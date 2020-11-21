@@ -41,7 +41,7 @@ void AssetEditor::Draw(ImGuiID dockspace_id) {
   }
   CheckForFocus();
 
-  if (is_active) {
+  if (is_active && keep_open_) {
     Draw();
   }
   ImGui::End();
