@@ -1,16 +1,15 @@
 #include "asset_viewer_window.hpp"
 
+#include "asset_editors/scene_editor.hpp"
+#include "asset_editors/script_editor.hpp"
+#include "asset_editors/texture_editor.hpp"
 #include <filesystem>
 #include <fstream>
 
 #include <imgui.h>
 
-#include "asset_editors/scene_editor.hpp"
-#include "asset_editors/script_editor.hpp"
-
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/log.hpp>
-
 #include <ovis/engine/lua.hpp>
 
 namespace ove {
@@ -67,6 +66,9 @@ AssetEditor* AssetViewerWindow::OpenAssetEditor(const std::string& asset_id) {
     return open_editors_->back().get();
   } else if (asset_type == "scene_controller") {
     open_editors_->push_back(std::make_unique<ScriptEditor>(asset_id));
+    return open_editors_->back().get();
+  } else if (asset_type == "texture2d") {
+    open_editors_->push_back(std::make_unique<TextureEditor>(asset_id));
     return open_editors_->back().get();
   } else {
     ovis::LogE("Unknown asset type: {}", asset_type);

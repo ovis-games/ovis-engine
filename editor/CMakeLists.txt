@@ -40,6 +40,7 @@ add_executable(
   windows/asset_editors/asset_editor.hpp windows/asset_editors/asset_editor.cpp
   windows/asset_editors/scene_editor.hpp windows/asset_editors/scene_editor.cpp
   windows/asset_editors/script_editor.hpp windows/asset_editors/script_editor.cpp
+  windows/asset_editors/texture_editor.hpp windows/asset_editors/texture_editor.cpp
 )
 
 target_compile_options(
