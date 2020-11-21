@@ -76,6 +76,6 @@ install(
   RUNTIME DESTINATION .
 )
 install(
-  FILES ${CMAKE_BINARY_DIR}/ovis-editor.data ${CMAKE_BINARY_DIR}/ovis-editor.wasm
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/ovis-editor.data ${CMAKE_CURRENT_BINARY_DIR}/ovis-editor.wasm
   DESTINATION .
 )
