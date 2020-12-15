@@ -66,11 +66,15 @@ class RenderPass {
   }
 
   inline void CreateResourcesWrapper() {
+#if OVIS_ENABLE_BUILT_IN_PROFILING
     gpu_render_profiler_ = std::make_unique<GPUTimeProfiler>(context(), name() + "::Render");
+#endif
     CreateResources();
   }
   inline void ReleaseResourcesWrapper() {
+#if OVIS_ENABLE_BUILT_IN_PROFILING
     gpu_render_profiler_.reset();
+#endif
     ReleaseResources();
   }
 };

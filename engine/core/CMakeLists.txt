@@ -57,5 +57,5 @@ target_compile_features(
 target_compile_definitions(
   ovis-core
   PUBLIC
-    -DOVIS_ENABLE_BUILT_IN_PROFILING=1
+    -DOVIS_ENABLE_BUILT_IN_PROFILING=0
 )
