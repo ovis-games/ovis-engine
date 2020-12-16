@@ -14,6 +14,8 @@ class EditorWindow : public ovis::Window {
 
  private:
   static EditorWindow* instance_;
+
+  void SetUIStyle();
 };
 
 }  // namespace ove
