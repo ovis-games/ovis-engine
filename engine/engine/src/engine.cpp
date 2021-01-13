@@ -54,7 +54,10 @@ bool Update() {
 
 #ifdef OVIS_EMSCRIPTEN
 void EmscriptenUpdate() {
-  Update();
+  if (!Update()) {
+    LogI("Quitting application!");
+    emscripten_cancel_main_loop();
+  }
 }
 #endif  // OVIS_EMSCRIPTEN
 
