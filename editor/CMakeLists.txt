@@ -46,12 +46,14 @@ add_executable(
 target_compile_options(
   ovis-editor
   PUBLIC
-  "SHELL:-s FETCH=1"
+    "SHELL:-s FETCH=1"
 )
 target_link_options(
   ovis-editor
   PUBLIC
-  "SHELL:-s FETCH=1"
+    "SHELL:-s FETCH=1"
+    "SHELL:-s MODULARIZE=1"
+    "SHELL:-s 'EXPORT_NAME=\"createEditorModule\"'"
 )
 
 add_custom_target(
