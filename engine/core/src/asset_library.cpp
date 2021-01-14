@@ -94,6 +94,8 @@ bool DirectoryAssetLibrary::CreateAsset(
       }
     }
   }
+
+  Rescan();
   return true;
 }
 

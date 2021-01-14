@@ -8,7 +8,7 @@
 
 namespace ovis {
 
-std::string to_lower(const std::string& string) {
+inline std::string to_lower(const std::string& string) {
   std::string lowercase_string;
   lowercase_string.resize(string.size());
   std::transform(string.begin(), string.end(), lowercase_string.begin(),

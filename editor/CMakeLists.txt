@@ -41,19 +41,30 @@ add_executable(
   windows/asset_editors/scene_editor.hpp windows/asset_editors/scene_editor.cpp
   windows/asset_editors/script_editor.hpp windows/asset_editors/script_editor.cpp
   windows/asset_editors/texture_editor.hpp windows/asset_editors/texture_editor.cpp
+  windows/asset_importers/asset_importer.hpp windows/asset_importers/asset_importer.cpp
 )
 
 target_compile_options(
   ovis-editor
   PUBLIC
-    "SHELL:-s FETCH=1"
+  "SHELL:-s FETCH=1"
 )
 target_link_options(
   ovis-editor
   PUBLIC
     "SHELL:-s FETCH=1"
+    "SHELL:-s FORCE_FILESYSTEM=1"
     "SHELL:-s MODULARIZE=1"
-    "SHELL:-s 'EXPORT_NAME=\"createEditorModule\"'"
+    "SHELL:-s ALLOW_MEMORY_GROWTH=1"
+    "SHELL:-s EXPORT_NAME=createEditorModule"
+    "SHELL:-s EXTRA_EXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap']"
+    "--preload-file ${CMAKE_BINARY_DIR}/assets@/ovis_assets"
+)
+
+add_custom_command(
+  TARGET ovis-editor
+  PRE_LINK
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
 )
 
 add_custom_target(
@@ -72,6 +83,7 @@ target_link_libraries(
     ovis::rendering2d
     nlohmann_json
     ImGuiColorTextEdit
+    stb
 )
 
 install(

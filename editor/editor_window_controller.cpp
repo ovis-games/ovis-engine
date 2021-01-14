@@ -1,15 +1,17 @@
 #include "editor_window_controller.hpp"
 
+#include "editor_asset_library.hpp"
+#include "editor_window.hpp"
+#include "windows/asset_editors/asset_editor.hpp"
+#include "windows/asset_importers/asset_importer.hpp"
+
 #include <emscripten/html5.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include "editor_asset_library.hpp"
-#include "windows/asset_editors/asset_editor.hpp"
-
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/log.hpp>
-
+#include <ovis/engine/engine.hpp>
 #include <ovis/engine/scene.hpp>
 #include <ovis/engine/window.hpp>
 
@@ -18,6 +20,10 @@ namespace ove {
 EditorWindowController::EditorWindowController(const std::vector<std::string>* log_history)
     : ovis::SceneController("EditorWindowController"), log_window_(log_history), asset_viewer_window_(&open_editors_) {
   ovis::CreateApplicationAssetLibrary<EditorAssetLibrary>("/assets/");
+
+  icons_.save = ovis::LoadTexture2D("icon-save", EditorWindow::instance()->context());
+  icons_.undo = ovis::LoadTexture2D("icon-undo", EditorWindow::instance()->context());
+  icons_.redo = ovis::LoadTexture2D("icon-redo", EditorWindow::instance()->context());
 }
 
 void EditorWindowController::Update(std::chrono::microseconds delta_time) {
@@ -27,58 +33,51 @@ void EditorWindowController::Update(std::chrono::microseconds delta_time) {
 }
 
 void EditorWindowController::DrawImGui() {
-  bool open = true;
+  DrawToolbar();
+  DrawDockSpace();
+}
 
-  ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+bool EditorWindowController::ProcessEvent(const SDL_Event& event) {
+  if (event.type == SDL_KEYDOWN) {
+    if (event.key.keysym.sym == SDLK_s && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
+      Save();
+      return true;
+    } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0 &&
+               (event.key.keysym.mod & (KMOD_LSHIFT | KMOD_RSHIFT)) != 0) {
+      Redo();
+      return true;
+    } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
+      Undo();
+      return true;
+    }
+  } else if (event.type == SDL_DROPFILE) {
+    const std::string filename = event.drop.file;
+    SDL_free(event.drop.file);
+    ImportAsset(filename);
+    return true;
+  }
+
+  if (AssetEditor::last_focused_document_window) {
+    return AssetEditor::last_focused_document_window->ProcessEvent(event);
+  } else {
+    return false;
+  }
+}
+
+void EditorWindowController::DrawDockSpace() {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
-  ImGui::SetNextWindowPos(viewport->Pos);
-  ImGui::SetNextWindowSize(viewport->Size);
+  ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + icon_size_.y + 10));
+  ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, viewport->Size.y - icon_size_.y - 10));
   ImGui::SetNextWindowViewport(viewport->ID);
+  ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
+                                  ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                                  ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-  window_flags |=
-      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-  window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-  ImGui::Begin("Ovis Editor", &open, window_flags);
-  ImGui::PopStyleVar();
-
-  ImGui::PopStyleVar(2);
-
-  ImGui::BeginMenuBar();
-  if (ImGui::Button("Save")) {
-    Save();
-  }
-  if (ImGui::IsItemHovered()) {
-    if (AssetEditor::last_focused_document_window != nullptr) {
-      ImGui::SetTooltip("Save: %s", AssetEditor::last_focused_document_window->asset_id().c_str());
-    }
-  }
-
-  if (ImGui::Button("Undo")) {
-    Undo();
-  }
-  if (ImGui::IsItemHovered()) {
-    std::string undo_description = "Nothing to undo";
-    if (AssetEditor::last_focused_document_window != nullptr &&
-        AssetEditor::last_focused_document_window->GetActionHistory()->undo_possible()) {
-      undo_description = AssetEditor::last_focused_document_window->GetActionHistory()->undo_description();
-    }
-    ImGui::SetTooltip("Undo: %s", undo_description.c_str());
-  }
-  if (ImGui::Button("Redo")) {
-    Redo();
-  }
-  if (ImGui::IsItemHovered()) {
-    std::string redo_description = "Nothing to redo";
-    if (AssetEditor::last_focused_document_window != nullptr &&
-        AssetEditor::last_focused_document_window->GetActionHistory()->redo_possible()) {
-      redo_description = AssetEditor::last_focused_document_window->GetActionHistory()->redo_description();
-    }
-    ImGui::SetTooltip("Redo: %s", redo_description.c_str());
-  }
-  ImGui::EndMenuBar();
+  ImGui::Begin("Ovis Editor", nullptr, window_flags);
+  ImGui::PopStyleVar(3);
 
   if (ImGui::DockBuilderGetNode(ImGui::GetID("MyDockspace")) == NULL) {
     ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
@@ -130,26 +129,63 @@ void EditorWindowController::DrawImGui() {
   asset_viewer_window_.Draw();
 }
 
-bool EditorWindowController::ProcessEvent(const SDL_Event& event) {
-  if (event.type == SDL_KEYDOWN) {
-    if (event.key.keysym.sym == SDLK_s && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
-      Save();
-      return true;
-    } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0 &&
-               (event.key.keysym.mod & (KMOD_LSHIFT | KMOD_RSHIFT)) != 0) {
-      Redo();
-      return true;
-    } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
-      Undo();
-      return true;
+void EditorWindowController::DrawToolbar() {
+  ImGuiViewport* viewport = ImGui::GetMainViewport();
+  ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y));
+  ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, icon_size_.y + 10));
+  ImGui::SetNextWindowViewport(viewport->ID);
+  ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
+                                  ImGuiWindowFlags_NoSavedSettings;
+
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+  ImGui::Begin("Toolbar", nullptr, window_flags);
+  ImGui::PopStyleVar(3);
+
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(48, 48, 48)));
+
+  if (ImGui::ImageButton(icons_.save.get(), icon_size_)) {
+    Save();
+  }
+  if (ImGui::IsItemHovered()) {
+    if (AssetEditor::last_focused_document_window != nullptr) {
+      ImGui::SetTooltip("Save: %s", AssetEditor::last_focused_document_window->asset_id().c_str());
+    } else {
+      ImGui::SetTooltip("Nothing to save");
     }
   }
 
-  if (AssetEditor::last_focused_document_window) {
-    return AssetEditor::last_focused_document_window->ProcessEvent(event);
-  } else {
-    return false;
+  ImGui::SameLine();
+  if (ImGui::ImageButton(icons_.undo.get(), icon_size_)) {
+    Undo();
   }
+  if (ImGui::IsItemHovered()) {
+    std::string undo_description = "Nothing to undo";
+    if (AssetEditor::last_focused_document_window != nullptr &&
+        AssetEditor::last_focused_document_window->GetActionHistory()->undo_possible()) {
+      undo_description = AssetEditor::last_focused_document_window->GetActionHistory()->undo_description();
+    }
+    ImGui::SetTooltip("Undo: %s", undo_description.c_str());
+  }
+
+  ImGui::SameLine();
+  if (ImGui::ImageButton(icons_.redo.get(), icon_size_)) {
+    Redo();
+  }
+  if (ImGui::IsItemHovered()) {
+    std::string redo_description = "Nothing to redo";
+    if (AssetEditor::last_focused_document_window != nullptr &&
+        AssetEditor::last_focused_document_window->GetActionHistory()->redo_possible()) {
+      redo_description = AssetEditor::last_focused_document_window->GetActionHistory()->redo_description();
+    }
+    ImGui::SetTooltip("Redo: %s", redo_description.c_str());
+  }
+
+  ImGui::PopStyleColor();
+
+  ImGui::End();
 }
 
 void EditorWindowController::Save() {

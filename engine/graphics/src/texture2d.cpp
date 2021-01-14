@@ -103,8 +103,11 @@ Texture2D::Texture2D(GraphicsContext* context, const Texture2DDescription& descr
       SDL_assert(false);
       break;
   }
+
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, min_filter);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag_filter);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 }
 
 void Texture2D::Write(std::size_t level, std::size_t x, std::size_t y, std::size_t width, std::size_t height,

@@ -8,9 +8,10 @@
 
 #include <ovis/core/file.hpp>
 #include <ovis/core/log.hpp>
-
 #include <ovis/engine/engine.hpp>
 #include <ovis/engine/lua.hpp>
+
+#include "global.hpp"
 
 namespace ove {
 
@@ -23,6 +24,19 @@ EditorAssetLibrary::EditorAssetLibrary(const std::string& directory) : ovis::Dir
   } else if (!std::filesystem::is_directory(directory)) {
     ovis::LogE("'{}' is not a directory", directory);
     SDL_assert(false);
+  }
+}
+
+bool EditorAssetLibrary::CreateAsset(
+    const std::string& asset_id, const std::string& type,
+    const std::vector<std::pair<std::string, std::variant<std::string, ovis::Blob>>>& files) {
+  if (DirectoryAssetLibrary::CreateAsset(asset_id, type, files)) {
+    for (const auto file : files) {
+      UploadFile(*GetAssetFilename(asset_id, file.first));
+    }
+    return true;
+  } else {
+    return false;
   }
 }
 
@@ -118,7 +132,7 @@ void EditorAssetLibrary::UploadNextFile() {
       attr.userData = this;
 
       std::string relative_filename = std::filesystem::relative(filename, directory());
-      std::string url = fmt::format("http://localhost:3000/v0/project/x/file/{}", relative_filename);
+      std::string url = fmt::format("{}/v0/project/x/file/{}", ove::backend_url, relative_filename);
       emscripten_fetch(&attr, url.c_str());
 
       ovis::LogI("Uploading {} ({} bytes)", filename, file_data->size());

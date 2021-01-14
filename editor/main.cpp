@@ -1,15 +1,31 @@
-#include <emscripten.h>
+#include <cstring>
 
 #include "editor_module.hpp"
 #include "editor_window.hpp"
 #include "global.hpp"
-#include <ovis/rendering2d/rendering2d_module.hpp>
+
+#include <emscripten.h>
+#include <emscripten/val.h>
+#include <ovis/base/base_module.hpp>
 
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/log.hpp>
-
-#include <ovis/base/base_module.hpp>
 #include <ovis/engine/engine.hpp>
+#include <ovis/rendering2d/rendering2d_module.hpp>
+
+extern "C" {
+
+void EMSCRIPTEN_KEEPALIVE DropFile(const char* filename) {
+  const size_t filename_length = std::strlen(filename);
+  char* filename_copy = static_cast<char*>(SDL_malloc(filename_length + 1));
+  std::strncpy(filename_copy, filename, filename_length + 1);
+
+  SDL_Event sdl_event;
+  sdl_event.type = SDL_DROPFILE;
+  sdl_event.drop.file = filename_copy;
+  SDL_PushEvent(&sdl_event);
+}
+}
 
 // Usage: ovis-editor backend_url project_id authentication_token
 int main(int argc, char* argv[]) {
