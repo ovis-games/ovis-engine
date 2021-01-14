@@ -23,8 +23,9 @@ LoadingController::LoadingController() : ovis::SceneController("LoadingControlle
   attr.onsuccess = &LoadingController::FileListDownloadSucceded;
   attr.onerror = &LoadingController::DownloadFailed;
   attr.userData = this;
+  attr.withCredentials = true;
 
-  const std::string url = backend_url + "/v0/project/" + project_id + "/files";
+  const std::string url = backend_url + "/v1/games/" + project_id + "/assetFiles";
   emscripten_fetch(&attr, url.c_str());
 }
 
@@ -78,7 +79,8 @@ void LoadingController::FileDownloadSucceded(emscripten_fetch_t* fetch) {
 }
 
 void LoadingController::DownloadFailed(emscripten_fetch_t* fetch) {
-  ovis::LogE("Failed to download {}", fetch->url);
+  const std::string error(fetch->data, fetch->data + fetch->numBytes);
+  ovis::LogE("Failed to download {}:\n{}", fetch->url, error);
 }
 
 void LoadingController::DownloadNextFile() {
@@ -96,8 +98,9 @@ void LoadingController::DownloadNextFile() {
     attr.onsuccess = &LoadingController::FileDownloadSucceded;
     attr.onerror = &LoadingController::DownloadFailed;
     attr.userData = this;
+    attr.withCredentials = true;
 
-    const std::string url = backend_url + "/v0/project/" + project_id + "/file/" + current_file_;
+    const std::string url = backend_url + "/v1/games/" + project_id + "/assetFiles/" + current_file_;
     emscripten_fetch(&attr, url.c_str());
 
     ovis::LogD("Downloading '{}'", current_file_);

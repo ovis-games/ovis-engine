@@ -130,9 +130,10 @@ void EditorAssetLibrary::UploadNextFile() {
       attr.requestDataSize = current_file_content_.size();
       attr.requestHeaders = REQUEST_HEADERS;
       attr.userData = this;
+      attr.withCredentials = true;
 
       std::string relative_filename = std::filesystem::relative(filename, directory());
-      std::string url = fmt::format("{}/v0/project/x/file/{}", ove::backend_url, relative_filename);
+      std::string url = fmt::format("{}/v1/games/{}/assetFiles/{}", ove::backend_url, ove::project_id, relative_filename);
       emscripten_fetch(&attr, url.c_str());
 
       ovis::LogI("Uploading {} ({} bytes)", filename, file_data->size());
