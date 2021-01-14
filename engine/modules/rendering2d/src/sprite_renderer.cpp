@@ -65,6 +65,13 @@ void SpriteRenderer::Render(Scene* scene) {
     SpriteComponent* sprite = object->GetComponent<SpriteComponent>("Sprite");
     const glm::mat4 size_matrix = glm::scale(glm::vec3(sprite->size(), 1.0f));
     const glm::vec4 color = sprite->color();
+    const std::string texture_asset = sprite->texture_asset();
+
+    auto texture_iterator = textures_.find(texture_asset);
+    if (texture_iterator == textures_.end()) {
+      texture_iterator = textures_.insert(std::make_pair(texture_asset, LoadTexture2D(texture_asset, context()))).first;
+    }
+    const std::unique_ptr<Texture2D>& texture = texture_iterator->second;
 
     Transform2DComponent* transform = object->GetComponent<Transform2DComponent>("Transform2D");
     const glm::mat4 world_view_projection =
@@ -73,6 +80,7 @@ void SpriteRenderer::Render(Scene* scene) {
 
     shader_program_->SetUniform("WorldViewProjection", world_view_projection);
     shader_program_->SetUniform("Color", color);
+    shader_program_->SetTexture("Texture", texture.get());
     context()->Draw(draw_item);
   }
 }

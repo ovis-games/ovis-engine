@@ -25,7 +25,7 @@ SceneObjectComponent::PropertyValue SpriteComponent::GetProperty(const std::stri
   } else if (property_name == "Color") {
     return color_;
   } else if (property_name == "Texture") {
-    return std::string{};
+    return texture_asset_;
   } else {
     return std::monostate{};
   }
@@ -39,6 +39,8 @@ void SpriteComponent::SetProperty(const std::string& property_name, const Proper
     SDL_assert(std::holds_alternative<glm::vec4>(value));
     color_ = std::get<glm::vec4>(value);
   } else if (property_name == "Texture") {
+    SDL_assert(std::holds_alternative<std::string>(value));
+    texture_asset_ = std::get<std::string>(value);
   }
 }
 

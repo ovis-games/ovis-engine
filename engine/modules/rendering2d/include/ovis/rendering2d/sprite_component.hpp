@@ -17,9 +17,10 @@ class SpriteComponent : public SceneObjectComponent {
 
   inline glm::vec4 color() const { return color_; }
   inline glm::vec2 size() const { return size_; }
+  inline std::string texture_asset() const { return texture_asset_; } 
 
  private:
-  ResourcePointer<Texture2D> texture_;
+  std::string texture_asset_;
   glm::vec2 size_;
   glm::vec4 color_;
 };

@@ -19,6 +19,7 @@ class SpriteRenderer : public RenderPass {
   std::unique_ptr<ovis::ShaderProgram> shader_program_;
   std::unique_ptr<ovis::VertexBuffer> vertex_buffer_;
   std::unique_ptr<ovis::VertexInput> vertex_input_;
+  std::unordered_map<std::string, std::unique_ptr<Texture2D>> textures_;
 };
 
 }  // namespace ovis

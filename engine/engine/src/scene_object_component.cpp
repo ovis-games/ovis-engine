@@ -1,5 +1,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
+#include <imgui_stdlib.h>
 
 #include <ovis/core/log.hpp>
 #include <ovis/engine/module.hpp>
@@ -163,7 +164,10 @@ bool SceneObjectComponent::DrawEditorForProperty(const std::string& property_nam
     }
 
     case PropertyType::STRING: {
-      ImGui::Text("%s", property_name.c_str());
+      std::string value = std::get<std::string>(GetProperty(property_name));
+      if (ImGui::InputText(property_name.c_str(), &value, ImGuiInputTextFlags_EnterReturnsTrue)) {
+        SetProperty(property_name.c_str(), value);
+      }
       return false;
     }
 
@@ -174,7 +178,7 @@ bool SceneObjectComponent::DrawEditorForProperty(const std::string& property_nam
 
     case PropertyType::FLOAT: {
       float value = std::get<float>(GetProperty(property_name));
-      if (ImGui::InputFloat(property_name.c_str(), &value)) {
+      if (ImGui::InputFloat(property_name.c_str(), &value, 0.0f, 0.0f, "%.3f", ImGuiInputTextFlags_EnterReturnsTrue)) {
         SetProperty(property_name, value);
         return true;
       }
@@ -183,7 +187,7 @@ bool SceneObjectComponent::DrawEditorForProperty(const std::string& property_nam
 
     case PropertyType::VECTOR2: {
       glm::vec2 value = std::get<glm::vec2>(GetProperty(property_name));
-      if (ImGui::InputFloat2(property_name.c_str(), glm::value_ptr(value))) {
+      if (ImGui::InputFloat2(property_name.c_str(), glm::value_ptr(value), "%.3f", ImGuiInputTextFlags_EnterReturnsTrue)) {
         SetProperty(property_name, value);
         return true;
       }
@@ -192,7 +196,7 @@ bool SceneObjectComponent::DrawEditorForProperty(const std::string& property_nam
 
     case PropertyType::VECTOR3: {
       glm::vec3 value = std::get<glm::vec3>(GetProperty(property_name));
-      if (ImGui::InputFloat3(property_name.c_str(), glm::value_ptr(value))) {
+      if (ImGui::InputFloat3(property_name.c_str(), glm::value_ptr(value), "%.3f", ImGuiInputTextFlags_EnterReturnsTrue)) {
         SetProperty(property_name, value);
         return true;
       }
@@ -201,7 +205,7 @@ bool SceneObjectComponent::DrawEditorForProperty(const std::string& property_nam
 
     case PropertyType::VECTOR4: {
       glm::vec4 value = std::get<glm::vec4>(GetProperty(property_name));
-      if (ImGui::InputFloat4(property_name.c_str(), glm::value_ptr(value))) {
+      if (ImGui::InputFloat4(property_name.c_str(), glm::value_ptr(value), "%.3f", ImGuiInputTextFlags_EnterReturnsTrue)) {
         SetProperty(property_name, value);
         return true;
       }
