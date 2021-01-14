@@ -40,8 +40,6 @@ void SpriteRenderer::CreateResources() {
 }
 
 void SpriteRenderer::Render(Scene* scene) {
-  viewport()->GetDefaultRenderTargetConfiguration()->ClearColor(0, glm::vec4(1.0, 1.0, 0.0, 1.0));
-
   scene->camera().SetProjectionType(ProjectionType::ORTHOGRAPHIC);
   scene->camera().SetNearClipPlane(0.0f);
   scene->camera().SetNearClipPlane(1.0f);
@@ -58,6 +56,9 @@ void SpriteRenderer::Render(Scene* scene) {
   draw_item.primitive_topology = PrimitiveTopology::TRIANGLE_STRIP;
   draw_item.count = 4;
   draw_item.render_target_configuration = viewport()->GetDefaultRenderTargetConfiguration();
+  draw_item.blend_state.enabled = true;
+  draw_item.blend_state.source_color_factor = ovis::SourceBlendFactor::SOURCE_ALPHA;
+  draw_item.blend_state.destination_color_factor = ovis::DestinationBlendFactor::ONE_MINUS_SOURCE_ALPHA;
 
   const auto objects_with_sprites = scene->GetSceneObjectsWithComponent("Sprite");
 
