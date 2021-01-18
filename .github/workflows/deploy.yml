@@ -1,0 +1,24 @@
+name: Deploy Docker Image
+
+on:
+  push:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, Docker]
+
+    steps:
+      # Check out repository under $GITHUB_WORKSPACE
+      - uses: actions/checkout@v2
+
+      - name: Push to GitHub Packages
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          repository: ovis-games/ovis-engine/ovis-engine
+          tags: latest
