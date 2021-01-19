@@ -10,4 +10,3 @@ FROM tianon/true
 WORKDIR /ovis-engine
 COPY --from=0 /ovis-engine/install/* ./
 VOLUME /ovis-engine
-CMD [ "true" ]
