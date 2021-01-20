@@ -49,7 +49,6 @@ add_library(
   src/lparser.h 
   src/lstring.h  
   src/ltm.c      
-  src/luac.c     
   src/lutf8lib.c
   src/lauxlib.h  
   src/lctype.c   
