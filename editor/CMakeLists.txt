@@ -31,10 +31,13 @@ add_executable(
   editor_window.hpp editor_window.cpp
   editor_window_controller.hpp editor_window_controller.cpp
   editor_asset_library.hpp editor_asset_library.cpp
-  loading_controller.hpp loading_controller.cpp
   
   windows/log_window.hpp windows/log_window.cpp
   windows/asset_viewer_window.hpp windows/asset_viewer_window.cpp
+  
+  windows/modal/modal_window.hpp windows/modal/modal_window.cpp
+  windows/modal/loading_window.hpp windows/modal/loading_window.cpp
+
   windows/asset_editors/asset_editor.hpp windows/asset_editors/asset_editor.cpp
   windows/asset_editors/scene_editor.hpp windows/asset_editors/scene_editor.cpp
   windows/asset_editors/script_editor.hpp windows/asset_editors/script_editor.cpp

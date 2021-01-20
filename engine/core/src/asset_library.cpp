@@ -119,6 +119,10 @@ void DirectoryAssetLibrary::Rescan() {
   assets_.clear();
   assets_with_type_.clear();
 
+  if (!std::filesystem::exists(directory_)) {
+    return;
+  }
+
   for (const auto& directory_entry : std::filesystem::recursive_directory_iterator(directory_)) {
     if (directory_entry.is_regular_file()) {
       const auto file_path = directory_entry.path();

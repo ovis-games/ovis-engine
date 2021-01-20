@@ -1,6 +1,7 @@
-#include "loading_controller.hpp"
+#include "loading_window.hpp"
 
-#include "global.hpp"
+#include "../../editor_asset_library.hpp"
+#include "../../global.hpp"
 #include <filesystem>
 #include <fstream>
 
@@ -12,7 +13,7 @@
 
 namespace ove {
 
-LoadingController::LoadingController() : ovis::SceneController("LoadingController") {
+LoadingWindow::LoadingWindow() : ModalWindow("LoadingWindow", "Loading game assets") {
   if (!std::filesystem::exists("/assets")) {
     std::filesystem::create_directory("/assets");
   }
@@ -21,8 +22,8 @@ LoadingController::LoadingController() : ovis::SceneController("LoadingControlle
   emscripten_fetch_attr_init(&attr);
   strcpy(attr.requestMethod, "GET");
   attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-  attr.onsuccess = &LoadingController::FileListDownloadSucceded;
-  attr.onerror = &LoadingController::DownloadFailed;
+  attr.onsuccess = &LoadingWindow::FileListDownloadSucceded;
+  attr.onerror = &LoadingWindow::DownloadFailed;
   attr.userData = this;
   attr.withCredentials = true;
 
@@ -30,43 +31,17 @@ LoadingController::LoadingController() : ovis::SceneController("LoadingControlle
   emscripten_fetch(&attr, url.c_str());
 }
 
-void LoadingController::Update(std::chrono::microseconds delta_time) {
-  if (finished_) {
-    Remove();
-    scene()->AddController("EditorWindowController");
-  }
-}
-
-void LoadingController::DrawImGui() {
-  ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-  ImGuiViewport* viewport = ImGui::GetMainViewport();
-  ImGui::SetNextWindowPos(viewport->Pos);
-  ImGui::SetNextWindowSize(viewport->Size);
-  ImGui::SetNextWindowViewport(viewport->ID);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-  window_flags |=
-      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-  window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-  ImGui::Begin("Ovis Editor", nullptr, window_flags);
-  ImGui::PopStyleVar();
-
-  ImGui::PopStyleVar(2);
-
+void LoadingWindow::DrawContent() {
   const float progress = downloaded_files_.size() / static_cast<float>(files_to_download_.size());
-  ImGui::ProgressBar(progress);
-
-  ImGui::End();
+  ImGui::ProgressBar(progress, ImVec2(250, 0));
 }
 
-void LoadingController::FileListDownloadSucceded(emscripten_fetch_t* fetch) {
+void LoadingWindow::FileListDownloadSucceded(emscripten_fetch_t* fetch) {
   std::string_view data(fetch->data, fetch->numBytes);
   try {
     ovis::json files = ovis::json::parse(data);
 
-    auto controller = reinterpret_cast<LoadingController*>(fetch->userData);
+    auto controller = reinterpret_cast<LoadingWindow*>(fetch->userData);
     controller->files_to_download_ = files.get<std::vector<std::string>>();
     controller->DownloadNextFile();
   } catch (const ovis::json::parse_error& error) {
@@ -74,8 +49,8 @@ void LoadingController::FileListDownloadSucceded(emscripten_fetch_t* fetch) {
   }
 }
 
-void LoadingController::FileDownloadSucceded(emscripten_fetch_t* fetch) {
-  auto controller = reinterpret_cast<LoadingController*>(fetch->userData);
+void LoadingWindow::FileDownloadSucceded(emscripten_fetch_t* fetch) {
+  auto controller = reinterpret_cast<LoadingWindow*>(fetch->userData);
   ovis::LogD("Successfully downloaded '{}'", controller->current_file_);
 
   std::ofstream file(fmt::format("/assets/{}", controller->current_file_));
@@ -86,12 +61,12 @@ void LoadingController::FileDownloadSucceded(emscripten_fetch_t* fetch) {
   controller->DownloadNextFile();
 }
 
-void LoadingController::DownloadFailed(emscripten_fetch_t* fetch) {
+void LoadingWindow::DownloadFailed(emscripten_fetch_t* fetch) {
   const std::string error(fetch->data, fetch->data + fetch->numBytes);
   ovis::LogE("Failed to download {}:\n{}", fetch->url, error);
 }
 
-void LoadingController::DownloadNextFile() {
+void LoadingWindow::DownloadNextFile() {
   if (current_file_ != "") {
     downloaded_files_.insert(current_file_);
   }
@@ -103,8 +78,8 @@ void LoadingController::DownloadNextFile() {
     emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "GET");
     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.onsuccess = &LoadingController::FileDownloadSucceded;
-    attr.onerror = &LoadingController::DownloadFailed;
+    attr.onsuccess = &LoadingWindow::FileDownloadSucceded;
+    attr.onerror = &LoadingWindow::DownloadFailed;
     attr.userData = this;
     attr.withCredentials = true;
 
@@ -115,7 +90,10 @@ void LoadingController::DownloadNextFile() {
   } else {
     current_file_.clear();
     ovis::LogD("No more files to download");
-    finished_ = true;
+
+    // This is okay as the callbacks are called from the main thread
+    Remove();
+    static_cast<EditorAssetLibrary*>(ovis::GetApplicationAssetLibrary())->Rescan();
   }
 }
 

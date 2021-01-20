@@ -3,7 +3,7 @@
 #include <imgui.h>
 
 #include "editor_window_controller.hpp"
-#include "loading_controller.hpp"
+#include "windows/modal/loading_window.hpp"
 #include <glm/gtc/type_ptr.hpp>
 
 #include <ovis/core/log.hpp>
@@ -31,7 +31,7 @@ EditorModule::EditorModule() : ovis::Module("Editor") {
   RegisterRenderPass("ClearRenderPass", [](ovis::Viewport*) { return std::make_unique<ClearRenderPass>(); });
   RegisterSceneController("EditorWindowController",
                           [this](ovis::Scene*) { return std::make_unique<EditorWindowController>(&log_history_); });
-  RegisterSceneController("LoadingController", [this](ovis::Scene*) { return std::make_unique<LoadingController>(); });
+  RegisterSceneController("LoadingWindow", [this](ovis::Scene*) { return std::make_unique<LoadingWindow>(); });
 
   ovis::Log::AddListener([this](ovis::LogLevel, const std::string& text) { log_history_.push_back(text); });
 }

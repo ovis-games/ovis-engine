@@ -4,8 +4,6 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include "loading_controller.hpp"
-
 #include <ovis/core/log.hpp>
 
 #include <ovis/engine/scene.hpp>
@@ -20,7 +18,7 @@ ovis::WindowDescription CreateWindowDescription() {
 
   window_description.title = "Ovis Editor";
   window_description.resource_search_paths = {"/resources/", "/assets/"};
-  window_description.scene_controllers = {"ImGui", "LoadingController"};
+  window_description.scene_controllers = {"ImGui"};
   window_description.render_passes = {"ImGui"};
 
   double canvas_css_width;
@@ -40,6 +38,10 @@ EditorWindow* EditorWindow::instance_ = nullptr;
 EditorWindow::EditorWindow() : ovis::Window(CreateWindowDescription()) {
   SDL_assert(instance_ == nullptr);
   instance_ = this;
+
+  // Add them here, so the instance variable is set
+  scene()->AddController("EditorWindowController");
+  scene()->AddController("LoadingWindow");
 
   SetUIStyle();
 }

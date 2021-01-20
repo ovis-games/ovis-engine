@@ -6,19 +6,17 @@
 
 #include <emscripten/fetch.h>
 
-#include <ovis/engine/scene_controller.hpp>
+#include "modal_window.hpp"
 
 namespace ove {
 
-class LoadingController : public ovis::SceneController {
+class LoadingWindow : public ModalWindow {
  public:
-  LoadingController();
-
-  void Update(std::chrono::microseconds delta_time) override;
-  void DrawImGui() override;
+  LoadingWindow();
 
  private:
-  bool finished_ = false;
+  void DrawContent() override;
+
   std::vector<std::string> files_to_download_;
   std::set<std::string> downloaded_files_;
   std::string current_file_;

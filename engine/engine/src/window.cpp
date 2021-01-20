@@ -39,12 +39,14 @@ Window::Window(const WindowDescription& desc)
   for (const auto& search_path : desc.resource_search_paths) {
     resource_manager_.AddSearchPath(search_path);
   }
+
+  SetResourceManager(&resource_manager_);
+  SetGraphicsContext(&graphics_context_);
+
   for (const auto& controller : desc.scene_controllers) {
     scene_.AddController(controller);
   }
 
-  SetResourceManager(&resource_manager_);
-  SetGraphicsContext(&graphics_context_);
   for (const auto& render_pass : desc.render_passes) {
     AddRenderPass(render_pass);
   }
