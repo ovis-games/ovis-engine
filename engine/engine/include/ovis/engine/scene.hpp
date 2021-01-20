@@ -84,6 +84,7 @@ class Scene {
 
  private:
   void InvalidateControllerOrder();
+  void DeleteRemovedControllers();
   void SortControllers();
   SceneController* GetControllerInternal(const std::string& controller_name) const;
 
@@ -92,6 +93,7 @@ class Scene {
 
   std::unordered_map<std::string, std::unique_ptr<SceneController>> controllers_;
   std::vector<SceneController*> controller_order_;
+  std::vector<std::unique_ptr<SceneController>> removed_controllers_;
   bool controllers_sorted_ = false;
 
   std::unordered_map<std::string, std::unique_ptr<SceneObject>> objects_;

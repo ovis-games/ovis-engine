@@ -56,7 +56,7 @@ void Scene::AddController(const std::string& scene_controller_id) {
 
   auto insert_return_value = controllers_.insert(std::make_pair(scene_controller_id, std::move(controller)));
   SDL_assert(insert_return_value.second);
-  insert_return_value.first->second->m_scene = this;
+  insert_return_value.first->second->scene_ = this;
   InvalidateControllerOrder();
 }
 
@@ -65,12 +65,17 @@ void Scene::RemoveController(const std::string& id) {
   if (scene_controller == controllers_.end()) {
     LogE("The scene does not contain the controller '{}'", id);
   } else {
+    removed_controllers_.push_back(std::move(scene_controller->second));
     controllers_.erase(scene_controller);
+    InvalidateControllerOrder();
   }
-  InvalidateControllerOrder();
 }
 
 void Scene::ClearControllers() {
+  removed_controllers_.reserve(removed_controllers_.size() + controllers_.size());
+  for (auto& controller : controllers_) {
+    removed_controllers_.push_back(std::move(controller.second));
+  }
   controllers_.clear();
   InvalidateControllerOrder();
 }
@@ -149,6 +154,7 @@ void Scene::Stop() {
   for (const auto& controller : controller_order_) {
     controller->Stop();
   }
+  DeleteRemovedControllers();
   is_playing_ = false;
 }
 
@@ -170,6 +176,7 @@ void Scene::AfterUpdate() {
   for (const auto& controller : controller_order_) {
     controller->AfterUpdate();
   }
+  DeleteRemovedControllers();
 }
 
 void Scene::Update(std::chrono::microseconds delta_time) {
@@ -244,8 +251,14 @@ void Scene::Deserialize(const json& serialized_object) {
 }
 
 void Scene::InvalidateControllerOrder() {
-  controller_order_.clear();
   controllers_sorted_ = false;
+}
+
+void Scene::DeleteRemovedControllers() {
+  if (removed_controllers_.size() > 0) {
+    ovis::LogD("Delete {} removed controller(s)", removed_controllers_.size());
+    removed_controllers_.clear();
+  }
 }
 
 void Scene::SortControllers() {

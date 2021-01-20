@@ -10,7 +10,7 @@
 namespace ovis {
 
 SceneController::SceneController(const std::string& name)
-    : m_name(name)
+    : name_(name)
 #if OVIS_ENABLE_BUILT_IN_PROFILING
       ,
       update_profiler_(name + "Update")
@@ -19,6 +19,11 @@ SceneController::SceneController(const std::string& name)
 }
 
 SceneController::~SceneController() {}
+
+void SceneController::Remove() {
+  SDL_assert(scene_ != nullptr);
+  scene()->RemoveController(name());
+}
 
 void SceneController::Update(std::chrono::microseconds /*delta_time*/) {}
 

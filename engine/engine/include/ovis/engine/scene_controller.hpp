@@ -25,8 +25,10 @@ class SceneController {
   SceneController(const std::string& name);
   virtual ~SceneController();
 
-  inline Scene* scene() const { return m_scene; }
-  inline std::string name() const { return m_name; }
+  inline Scene* scene() const { return scene_; }
+  inline std::string name() const { return name_; }
+
+  void Remove();
 
   virtual void Play() {}
   virtual void Stop() {}
@@ -44,8 +46,8 @@ class SceneController {
   void UpdateAfter(const std::string& controller_name);
 
  private:
-  Scene* m_scene;
-  std::string m_name;
+  Scene* scene_;
+  std::string name_;
   std::set<std::string> update_before_list_;
   std::set<std::string> update_after_list_;
 

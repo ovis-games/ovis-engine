@@ -1,13 +1,14 @@
 #include "loading_controller.hpp"
 
-#include <imgui.h>
-
 #include "global.hpp"
+#include <filesystem>
+#include <fstream>
+
+#include <imgui.h>
 
 #include <ovis/core/json.hpp>
 #include <ovis/core/log.hpp>
-#include <filesystem>
-#include <fstream>
+#include <ovis/engine/scene.hpp>
 
 namespace ove {
 
@@ -27,6 +28,13 @@ LoadingController::LoadingController() : ovis::SceneController("LoadingControlle
 
   const std::string url = backend_url + "/v1/games/" + project_id + "/assetFiles";
   emscripten_fetch(&attr, url.c_str());
+}
+
+void LoadingController::Update(std::chrono::microseconds delta_time) {
+  if (finished_) {
+    Remove();
+    scene()->AddController("EditorWindowController");
+  }
 }
 
 void LoadingController::DrawImGui() {

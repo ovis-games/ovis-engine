@@ -14,10 +14,8 @@ class LoadingController : public ovis::SceneController {
  public:
   LoadingController();
 
-  // void Update(std::chrono::microseconds delta_time) override;
+  void Update(std::chrono::microseconds delta_time) override;
   void DrawImGui() override;
-
-  inline bool is_finished() const { return finished_; }
 
  private:
   bool finished_ = false;

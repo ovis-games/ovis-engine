@@ -60,12 +60,6 @@ void EditorWindow::Update(std::chrono::microseconds delta_time) {
   }
 
   Window::Update(delta_time);
-
-  auto loading_controller = scene()->GetController<LoadingController>("LoadingController");
-  if (loading_controller != nullptr && loading_controller->is_finished()) {
-    scene()->RemoveController("LoadingController");
-    scene()->AddController("EditorWindowController");
-  }
 }
 
 void EditorWindow::SetUIStyle() {
