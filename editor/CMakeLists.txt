@@ -37,6 +37,7 @@ add_executable(
   
   windows/modal/modal_window.hpp windows/modal/modal_window.cpp
   windows/modal/loading_window.hpp windows/modal/loading_window.cpp
+  windows/modal/packaging_window.hpp windows/modal/packaging_window.cpp
 
   windows/asset_editors/asset_editor.hpp windows/asset_editors/asset_editor.cpp
   windows/asset_editors/scene_editor.hpp windows/asset_editors/scene_editor.cpp
@@ -85,6 +86,7 @@ target_link_libraries(
     nlohmann_json
     ImGuiColorTextEdit
     stb
+    microtar
 )
 
 install(

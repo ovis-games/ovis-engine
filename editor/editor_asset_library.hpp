@@ -19,6 +19,7 @@ class EditorAssetLibrary : public ovis::DirectoryAssetLibrary {
 
   bool SaveAssetFile(const std::string& asset_id, const std::string& file_type,
                      std::variant<std::string, ovis::Blob> content) override;
+  bool Package();
 
   void UploadFile(const std::string& filename);
 

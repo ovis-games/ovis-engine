@@ -1,17 +1,17 @@
 #include "editor_asset_library.hpp"
 
+#include "global.hpp"
 #include <filesystem>
 #include <fstream>
 
 #include <emscripten/fetch.h>
 #include <fmt/format.h>
+#include <microtar.h>
 
 #include <ovis/core/file.hpp>
 #include <ovis/core/log.hpp>
 #include <ovis/engine/engine.hpp>
 #include <ovis/engine/lua.hpp>
-
-#include "global.hpp"
 
 namespace ove {
 
@@ -48,6 +48,62 @@ bool EditorAssetLibrary::SaveAssetFile(const std::string& asset_id, const std::s
   } else {
     return false;
   }
+}
+
+bool EditorAssetLibrary::Package() {
+  // Should not be necessary but better save than sorry
+  Rescan();
+
+  const auto filename = directory() + "test.tar";
+  ovis::LogD("Tar filename: {}", filename);
+
+  mtar_t tar;
+  if (int error = mtar_open(&tar, filename.c_str(), "w"); error != MTAR_ESUCCESS) {
+    ovis::LogE("Failed to open tar archive: {}", mtar_strerror(error));
+    return false;
+  }
+
+  for (const std::string& asset_id : GetAssets()) {
+    for (const std::string& asset_file_type : GetAssetFileTypes(asset_id)) {
+      const std::optional<std::string> asset_filename = GetAssetFilename(asset_id, asset_file_type);
+      if (!asset_filename) {
+        ovis::LogE("Could not get asset filename for asset id '{}' and file type '{}'", asset_id, asset_file_type);
+        return false;
+      }
+
+      ovis::LogV("Add asset file to archive ({},{})", asset_id, asset_file_type);
+      // TODO: we should not reallocate this every time!
+      std::optional<ovis::Blob> content = LoadAssetBinaryFile(asset_id, asset_file_type);
+      if (!asset_filename) {
+        ovis::LogE("Could load asset file for asset id '{}' and file type '{}'", asset_id, asset_file_type);
+        return false;
+      }
+
+      if (int error = mtar_write_file_header(&tar, asset_filename->c_str(), content->size()); error != MTAR_ESUCCESS) {
+        ovis::LogE("Failed to write file header to archive: {}", mtar_strerror(error));
+        return false;
+      }
+
+      if (int error = mtar_write_data(&tar, content->data(), content->size()); error != MTAR_ESUCCESS) {
+        ovis::LogE("Failed to write file to archive: {}", mtar_strerror(error));
+        return false;
+      }
+    }
+  }
+
+
+  if (int error = mtar_finalize(&tar); error != MTAR_ESUCCESS) {
+    ovis::LogE("Failed to finalize archive: {}", mtar_strerror(error));
+    return false;
+  }
+  if (int error = mtar_close(&tar); error != MTAR_ESUCCESS) {
+    ovis::LogE("Failed to close archive: {}", mtar_strerror(error));
+    return false;
+  }
+
+  UploadFile(filename);
+
+  return true;
 }
 
 // void AssetLibrary::AddScene(const std::string& id, const std::string& path) {
@@ -133,7 +189,8 @@ void EditorAssetLibrary::UploadNextFile() {
       attr.withCredentials = true;
 
       std::string relative_filename = std::filesystem::relative(filename, directory());
-      std::string url = fmt::format("{}/v1/games/{}/assetFiles/{}", ove::backend_url, ove::project_id, relative_filename);
+      std::string url =
+          fmt::format("{}/v1/games/{}/assetFiles/{}", ove::backend_url, ove::project_id, relative_filename);
       emscripten_fetch(&attr, url.c_str());
 
       ovis::LogI("Uploading {} ({} bytes)", filename, file_data->size());

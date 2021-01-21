@@ -4,6 +4,7 @@
 
 #include "editor_window_controller.hpp"
 #include "windows/modal/loading_window.hpp"
+#include "windows/modal/packaging_window.hpp"
 #include <glm/gtc/type_ptr.hpp>
 
 #include <ovis/core/log.hpp>
@@ -32,6 +33,7 @@ EditorModule::EditorModule() : ovis::Module("Editor") {
   RegisterSceneController("EditorWindowController",
                           [this](ovis::Scene*) { return std::make_unique<EditorWindowController>(&log_history_); });
   RegisterSceneController("LoadingWindow", [this](ovis::Scene*) { return std::make_unique<LoadingWindow>(); });
+  RegisterSceneController("PackagingWindow", [this](ovis::Scene*) { return std::make_unique<PackagingWindow>(); });
 
   ovis::Log::AddListener([this](ovis::LogLevel, const std::string& text) { log_history_.push_back(text); });
 }

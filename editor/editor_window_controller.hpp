@@ -27,6 +27,7 @@ class EditorWindowController : public ovis::SceneController {
     std::unique_ptr<ovis::Texture2D> save;
     std::unique_ptr<ovis::Texture2D> undo;
     std::unique_ptr<ovis::Texture2D> redo;
+    std::unique_ptr<ovis::Texture2D> package;
   } icons_;
   ImVec2 icon_size_ = {28, 28};
 

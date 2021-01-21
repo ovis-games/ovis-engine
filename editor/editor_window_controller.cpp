@@ -24,6 +24,7 @@ EditorWindowController::EditorWindowController(const std::vector<std::string>* l
   icons_.save = ovis::LoadTexture2D("icon-save", EditorWindow::instance()->context());
   icons_.undo = ovis::LoadTexture2D("icon-undo", EditorWindow::instance()->context());
   icons_.redo = ovis::LoadTexture2D("icon-redo", EditorWindow::instance()->context());
+  icons_.package = ovis::LoadTexture2D("icon-package", EditorWindow::instance()->context());
 }
 
 void EditorWindowController::Update(std::chrono::microseconds delta_time) {
@@ -181,6 +182,14 @@ void EditorWindowController::DrawToolbar() {
       redo_description = AssetEditor::last_focused_document_window->GetActionHistory()->redo_description();
     }
     ImGui::SetTooltip("Redo: %s", redo_description.c_str());
+  }
+
+  ImGui::SameLine();
+  if (ImGui::ImageButton(icons_.package.get(), icon_size_)) {
+    scene()->AddController("PackagingWindow");
+  }
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("Package game");
   }
 
   ImGui::PopStyleColor();
