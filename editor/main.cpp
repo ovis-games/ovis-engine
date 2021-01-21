@@ -25,6 +25,13 @@ void EMSCRIPTEN_KEEPALIVE DropFile(const char* filename) {
   sdl_event.drop.file = filename_copy;
   SDL_PushEvent(&sdl_event);
 }
+
+void EMSCRIPTEN_KEEPALIVE QuitEditor() {
+  SDL_Event sdl_event;
+  sdl_event.type = SDL_QUIT;
+  SDL_PushEvent(&sdl_event);
+}
+
 }
 
 // Usage: ovis-editor backend_url project_id authentication_token
@@ -49,6 +56,8 @@ int main(int argc, char* argv[]) {
   ove::EditorWindow editor_window;
 
   ovis::Run();
+
+  ovis::LogI("Quitting editor...");
 
   ovis::Quit();
   return 0;
