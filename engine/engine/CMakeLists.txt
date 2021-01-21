@@ -14,6 +14,7 @@ add_library(
   include/ovis/engine/module.hpp src/module.cpp
   include/ovis/engine/render_pass.hpp src/render_pass.cpp
   include/ovis/engine/lua.hpp src/lua.cpp
+  include/ovis/engine/fetch.hpp src/fetch.cpp
 )
 add_library(ovis::engine ALIAS ovis-engine)
 
@@ -33,4 +34,15 @@ target_link_libraries(
     Lua
     sol2_single
     middleclass
+)
+
+target_compile_options(
+  ovis-engine
+  PUBLIC
+    "SHELL:-s FETCH=1"
+)
+target_link_options(
+  ovis-engine
+  PUBLIC
+    "SHELL:-s FETCH=1"
 )

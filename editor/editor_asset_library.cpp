@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <fstream>
 
-#include <emscripten/fetch.h>
+#include <ovis/engine/fetch.hpp>
 #include <fmt/format.h>
 #include <microtar.h>
 
@@ -165,57 +165,37 @@ void EditorAssetLibrary::UploadFile(const std::string& filename) {
 }
 
 void EditorAssetLibrary::UploadNextFile() {
-  static const char* REQUEST_HEADERS[] = {"Content-Type", "application/octet-stream", 0};
-
   if (!is_currently_uploading_ && files_to_upload_.size() > 0) {
     const std::string filename = *files_to_upload_.begin();
     files_to_upload_.erase(filename);
     is_currently_uploading_ = true;
 
     auto file_data = ovis::LoadBinaryFile(filename);
-
     if (file_data) {
-      current_file_content_ = std::move(*file_data);
-
-      emscripten_fetch_attr_t attr;
-      emscripten_fetch_attr_init(&attr);
-      strcpy(attr.requestMethod, "PUT");
-      attr.onsuccess = &EditorAssetLibrary::UploadSucceeded;
-      attr.onerror = &EditorAssetLibrary::UploadFailed;
-      attr.requestData = reinterpret_cast<const char*>(current_file_content_.data());
-      attr.requestDataSize = current_file_content_.size();
-      attr.requestHeaders = REQUEST_HEADERS;
-      attr.userData = this;
-      attr.withCredentials = true;
+      ovis::LogI("Uploading {} ({} bytes)", filename, file_data->size());
 
       std::string relative_filename = std::filesystem::relative(filename, directory());
       std::string url =
           fmt::format("{}/v1/games/{}/assetFiles/{}", ove::backend_url, ove::project_id, relative_filename);
-      emscripten_fetch(&attr, url.c_str());
-
-      ovis::LogI("Uploading {} ({} bytes)", filename, file_data->size());
+      ovis::FetchOptions options;
+      options.method = ovis::RequestMethod::PUT;
+      options.headers["Content-Type"] = "application/octet-stream";
+      options.with_credentials = true;
+      options.on_success = [this,filename]() {
+        ovis::LogI("Successfully uploaded '{}'", filename);
+        is_currently_uploading_ = false;
+        UploadNextFile();
+      };
+      options.on_error = [this,filename]() {
+        ovis::LogE("Failed to upload '{}'", filename);
+        is_currently_uploading_ = false;
+        UploadNextFile();
+      };
+      ovis::Fetch(url, options, std::move(*file_data));
     } else {
       ovis::LogE("Failed to upload '{}' file does not exist", filename);
     }
   }
-}
-
-void EditorAssetLibrary::UploadSucceeded(emscripten_fetch_t* fetch) {
-  EditorAssetLibrary* asset_library = reinterpret_cast<EditorAssetLibrary*>(fetch->userData);
-  ovis::LogI("Successfully uploaded '{}', status code: {}", fetch->url, fetch->status);
-  emscripten_fetch_close(fetch);
-  asset_library->is_currently_uploading_ = false;
-
-  asset_library->UploadNextFile();
-}
-
-void EditorAssetLibrary::UploadFailed(emscripten_fetch_t* fetch) {
-  EditorAssetLibrary* asset_library = reinterpret_cast<EditorAssetLibrary*>(fetch->userData);
-  ovis::LogE("Failed to upload '{}', status code: {}", fetch->url, fetch->status);
-  emscripten_fetch_close(fetch);
-  asset_library->is_currently_uploading_ = false;
-
-  asset_library->UploadNextFile();
 }
 
 }  // namespace ove
