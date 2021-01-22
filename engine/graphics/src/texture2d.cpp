@@ -189,6 +189,7 @@ std::unique_ptr<Texture2D> LoadTexture2D(const std::string& asset_id, GraphicsCo
 
 std::unique_ptr<Texture2D> LoadTexture2D(AssetLibrary* asset_library, const std::string& asset_id,
                                          GraphicsContext* graphics_context) {
+  SDL_assert(graphics_context != nullptr);
   const std::optional<std::string> parameters_file = asset_library->LoadAssetTextFile(asset_id, "json");
 
   if (!parameters_file) {
