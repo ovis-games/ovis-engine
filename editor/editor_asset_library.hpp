@@ -1,6 +1,7 @@
 #pragma once
 
 #include <set>
+#include <optional>
 
 #include <emscripten/fetch.h>
 
@@ -19,7 +20,7 @@ class EditorAssetLibrary : public ovis::DirectoryAssetLibrary {
 
   bool SaveAssetFile(const std::string& asset_id, const std::string& file_type,
                      std::variant<std::string, ovis::Blob> content) override;
-  bool Package();
+  std::optional<ovis::Blob> Package();
 
   void UploadFile(const std::string& filename);
 
@@ -29,8 +30,6 @@ class EditorAssetLibrary : public ovis::DirectoryAssetLibrary {
   bool is_currently_uploading_ = false;
 
   void UploadNextFile();
-  static void UploadSucceeded(emscripten_fetch_t* fetch);
-  static void UploadFailed(emscripten_fetch_t* fetch);
 };
 
 }  // namespace ove

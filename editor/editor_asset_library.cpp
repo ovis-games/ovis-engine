@@ -4,13 +4,13 @@
 #include <filesystem>
 #include <fstream>
 
-#include <ovis/engine/fetch.hpp>
 #include <fmt/format.h>
 #include <microtar.h>
 
 #include <ovis/core/file.hpp>
 #include <ovis/core/log.hpp>
 #include <ovis/engine/engine.hpp>
+#include <ovis/engine/fetch.hpp>
 #include <ovis/engine/lua.hpp>
 
 namespace ove {
@@ -50,25 +50,34 @@ bool EditorAssetLibrary::SaveAssetFile(const std::string& asset_id, const std::s
   }
 }
 
-bool EditorAssetLibrary::Package() {
+std::optional<ovis::Blob> EditorAssetLibrary::Package() {
   // Should not be necessary but better save than sorry
   Rescan();
 
-  const auto filename = directory() + "test.tar";
-  ovis::LogD("Tar filename: {}", filename);
+  std::vector<std::byte> archive_data;
 
   mtar_t tar;
-  if (int error = mtar_open(&tar, filename.c_str(), "w"); error != MTAR_ESUCCESS) {
-    ovis::LogE("Failed to open tar archive: {}", mtar_strerror(error));
-    return false;
-  }
+  tar.read = nullptr;
+  tar.write = [](mtar_t* tar, const void* data, unsigned size) {
+    auto archive_data = reinterpret_cast<std::vector<std::byte>*>(tar->stream);
+    size_t current_size = archive_data->size();
+    archive_data->resize(current_size + size);
+    std::memcpy(archive_data->data() + current_size, data, size);
+    return 0;
+  };
+  tar.seek = nullptr;
+  tar.close = nullptr;
+  tar.stream = &archive_data;
+  tar.pos = 0;
+  tar.remaining_data = 0;
+  tar.last_header = 0;
 
   for (const std::string& asset_id : GetAssets()) {
     for (const std::string& asset_file_type : GetAssetFileTypes(asset_id)) {
       const std::optional<std::string> asset_filename = GetAssetFilename(asset_id, asset_file_type);
       if (!asset_filename) {
         ovis::LogE("Could not get asset filename for asset id '{}' and file type '{}'", asset_id, asset_file_type);
-        return false;
+        return {};
       }
 
       ovis::LogV("Add asset file to archive ({},{})", asset_id, asset_file_type);
@@ -76,34 +85,27 @@ bool EditorAssetLibrary::Package() {
       std::optional<ovis::Blob> content = LoadAssetBinaryFile(asset_id, asset_file_type);
       if (!asset_filename) {
         ovis::LogE("Could load asset file for asset id '{}' and file type '{}'", asset_id, asset_file_type);
-        return false;
+        return {};
       }
 
       if (int error = mtar_write_file_header(&tar, asset_filename->c_str(), content->size()); error != MTAR_ESUCCESS) {
         ovis::LogE("Failed to write file header to archive: {}", mtar_strerror(error));
-        return false;
+        return {};
       }
 
       if (int error = mtar_write_data(&tar, content->data(), content->size()); error != MTAR_ESUCCESS) {
         ovis::LogE("Failed to write file to archive: {}", mtar_strerror(error));
-        return false;
+        return {};
       }
     }
   }
 
-
   if (int error = mtar_finalize(&tar); error != MTAR_ESUCCESS) {
     ovis::LogE("Failed to finalize archive: {}", mtar_strerror(error));
-    return false;
-  }
-  if (int error = mtar_close(&tar); error != MTAR_ESUCCESS) {
-    ovis::LogE("Failed to close archive: {}", mtar_strerror(error));
-    return false;
+    return {};
   }
 
-  UploadFile(filename);
-
-  return true;
+  return archive_data;
 }
 
 // void AssetLibrary::AddScene(const std::string& id, const std::string& path) {
@@ -180,13 +182,12 @@ void EditorAssetLibrary::UploadNextFile() {
       ovis::FetchOptions options;
       options.method = ovis::RequestMethod::PUT;
       options.headers["Content-Type"] = "application/octet-stream";
-      options.with_credentials = true;
-      options.on_success = [this,filename]() {
+      options.on_success = [this, filename]() {
         ovis::LogI("Successfully uploaded '{}'", filename);
         is_currently_uploading_ = false;
         UploadNextFile();
       };
-      options.on_error = [this,filename]() {
+      options.on_error = [this, filename]() {
         ovis::LogE("Failed to upload '{}'", filename);
         is_currently_uploading_ = false;
         UploadNextFile();

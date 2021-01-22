@@ -16,12 +16,12 @@ class PackagingWindow : public ModalWindow {
 
  private:
   void DrawContent() override;
+  void DrawConfiguration();
+  void DrawProgress();
 
-  struct Version {
-    int major;
-    int minor;
-    int patch;
-  } version_ = { };
+  std::string version_ = "preview";
+  bool is_packaging_ = false;
+  float progress_ = 0.0f;
 };
 
 }  // namespace ove
