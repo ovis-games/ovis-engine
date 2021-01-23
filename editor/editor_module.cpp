@@ -1,6 +1,5 @@
 #include "editor_module.hpp"
 
-#include "editor_window_controller.hpp"
 #include "windows/modal/loading_window.hpp"
 #include "windows/modal/packaging_window.hpp"
 
@@ -28,8 +27,6 @@ class ClearRenderPass : public ovis::RenderPass {
 
 EditorModule::EditorModule() : ovis::Module("Editor") {
   RegisterRenderPass("ClearRenderPass", [](ovis::Viewport*) { return std::make_unique<ClearRenderPass>(); });
-  RegisterSceneController("EditorWindowController",
-                          [this](ovis::Scene*) { return std::make_unique<EditorWindowController>(); });
   RegisterSceneController("LoadingWindow", [this](ovis::Scene*) { return std::make_unique<LoadingWindow>(); });
   RegisterSceneController("PackagingWindow", [this](ovis::Scene*) { return std::make_unique<PackagingWindow>(); });
 

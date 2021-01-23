@@ -1,20 +1,20 @@
 #pragma once
 
+#include "ui_window.hpp"
+
 #include <imgui.h>
 
-#include <ovis/core/asset_library.hpp>
 #include <ovis/graphics/texture2d.hpp>
-#include <ovis/engine/scene_controller.hpp>
 
 namespace ove {
 
-class EditorWindowController : public ovis::SceneController {
+class Toolbar : public UiWindow {
  public:
-  EditorWindowController();
+  Toolbar();
 
-  void Update(std::chrono::microseconds delta_time) override;
-  void DrawImGui() override;
-  bool ProcessEvent(const SDL_Event& event) override;
+ protected:
+  void BeforeBegin() override;
+  void DrawContent() override;
 
  private:
   struct Icons {
@@ -25,9 +25,6 @@ class EditorWindowController : public ovis::SceneController {
     std::unique_ptr<ovis::Texture2D> windows;
   } icons_;
   ImVec2 icon_size_ = {28, 28};
-
-  void DrawDockSpace();
-  void DrawToolbar();
 
   void Save();
   void Undo();

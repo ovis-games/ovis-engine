@@ -29,7 +29,6 @@ add_executable(
   main.cpp
   editor_module.hpp editor_module.cpp
   editor_window.hpp editor_window.cpp
-  editor_window_controller.hpp editor_window_controller.cpp
   editor_asset_library.hpp editor_asset_library.cpp
   
   windows/ui_window.hpp windows/ui_window.cpp
@@ -37,6 +36,7 @@ add_executable(
   windows/asset_viewer_window.hpp windows/asset_viewer_window.cpp
   windows/inspector_window.hpp windows/inspector_window.cpp
   windows/dockspace_window.hpp windows/dockspace_window.cpp
+  windows/toolbar.hpp windows/toolbar.cpp
   
   windows/modal/modal_window.hpp windows/modal/modal_window.cpp
   windows/modal/loading_window.hpp windows/modal/loading_window.cpp

@@ -2,6 +2,7 @@
 
 #include "editor_module.hpp"
 #include "editor_window.hpp"
+#include "editor_asset_library.hpp"
 #include "global.hpp"
 
 #include <emscripten.h>
@@ -49,6 +50,7 @@ int main(int argc, char* argv[]) {
 
   ovis::Init();
   ovis::SetEngineAssetsDirectory("/ovis_assets");
+  ovis::CreateApplicationAssetLibrary<ove::EditorAssetLibrary>("/assets/");
   ovis::LoadModule<ovis::BaseModule>();
   ovis::LoadModule<ovis::Rendering2DModule>();
   ovis::LoadModule<ove::EditorModule>();

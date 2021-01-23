@@ -8,7 +8,6 @@ UiWindow::UiWindow(const std::string& id, const std::string& window_title, ImGui
     : ovis::SceneController(id),
       imgui_id_(window_title.length() > 0 ? window_title + "##" + id : id),
       window_flags_(window_flags) {
-  UpdateAfter("EditorWindowController");
 }
 
 void UiWindow::DrawImGui() {

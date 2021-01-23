@@ -4,6 +4,7 @@
 #include "windows/asset_viewer_window.hpp"
 #include "windows/inspector_window.hpp"
 #include "windows/dockspace_window.hpp"
+#include "windows/toolbar.hpp"
 
 #include <emscripten/html5.h>
 #include <imgui.h>
@@ -44,8 +45,8 @@ EditorWindow::EditorWindow() : ovis::Window(CreateWindowDescription()) {
   instance_ = this;
 
   // Add them here, so the instance variable is set
-  scene()->AddController("EditorWindowController");
   scene()->AddController("LoadingWindow");
+  scene()->AddController(std::make_unique<Toolbar>());
   scene()->AddController(std::make_unique<DockspaceWindow>());
   scene()->AddController(std::make_unique<LogWindow>());
   scene()->AddController(std::make_unique<AssetViewerWindow>());

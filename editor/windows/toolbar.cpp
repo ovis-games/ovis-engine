@@ -1,26 +1,22 @@
-#include "editor_window_controller.hpp"
+#include "toolbar.hpp"
 
-#include "editor_asset_library.hpp"
-#include "editor_window.hpp"
-#include "windows/asset_editors/asset_editor.hpp"
-#include "windows/asset_importers/asset_importer.hpp"
-#include "windows/log_window.hpp"
-#include "windows/asset_viewer_window.hpp"
-#include "windows/inspector_window.hpp"
+#include "../editor_window.hpp"
+#include "asset_editors/asset_editor.hpp"
+#include "asset_viewer_window.hpp"
+#include "inspector_window.hpp"
+#include "log_window.hpp"
 
-#include <emscripten/html5.h>
 #include <imgui_internal.h>
-
-#include <ovis/core/asset_library.hpp>
-#include <ovis/core/log.hpp>
-#include <ovis/engine/engine.hpp>
-#include <ovis/engine/scene.hpp>
-#include <ovis/engine/window.hpp>
 
 namespace ove {
 
-EditorWindowController::EditorWindowController() : ovis::SceneController("EditorWindowController") {
-  ovis::CreateApplicationAssetLibrary<EditorAssetLibrary>("/assets/");
+Toolbar::Toolbar()
+    : UiWindow("Toolbar", "",
+               ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings) {
+  SetStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+  SetStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  SetStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
   icons_.save = ovis::LoadTexture2D("icon-save", EditorWindow::instance()->context());
   icons_.undo = ovis::LoadTexture2D("icon-undo", EditorWindow::instance()->context());
@@ -29,62 +25,14 @@ EditorWindowController::EditorWindowController() : ovis::SceneController("Editor
   icons_.windows = ovis::LoadTexture2D("icon-windows", EditorWindow::instance()->context());
 }
 
-void EditorWindowController::Update(std::chrono::microseconds delta_time) {
-  if (AssetEditor::last_focused_document_window != nullptr) {
-    AssetEditor::last_focused_document_window->Update(delta_time);
-  }
-}
-
-void EditorWindowController::DrawImGui() {
-  DrawToolbar();
-  DrawDockSpace();
-}
-
-bool EditorWindowController::ProcessEvent(const SDL_Event& event) {
-  if (event.type == SDL_KEYDOWN) {
-    if (event.key.keysym.sym == SDLK_s && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
-      Save();
-      return true;
-    } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0 &&
-               (event.key.keysym.mod & (KMOD_LSHIFT | KMOD_RSHIFT)) != 0) {
-      Redo();
-      return true;
-    } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
-      Undo();
-      return true;
-    }
-  } else if (event.type == SDL_DROPFILE) {
-    const std::string filename = event.drop.file;
-    SDL_free(event.drop.file);
-    ImportAsset(filename);
-    return true;
-  }
-
-  if (AssetEditor::last_focused_document_window) {
-    return AssetEditor::last_focused_document_window->ProcessEvent(event);
-  } else {
-    return false;
-  }
-}
-
-void EditorWindowController::DrawDockSpace() {
-}
-
-void EditorWindowController::DrawToolbar() {
+void Toolbar::BeforeBegin() {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
   ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y));
   ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, icon_size_.y + 10));
   ImGui::SetNextWindowViewport(viewport->ID);
-  ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                                  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar |
-                                  ImGuiWindowFlags_NoSavedSettings;
+}
 
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-  ImGui::Begin("Toolbar", nullptr, window_flags);
-  ImGui::PopStyleVar(3);
-
+void Toolbar::DrawContent() {
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(48, 48, 48)));
 
   if (ImGui::ImageButton(icons_.save.get(), icon_size_)) {
@@ -168,26 +116,43 @@ void EditorWindowController::DrawToolbar() {
   }
 
   ImGui::PopStyleColor();
-
-  ImGui::End();
 }
 
-void EditorWindowController::Save() {
+void Toolbar::Save() {
   if (AssetEditor::last_focused_document_window != nullptr) {
     AssetEditor::last_focused_document_window->Save();
   }
 }
 
-void EditorWindowController::Undo() {
+void Toolbar::Undo() {
   if (AssetEditor::last_focused_document_window != nullptr) {
     AssetEditor::last_focused_document_window->GetActionHistory()->Undo();
   }
 }
 
-void EditorWindowController::Redo() {
+void Toolbar::Redo() {
   if (AssetEditor::last_focused_document_window != nullptr) {
     AssetEditor::last_focused_document_window->GetActionHistory()->Redo();
   }
 }
+
+  // if (event.type == SDL_KEYDOWN) {
+  //   if (event.key.keysym.sym == SDLK_s && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
+  //     Save();
+  //     return true;
+  //   } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0 &&
+  //              (event.key.keysym.mod & (KMOD_LSHIFT | KMOD_RSHIFT)) != 0) {
+  //     Redo();
+  //     return true;
+  //   } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
+  //     Undo();
+  //     return true;
+  //   }
+  // } else if (event.type == SDL_DROPFILE) {
+  //   const std::string filename = event.drop.file;
+  //   SDL_free(event.drop.file);
+  //   ImportAsset(filename);
+  //   return true;
+  // }
 
 }  // namespace ove
