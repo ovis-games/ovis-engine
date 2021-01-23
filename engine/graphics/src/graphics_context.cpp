@@ -95,15 +95,17 @@ void GraphicsContext::Draw(const DrawItem& draw_item) {
     if (draw_item.scissor_rect) {
       glEnable(GL_SCISSOR_TEST);
       scissoring_enabled_ = true;
-      if (*draw_item.scissor_rect != current_scissor_rect_) {
-        glScissor(draw_item.scissor_rect->left, draw_item.scissor_rect->top, draw_item.scissor_rect->width,
-                  draw_item.scissor_rect->height);
-        current_scissor_rect_ = *draw_item.scissor_rect;
-      }
     } else {
+      ovis::LogD("Disable scissoring");
       glDisable(GL_SCISSOR_TEST);
       scissoring_enabled_ = false;
     }
+  }
+  if (draw_item.scissor_rect.has_value() && *draw_item.scissor_rect != current_scissor_rect_) {
+    const int bottom = targets->height() - draw_item.scissor_rect->top - draw_item.scissor_rect->height;
+    glScissor(draw_item.scissor_rect->left, bottom, draw_item.scissor_rect->width,
+              draw_item.scissor_rect->height);
+    current_scissor_rect_ = *draw_item.scissor_rect;
   }
 
   if (culling_enabled_ != draw_item.enable_culling) {

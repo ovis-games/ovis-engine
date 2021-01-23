@@ -1,10 +1,10 @@
 #define NK_IMPLEMENTATION
 #include <SDL2/SDL_assert.h>
+#include <ovis/base/imgui_render_pass.hpp>
 
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/resource_manager.hpp>
 #include <ovis/graphics/graphics_context.hpp>
-#include <ovis/base/imgui_render_pass.hpp>
 #include <ovis/engine/engine.hpp>
 #include <ovis/engine/scene.hpp>
 
@@ -96,12 +96,11 @@ void ImGuiRenderPass::Render(ovis::Scene* scene) {
       draw_item.blend_state.enabled = true;
       draw_item.blend_state.source_color_factor = ovis::SourceBlendFactor::SOURCE_ALPHA;
       draw_item.blend_state.destination_color_factor = ovis::DestinationBlendFactor::ONE_MINUS_SOURCE_ALPHA;
-      // draw_item.scissor_rect.emplace();
-      // draw_item.scissor_rect->left = command.ClipRect.x;
-      // draw_item.scissor_rect->top = command.ClipRect.y;
-      // draw_item.scissor_rect->width = command.ClipRect.z -
-      // command.ClipRect.x; draw_item.scissor_rect->height = command.ClipRect.w
-      // - command.ClipRect.y;
+      draw_item.scissor_rect.emplace();
+      draw_item.scissor_rect->left = command.ClipRect.x;
+      draw_item.scissor_rect->top = command.ClipRect.y;
+      draw_item.scissor_rect->width = command.ClipRect.z - command.ClipRect.x;
+      draw_item.scissor_rect->height = command.ClipRect.w - command.ClipRect.y;
       context()->Draw(draw_item);
     }
   }
