@@ -68,57 +68,6 @@ bool EditorWindowController::ProcessEvent(const SDL_Event& event) {
 }
 
 void EditorWindowController::DrawDockSpace() {
-  ImGuiViewport* viewport = ImGui::GetMainViewport();
-  ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + icon_size_.y + 10));
-  ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, viewport->Size.y - icon_size_.y - 10));
-  ImGui::SetNextWindowViewport(viewport->ID);
-  ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar |
-                                  ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
-                                  ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-  ImGui::Begin("Ovis Editor", nullptr, window_flags);
-  ImGui::PopStyleVar(3);
-
-  if (ImGui::DockBuilderGetNode(ImGui::GetID("MyDockspace")) == NULL) {
-    ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::DockBuilderRemoveNode(dockspace_id);  // Clear out existing layout
-    ImGui::DockBuilderAddNode(dockspace_id,
-                              ImGuiDockNodeFlags_DockSpace);  // Add empty node
-    ImGui::DockBuilderSetNodeSize(dockspace_id, viewport->Size);
-
-    // This variable will track the document node, however we
-    // are not using it here as we aren't docking anything
-    // into it.
-    ImGuiID dock_main_id = dockspace_id;
-
-    ImGuiID dock_id_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.2f, NULL, &dock_main_id);
-    ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 1.0f / 4.0f, NULL, &dock_main_id);
-    ImGuiID dock_id_bottom = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.25f, NULL, &dock_main_id);
-
-    // ImGui::DockBuilderDockWindow("Scene Objects", dock_id_left);
-    // ImGui::DockBuilderDockWindow("Object Properties", dock_id_right);
-    ImGui::DockBuilderDockWindow("Inspector", dock_id_right);
-    ImGui::DockBuilderDockWindow("Log", dock_id_bottom);
-    ImGui::DockBuilderDockWindow("Assets", dock_id_bottom);
-
-    ImGui::DockBuilderFinish(dockspace_id);
-  }
-
-  ImGui::PushStyleColor(ImGuiCol_DockingEmptyBg, 0xff000000);
-  ImGuiID dockspace_id = ImGui::GetID("MyDockspace");
-
-  ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), 0);
-  ImGui::PopStyleColor();
-
-  // if (AssetEditor::last_focused_document_window != nullptr) {
-  //   AssetEditor::last_focused_document_window->DrawPropertyWindows();
-  // }
-
-  ImGui::End();
 }
 
 void EditorWindowController::DrawToolbar() {

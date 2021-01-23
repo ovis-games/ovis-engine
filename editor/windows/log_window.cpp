@@ -9,7 +9,9 @@
 
 namespace ove {
 
-LogWindow::LogWindow() : UiWindow("Log"), log_history_(ovis::GetModule<EditorModule>()->log_history()) {}
+LogWindow::LogWindow() : UiWindow("Log"), log_history_(ovis::GetModule<EditorModule>()->log_history()) {
+  UpdateAfter("Dockspace Window");
+}
 
 void LogWindow::DrawContent() {
   ImGui::Checkbox("Verbose", &show_verbose_);

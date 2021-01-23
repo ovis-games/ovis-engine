@@ -3,6 +3,7 @@
 #include "windows/log_window.hpp"
 #include "windows/asset_viewer_window.hpp"
 #include "windows/inspector_window.hpp"
+#include "windows/dockspace_window.hpp"
 
 #include <emscripten/html5.h>
 #include <imgui.h>
@@ -45,6 +46,7 @@ EditorWindow::EditorWindow() : ovis::Window(CreateWindowDescription()) {
   // Add them here, so the instance variable is set
   scene()->AddController("EditorWindowController");
   scene()->AddController("LoadingWindow");
+  scene()->AddController(std::make_unique<DockspaceWindow>());
   scene()->AddController(std::make_unique<LogWindow>());
   scene()->AddController(std::make_unique<AssetViewerWindow>());
   scene()->AddController(std::make_unique<InspectorWindow>());

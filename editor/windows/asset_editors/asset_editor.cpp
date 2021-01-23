@@ -6,7 +6,9 @@ namespace ove {
 
 AssetEditor* AssetEditor::last_focused_document_window = nullptr;
 
-AssetEditor::AssetEditor(const std::string& asset_id) : UiWindow(GetAssetEditorId(asset_id)), asset_id_(asset_id) {}
+AssetEditor::AssetEditor(const std::string& asset_id) : UiWindow(GetAssetEditorId(asset_id)), asset_id_(asset_id) {
+  UpdateAfter("Dockspace Window");
+}
 
 AssetEditor::~AssetEditor() {
   if (last_focused_document_window == this) {

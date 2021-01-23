@@ -3,6 +3,7 @@
 #include "asset_editors/scene_editor.hpp"
 #include "asset_editors/script_editor.hpp"
 #include "asset_editors/texture_editor.hpp"
+#include "dockspace_window.hpp"
 #include <filesystem>
 #include <fstream>
 
@@ -15,6 +16,8 @@
 namespace ove {
 
 AssetViewerWindow::AssetViewerWindow() : UiWindow("Assets"), current_path_("/") {
+  UpdateAfter("Dockspace Window");
+
   ovis::Lua::on_error.Subscribe([this](const std::string& error_message) {
     std::vector<LuaError> errors = ParseLuaErrorMessage(error_message);
     if (errors.size() > 0) {
@@ -43,7 +46,9 @@ void AssetViewerWindow::DrawContent() {
     ImGui::Selectable(asset_id.c_str());
 
     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-      OpenAssetEditor(asset_id);
+      if (auto asset_editor = OpenAssetEditor(asset_id); asset_editor != nullptr) {
+        asset_editor->SetDockSpaceId(scene()->GetController<DockspaceWindow>("Dockspace Window")->dockspace_main());
+      }
     }
   }
   ImGui::EndChild();

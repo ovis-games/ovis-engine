@@ -4,7 +4,9 @@
 
 namespace ove {
 
-InspectorWindow::InspectorWindow() : UiWindow("Inspector") {}
+InspectorWindow::InspectorWindow() : UiWindow("Inspector") {
+  UpdateAfter("Dockspace Window");
+}
 
 void InspectorWindow::DrawContent() {
   if (AssetEditor::last_focused_document_window != nullptr) {

@@ -36,6 +36,7 @@ add_executable(
   windows/log_window.hpp windows/log_window.cpp
   windows/asset_viewer_window.hpp windows/asset_viewer_window.cpp
   windows/inspector_window.hpp windows/inspector_window.cpp
+  windows/dockspace_window.hpp windows/dockspace_window.cpp
   
   windows/modal/modal_window.hpp windows/modal/modal_window.cpp
   windows/modal/loading_window.hpp windows/modal/loading_window.cpp
