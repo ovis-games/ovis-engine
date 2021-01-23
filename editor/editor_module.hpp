@@ -8,6 +8,8 @@ class EditorModule : public ovis::Module {
  public:
   EditorModule();
 
+  inline std::vector<std::string>* log_history() { return &log_history_; }
+
  private:
   std::vector<std::string> log_history_;
 };

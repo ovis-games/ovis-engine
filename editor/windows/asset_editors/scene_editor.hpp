@@ -16,12 +16,14 @@ class SceneEditor : public AssetEditor {
 
   void Update(std::chrono::microseconds delta_time) override;
   bool ProcessEvent(const SDL_Event& event) override;
-  void Draw() override;
-  void DrawPropertyWindows() override;
+  // void DrawPropertyWindows() override;
   void Save() override;
   ActionHistoryBase* GetActionHistory() override { return &action_history_; }
 
  private:
+  void DrawContent() override;
+  void DrawInspectorContent() override;
+
   void DrawObjectList();
   void DrawObjectComponentList();
   void DrawSceneProperties();

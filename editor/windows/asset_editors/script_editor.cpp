@@ -36,7 +36,7 @@ ScriptEditor::ScriptEditor(const std::string& script_id) : AssetEditor(script_id
   }
 }
 
-void ScriptEditor::Draw() {
+void ScriptEditor::DrawContent() {
   editor_.Render("ScriptEditor");
 }
 

@@ -3,7 +3,6 @@
 #include "../../editor_window.hpp"
 
 #include <ovis/core/asset_library.hpp>
-
 #include <ovis/engine/lua.hpp>
 #include <ovis/engine/scene_controller.hpp>
 #include <ovis/engine/scene_object.hpp>
@@ -162,7 +161,7 @@ bool SceneEditor::ProcessEvent(const SDL_Event& event) {
   }
 }
 
-void SceneEditor::Draw() {
+void SceneEditor::DrawContent() {
   scene_viewport_->Render(false);
   if (state_ == State::RUNNING) {
     if (ImGui::Button("Pause")) {
@@ -196,80 +195,84 @@ void SceneEditor::Draw() {
   scene_window_focused_ = ImGui::IsWindowFocused();
 }
 
-void SceneEditor::DrawPropertyWindows() {
+void SceneEditor::DrawInspectorContent() {
   DrawObjectList();
   DrawObjectComponentList();
-  DrawSceneProperties();
 }
+
+// void SceneEditor::DrawPropertyWindows() {
+//   DrawObjectList();
+//   DrawObjectComponentList();
+//   DrawSceneProperties();
+// }
 
 void SceneEditor::Save() {
   SaveFile("json", scene_.Serialize().dump());
 }
 
 void SceneEditor::DrawObjectList() {
-  if (ImGui::Begin("Scene Objects")) {
-    ImGui::BeginChild("ObjectList", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true);
-    for (ovis::SceneObject* object : scene_.GetObjects(true)) {
-      bool item_selected = selected_ == object->name();
-      if (item_selected && is_renaming_) {
-        char buffer[512];
-        strcpy(buffer, object->name().c_str());
-        if (ImGui::InputText(("###" + object->name()).c_str(), buffer, 512,
-                             ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
-          if (!scene_.ContainsObject(buffer)) {
-            is_renaming_ = false;
-            action_history_.Do("RenameObject", {{"old_name", object->name()}, {"new_name", buffer}},
-                               "Rename object {} to {}", object->name(), buffer);
-            selected_ = buffer;
-          } else {
-            // Object already exists or old and new names are the same
-            ovis::LogI("The object '{}' does already exist", buffer);
-          }
-        }
-
-        if (ImGui::IsItemDeactivated()) {
+  ImVec2 window_size = ImGui::GetWindowSize();
+  ImGui::BeginChild("ObjectList", ImVec2(0, window_size.y / 2 - ImGui::GetFrameHeightWithSpacing()), true);
+  for (ovis::SceneObject* object : scene_.GetObjects(true)) {
+    bool item_selected = selected_ == object->name();
+    if (item_selected && is_renaming_) {
+      char buffer[512];
+      strcpy(buffer, object->name().c_str());
+      if (ImGui::InputText(("###" + object->name()).c_str(), buffer, 512,
+                           ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
+        if (!scene_.ContainsObject(buffer)) {
           is_renaming_ = false;
-        }
-        ImGui::SetKeyboardFocusHere(0);
-      } else {
-        if (ImGui::Selectable(object->name().c_str(), &item_selected)) {
-          selected_ = object->name();
-        }
-        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-          is_renaming_ = true;
+          action_history_.Do("RenameObject", {{"old_name", object->name()}, {"new_name", buffer}},
+                             "Rename object {} to {}", object->name(), buffer);
+          selected_ = buffer;
+        } else {
+          // Object already exists or old and new names are the same
+          ovis::LogI("The object '{}' does already exist", buffer);
         }
       }
-    }
-    ImGui::EndChild();
-    ImGui::BeginChild("SceneDocumentButtons");
 
-    if (ImGui::Button("Add")) {
-      std::string object_name = "NewObject";
-
-      for (int i = 2; scene_.ContainsObject(object_name); object_name = "NewObject" + std::to_string(i), ++i)
-        ;
-
-      action_history_.Do("CreateObject", object_name, "Create object {}", object_name);
-      selected_ = object_name;
-      is_renaming_ = true;
-    }
-    ImGui::SameLine();
-
-    if (ImGui::Button("Remove")) {
-      if (scene_.ContainsObject(selected_)) {
-        action_history_.Do("ChangeObject", {{"before", scene_.GetObject(selected_)->Serialize()}}, "Delete object {}",
-                           selected_);
-        selected_ = "";
+      if (ImGui::IsItemDeactivated()) {
         is_renaming_ = false;
       }
+      ImGui::SetKeyboardFocusHere(0);
+    } else {
+      if (ImGui::Selectable(object->name().c_str(), &item_selected)) {
+        selected_ = object->name();
+      }
+      if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+        is_renaming_ = true;
+      }
     }
-    ImGui::EndChild();
   }
-  ImGui::End();
+  ImGui::EndChild();
+  // ImGui::BeginChild("SceneDocumentButtons");
+
+  // if (ImGui::Button("Add")) {
+  //   std::string object_name = "NewObject";
+
+  //   for (int i = 2; scene_.ContainsObject(object_name); object_name = "NewObject" + std::to_string(i), ++i)
+  //     ;
+
+  //   action_history_.Do("CreateObject", object_name, "Create object {}", object_name);
+  //   selected_ = object_name;
+  //   is_renaming_ = true;
+  // }
+  // ImGui::SameLine();
+
+  // if (ImGui::Button("Remove")) {
+  //   if (scene_.ContainsObject(selected_)) {
+  //     action_history_.Do("ChangeObject", {{"before", scene_.GetObject(selected_)->Serialize()}}, "Delete object {}",
+  //                        selected_);
+  //     selected_ = "";
+  //     is_renaming_ = false;
+  //   }
+  // }
+  // ImGui::EndChild();
 }
 
 void SceneEditor::DrawObjectComponentList() {
-  if (ImGui::Begin("Object Properties")) {
+  ImVec2 window_size = ImGui::GetWindowSize();
+  if (ImGui::BeginChild("Object Properties", ImVec2(0, window_size.y / 2 - ImGui::GetFrameHeightWithSpacing()))) {
     ovis::SceneObject* selected_object = scene_.GetObject(selected_);
     if (selected_object != nullptr) {
       ImGui::BeginChild("Components", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true);
@@ -308,7 +311,7 @@ void SceneEditor::DrawObjectComponentList() {
       ImGui::Text("Select an object in the scene to display its components.");
     }
   }
-  ImGui::End();
+  ImGui::EndChild();
 }
 
 void SceneEditor::DrawSceneProperties() {

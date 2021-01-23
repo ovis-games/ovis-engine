@@ -1,18 +1,18 @@
 #pragma once
 
 #include "asset_editors/asset_editor.hpp"
+#include "ui_window.hpp"
 
 #include <ovis/core/json.hpp>
 
 namespace ove {
 
-class AssetViewerWindow {
+class AssetViewerWindow : public UiWindow {
  public:
-  AssetViewerWindow(AssetEditors* open_editors);
-  void Draw();
+  AssetViewerWindow();
+  void DrawContent() override;
 
  private:
-  AssetEditors* open_editors_;
   std::string current_path_;
 
   AssetEditor* OpenAssetEditor(const std::string& asset_id);

@@ -4,9 +4,11 @@
 #include "editor_window.hpp"
 #include "windows/asset_editors/asset_editor.hpp"
 #include "windows/asset_importers/asset_importer.hpp"
+#include "windows/log_window.hpp"
+#include "windows/asset_viewer_window.hpp"
+#include "windows/inspector_window.hpp"
 
 #include <emscripten/html5.h>
-#include <imgui.h>
 #include <imgui_internal.h>
 
 #include <ovis/core/asset_library.hpp>
@@ -17,14 +19,14 @@
 
 namespace ove {
 
-EditorWindowController::EditorWindowController(const std::vector<std::string>* log_history)
-    : ovis::SceneController("EditorWindowController"), log_window_(log_history), asset_viewer_window_(&open_editors_) {
+EditorWindowController::EditorWindowController() : ovis::SceneController("EditorWindowController") {
   ovis::CreateApplicationAssetLibrary<EditorAssetLibrary>("/assets/");
 
   icons_.save = ovis::LoadTexture2D("icon-save", EditorWindow::instance()->context());
   icons_.undo = ovis::LoadTexture2D("icon-undo", EditorWindow::instance()->context());
   icons_.redo = ovis::LoadTexture2D("icon-redo", EditorWindow::instance()->context());
   icons_.package = ovis::LoadTexture2D("icon-package", EditorWindow::instance()->context());
+  icons_.windows = ovis::LoadTexture2D("icon-windows", EditorWindow::instance()->context());
 }
 
 void EditorWindowController::Update(std::chrono::microseconds delta_time) {
@@ -97,9 +99,9 @@ void EditorWindowController::DrawDockSpace() {
     ImGuiID dock_id_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 1.0f / 4.0f, NULL, &dock_main_id);
     ImGuiID dock_id_bottom = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.25f, NULL, &dock_main_id);
 
-    ImGui::DockBuilderDockWindow("Scene Objects", dock_id_left);
-    ImGui::DockBuilderDockWindow("Object Properties", dock_id_right);
-    ImGui::DockBuilderDockWindow("Scene Properties", dock_id_right);
+    // ImGui::DockBuilderDockWindow("Scene Objects", dock_id_left);
+    // ImGui::DockBuilderDockWindow("Object Properties", dock_id_right);
+    ImGui::DockBuilderDockWindow("Inspector", dock_id_right);
     ImGui::DockBuilderDockWindow("Log", dock_id_bottom);
     ImGui::DockBuilderDockWindow("Assets", dock_id_bottom);
 
@@ -112,22 +114,11 @@ void EditorWindowController::DrawDockSpace() {
   ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), 0);
   ImGui::PopStyleColor();
 
-  for (auto& document : open_editors_) {
-    document->Draw(dockspace_id);
-  }
-
-  open_editors_.erase(std::remove_if(open_editors_.begin(), open_editors_.end(),
-                                     [](const auto& document) { return document->should_close(); }),
-                      open_editors_.end());
-
-  if (AssetEditor::last_focused_document_window != nullptr) {
-    AssetEditor::last_focused_document_window->DrawPropertyWindows();
-  }
+  // if (AssetEditor::last_focused_document_window != nullptr) {
+  //   AssetEditor::last_focused_document_window->DrawPropertyWindows();
+  // }
 
   ImGui::End();
-
-  log_window_.Draw();
-  asset_viewer_window_.Draw();
 }
 
 void EditorWindowController::DrawToolbar() {
@@ -190,6 +181,41 @@ void EditorWindowController::DrawToolbar() {
   }
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Package game");
+  }
+
+  ImGui::SameLine();
+  ImVec2 window_button_pos = ImGui::GetCursorPos();
+  if (ImGui::ImageButton(icons_.windows.get(), icon_size_)) {
+    ImGui::OpenPopup("testtest");
+  }
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("Windows");
+  }
+  ImVec2 next_line_pos = ImGui::GetCursorPos();
+  ImGui::SetNextWindowPos({window_button_pos.x, next_line_pos.y});
+  if (ImGui::BeginPopup("testtest")) {
+    if (ImGui::Selectable("Log")) {
+      if (auto log_window = scene()->GetController<LogWindow>("Log"); log_window != nullptr) {
+        log_window->Remove();
+      } else {
+        scene()->AddController<LogWindow>();
+      }
+    }
+    if (ImGui::Selectable("Assets")) {
+      if (auto assets_window = scene()->GetController<AssetViewerWindow>("Assets"); assets_window != nullptr) {
+        assets_window->Remove();
+      } else {
+        scene()->AddController<AssetViewerWindow>();
+      }
+    }
+    if (ImGui::Selectable("Inspector")) {
+      if (auto inspector_window = scene()->GetController<InspectorWindow>("Inspector"); inspector_window != nullptr) {
+        inspector_window->Remove();
+      } else {
+        scene()->AddController<InspectorWindow>();
+      }
+    }
+    ImGui::EndPopup();
   }
 
   ImGui::PopStyleColor();

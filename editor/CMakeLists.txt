@@ -32,8 +32,10 @@ add_executable(
   editor_window_controller.hpp editor_window_controller.cpp
   editor_asset_library.hpp editor_asset_library.cpp
   
+  windows/ui_window.hpp windows/ui_window.cpp
   windows/log_window.hpp windows/log_window.cpp
   windows/asset_viewer_window.hpp windows/asset_viewer_window.cpp
+  windows/inspector_window.hpp windows/inspector_window.cpp
   
   windows/modal/modal_window.hpp windows/modal/modal_window.cpp
   windows/modal/loading_window.hpp windows/modal/loading_window.cpp

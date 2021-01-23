@@ -1,14 +1,15 @@
 #pragma once
 
-#include <ovis/engine/scene_controller.hpp>
+#include "ui_window.hpp"
 
 namespace ove {
 
-class LogWindow {
+class LogWindow : public UiWindow {
  public:
-  LogWindow(const std::vector<std::string>* log_history);
+  LogWindow();
 
-  void Draw();
+ protected:
+  void DrawContent() override;
 
  private:
   bool show_verbose_ = false;

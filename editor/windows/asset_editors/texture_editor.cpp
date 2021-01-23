@@ -15,10 +15,25 @@ namespace ove {
 TextureEditor::TextureEditor(const std::string& texture_id) : AssetEditor(texture_id), action_history_(this) {
   // texture_ = EditorWindow::instance()->resource_manager()->Load<ovis::Texture2D>()
   texture_ = ovis::LoadTexture2D(ovis::GetApplicationAssetLibrary(), texture_id, EditorWindow::instance()->context());
+  description_ = texture_->description();
 }
 
-void TextureEditor::Draw() {
-  ImGui::Image(texture_.get(), {512, 512});
+void TextureEditor::DrawContent() {
+  ImVec2 image_size = { description_.width * scale_, description_.height * scale_ };
+  ImGui::Image(texture_.get(), image_size);
+}
+
+void TextureEditor::DrawInspectorContent() {
+  int width = description_.width;
+  ImGui::InputInt("Width", &width, 0, 0, ImGuiInputTextFlags_ReadOnly);
+
+  int height = description_.height;
+  ImGui::InputInt("Height", &height, 0, 0, ImGuiInputTextFlags_ReadOnly);
+
+  float scale = scale_ * 100.0f;
+  if (ImGui::InputFloat("Scaling", &scale, 0.0f, 0.0f, "%.0f%%")) {
+    scale_ = scale / 100.0f;
+  }
 }
 
 void TextureEditor::Save() {}

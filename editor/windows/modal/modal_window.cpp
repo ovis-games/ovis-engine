@@ -6,12 +6,12 @@
 
 namespace ove {
 
-ModalWindow::ModalWindow(const std::string& controller_name, const std::string& window_title)
-    : ovis::SceneController(controller_name), window_name_(window_title + "##" + controller_name) {}
+ModalWindow::ModalWindow(const std::string& id, const std::string& window_title, ImGuiWindowFlags window_flags)
+    : UiWindow(id, window_title, window_flags) {}
 
 void ModalWindow::DrawImGui() {
-  ImGui::OpenPopup(window_name_.c_str());
-  if (ImGui::BeginPopupModal(window_name_.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+  ImGui::OpenPopup(imgui_id_.c_str());
+  if (ImGui::BeginPopupModal(imgui_id_.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
     DrawContent();
     ImGui::EndPopup();
   }

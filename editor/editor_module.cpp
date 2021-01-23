@@ -1,17 +1,15 @@
 #include "editor_module.hpp"
 
-#include <imgui.h>
-
 #include "editor_window_controller.hpp"
 #include "windows/modal/loading_window.hpp"
 #include "windows/modal/packaging_window.hpp"
+
 #include <glm/gtc/type_ptr.hpp>
+#include <imgui.h>
 
 #include <ovis/core/log.hpp>
-
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/render_target_configuration.hpp>
-
 #include <ovis/engine/render_pass.hpp>
 
 namespace ove {
@@ -31,7 +29,7 @@ class ClearRenderPass : public ovis::RenderPass {
 EditorModule::EditorModule() : ovis::Module("Editor") {
   RegisterRenderPass("ClearRenderPass", [](ovis::Viewport*) { return std::make_unique<ClearRenderPass>(); });
   RegisterSceneController("EditorWindowController",
-                          [this](ovis::Scene*) { return std::make_unique<EditorWindowController>(&log_history_); });
+                          [this](ovis::Scene*) { return std::make_unique<EditorWindowController>(); });
   RegisterSceneController("LoadingWindow", [this](ovis::Scene*) { return std::make_unique<LoadingWindow>(); });
   RegisterSceneController("PackagingWindow", [this](ovis::Scene*) { return std::make_unique<PackagingWindow>(); });
 

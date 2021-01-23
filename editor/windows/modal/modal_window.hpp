@@ -1,20 +1,15 @@
 #pragma once
 
-#include <ovis/engine/scene_controller.hpp>
+#include "../ui_window.hpp"
 
 namespace ove
 {
   
-class ModalWindow : public ovis::SceneController {
+class ModalWindow : public UiWindow {
 public:
-  ModalWindow(const std::string& controller_name, const std::string& window_title);
+  ModalWindow(const std::string& id, const std::string& window_title = "", ImGuiWindowFlags window_flags = 0);
 
   void DrawImGui() override;
-
-protected:
-  virtual void DrawContent() {}
-
-  std::string window_name_;
 };
 
 } // namespace ove

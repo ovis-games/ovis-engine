@@ -17,7 +17,7 @@ class ScriptEditor : public AssetEditor {
  public:
   ScriptEditor(const std::string& script_id);
 
-  void Draw() override;
+  void DrawContent() override;
   void Save() override;
   ActionHistoryBase* GetActionHistory() override { return &action_history_; }
 
