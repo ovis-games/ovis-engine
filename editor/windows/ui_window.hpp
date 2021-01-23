@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <tuple>
+#include <variant>
 #include <imgui.h>
 
 #include <ovis/engine/scene_controller.hpp>
@@ -21,7 +24,11 @@ class UiWindow : public ovis::SceneController {
     dock_next_frame_ = true;
   }
 
+  using ImGuiStyleValue = std::variant<float, ImVec2>;
+  void SetStyleVar(ImGuiStyleVar style_id, ImGuiStyleValue value);
+
  protected:
+  virtual void BeforeBegin() {}
   virtual void DrawContent() {}
 
   std::string imgui_id_;
@@ -31,6 +38,8 @@ class UiWindow : public ovis::SceneController {
 
   ImGuiID dockspace_id_ = 0;
   bool dock_next_frame_ = false;
+
+  std::vector<std::tuple<ImGuiStyleVar, ImGuiStyleValue>> style_vars_;
 };
 
 }  // namespace ove
