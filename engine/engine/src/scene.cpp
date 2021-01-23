@@ -22,10 +22,29 @@ Scene::Scene() {}
 
 Scene::~Scene() {}
 
-void Scene::AddController(const std::string& scene_controller_id) {
+SceneController* Scene::AddController(std::unique_ptr<SceneController> scene_controller) {
+  if (!scene_controller) {
+    LogE("Scene controller is null!");
+    return nullptr;
+  }
+
+  const std::string scene_controller_id = scene_controller->name();
   if (controllers_.count(scene_controller_id) != 0) {
     LogE("Scene controller '{}' already added", scene_controller_id);
-    return;
+    return nullptr;
+  }
+
+  auto insert_return_value = controllers_.insert(std::make_pair(scene_controller_id, std::move(scene_controller)));
+  SDL_assert(insert_return_value.second);
+  insert_return_value.first->second->scene_ = this;
+  InvalidateControllerOrder();
+  return insert_return_value.first->second.get();
+}
+
+SceneController* Scene::AddController(const std::string& scene_controller_id) {
+  if (controllers_.count(scene_controller_id) != 0) {
+    LogE("Scene controller '{}' already added", scene_controller_id);
+    return nullptr;
   }
 
   auto controller_factory = Module::scene_controller_factory_functions()->find(scene_controller_id);
@@ -40,24 +59,20 @@ void Scene::AddController(const std::string& scene_controller_id) {
         SDL_assert(controller_factory != Module::scene_controller_factory_functions()->end());
       } else {
         LogE("Failed to loead scene controller '{}'", scene_controller_id);
-        return;
+        return nullptr;
       }
     } else {
       LogE("Cannot find scene controller '{}'", scene_controller_id);
-      return;
+      return nullptr;
     }
   }
 
   auto controller = controller_factory->second(this);
   if (controller == nullptr) {
     LogE("Failed to create scene controller '{}'", scene_controller_id);
-    return;
+    return nullptr;
   }
-
-  auto insert_return_value = controllers_.insert(std::make_pair(scene_controller_id, std::move(controller)));
-  SDL_assert(insert_return_value.second);
-  insert_return_value.first->second->scene_ = this;
-  InvalidateControllerOrder();
+  return AddController(std::move(controller));
 }
 
 void Scene::RemoveController(const std::string& id) {

@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <type_traits>
 
 #include <SDL2/SDL_assert.h>
 #include <SDL2/SDL_events.h>
@@ -36,7 +37,13 @@ class Scene {
   inline ResourceManager* resource_manager() const { return resource_manager_; }
   inline void SetResourceManager(ResourceManager* resource_manager) { resource_manager_ = resource_manager; }
 
-  void AddController(const std::string& id);
+  template <typename ControllerType, typename... ArgumentTypes>
+  ControllerType* AddController(ArgumentTypes&&... constructor_args) {
+    static_assert(std::is_base_of<SceneController, ControllerType>());
+    return static_cast<ControllerType*>(AddController(std::make_unique<ControllerType>(std::forward<ArgumentTypes>(constructor_args)...)));
+  }
+  SceneController* AddController(std::unique_ptr<SceneController> scene_controller);
+  SceneController* AddController(const std::string& id);
   void RemoveController(const std::string& id);
   void ClearControllers();
 
