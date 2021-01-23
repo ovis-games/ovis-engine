@@ -19,6 +19,7 @@ TextureEditor::TextureEditor(const std::string& texture_id) : AssetEditor(textur
 }
 
 void TextureEditor::DrawContent() {
+  ovis::LogD("Mousewheel: {}", ImGui::GetIO().MouseWheel);
   ImVec2 image_size = { description_.width * scale_, description_.height * scale_ };
   ImGui::Image(texture_.get(), image_size);
 }

@@ -10,13 +10,13 @@
 
 namespace ove {
 
-Toolbar::Toolbar()
-    : UiWindow("Toolbar", "",
-               ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings) {
+Toolbar::Toolbar() : UiWindow("Toolbar", "") {
   SetStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   SetStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
   SetStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+  SetFlags(ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+           ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings);
 
   icons_.save = ovis::LoadTexture2D("icon-save", EditorWindow::instance()->context());
   icons_.undo = ovis::LoadTexture2D("icon-undo", EditorWindow::instance()->context());
@@ -136,23 +136,23 @@ void Toolbar::Redo() {
   }
 }
 
-  // if (event.type == SDL_KEYDOWN) {
-  //   if (event.key.keysym.sym == SDLK_s && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
-  //     Save();
-  //     return true;
-  //   } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0 &&
-  //              (event.key.keysym.mod & (KMOD_LSHIFT | KMOD_RSHIFT)) != 0) {
-  //     Redo();
-  //     return true;
-  //   } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
-  //     Undo();
-  //     return true;
-  //   }
-  // } else if (event.type == SDL_DROPFILE) {
-  //   const std::string filename = event.drop.file;
-  //   SDL_free(event.drop.file);
-  //   ImportAsset(filename);
-  //   return true;
-  // }
+// if (event.type == SDL_KEYDOWN) {
+//   if (event.key.keysym.sym == SDLK_s && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
+//     Save();
+//     return true;
+//   } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0 &&
+//              (event.key.keysym.mod & (KMOD_LSHIFT | KMOD_RSHIFT)) != 0) {
+//     Redo();
+//     return true;
+//   } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
+//     Undo();
+//     return true;
+//   }
+// } else if (event.type == SDL_DROPFILE) {
+//   const std::string filename = event.drop.file;
+//   SDL_free(event.drop.file);
+//   ImportAsset(filename);
+//   return true;
+// }
 
 }  // namespace ove

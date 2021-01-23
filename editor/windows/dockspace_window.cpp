@@ -4,14 +4,14 @@
 
 namespace ove {
 
-DockspaceWindow::DockspaceWindow()
-    : UiWindow("Dockspace Window", "",
-               ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-                   ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
-                   ImGuiWindowFlags_NoNavFocus) {
+DockspaceWindow::DockspaceWindow() : UiWindow("Dockspace Window", "") {
   SetStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   SetStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
   SetStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+
+  SetFlags(ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+           ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus |
+           ImGuiWindowFlags_NoNavFocus);
 }
 
 void DockspaceWindow::BeforeBegin() {
@@ -33,7 +33,8 @@ void DockspaceWindow::DrawContent() {
     ImGui::DockBuilderSetNodeSize(dockspace_main_, viewport->Size);
 
     dockspace_left_ = ImGui::DockBuilderSplitNode(dockspace_main_, ImGuiDir_Left, 0.2f, NULL, &dockspace_main_);
-    dockspace_right_ = ImGui::DockBuilderSplitNode(dockspace_main_, ImGuiDir_Right, 1.0f / 4.0f, NULL, &dockspace_main_);
+    dockspace_right_ =
+        ImGui::DockBuilderSplitNode(dockspace_main_, ImGuiDir_Right, 1.0f / 4.0f, NULL, &dockspace_main_);
     dockspace_bottom_ = ImGui::DockBuilderSplitNode(dockspace_main_, ImGuiDir_Down, 0.25f, NULL, &dockspace_main_);
 
     ImGui::DockBuilderDockWindow("Inspector", dockspace_right_);

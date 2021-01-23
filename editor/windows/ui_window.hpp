@@ -11,7 +11,7 @@ namespace ove {
 
 class UiWindow : public ovis::SceneController {
  public:
-  UiWindow(const std::string& id, const std::string& window_title = "", ImGuiWindowFlags window_flags = 0);
+  UiWindow(const std::string& id, const std::string& window_title = "");
 
   void DrawImGui() override;
 
@@ -26,6 +26,7 @@ class UiWindow : public ovis::SceneController {
 
   using ImGuiStyleValue = std::variant<float, ImVec2>;
   void SetStyleVar(ImGuiStyleVar style_id, ImGuiStyleValue value);
+  void SetFlags(ImGuiWindowFlags window_flags);
 
  protected:
   virtual void BeforeBegin() {}

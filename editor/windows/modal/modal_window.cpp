@@ -6,8 +6,8 @@
 
 namespace ove {
 
-ModalWindow::ModalWindow(const std::string& id, const std::string& window_title, ImGuiWindowFlags window_flags)
-    : UiWindow(id, window_title, window_flags) {}
+ModalWindow::ModalWindow(const std::string& id, const std::string& window_title)
+    : UiWindow(id, window_title) {}
 
 void ModalWindow::DrawImGui() {
   ImGui::OpenPopup(imgui_id_.c_str());

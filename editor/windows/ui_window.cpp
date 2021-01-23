@@ -4,10 +4,10 @@
 
 namespace ove {
 
-UiWindow::UiWindow(const std::string& id, const std::string& window_title, ImGuiWindowFlags window_flags)
+UiWindow::UiWindow(const std::string& id, const std::string& window_title)
     : ovis::SceneController(id),
       imgui_id_(window_title.length() > 0 ? window_title + "##" + id : id),
-      window_flags_(window_flags) {
+      window_flags_(0) {
 }
 
 void UiWindow::DrawImGui() {
@@ -47,6 +47,10 @@ void UiWindow::DrawImGui() {
 
 void UiWindow::SetStyleVar(ImGuiStyleVar style_id, ImGuiStyleValue value) {
   style_vars_.push_back(std::make_tuple(style_id, value));
+}
+
+void UiWindow::SetFlags(ImGuiWindowFlags window_flags) {
+  window_flags_ = window_flags;
 }
 
 }  // namespace ove
