@@ -16,10 +16,14 @@ TextureEditor::TextureEditor(const std::string& texture_id) : AssetEditor(textur
   // texture_ = EditorWindow::instance()->resource_manager()->Load<ovis::Texture2D>()
   texture_ = ovis::LoadTexture2D(ovis::GetApplicationAssetLibrary(), texture_id, EditorWindow::instance()->context());
   description_ = texture_->description();
+
+  SetFlags(ImGuiWindowFlags_HorizontalScrollbar);
 }
 
 void TextureEditor::DrawContent() {
-  ovis::LogD("Mousewheel: {}", ImGui::GetIO().MouseWheel);
+  if (ImGui::GetIO().KeyCtrl) {
+    scale_ += ImGui::GetIO().MouseWheel * 0.1f;
+  }
   ImVec2 image_size = { description_.width * scale_, description_.height * scale_ };
   ImGui::Image(texture_.get(), image_size);
 }
