@@ -30,6 +30,8 @@ add_executable(
   editor_module.hpp editor_module.cpp
   editor_window.hpp editor_window.cpp
   editor_asset_library.hpp editor_asset_library.cpp
+
+  imgui_extensions/input_asset.hpp imgui_extensions/input_asset.cpp
   
   windows/ui_window.hpp windows/ui_window.cpp
   windows/log_window.hpp windows/log_window.cpp
@@ -43,9 +45,11 @@ add_executable(
   windows/modal/packaging_window.hpp windows/modal/packaging_window.cpp
 
   windows/asset_editors/asset_editor.hpp windows/asset_editors/asset_editor.cpp
+  windows/asset_editors/settings_editor.hpp windows/asset_editors/settings_editor.cpp
   windows/asset_editors/scene_editor.hpp windows/asset_editors/scene_editor.cpp
   windows/asset_editors/script_editor.hpp windows/asset_editors/script_editor.cpp
   windows/asset_editors/texture_editor.hpp windows/asset_editors/texture_editor.cpp
+
   windows/asset_importers/asset_importer.hpp windows/asset_importers/asset_importer.cpp
 )
 

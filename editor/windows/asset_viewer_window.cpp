@@ -3,6 +3,7 @@
 #include "asset_editors/scene_editor.hpp"
 #include "asset_editors/script_editor.hpp"
 #include "asset_editors/texture_editor.hpp"
+#include "asset_editors/settings_editor.hpp"
 #include "dockspace_window.hpp"
 #include <filesystem>
 #include <fstream>
@@ -45,6 +46,13 @@ void AssetViewerWindow::DrawContent() {
   for (const auto& asset_id : ovis::GetApplicationAssetLibrary()->GetAssets()) {
     ImGui::Selectable(asset_id.c_str());
 
+    if (ImGui::BeginDragDropSource()) {
+      const std::string type = "asset/" + ovis::GetApplicationAssetLibrary()->GetAssetType(asset_id);
+      SDL_assert(type.size() <= 32);
+      ImGui::SetDragDropPayload(type.c_str(), asset_id.c_str(), asset_id.length());
+      ImGui::EndDragDropSource();
+    }
+
     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
       if (auto asset_editor = OpenAssetEditor(asset_id); asset_editor != nullptr) {
         asset_editor->SetDockSpaceId(scene()->GetController<DockspaceWindow>("Dockspace Window")->dockspace_main());
@@ -68,6 +76,8 @@ AssetEditor* AssetViewerWindow::OpenAssetEditor(const std::string& asset_id) {
     return scene()->AddController<ScriptEditor>(asset_id);
   } else if (asset_type == "texture2d") {
     return scene()->AddController<TextureEditor>(asset_id);
+  } else if (asset_type == "settings") {
+    return scene()->AddController<SettingsEditor>(asset_id);
   } else {
     ovis::LogE("Unknown asset type: {}", asset_type);
     return nullptr;
