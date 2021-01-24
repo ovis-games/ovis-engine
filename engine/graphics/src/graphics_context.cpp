@@ -96,7 +96,6 @@ void GraphicsContext::Draw(const DrawItem& draw_item) {
       glEnable(GL_SCISSOR_TEST);
       scissoring_enabled_ = true;
     } else {
-      ovis::LogD("Disable scissoring");
       glDisable(GL_SCISSOR_TEST);
       scissoring_enabled_ = false;
     }
