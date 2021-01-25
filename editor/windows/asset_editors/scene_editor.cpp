@@ -5,6 +5,7 @@
 #include "../../imgui_extensions/input_serializable.hpp"
 
 #include <ovis/core/asset_library.hpp>
+#include <ovis/core/utils.hpp>
 #include <ovis/engine/lua.hpp>
 #include <ovis/engine/scene_controller.hpp>
 #include <ovis/engine/scene_object.hpp>
@@ -120,6 +121,8 @@ void UndoChangeComponent(ovis::Scene* scene, const ovis::json& data) {
 
 }  // namespace
 
+const SceneEditor::SelectedObject SceneEditor::SelectedObject::NONE = {""};
+
 SceneEditor::SceneEditor(const std::string& scene_asset) : AssetEditor(scene_asset), action_history_(&scene_) {
   action_history_.RegisterAction("CreateObject", &CreateObject, &UndoCreateObject);
   action_history_.RegisterAction("DeleteObject", &DeleteObject, &UndoDeleteObject);
@@ -130,7 +133,8 @@ SceneEditor::SceneEditor(const std::string& scene_asset) : AssetEditor(scene_ass
   const std::optional<std::string> serialized_scene = LoadTextFile("json");
   if (serialized_scene) {
     try {
-      scene_.Deserialize(ovis::json::parse(*serialized_scene));
+      serialized_scene_ = ovis::json::parse(*serialized_scene);
+      scene_.Deserialize(serialized_scene_);
     } catch (const ovis::json::exception& exception) {
       ovis::LogE("Failed to parse scene file: {}", exception.what());
     }
@@ -198,8 +202,21 @@ void SceneEditor::DrawContent() {
 }
 
 void SceneEditor::DrawInspectorContent() {
-  DrawObjectList();
-  DrawObjectComponentList();
+  bool scene_changed = false;
+  if (DrawObjectList()) {
+    scene_changed = true;
+  }
+  if (DrawObjectComponentList()) {
+    scene_changed = true;
+  }
+  if (scene_changed) {
+    const ovis::json updated_serialized_scene = scene_.Serialize();
+    const ovis::json diff = ovis::json::diff(serialized_scene_, updated_serialized_scene);
+    const ovis::json reverse_diff = ovis::json::diff(updated_serialized_scene, serialized_scene_);
+    ovis::LogD("Scene patch: {}", diff.dump());
+    ovis::LogD("Scene undo patch: {}", reverse_diff.dump());
+    serialized_scene_ = updated_serialized_scene;
+  }
 }
 
 void SceneEditor::Save() {
@@ -210,7 +227,9 @@ void SceneEditor::Save() {
   }
 }
 
-void SceneEditor::DrawObjectList() {
+bool SceneEditor::DrawObjectList() {
+  bool scene_changed = false;
+
   ImVec2 window_size = ImGui::GetWindowSize();
   ImGui::BeginChild("ObjectView", ImVec2(0, window_size.y / 2), true);
 
@@ -218,26 +237,28 @@ void SceneEditor::DrawObjectList() {
                                        ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
 
   ImGuiTreeNodeFlags scene_node_flags = tree_node_flags | ImGuiTreeNodeFlags_AllowItemOverlap;
-  if (ovis::Scene** scene = std::get_if<ovis::Scene*>(&selection_); scene != nullptr && *scene == &scene_) {
+  if (std::holds_alternative<SelectedScene>(selection_)) {
     scene_node_flags |= ImGuiTreeNodeFlags_Selected;
   }
   if (ImGui::TreeNodeEx(asset_id().c_str(), scene_node_flags)) {
     if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-      selection_ = &scene_;
+      selection_ = SelectedScene{};
     }
 
+    const std::string selected_object_name =
+        ovis::get_with_default<SelectedObject>(selection_, SelectedObject::NONE).name;
     scene_.GetObjects(&cached_scene_objects_, true);
     for (ovis::SceneObject* object : cached_scene_objects_) {
       SDL_assert(object != nullptr);
 
       ImGuiTreeNodeFlags scene_object_flags = tree_node_flags | ImGuiTreeNodeFlags_Leaf;
-      if (ovis::SceneObject** selected_object = std::get_if<ovis::SceneObject*>(&selection_);
-          selected_object != nullptr && *selected_object == object) {
+      if (object->name() == selected_object_name) {
         scene_object_flags |= ImGuiTreeNodeFlags_Selected;
       }
+
       if (ImGui::TreeNodeEx(object->name().c_str(), scene_object_flags)) {
         if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-          selection_ = object;
+          selection_ = SelectedObject{object->name()};
         }
         ImGui::TreePop();
       }
@@ -246,6 +267,8 @@ void SceneEditor::DrawObjectList() {
     ImGui::TreePop();
   }
   ImGui::EndChild();
+
+  return scene_changed;
 
   // for (ovis::SceneObject* object : scene_.GetObjects(true)) {
   //   bool item_selected = selected_ == object->name();
@@ -304,21 +327,24 @@ void SceneEditor::DrawObjectList() {
   // ImGui::EndChild();
 }
 
-void SceneEditor::DrawObjectComponentList() {
+bool SceneEditor::DrawObjectComponentList() {
+  bool object_changed = false;
+
   ImVec2 window_size = ImGui::GetWindowSize();
   if (ImGui::BeginChild("Object Properties", ImVec2(0, window_size.y / 2 - ImGui::GetFrameHeightWithSpacing()))) {
-    ovis::SceneObject* selected_object = nullptr;
-    if (ovis::SceneObject** selected_object_pointer = std::get_if<ovis::SceneObject*>(&selection_);
-        selected_object_pointer != nullptr) {
-      selected_object = *selected_object_pointer;
-    }
-    if (selected_object != nullptr) {
+    const std::string selected_object_name =
+        ovis::get_with_default<SelectedObject>(selection_, SelectedObject::NONE).name;
+
+    if (selected_object_name.size() != 0) {
+      ovis::SceneObject* selected_object = scene_.GetObject(selected_object_name);
+      
       ImGui::Text("%s", selected_object->name().c_str());
       ImGui::SameLine();
       if (ImGui::BeginCombo("##AddComponent", "Add Component", ImGuiComboFlags_NoArrowButton)) {
         for (const auto& component_id : ovis::SceneObjectComponent::GetRegisteredComponents()) {
           if (!selected_object->HasComponent(component_id)) {
             if (ImGui::Selectable(component_id.c_str())) {
+              object_changed = true;
               action_history_.Do("AddComponent",
                                  {{"object_name", selected_object->name()}, {"component_id", component_id}},
                                  "Add component {} to {}", component_id, selected_object->name());
@@ -341,6 +367,8 @@ void SceneEditor::DrawObjectComponentList() {
                               {"before", before},
                               {"after", after}},
                              "Change property in component {} of {}", component_id, selected_object->name());
+
+          object_changed = true;
         }
       }
       ImGui::EndChild();
@@ -353,25 +381,31 @@ void SceneEditor::DrawObjectComponentList() {
     }
   }
   ImGui::EndChild();
+
+  return object_changed;
 }  // namespace ove
 
-void SceneEditor::DrawSceneProperties() {
-  if (ImGui::Begin("Scene Properties")) {
-    if (ImGui::CollapsingHeader("Controllers", ImGuiTreeNodeFlags_DefaultOpen)) {
-      for (const auto& controller : ovis::GetApplicationAssetLibrary()->GetAssetsWithType("scene_controller")) {
-        bool has_controller = scene_.GetController(controller) != nullptr;
-        if (ImGui::Checkbox(controller.c_str(), &has_controller)) {
-          if (has_controller) {
-            scene_.AddController(controller);
-          } else {
-            scene_.RemoveController(controller);
-          }
-        }
-      }
-    }
-  }
-  ImGui::End();
-}
+// void SceneEditor::DrawSceneProperties() {
+//   bool scene_changed = false;
+
+//   if (ImGui::Begin("Scene Properties")) {
+//     if (ImGui::CollapsingHeader("Controllers", ImGuiTreeNodeFlags_DefaultOpen)) {
+//       for (const auto& controller : ovis::GetApplicationAssetLibrary()->GetAssetsWithType("scene_controller")) {
+//         bool has_controller = scene_.GetController(controller) != nullptr;
+//         if (ImGui::Checkbox(controller.c_str(), &has_controller)) {
+//           if (has_controller) {
+//             scene_.AddController(controller);
+//           } else {
+//             scene_.RemoveController(controller);
+//           }
+//         }
+//       }
+//     }
+//   }
+//   ImGui::End();
+
+//   return false;
+// }
 
 void SceneEditor::CreateSceneViewport() {
   ovis::RenderTargetViewportDescription scene_viewport_description;

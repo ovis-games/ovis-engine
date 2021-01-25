@@ -2,8 +2,8 @@
 
 #include "../../action_history.hpp"
 #include "asset_editor.hpp"
-
 #include <variant>
+
 #include <ovis/engine/render_target_viewport.hpp>
 #include <ovis/engine/scene.hpp>
 
@@ -25,9 +25,8 @@ class SceneEditor : public AssetEditor {
   void DrawContent() override;
   void DrawInspectorContent() override;
 
-  void DrawObjectList();
-  void DrawObjectComponentList();
-  void DrawSceneProperties();
+  bool DrawObjectList();
+  bool DrawObjectComponentList();
 
   void CreateSceneViewport();
 
@@ -39,7 +38,13 @@ class SceneEditor : public AssetEditor {
   bool is_renaming_ = false;
   bool scene_window_focused_ = false;
 
-  std::variant<ovis::Scene*, ovis::SceneObject*> selection_;
+  struct SelectedScene {};
+  struct SelectedObject {
+    std::string name;
+    static const SelectedObject NONE;
+  };
+
+  std::variant<SelectedScene, SelectedObject> selection_;
   std::vector<ovis::SceneObject*> cached_scene_objects_;
 };
 
