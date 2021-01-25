@@ -1,8 +1,7 @@
 #include <SDL_assert.h>
 #include <ovis/base/transform2d_component.hpp>
 
-#include <ovis/math/serialize.hpp>
-#include <ovis/math/vector.hpp>
+#include <ovis/math/json_serialization.hpp>
 
 namespace ovis {
 

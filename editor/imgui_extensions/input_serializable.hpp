@@ -2,7 +2,7 @@
 
 #include <type_traits>
 #include <ovis/core/serialize.hpp>
-#include <ovis/math/serialize.hpp>
+#include <ovis/math/json_serialization.hpp>
 #include "input_json.hpp"
 
 namespace ImGui

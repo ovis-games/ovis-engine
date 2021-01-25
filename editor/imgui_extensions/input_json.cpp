@@ -9,8 +9,7 @@
 
 #include <ovis/core/log.hpp>
 #include <ovis/core/serialize.hpp>
-#include <ovis/math/serialize.hpp>
-#include <ovis/math/vector.hpp>
+#include <ovis/math/json_serialization.hpp>
 
 namespace ImGui {
 
