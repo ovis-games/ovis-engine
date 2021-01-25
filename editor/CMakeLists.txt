@@ -31,6 +31,7 @@ add_executable(
   editor_window.hpp editor_window.cpp
   editor_asset_library.hpp editor_asset_library.cpp
 
+  imgui_extensions/input_json.hpp imgui_extensions/input_json.cpp
   imgui_extensions/input_asset.hpp imgui_extensions/input_asset.cpp
   
   windows/ui_window.hpp windows/ui_window.cpp

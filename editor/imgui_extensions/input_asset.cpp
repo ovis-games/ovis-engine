@@ -47,10 +47,10 @@ bool InputAsset(const char* label, std::string* asset_id, const std::string& ass
   }
 
   if (ImGui::BeginDragDropTarget()) {
-    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("asset/scene")) {
+    const std::string payload_type = "asset<" + asset_type + '>';
+    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(payload_type.c_str())) {
       const char* dropped_asset_id_ptr = static_cast<const char*>(payload->Data);
       const std::string dropped_asset_id(dropped_asset_id_ptr, dropped_asset_id_ptr + payload->DataSize);
-      ovis::LogD("Accept {}", dropped_asset_id);
       if (IsAssetValid(dropped_asset_id, asset_type)) {
         *asset_id = dropped_asset_id;
         asset_changed = true;

@@ -1,46 +1,51 @@
 #include <SDL_assert.h>
+
 #include <ovis/rendering2d/sprite_component.hpp>
+#include <ovis/math/vector.hpp>
 
 namespace ovis {
 
-std::vector<std::string> SpriteComponent::GetPropertyNames() const {
-  return {"Size", "Color", "Texture"};
+// clang-format off
+const json SpriteComponent::schema = {
+  {"title", "Sprite"},
+  {"type", "object"},
+  {"properties", {
+    {"Size", {
+      {"type", "vector2"},
+      {"description", "The size of the sprite."},
+    }},
+    {"Color", {
+      {"type", "color"},
+      {"description", "The color of the sprite."},
+    }},
+    {"Texture", {
+      {"type", "asset<texture2d>"},
+      {"description", "A texture that will be displayed on the sprite."},
+    }}
+  }}
+};
+// clang-format on
+
+json SpriteComponent::Serialize() const {
+  return {{"Size", size_},
+          {"Color", color_},
+          {"Texture", texture_asset_}};
 }
 
-SceneObjectComponent::PropertyType SpriteComponent::GetPropertyType(const std::string& property_name) const {
-  if (property_name == "Size") {
-    return PropertyType::VECTOR2;
-  } else if (property_name == "Color") {
-    return PropertyType::COLOR;
-  } else if (property_name == "Texture") {
-    return PropertyType::STRING;
-  } else {
-    return PropertyType::UNDEFINED;
-  }
-}
-
-SceneObjectComponent::PropertyValue SpriteComponent::GetProperty(const std::string& property_name) const {
-  if (property_name == "Size") {
-    return size_;
-  } else if (property_name == "Color") {
-    return color_;
-  } else if (property_name == "Texture") {
-    return texture_asset_;
-  } else {
-    return std::monostate{};
-  }
-}
-
-void SpriteComponent::SetProperty(const std::string& property_name, const PropertyValue& value) {
-  if (property_name == "Size") {
-    SDL_assert(std::holds_alternative<glm::vec2>(value));
-    size_ = std::get<glm::vec2>(value);
-  } else if (property_name == "Color") {
-    SDL_assert(std::holds_alternative<glm::vec4>(value));
-    color_ = std::get<glm::vec4>(value);
-  } else if (property_name == "Texture") {
-    SDL_assert(std::holds_alternative<std::string>(value));
-    texture_asset_ = std::get<std::string>(value);
+bool SpriteComponent::Deserialize(const json& data) {
+  try {
+    if (data.contains("Size")) {
+      size_ = data.at("Size");
+    }
+    if (data.contains("Color")) {
+      color_ = data.at("Color");
+    }
+    if (data.contains("Texture")) {
+      texture_asset_ = data.at("Texture");
+    }
+    return true;
+  } catch (...) {
+    return false;
   }
 }
 

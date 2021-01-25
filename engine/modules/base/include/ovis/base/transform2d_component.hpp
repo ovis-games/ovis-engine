@@ -7,16 +7,17 @@ namespace ovis {
 
 class Transform2DComponent : public SceneObjectComponent {
  public:
-  std::vector<std::string> GetPropertyNames() const override;
-  PropertyType GetPropertyType(const std::string& property_name) const override;
-  PropertyValue GetProperty(const std::string& property_name) const override;
-  void SetProperty(const std::string& property_name, const PropertyValue& value) override;
-
   inline Transform* transform() { return &transform_; }
   inline const Transform* transform() const { return &transform_; }
 
+  json Serialize() const override;
+  bool Deserialize(const json& data) override;
+  const json* GetSchema() const override { return &schema; }
+
  private:
   Transform transform_;
+
+  static const json schema;
 };
 
 }  // namespace ovis

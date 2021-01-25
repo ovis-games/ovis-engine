@@ -1,6 +1,8 @@
 #include "scene_editor.hpp"
 
 #include "../../editor_window.hpp"
+#include "../../imgui_extensions/input_asset.hpp"
+#include "../../imgui_extensions/input_serializable.hpp"
 
 #include <ovis/core/asset_library.hpp>
 #include <ovis/engine/lua.hpp>
@@ -275,26 +277,9 @@ void SceneEditor::DrawObjectComponentList() {
   if (ImGui::BeginChild("Object Properties", ImVec2(0, window_size.y / 2 - ImGui::GetFrameHeightWithSpacing()))) {
     ovis::SceneObject* selected_object = scene_.GetObject(selected_);
     if (selected_object != nullptr) {
-      ImGui::BeginChild("Components", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true);
-      for (const auto& component_id : selected_object->GetComponentIds()) {
-        if (ImGui::CollapsingHeader(component_id.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-          auto component = selected_object->GetComponent(component_id);
-          const auto before = component->Serialize();
-          if (component->DrawEditorForProperties()) {
-            const auto after = component->Serialize();
-            action_history_.Do("ChangeComponent",
-                               {{"object_name", selected_object->name()},
-                                {"component_id", component_id},
-                                {"before", before},
-                                {"after", after}},
-                               "Change property in component {} of {}", component_id, selected_object->name());
-          }
-        }
-      }
-      ImGui::EndChild();
-
-      ImGui::BeginChild("Scene Object Buttons");
-      if (ImGui::BeginCombo("", "Add Component", ImGuiComboFlags_NoArrowButton)) {
+      ImGui::Text("%s", selected_object->name().c_str());
+      ImGui::SameLine();
+      if (ImGui::BeginCombo("##AddComponent", "Add Component", ImGuiComboFlags_NoArrowButton)) {
         for (const auto& component_id : ovis::SceneObjectComponent::GetRegisteredComponents()) {
           if (!selected_object->HasComponent(component_id)) {
             if (ImGui::Selectable(component_id.c_str())) {
@@ -306,13 +291,33 @@ void SceneEditor::DrawObjectComponentList() {
         }
         ImGui::EndCombo();
       }
+
+      ImGui::BeginChild("Components", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true);
+      for (const auto& component_id : selected_object->GetComponentIds()) {
+        ovis::Serializable* component = selected_object->GetComponent(component_id);
+
+        const auto before = component->Serialize();  // TODO: this is aweful
+        if (ImGui::InputSerializable(component_id.c_str(), component)) {
+          const auto after = component->Serialize();
+          action_history_.Do("ChangeComponent",
+                             {{"object_name", selected_object->name()},
+                              {"component_id", component_id},
+                              {"before", before},
+                              {"after", after}},
+                             "Change property in component {} of {}", component_id, selected_object->name());
+        }
+      }
+      ImGui::EndChild();
+
+      ImGui::BeginChild("Scene Object Buttons");
+
       ImGui::EndChild();
     } else {
       ImGui::Text("Select an object in the scene to display its components.");
     }
   }
   ImGui::EndChild();
-}
+}  // namespace ove
 
 void SceneEditor::DrawSceneProperties() {
   if (ImGui::Begin("Scene Properties")) {

@@ -13,6 +13,7 @@ add_library(
   include/ovis/core/resource_manager.hpp src/resource_manager.cpp
   include/ovis/core/resource.hpp
   include/ovis/core/profiling.hpp src/profiling.cpp
+  include/ovis/core/serialize.hpp src/serialize.cpp
 )
 add_library(ovis::core ALIAS ovis-core)
 

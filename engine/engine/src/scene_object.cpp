@@ -60,19 +60,26 @@ json SceneObject::Serialize() const {
   return serialized_object;
 }
 
-void SceneObject::Deserialize(const json& serialized_object) {
-  SDL_assert(serialized_object.is_object());
+bool SceneObject::Deserialize(const json& serialized_object) {
+  if (!serialized_object.is_object()) {
+    return false;
+  }
   if (serialized_object.contains("components")) {
-    SDL_assert(serialized_object["components"].is_object());
+    if (!serialized_object["components"].is_object()) {
+      return false;
+    }
     for (const auto& component : serialized_object["components"].items()) {
-      SDL_assert(std::find(SceneObjectComponent::GetRegisteredComponents().begin(),
-                           SceneObjectComponent::GetRegisteredComponents().end(),
-                           component.key()) != SceneObjectComponent::GetRegisteredComponents().end());
+      if (std::find(SceneObjectComponent::GetRegisteredComponents().begin(),
+                    SceneObjectComponent::GetRegisteredComponents().end(),
+                    component.key()) == SceneObjectComponent::GetRegisteredComponents().end()) {
+        return false;
+      }
       AddComponent(component.key())->Deserialize(component.value());
     }
   } else {
     ovis::LogV("SceneObject deserialization: no 'components' property available!");
   }
+  return true;
 }
 
 void SceneObject::RegisterToLua() {

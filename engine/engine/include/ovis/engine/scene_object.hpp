@@ -6,13 +6,14 @@
 
 #include <ovis/core/class.hpp>
 #include <ovis/core/json.hpp>
+#include <ovis/core/serialize.hpp>
 #include <ovis/engine/scene_object_component.hpp>
 
 namespace ovis {
 
 class Scene;
 
-class SceneObject {
+class SceneObject : public Serializable {
   MAKE_NON_COPYABLE(SceneObject);
 
  public:
@@ -42,8 +43,8 @@ class SceneObject {
   }
   void RemoveComponent(const std::string& component_id);
 
-  json Serialize() const;
-  void Deserialize(const json& serialized_object);
+  json Serialize() const override;
+  bool Deserialize(const json& serialized_object) override;
 
   static void RegisterToLua();
 

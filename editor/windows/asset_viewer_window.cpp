@@ -47,7 +47,9 @@ void AssetViewerWindow::DrawContent() {
     ImGui::Selectable(asset_id.c_str());
 
     if (ImGui::BeginDragDropSource()) {
-      const std::string type = "asset/" + ovis::GetApplicationAssetLibrary()->GetAssetType(asset_id);
+      ImGui::Text("%s", asset_id.c_str());
+
+      const std::string type = "asset<" + ovis::GetApplicationAssetLibrary()->GetAssetType(asset_id) + '>';
       SDL_assert(type.size() <= 32);
       ImGui::SetDragDropPayload(type.c_str(), asset_id.c_str(), asset_id.length());
       ImGui::EndDragDropSource();

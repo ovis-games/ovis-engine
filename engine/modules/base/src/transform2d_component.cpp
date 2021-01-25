@@ -1,47 +1,56 @@
 #include <SDL_assert.h>
-
 #include <ovis/base/transform2d_component.hpp>
+
+#include <ovis/math/serialize.hpp>
+#include <ovis/math/vector.hpp>
 
 namespace ovis {
 
-std::vector<std::string> Transform2DComponent::GetPropertyNames() const {
-  return {"Position", "Rotation", "Scale"};
+// clang-format off
+const json Transform2DComponent::schema = {
+  {"title", "Transform2D"},
+  {"type", "object"},
+  {"description", "Represents the transformation of an object in a 2D space."},
+  {"properties", {
+    {"Position", {
+      {"type", "vector2"},
+      {"description", "The position of the object."},
+    }},
+    {"Rotation", {
+      {"type", "number"},
+      {"description", "The rotation of the object in radians."},
+    }},
+    {"Scale", {
+      {"type", "vector2"},
+      {"description", "The scaling of the object."},
+    }}
+  }}
+};
+// clang-format on
+
+json Transform2DComponent::Serialize() const {
+  return {{"Position", glm::vec2(transform_.translation())},
+          {"Rotation", transform_.rotaton().z},
+          {"Scale", glm::vec2(transform_.scale())}};
 }
 
-SceneObjectComponent::PropertyType Transform2DComponent::GetPropertyType(const std::string& property_name) const {
-  if (property_name == "Position") {
-    return PropertyType::VECTOR2;
-  } else if (property_name == "Rotation") {
-    return PropertyType::FLOAT;
-  } else if (property_name == "Scale") {
-    return PropertyType::VECTOR2;
-  } else {
-    return PropertyType::UNDEFINED;
-  }
-}
-
-SceneObjectComponent::PropertyValue Transform2DComponent::GetProperty(const std::string& property_name) const {
-  if (property_name == "Position") {
-    return glm::vec2(transform_.translation());
-  } else if (property_name == "Rotation") {
-    return transform_.rotaton().z;
-  } else if (property_name == "Scale") {
-    return glm::vec2(transform_.scale());
-  } else {
-    return std::monostate{};
-  }
-}
-
-void Transform2DComponent::SetProperty(const std::string& property_name, const PropertyValue& value) {
-  if (property_name == "Position") {
-    SDL_assert(std::holds_alternative<glm::vec2>(value));
-    transform_.SetTranslation(glm::vec3(std::get<glm::vec2>(value), 0.0));
-  } else if (property_name == "Rotation") {
-    SDL_assert(std::holds_alternative<float>(value));
-    transform_.SetRotation(glm::quat(1.0f, 0.0f, 0.0f, std::get<float>(value)));
-  } else if (property_name == "Scale") {
-    SDL_assert(std::holds_alternative<glm::vec2>(value));
-    transform_.SetScale(glm::vec3(std::get<glm::vec2>(value), 1.0));
+bool Transform2DComponent::Deserialize(const json& data) {
+  try {
+    if (data.contains("Position")) {
+      const glm::vec2 position = data.at("Position");
+      transform_.SetTranslation(glm::vec3(position, 0.0f));
+    }
+    if (data.contains("Rotation")) {
+      const float rotation = data.at("Rotation");
+      transform_.SetRotation(glm::quat(1.0f, 0.0f, 0.0f, rotation));
+    }
+    if (data.contains("Scale")) {
+      const glm::vec2 scaling = data.at("Scale");
+      transform_.SetScale(glm::vec3(scaling, 1.0f));
+    }
+    return true;
+  } catch (...) {
+    return false;
   }
 }
 
