@@ -97,6 +97,7 @@ void EditorWindow::SetUIStyle() {
   const ImVec4 COLOR_ACTIVE_HEADER = rgba_to_imvec4(128, 128, 128, 255);
   const ImVec4 COLOR_BUTTON = rgba_to_imvec4(80, 80, 80, 255);
   const ImVec4 COLOR_TITLE_BACKGROUND = rgba_to_imvec4(72, 72, 72, 255);
+  const ImVec4 COLOR_HEADER = rgba_to_imvec4(94, 94, 94, 255);
 
   const ImVec4 COLOR_SEPARATOR_HOVERED = rgba_to_imvec4(255, 255, 255, 200);
   const ImVec4 COLOR_SEPARATOR_ACTIVE = rgba_to_imvec4(255, 255, 255, 255);
@@ -125,7 +126,7 @@ void EditorWindow::SetUIStyle() {
   colors[ImGuiCol_Button] = COLOR_BUTTON;
   colors[ImGuiCol_ButtonHovered] = COLOR_ACTIVE_HEADER;
   colors[ImGuiCol_ButtonActive] = COLOR_HIGHLIGHT;
-  colors[ImGuiCol_Header] = COLOR_WINDOW_BACKGROUND;
+  colors[ImGuiCol_Header] = COLOR_HEADER;
   colors[ImGuiCol_HeaderHovered] = COLOR_HIGHLIGHT;
   colors[ImGuiCol_HeaderActive] = COLOR_ACTIVE_HEADER;
   colors[ImGuiCol_Separator] = colors[ImGuiCol_Border];
