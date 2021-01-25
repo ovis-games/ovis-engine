@@ -3,6 +3,7 @@
 #include "../../action_history.hpp"
 #include "asset_editor.hpp"
 
+#include <variant>
 #include <ovis/engine/render_target_viewport.hpp>
 #include <ovis/engine/scene.hpp>
 
@@ -35,9 +36,11 @@ class SceneEditor : public AssetEditor {
   ovis::Scene scene_;
   ovis::json serialized_scene_;
   ActionHistory<ovis::Scene> action_history_;
-  std::string selected_;
   bool is_renaming_ = false;
   bool scene_window_focused_ = false;
+
+  std::variant<ovis::Scene*, ovis::SceneObject*> selection_;
+  std::vector<ovis::SceneObject*> cached_scene_objects_;
 };
 
 }  // namespace ove

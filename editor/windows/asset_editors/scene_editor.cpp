@@ -202,51 +202,83 @@ void SceneEditor::DrawInspectorContent() {
   DrawObjectComponentList();
 }
 
-// void SceneEditor::DrawPropertyWindows() {
-//   DrawObjectList();
-//   DrawObjectComponentList();
-//   DrawSceneProperties();
-// }
-
 void SceneEditor::Save() {
-  SaveFile("json", scene_.Serialize().dump());
+  if (state_ == State::STOPPED) {
+    SaveFile("json", scene_.Serialize().dump());
+  } else {
+    SaveFile("json", serialized_scene_.dump());
+  }
 }
 
 void SceneEditor::DrawObjectList() {
   ImVec2 window_size = ImGui::GetWindowSize();
-  ImGui::BeginChild("ObjectList", ImVec2(0, window_size.y / 2 - ImGui::GetFrameHeightWithSpacing()), true);
-  for (ovis::SceneObject* object : scene_.GetObjects(true)) {
-    bool item_selected = selected_ == object->name();
-    if (item_selected && is_renaming_) {
-      char buffer[512];
-      strcpy(buffer, object->name().c_str());
-      if (ImGui::InputText(("###" + object->name()).c_str(), buffer, 512,
-                           ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
-        if (!scene_.ContainsObject(buffer)) {
-          is_renaming_ = false;
-          action_history_.Do("RenameObject", {{"old_name", object->name()}, {"new_name", buffer}},
-                             "Rename object {} to {}", object->name(), buffer);
-          selected_ = buffer;
-        } else {
-          // Object already exists or old and new names are the same
-          ovis::LogI("The object '{}' does already exist", buffer);
-        }
-      }
+  ImGui::BeginChild("ObjectView", ImVec2(0, window_size.y / 2), true);
 
-      if (ImGui::IsItemDeactivated()) {
-        is_renaming_ = false;
+  ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
+                                       ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
+
+  ImGuiTreeNodeFlags scene_node_flags = tree_node_flags | ImGuiTreeNodeFlags_AllowItemOverlap;
+  if (ovis::Scene** scene = std::get_if<ovis::Scene*>(&selection_); scene != nullptr && *scene == &scene_) {
+    scene_node_flags |= ImGuiTreeNodeFlags_Selected;
+  }
+  if (ImGui::TreeNodeEx(asset_id().c_str(), scene_node_flags)) {
+    if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+      selection_ = &scene_;
+    }
+
+    scene_.GetObjects(&cached_scene_objects_, true);
+    for (ovis::SceneObject* object : cached_scene_objects_) {
+      SDL_assert(object != nullptr);
+
+      ImGuiTreeNodeFlags scene_object_flags = tree_node_flags | ImGuiTreeNodeFlags_Leaf;
+      if (ovis::SceneObject** selected_object = std::get_if<ovis::SceneObject*>(&selection_);
+          selected_object != nullptr && *selected_object == object) {
+        scene_object_flags |= ImGuiTreeNodeFlags_Selected;
       }
-      ImGui::SetKeyboardFocusHere(0);
-    } else {
-      if (ImGui::Selectable(object->name().c_str(), &item_selected)) {
-        selected_ = object->name();
-      }
-      if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-        is_renaming_ = true;
+      if (ImGui::TreeNodeEx(object->name().c_str(), scene_object_flags)) {
+        if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+          selection_ = object;
+        }
+        ImGui::TreePop();
       }
     }
+
+    ImGui::TreePop();
   }
   ImGui::EndChild();
+
+  // for (ovis::SceneObject* object : scene_.GetObjects(true)) {
+  //   bool item_selected = selected_ == object->name();
+  //   if (item_selected && is_renaming_) {
+  //     char buffer[512];
+  //     strcpy(buffer, object->name().c_str());
+  //     if (ImGui::InputText(("###" + object->name()).c_str(), buffer, 512,
+  //                          ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
+  //       if (!scene_.ContainsObject(buffer)) {
+  //         is_renaming_ = false;
+  //         action_history_.Do("RenameObject", {{"old_name", object->name()}, {"new_name", buffer}},
+  //                            "Rename object {} to {}", object->name(), buffer);
+  //         selected_ = buffer;
+  //       } else {
+  //         // Object already exists or old and new names are the same
+  //         ovis::LogI("The object '{}' does already exist", buffer);
+  //       }
+  //     }
+
+  //     if (ImGui::IsItemDeactivated()) {
+  //       is_renaming_ = false;
+  //     }
+  //     ImGui::SetKeyboardFocusHere(0);
+  //   } else {
+  //     if (ImGui::Selectable(object->name().c_str(), &item_selected)) {
+  //       selected_ = object->name();
+  //     }
+  //     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+  //       is_renaming_ = true;
+  //     }
+  //   }
+  // }
+
   // ImGui::BeginChild("SceneDocumentButtons");
 
   // if (ImGui::Button("Add")) {
@@ -275,7 +307,11 @@ void SceneEditor::DrawObjectList() {
 void SceneEditor::DrawObjectComponentList() {
   ImVec2 window_size = ImGui::GetWindowSize();
   if (ImGui::BeginChild("Object Properties", ImVec2(0, window_size.y / 2 - ImGui::GetFrameHeightWithSpacing()))) {
-    ovis::SceneObject* selected_object = scene_.GetObject(selected_);
+    ovis::SceneObject* selected_object = nullptr;
+    if (ovis::SceneObject** selected_object_pointer = std::get_if<ovis::SceneObject*>(&selection_);
+        selected_object_pointer != nullptr) {
+      selected_object = *selected_object_pointer;
+    }
     if (selected_object != nullptr) {
       ImGui::Text("%s", selected_object->name().c_str());
       ImGui::SameLine();
