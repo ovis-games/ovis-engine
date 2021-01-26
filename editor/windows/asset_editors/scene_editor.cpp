@@ -9,6 +9,7 @@
 #include <ovis/engine/lua.hpp>
 #include <ovis/engine/scene_controller.hpp>
 #include <ovis/engine/scene_object.hpp>
+#include <imgui_stdlib.h>
 
 namespace ove {
 
@@ -122,10 +123,48 @@ bool SceneEditor::DrawObjectList() {
         scene_object_flags |= ImGuiTreeNodeFlags_Selected;
       }
 
-      if (ImGui::TreeNodeEx(object->name().c_str(), scene_object_flags)) {
-        if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-          selection_ = SelectedObject{object->name()};
+      if (renaming_state_ == RenamingState::IS_NOT_RENAMING || object->name() != selected_object_name) {
+        if (ImGui::TreeNodeEx(object->name().c_str(), scene_object_flags)) {
+          if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+            selection_ = SelectedObject{object->name()};
+            // is_renaming_selected_object_ = false;
+          }
+          if (ImGui::BeginPopupContextItem()) {
+            if (ImGui::Selectable("Rename")) {
+              renaming_state_ = RenamingState::STARTED_RENAMING;
+            }
+            if (ImGui::Selectable("Remove")) {
+              scene_.DeleteObject(object->name());
+              scene_changed = true;
+            }
+            ImGui::EndPopup();
+          }
+          ImGui::TreePop();
         }
+      } else {
+        std::string new_object_name = object->name();
+        ImGui::TreePush(object->name().c_str());
+        ImGui::PushItemWidth(-1);
+        if (ImGui::InputText("Renaming", &new_object_name, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
+          if (new_object_name != object->name()) {
+            // TODO: check for validity: alphanumeric+underscore+space
+            if (scene_.ContainsObject(new_object_name)) {
+              // TODO: Show message box
+            } else {
+              scene_.CreateObject(new_object_name, object->Serialize());
+              scene_.DeleteObject(object->name());
+              scene_changed = true;
+            }
+          }
+          renaming_state_ = RenamingState::IS_NOT_RENAMING;
+        }
+        if (renaming_state_ == RenamingState::STARTED_RENAMING) {
+          ImGui::SetKeyboardFocusHere();
+          renaming_state_ = RenamingState::IS_RENAMING;
+        } else if (!ImGui::IsItemActive()) {
+          renaming_state_ = RenamingState::IS_NOT_RENAMING;
+        }
+        ImGui::PopItemWidth();
         ImGui::TreePop();
       }
     }
@@ -147,7 +186,7 @@ bool SceneEditor::DrawObjectComponentList() {
 
     if (selected_object_name.size() != 0) {
       ovis::SceneObject* selected_object = scene_.GetObject(selected_object_name);
-      
+
       ImGui::Text("%s", selected_object->name().c_str());
       ImGui::SameLine();
       if (ImGui::BeginCombo("##AddComponent", "Add Component", ImGuiComboFlags_NoArrowButton)) {

@@ -11,6 +11,7 @@ namespace ove {
 
 class SceneEditor : public AssetEditor {
   enum class State { STOPPED, PAUSED, RUNNING };
+  enum class RenamingState { IS_NOT_RENAMING, STARTED_RENAMING, IS_RENAMING };
 
  public:
   SceneEditor(const std::string& scene_asset);
@@ -32,7 +33,7 @@ class SceneEditor : public AssetEditor {
   void JsonFileChanged(const ovis::json& data, const std::string& file_type) override;
 
   State state_ = State::STOPPED;
-  
+
   std::unique_ptr<ovis::RenderTargetViewport> scene_viewport_;
   bool scene_window_focused_ = false;
 
@@ -44,6 +45,7 @@ class SceneEditor : public AssetEditor {
     std::string name;
     static const SelectedObject NONE;
   };
+  RenamingState renaming_state_ = RenamingState::IS_NOT_RENAMING;
 
   std::variant<SelectedScene, SelectedObject> selection_;
   std::vector<ovis::SceneObject*> cached_scene_objects_;
