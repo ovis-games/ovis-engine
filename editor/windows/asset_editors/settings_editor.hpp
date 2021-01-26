@@ -14,7 +14,9 @@ class SettingsEditor : public AssetEditor {
   void Save() override;
 
  private:
-  std::string startup_scene_ = " asd";
+  ovis::json settings_;
+
+  void JsonFileChanged(const ovis::json& data, const std::string& file_type) override;
 };
 
 }  // namespace ove

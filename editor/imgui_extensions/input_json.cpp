@@ -26,16 +26,22 @@ void DisplayTooltip(const ovis::json& schema) {
 
 }  // namespace
 
-bool InputJson(const char* label, ovis::json* value, const ovis::json& schema) {
+bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, int flags) {
   SDL_assert(value != nullptr);
   bool json_changed = false;
 
   if (schema.contains("type")) {
     const std::string type = schema["type"];
     if (type == "object") {
-      if (ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen)) {
-        DisplayTooltip(schema);
 
+      bool display_properties = true;
+
+      if ((flags & ImGuiInputJsonFlags_IgnoreEnclosingObject) == 0) {
+        display_properties = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
+        DisplayTooltip(schema);
+      }
+
+      if (display_properties) {
         const auto& properties = schema["properties"];
         if (properties.is_object()) {
           for (auto property = properties.begin(), end = properties.end(); property != end; ++property) {

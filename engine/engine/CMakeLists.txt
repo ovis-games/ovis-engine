@@ -15,6 +15,7 @@ add_library(
   include/ovis/engine/render_pass.hpp src/render_pass.cpp
   include/ovis/engine/lua.hpp src/lua.cpp
   include/ovis/engine/fetch.hpp src/fetch.cpp
+  include/ovis/engine/game_settings.hpp src/game_settings.cpp
 )
 add_library(ovis::engine ALIAS ovis-engine)
 
