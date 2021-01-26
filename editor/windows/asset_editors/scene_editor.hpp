@@ -19,7 +19,6 @@ class SceneEditor : public AssetEditor {
   bool ProcessEvent(const SDL_Event& event) override;
   // void DrawPropertyWindows() override;
   void Save() override;
-  ActionHistoryBase* GetActionHistory() override { return &action_history_; }
 
  private:
   void DrawContent() override;
@@ -30,13 +29,15 @@ class SceneEditor : public AssetEditor {
 
   void CreateSceneViewport();
 
+  void JsonFileChanged(const ovis::json& data, const std::string& file_type) override;
+
   State state_ = State::STOPPED;
+  
   std::unique_ptr<ovis::RenderTargetViewport> scene_viewport_;
+  bool scene_window_focused_ = false;
+
   ovis::Scene scene_;
   ovis::json serialized_scene_;
-  ActionHistory<ovis::Scene> action_history_;
-  bool is_renaming_ = false;
-  bool scene_window_focused_ = false;
 
   struct SelectedScene {};
   struct SelectedObject {

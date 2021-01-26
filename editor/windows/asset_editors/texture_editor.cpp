@@ -12,7 +12,7 @@
 
 namespace ove {
 
-TextureEditor::TextureEditor(const std::string& texture_id) : AssetEditor(texture_id), action_history_(this) {
+TextureEditor::TextureEditor(const std::string& texture_id) : AssetEditor(texture_id) {
   // texture_ = EditorWindow::instance()->resource_manager()->Load<ovis::Texture2D>()
   texture_ = ovis::LoadTexture2D(ovis::GetApplicationAssetLibrary(), texture_id, EditorWindow::instance()->context());
   description_ = texture_->description();

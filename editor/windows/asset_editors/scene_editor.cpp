@@ -12,136 +12,10 @@
 
 namespace ove {
 
-namespace {
-
-void CreateObject(ovis::Scene* scene, const ovis::json& data) {
-  SDL_assert(data.is_string());
-  SDL_assert(!scene->ContainsObject(data.get<std::string>()));
-  scene->CreateObject(data.get<std::string>());
-}
-
-void UndoCreateObject(ovis::Scene* scene, const ovis::json& data) {
-  SDL_assert(data.is_string());
-  SDL_assert(scene->ContainsObject(data.get<std::string>()));
-  scene->DeleteObject(data.get<std::string>());
-}
-
-void DeleteObject(ovis::Scene* scene, const ovis::json& data) {
-  SDL_assert(data.contains("name"));
-  SDL_assert(data["name"].is_string());
-  SDL_assert(data.contains("objects"));
-  SDL_assert(data["objects"].is_object());
-  SDL_assert(scene->ContainsObject(data["name"]));
-  SDL_assert(scene->GetObject(data["name"])->Serialize() == data["object"]);
-  scene->DeleteObject(data["name"]);
-}
-
-void UndoDeleteObject(ovis::Scene* scene, const ovis::json& data) {
-  SDL_assert(data.contains("name"));
-  SDL_assert(data["name"].is_string());
-  SDL_assert(data.contains("objects"));
-  SDL_assert(data["objects"].is_object());
-  SDL_assert(!scene->ContainsObject(data["name"]));
-  scene->CreateObject(data["name"], data["objects"]);
-}
-
-void RenameObject(ovis::Scene* scene, const ovis::json& data) {
-  SDL_assert(data.contains("old_name") && data["old_name"].is_string());
-  SDL_assert(data.contains("new_name") && data["new_name"].is_string());
-  SDL_assert(scene->ContainsObject(data["old_name"].get<std::string>()));
-  SDL_assert(!scene->ContainsObject(data["new_name"].get<std::string>()));
-
-  const std::string old_name = data["old_name"];
-  const std::string new_name = data["new_name"];
-
-  const auto serialized_object = scene->GetObject(old_name)->Serialize();
-  scene->DeleteObject(old_name);
-
-  scene->CreateObject(new_name, serialized_object);
-}
-
-void UndoRenameObject(ovis::Scene* scene, const ovis::json& data) {
-  SDL_assert(data.contains("old_name") && data["old_name"].is_string());
-  SDL_assert(data.contains("new_name") && data["new_name"].is_string());
-  SDL_assert(!scene->ContainsObject(data["old_name"].get<std::string>()));
-  SDL_assert(scene->ContainsObject(data["new_name"].get<std::string>()));
-
-  const std::string old_name = data["old_name"];
-  const std::string new_name = data["new_name"];
-
-  const auto serialized_object = scene->GetObject(new_name)->Serialize();
-  scene->DeleteObject(new_name);
-
-  scene->CreateObject(old_name, serialized_object);
-}
-
-void AddComponent(ovis::Scene* scene, const ovis::json& data) {
-  SDL_assert(data.contains("object_name"));
-  SDL_assert(data["object_name"].is_string());
-  SDL_assert(data.contains("component_id"));
-  SDL_assert(data["component_id"].is_string());
-  SDL_assert(scene->ContainsObject(data["object_name"]));
-  SDL_assert(!scene->GetObject(data["object_name"])->HasComponent(data["component_id"]));
-  scene->GetObject(data["object_name"])->AddComponent(data["component_id"]);
-}
-
-void UndoAddComponent(ovis::Scene* scene, const ovis::json& data) {
-  SDL_assert(data.contains("object_name"));
-  SDL_assert(data["object_name"].is_string());
-  SDL_assert(data.contains("component_id"));
-  SDL_assert(data["component_id"].is_string());
-  SDL_assert(scene->ContainsObject(data["object_name"]));
-  SDL_assert(scene->GetObject(data["object_name"])->HasComponent(data["component_id"]));
-  scene->GetObject(data["object_name"])->RemoveComponent(data["component_id"]);
-}
-
-void ChangeComponent(ovis::Scene* scene, const ovis::json& data) {
-  SDL_assert(data.contains("object_name"));
-  SDL_assert(data["object_name"].is_string());
-  SDL_assert(data.contains("component_id"));
-  SDL_assert(data["component_id"].is_string());
-  SDL_assert(data.contains("before"));
-  SDL_assert(data.contains("after"));
-  SDL_assert(scene->ContainsObject(data["object_name"]));
-  SDL_assert(scene->GetObject(data["object_name"])->HasComponent(data["component_id"]));
-  scene->GetObject(data["object_name"])->GetComponent(data["component_id"])->Deserialize(data["after"]);
-}
-
-void UndoChangeComponent(ovis::Scene* scene, const ovis::json& data) {
-  SDL_assert(data.contains("object_name"));
-  SDL_assert(data["object_name"].is_string());
-  SDL_assert(data.contains("component_id"));
-  SDL_assert(data["component_id"].is_string());
-  SDL_assert(data.contains("before"));
-  SDL_assert(data.contains("after"));
-  SDL_assert(scene->ContainsObject(data["object_name"]));
-  SDL_assert(scene->GetObject(data["object_name"])->HasComponent(data["component_id"]));
-  scene->GetObject(data["object_name"])->GetComponent(data["component_id"])->Deserialize(data["before"]);
-}
-
-}  // namespace
-
 const SceneEditor::SelectedObject SceneEditor::SelectedObject::NONE = {""};
 
-SceneEditor::SceneEditor(const std::string& scene_asset) : AssetEditor(scene_asset), action_history_(&scene_) {
-  action_history_.RegisterAction("CreateObject", &CreateObject, &UndoCreateObject);
-  action_history_.RegisterAction("DeleteObject", &DeleteObject, &UndoDeleteObject);
-  action_history_.RegisterAction("RenameObject", &RenameObject, &UndoRenameObject);
-  action_history_.RegisterAction("AddComponent", &AddComponent, &UndoAddComponent);
-  action_history_.RegisterAction("ChangeComponent", &ChangeComponent, &UndoChangeComponent);
-
-  const std::optional<std::string> serialized_scene = LoadTextFile("json");
-  if (serialized_scene) {
-    try {
-      serialized_scene_ = ovis::json::parse(*serialized_scene);
-      scene_.Deserialize(serialized_scene_);
-    } catch (const ovis::json::exception& exception) {
-      ovis::LogE("Failed to parse scene file: {}", exception.what());
-    }
-  } else {
-    ovis::LogE("Could not load scene asset: {}", asset_id());
-  }
-
+SceneEditor::SceneEditor(const std::string& scene_asset) : AssetEditor(scene_asset) {
+  SetupJsonFile(scene_.Serialize());
   CreateSceneViewport();
   scene_viewport_->AddRenderPass("SpriteRenderer");
   scene_viewport_->SetScene(&scene_);
@@ -210,21 +84,13 @@ void SceneEditor::DrawInspectorContent() {
     scene_changed = true;
   }
   if (scene_changed) {
-    const ovis::json updated_serialized_scene = scene_.Serialize();
-    const ovis::json diff = ovis::json::diff(serialized_scene_, updated_serialized_scene);
-    const ovis::json reverse_diff = ovis::json::diff(updated_serialized_scene, serialized_scene_);
-    ovis::LogD("Scene patch: {}", diff.dump());
-    ovis::LogD("Scene undo patch: {}", reverse_diff.dump());
-    serialized_scene_ = updated_serialized_scene;
+    serialized_scene_ = scene_.Serialize();
+    SubmitJsonFile(serialized_scene_);
   }
 }
 
 void SceneEditor::Save() {
-  if (state_ == State::STOPPED) {
-    SaveFile("json", scene_.Serialize().dump());
-  } else {
-    SaveFile("json", serialized_scene_.dump());
-  }
+  SaveFile("json", serialized_scene_.dump());
 }
 
 bool SceneEditor::DrawObjectList() {
@@ -269,62 +135,6 @@ bool SceneEditor::DrawObjectList() {
   ImGui::EndChild();
 
   return scene_changed;
-
-  // for (ovis::SceneObject* object : scene_.GetObjects(true)) {
-  //   bool item_selected = selected_ == object->name();
-  //   if (item_selected && is_renaming_) {
-  //     char buffer[512];
-  //     strcpy(buffer, object->name().c_str());
-  //     if (ImGui::InputText(("###" + object->name()).c_str(), buffer, 512,
-  //                          ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
-  //       if (!scene_.ContainsObject(buffer)) {
-  //         is_renaming_ = false;
-  //         action_history_.Do("RenameObject", {{"old_name", object->name()}, {"new_name", buffer}},
-  //                            "Rename object {} to {}", object->name(), buffer);
-  //         selected_ = buffer;
-  //       } else {
-  //         // Object already exists or old and new names are the same
-  //         ovis::LogI("The object '{}' does already exist", buffer);
-  //       }
-  //     }
-
-  //     if (ImGui::IsItemDeactivated()) {
-  //       is_renaming_ = false;
-  //     }
-  //     ImGui::SetKeyboardFocusHere(0);
-  //   } else {
-  //     if (ImGui::Selectable(object->name().c_str(), &item_selected)) {
-  //       selected_ = object->name();
-  //     }
-  //     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-  //       is_renaming_ = true;
-  //     }
-  //   }
-  // }
-
-  // ImGui::BeginChild("SceneDocumentButtons");
-
-  // if (ImGui::Button("Add")) {
-  //   std::string object_name = "NewObject";
-
-  //   for (int i = 2; scene_.ContainsObject(object_name); object_name = "NewObject" + std::to_string(i), ++i)
-  //     ;
-
-  //   action_history_.Do("CreateObject", object_name, "Create object {}", object_name);
-  //   selected_ = object_name;
-  //   is_renaming_ = true;
-  // }
-  // ImGui::SameLine();
-
-  // if (ImGui::Button("Remove")) {
-  //   if (scene_.ContainsObject(selected_)) {
-  //     action_history_.Do("ChangeObject", {{"before", scene_.GetObject(selected_)->Serialize()}}, "Delete object {}",
-  //                        selected_);
-  //     selected_ = "";
-  //     is_renaming_ = false;
-  //   }
-  // }
-  // ImGui::EndChild();
 }
 
 bool SceneEditor::DrawObjectComponentList() {
@@ -344,10 +154,8 @@ bool SceneEditor::DrawObjectComponentList() {
         for (const auto& component_id : ovis::SceneObjectComponent::GetRegisteredComponents()) {
           if (!selected_object->HasComponent(component_id)) {
             if (ImGui::Selectable(component_id.c_str())) {
+              selected_object->AddComponent(component_id);
               object_changed = true;
-              action_history_.Do("AddComponent",
-                                 {{"object_name", selected_object->name()}, {"component_id", component_id}},
-                                 "Add component {} to {}", component_id, selected_object->name());
             }
           }
         }
@@ -355,19 +163,10 @@ bool SceneEditor::DrawObjectComponentList() {
       }
 
       ImGui::BeginChild("Components", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true);
+      // TODO: iterate over json object and not the serialize the components on every frame
       for (const auto& component_id : selected_object->GetComponentIds()) {
         ovis::Serializable* component = selected_object->GetComponent(component_id);
-
-        const auto before = component->Serialize();  // TODO: this is aweful
         if (ImGui::InputSerializable(component_id.c_str(), component)) {
-          const auto after = component->Serialize();
-          action_history_.Do("ChangeComponent",
-                             {{"object_name", selected_object->name()},
-                              {"component_id", component_id},
-                              {"before", before},
-                              {"after", after}},
-                             "Change property in component {} of {}", component_id, selected_object->name());
-
           object_changed = true;
         }
       }
@@ -383,29 +182,7 @@ bool SceneEditor::DrawObjectComponentList() {
   ImGui::EndChild();
 
   return object_changed;
-}  // namespace ove
-
-// void SceneEditor::DrawSceneProperties() {
-//   bool scene_changed = false;
-
-//   if (ImGui::Begin("Scene Properties")) {
-//     if (ImGui::CollapsingHeader("Controllers", ImGuiTreeNodeFlags_DefaultOpen)) {
-//       for (const auto& controller : ovis::GetApplicationAssetLibrary()->GetAssetsWithType("scene_controller")) {
-//         bool has_controller = scene_.GetController(controller) != nullptr;
-//         if (ImGui::Checkbox(controller.c_str(), &has_controller)) {
-//           if (has_controller) {
-//             scene_.AddController(controller);
-//           } else {
-//             scene_.RemoveController(controller);
-//           }
-//         }
-//       }
-//     }
-//   }
-//   ImGui::End();
-
-//   return false;
-// }
+}
 
 void SceneEditor::CreateSceneViewport() {
   ovis::RenderTargetViewportDescription scene_viewport_description;
@@ -416,6 +193,13 @@ void SceneEditor::CreateSceneViewport() {
   scene_viewport_description.color_description.texture_description.mip_map_count = 0;
   scene_viewport_ = std::make_unique<ovis::RenderTargetViewport>(
       EditorWindow::instance()->context(), EditorWindow::instance()->resource_manager(), scene_viewport_description);
+}
+
+void SceneEditor::JsonFileChanged(const ovis::json& data, const std::string& file_type) {
+  if (file_type == "json") {
+    serialized_scene_ = data;
+    scene_.Deserialize(serialized_scene_);
+  }
 }
 
 }  // namespace ove

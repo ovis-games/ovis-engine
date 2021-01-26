@@ -51,12 +51,12 @@ void Toolbar::DrawContent() {
     Undo();
   }
   if (ImGui::IsItemHovered()) {
-    std::string undo_description = "Nothing to undo";
     if (AssetEditor::last_focused_document_window != nullptr &&
-        AssetEditor::last_focused_document_window->GetActionHistory()->undo_possible()) {
-      undo_description = AssetEditor::last_focused_document_window->GetActionHistory()->undo_description();
+        AssetEditor::last_focused_document_window->CanUndo()) {
+      ImGui::SetTooltip("Undo");
+    } else {
+      ImGui::SetTooltip("Nothing to undo");
     }
-    ImGui::SetTooltip("Undo: %s", undo_description.c_str());
   }
 
   ImGui::SameLine();
@@ -64,12 +64,12 @@ void Toolbar::DrawContent() {
     Redo();
   }
   if (ImGui::IsItemHovered()) {
-    std::string redo_description = "Nothing to redo";
     if (AssetEditor::last_focused_document_window != nullptr &&
-        AssetEditor::last_focused_document_window->GetActionHistory()->redo_possible()) {
-      redo_description = AssetEditor::last_focused_document_window->GetActionHistory()->redo_description();
+        AssetEditor::last_focused_document_window->CanRedo()) {
+      ImGui::SetTooltip("Redo");
+    } else {
+      ImGui::SetTooltip("Nothing to redo");
     }
-    ImGui::SetTooltip("Redo: %s", redo_description.c_str());
   }
 
   ImGui::SameLine();
@@ -126,13 +126,13 @@ void Toolbar::Save() {
 
 void Toolbar::Undo() {
   if (AssetEditor::last_focused_document_window != nullptr) {
-    AssetEditor::last_focused_document_window->GetActionHistory()->Undo();
+    AssetEditor::last_focused_document_window->Undo();
   }
 }
 
 void Toolbar::Redo() {
   if (AssetEditor::last_focused_document_window != nullptr) {
-    AssetEditor::last_focused_document_window->GetActionHistory()->Redo();
+    AssetEditor::last_focused_document_window->Redo();
   }
 }
 

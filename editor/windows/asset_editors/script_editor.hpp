@@ -19,14 +19,16 @@ class ScriptEditor : public AssetEditor {
 
   void DrawContent() override;
   void Save() override;
-  ActionHistoryBase* GetActionHistory() override { return &action_history_; }
+  bool CanUndo() const override { return editor_.CanUndo(); }
+  void Undo() override { editor_.Undo(); }
+  bool CanRedo() const override { return editor_.CanRedo(); }
+  void Redo() override { editor_.Redo(); }
 
   void ClearErrors() { SetErrors({}); }
   void SetErrors(const std::vector<LuaError>& errors);
 
  private:
   TextEditor editor_;
-  ActionHistory<ScriptEditor> action_history_;
 };
 
 }  // namespace ove

@@ -24,7 +24,7 @@ std::vector<LuaError> ParseLuaErrorMessage(const std::string& error_message) {
   return errors;
 }
 
-ScriptEditor::ScriptEditor(const std::string& script_id) : AssetEditor(script_id), action_history_(this) {
+ScriptEditor::ScriptEditor(const std::string& script_id) : AssetEditor(script_id) {
   auto lang = TextEditor::LanguageDefinition::Lua();
 
   editor_.SetLanguageDefinition(lang);

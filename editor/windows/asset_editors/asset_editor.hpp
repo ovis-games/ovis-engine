@@ -29,18 +29,35 @@ class AssetEditor : public UiWindow {
 
   virtual void DrawInspectorContent() {}
   virtual void Save() = 0;
-  virtual ActionHistoryBase* GetActionHistory() = 0;
+
+  virtual bool CanUndo() const { return current_undo_redo_position_ != changes_.begin(); }
+  virtual void Undo();
+  virtual bool CanRedo() const { return current_undo_redo_position_ != changes_.end();; }
+  virtual void Redo();
 
   void DrawImGui() override;
   static AssetEditor* last_focused_document_window;
-  
+
   static const std::string GetAssetEditorId(const std::string& asset_id);
 
+ protected:
+  void SetupJsonFile(const ovis::json& default_data, const std::string& file_type = "json");
+  void SubmitJsonFile(const ovis::json& data, const std::string& file_type = "json");
+  virtual void JsonFileChanged(const ovis::json& data, const std::string& file_type) {}
+
  private:
+
   std::string asset_id_;
-  bool is_focused_ = false;
-  bool first_frame_ = true;
-  bool keep_open_ = true;
+
+  struct JsonFileChange {
+    std::string file_type;
+    ovis::json undo_patch;
+    ovis::json redo_patch;
+  };
+  using FileChange = std::variant<JsonFileChange>;
+  std::vector<FileChange> changes_;
+  std::vector<FileChange>::iterator current_undo_redo_position_;
+  std::map<std::string, ovis::json> json_files_;
 };
 
 }  // namespace ove

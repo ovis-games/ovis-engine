@@ -4,7 +4,7 @@
 
 namespace ove {
 
-SettingsEditor::SettingsEditor(const std::string& settings_id) : AssetEditor(settings_id), action_history_(this) {
+SettingsEditor::SettingsEditor(const std::string& settings_id) : AssetEditor(settings_id) {
 }
 
 void SettingsEditor::DrawContent() {
