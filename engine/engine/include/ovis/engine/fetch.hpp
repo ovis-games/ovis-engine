@@ -12,6 +12,12 @@ namespace ovis {
 
 enum class RequestMethod { GET, HEAD, POST, PUT, DELETE, CONNECT, OPTIONS, TRACE, PATCH };
 
+struct FetchProgress {
+  uint64_t num_bytes;
+  uint64_t data_offset;
+  uint64_t total_bytes;
+};
+
 struct FetchOptions {
   RequestMethod method = RequestMethod::GET;
   std::map<std::string, std::string> headers;
@@ -19,7 +25,7 @@ struct FetchOptions {
 
   using SuccessCallback = std::function<void()>;
   using ErrorCallback = std::function<void()>;
-  using ProgressCallback = std::function<void()>;
+  using ProgressCallback = std::function<void(const FetchProgress&)>;
   using ReadyStateChangeCallback = std::function<void()>;
 
   SuccessCallback on_success;

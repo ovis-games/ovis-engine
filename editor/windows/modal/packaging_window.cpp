@@ -51,8 +51,9 @@ void PackagingWindow::DrawConfiguration() {
         ovis::LogE("Failed to upload package");
         Remove();
       };
-      options.on_progress = []() {
+      options.on_progress = [](const ovis::FetchProgress& progress) {
         ovis::LogD("File upload progress!!");
+        // TODO: update loading bar (if possible?)
       };
       Fetch(url, options, std::move(*package));
     } else {

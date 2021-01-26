@@ -41,7 +41,11 @@ struct FetchContext {
   static void OnProgress(emscripten_fetch_t* fetch) {
     FetchContext* context = reinterpret_cast<FetchContext*>(fetch->userData);
     if (context->on_progress) {
-      context->on_progress();
+      FetchProgress progress;
+      progress.num_bytes = fetch->numBytes;
+      progress.data_offset = fetch->dataOffset;
+      progress.total_bytes = fetch->totalBytes;
+      context->on_progress(progress);
     }
   }
 
@@ -68,6 +72,8 @@ void Fetch(const std::string& url, const FetchOptions& options, Blob body) {
   emscripten_fetch_attr_t attr;
   emscripten_fetch_attr_init(&attr);
   strcpy(attr.requestMethod, MethodStrings[static_cast<int>(options.method)]);
+
+  attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
 
   attr.onsuccess = &FetchContext::OnSuccess;
   attr.onerror = &FetchContext::OnError;
