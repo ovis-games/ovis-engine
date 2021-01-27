@@ -14,6 +14,7 @@ target_compile_options(
   ovis-player
   PUBLIC
   "SHELL:-s FETCH=1"
+  "SHELL:-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0"
 )
 target_link_options(
   ovis-player
@@ -22,7 +23,7 @@ target_link_options(
     "SHELL:-s FORCE_FILESYSTEM=1"
     "SHELL:-s MODULARIZE=1"
     "SHELL:-s ALLOW_MEMORY_GROWTH=1"
-    "SHELL:-s EXPORT_NAME=createEditorModule"
+    "SHELL:-s EXPORT_NAME=createPlayerModule"
     "SHELL:-s EXTRA_EXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap']"
     "--preload-file ${CMAKE_BINARY_DIR}/assets@/ovis_assets"
 )

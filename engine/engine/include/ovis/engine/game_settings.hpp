@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <ovis/core/json.hpp>
 
 namespace ovis
@@ -13,5 +14,7 @@ struct GameSettings {
 
 void to_json(json& data, const GameSettings& settings);
 void from_json(const json& data, GameSettings& settings);
+
+std::optional<GameSettings> LoadGameSettings(const std::string& asset_id = "GameSettings");
 
 } // namespace ovis

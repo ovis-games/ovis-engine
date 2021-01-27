@@ -43,11 +43,11 @@ void PackagingWindow::DrawConfiguration() {
       ovis::FetchOptions options;
       options.method = ovis::RequestMethod::PUT;
       options.headers["Content-Type"] = "application/octet-stream";
-      options.on_success = [this]() {
+      options.on_success = [this](const ovis::FetchResponse&) {
         ovis::LogI("Successfully uploaded package.");
         Remove();
       };
-      options.on_error = [this]() {
+      options.on_error = [this](const ovis::FetchResponse&) {
         ovis::LogE("Failed to upload package");
         Remove();
       };

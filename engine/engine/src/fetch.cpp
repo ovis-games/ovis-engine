@@ -23,7 +23,11 @@ struct FetchContext {
   static void OnSuccess(emscripten_fetch_t* fetch) {
     FetchContext* context = reinterpret_cast<FetchContext*>(fetch->userData);
     if (context->on_success) {
-      context->on_success();
+      FetchResponse response;
+      response.status_code = fetch->status;
+      response.body = fetch->data;
+      response.content_length = fetch->totalBytes;
+      context->on_success(response);
     }
     delete context;
     emscripten_fetch_close(fetch);
@@ -32,7 +36,11 @@ struct FetchContext {
   static void OnError(emscripten_fetch_t* fetch) {
     FetchContext* context = reinterpret_cast<FetchContext*>(fetch->userData);
     if (context->on_error) {
-      context->on_error();
+      FetchResponse response;
+      response.status_code = fetch->status;
+      response.body = fetch->data;
+      response.content_length = fetch->totalBytes;
+      context->on_error(response);
     }
     delete context;
     emscripten_fetch_close(fetch);

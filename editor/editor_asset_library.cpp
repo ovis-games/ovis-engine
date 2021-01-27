@@ -182,12 +182,12 @@ void EditorAssetLibrary::UploadNextFile() {
       ovis::FetchOptions options;
       options.method = ovis::RequestMethod::PUT;
       options.headers["Content-Type"] = "application/octet-stream";
-      options.on_success = [this, filename]() {
+      options.on_success = [this, filename](const ovis::FetchResponse&) {
         ovis::LogI("Successfully uploaded '{}'", filename);
         is_currently_uploading_ = false;
         UploadNextFile();
       };
-      options.on_error = [this, filename]() {
+      options.on_error = [this, filename](const ovis::FetchResponse&) {
         ovis::LogE("Failed to upload '{}'", filename);
         is_currently_uploading_ = false;
         UploadNextFile();
