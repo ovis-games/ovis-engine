@@ -5,6 +5,26 @@
 
 namespace ovis {
 
+void to_json(json& data, const ProjectionType& projection_type) {
+  if (projection_type == ProjectionType::ORTHOGRAPHIC) {
+    data = "Orthographic";
+  } else if (projection_type == ProjectionType::PERSPECTIVE) {
+    data = "Perspective";
+  } else {
+    SDL_assert(false && "Invalid projection type");
+  }
+}
+
+void from_json(const json& data, ProjectionType& projection_type) {
+  if (data == "Orthographic") {
+    projection_type = ProjectionType::ORTHOGRAPHIC;
+  } else if (data == "Perspective") {
+    projection_type = ProjectionType::PERSPECTIVE;
+  } else {
+    SDL_assert(false && "Invalid projection type");
+  }
+}
+
 glm::mat4 Camera::CalculateProjectionMatrix() const {
   switch (projection_type_) {
     case ProjectionType::ORTHOGRAPHIC: {
@@ -25,6 +45,26 @@ glm::mat4 Camera::CalculateProjectionMatrix() const {
 
 glm::mat4 Camera::CalculateViewProjectionMatrix() const {
   return CalculateProjectionMatrix() * transform_.CalculateInverseMatrix();
+}
+
+void to_json(json& data, const Camera& camera) {
+// clang-format off
+  data = json{
+    {"projectionType", camera.projection_type()},
+    {"verticalFieldOfView", camera.vertical_field_of_view()},
+    {"aspectRatio", camera.aspect_ratio()},
+    {"nearClipPlane", camera.near_clip_plane()},
+    {"farClipPlane", camera.far_clip_plane()}
+  };
+// clang-format on
+}
+
+void from_json(const json& data, Camera& camera) {
+  camera.SetProjectionType(data.at("projectionType"));
+  camera.SetVerticalFieldOfView(data.at("verticalFieldOfView"));
+  camera.SetAspectRadio(data.at("aspectRatio"));
+  camera.SetNearClipPlane(data.at("nearClipPlane"));
+  camera.SetFarClipPlane(data.at("farClipPlane"));
 }
 
 }  // namespace ovis

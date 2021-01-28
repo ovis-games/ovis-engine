@@ -1,6 +1,6 @@
 #include "input_json.hpp"
-#include "input_asset.hpp"
 
+#include "input_asset.hpp"
 #include <string>
 
 #include <SDL2/SDL_assert.h>
@@ -24,9 +24,7 @@ void DisplayTooltip(const ovis::json& schema) {
   }
 }
 
-}  // namespace
-
-bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, int flags) {
+bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, int flags, int depth) {
   SDL_assert(value != nullptr);
   bool json_changed = false;
 
@@ -49,15 +47,19 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
     ovis::json referenced_schema = referenced_schema_file->at(ovis::json::json_pointer(schema_reference_pointer));
     // TODO: patch referenced_schema with values overriden in 'schema' variable
 
-    json_changed = InputJson(label, value, referenced_schema, flags);
-  }
-  else if (schema.contains("type")) {
+    json_changed = InputJson(label, value, referenced_schema, flags, depth);
+  } else if (schema.contains("type")) {
     const std::string type = schema["type"];
     if (type == "object") {
-
       bool display_properties = true;
+      bool pushed = false;
 
       if ((flags & ImGuiInputJsonFlags_IgnoreEnclosingObject) == 0) {
+        if (depth > 0) {
+          ImGui::TreePush(label);
+          pushed = true;
+        }
+
         display_properties = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
         DisplayTooltip(schema);
       }
@@ -67,7 +69,8 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
         if (properties.is_object()) {
           for (auto property = properties.begin(), end = properties.end(); property != end; ++property) {
             try {
-              if (InputJson(property.key().c_str(), &value->at(property.key()), property.value())) {
+              const int new_depth = flags & ImGuiInputJsonFlags_IgnoreEnclosingObject ? depth : depth + 1;
+              if (InputJson(property.key().c_str(), &value->at(property.key()), property.value(), flags & (~ImGuiInputJsonFlags_IgnoreEnclosingObject), new_depth)) {
                 json_changed = true;
               }
             } catch (...) {
@@ -79,6 +82,10 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
         }
       } else {
         DisplayTooltip(schema);
+      }
+
+      if (pushed) {
+        ImGui::TreePop();
       }
     } else if (type == "number") {
       float object = *value;
@@ -115,8 +122,9 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
         json_changed = true;
       }
       DisplayTooltip(schema);
-    } else if (type.size() > 7 && strncmp(type.c_str(), "asset<", 5) == 0 && type.back() == '>') { // 7 = strlen("asset<>"")
-      const std::string asset_type = type.substr(6, type.size()-7);
+    } else if (type.size() > 7 && strncmp(type.c_str(), "asset<", 5) == 0 &&
+               type.back() == '>') {  // 7 = strlen("asset<>"")
+      const std::string asset_type = type.substr(6, type.size() - 7);
       std::string asset_id = *value;
       if (InputAsset(label, &asset_id, asset_type)) {
         *value = asset_id;
@@ -127,6 +135,12 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
   }
 
   return json_changed;
+}
+
+}  // namespace
+
+bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, int flags) {
+  return InputJson(label, value, schema, flags, 0);
 }
 
 }  // namespace ImGui

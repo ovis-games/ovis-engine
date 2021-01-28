@@ -18,6 +18,8 @@
 
 namespace ovis {
 
+const json Scene::schema_ = {{"$ref", "engine#/$defs/scene"}};
+
 Scene::Scene() {}
 
 Scene::~Scene() {}
@@ -236,13 +238,15 @@ json Scene::Serialize() const {
     objects[object.first] = object.second->Serialize();
   }
 
+  serialized_object["camera"] = camera_;
+
   return serialized_object;
 }
 
-void Scene::Deserialize(const json& serialized_object) {
+bool Scene::Deserialize(const json& serialized_object) {
   if (!serialized_object.contains("version") || serialized_object["version"] != "0.1") {
     ovis::LogE("Invalid scene object. Version must be 0.1!");
-    return;
+    return false;
   }
 
   ClearControllers();
@@ -263,6 +267,12 @@ void Scene::Deserialize(const json& serialized_object) {
       CreateObject(object.key(), object.value());
     }
   }
+
+  if (serialized_object.contains("camera")) {
+    camera_ = serialized_object["camera"];
+  }
+
+  return true;
 }
 
 void Scene::InvalidateControllerOrder() {

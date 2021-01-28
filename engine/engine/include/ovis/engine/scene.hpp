@@ -14,6 +14,7 @@
 #include <ovis/core/json.hpp>
 #include <ovis/engine/camera.hpp>
 #include <ovis/engine/scene_object.hpp>
+#include <ovis/core/serialize.hpp>
 
 namespace ovis {
 
@@ -23,7 +24,7 @@ class GraphicsContext;
 class ResourceManager;
 class Window;
 
-class Scene {
+class Scene : public Serializable {
   friend class SceneController;
   friend class SceneObject;
 
@@ -86,8 +87,9 @@ class Scene {
 
   void DrawImGui();
 
-  json Serialize() const;
-  void Deserialize(const json& serialized_object);
+  json Serialize() const override;
+  bool Deserialize(const json& serialized_object) override;
+  const json* GetSchema() const override { return &schema_; }
 
  private:
   void InvalidateControllerOrder();
@@ -107,6 +109,8 @@ class Scene {
   ResourceManager* resource_manager_;
   Camera camera_;
   bool is_playing_ = false;
+
+  static const json schema_;
 };
 
 }  // namespace ovis

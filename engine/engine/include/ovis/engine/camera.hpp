@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ovis/math/transform.hpp>
+#include <ovis/core/json.hpp>
 
 namespace ovis {
 
@@ -8,6 +9,9 @@ enum class ProjectionType {
   ORTHOGRAPHIC,
   PERSPECTIVE,
 };
+
+void to_json(json& data, const ProjectionType& projection_type);
+void from_json(const json& data, ProjectionType& projection_type);
 
 class Camera {
  public:
@@ -43,5 +47,8 @@ class Camera {
   float near_clip_plane_ = 0.1f;
   float far_clip_plane_ = 1000.0f;
 };
+
+void to_json(json& data, const Camera& camera);
+void from_json(const json& data, Camera& camera);
 
 }  // namespace ovis

@@ -40,15 +40,7 @@ void SpriteRenderer::CreateResources() {
 }
 
 void SpriteRenderer::Render(Scene* scene) {
-  scene->camera().SetProjectionType(ProjectionType::ORTHOGRAPHIC);
-  scene->camera().SetNearClipPlane(0.0f);
-  scene->camera().SetNearClipPlane(1.0f);
-  scene->camera().SetVerticalFieldOfView(100.0f);
-  scene->camera().SetAspectRadio(1.0f);
-
-  // const glm::mat4 projection_matrix = scene->camera().CalculateProjectionMatrix();
-  // LogV("{}", glm::to_string(projection_matrix));
-  const glm::mat4 projection_matrix = glm::scale(glm::vec3(1.0f / 512, 1.0f / 512, 1.0f));
+  const glm::mat4 projection_matrix = scene->camera().CalculateProjectionMatrix();
 
   DrawItem draw_item;
   draw_item.shader_program = shader_program_.get();

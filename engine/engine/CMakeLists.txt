@@ -19,6 +19,12 @@ add_library(
 )
 add_library(ovis::engine ALIAS ovis-engine)
 
+add_custom_command(
+  TARGET ovis-engine
+  PRE_LINK
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
+)
+
 target_include_directories(
   ovis-engine
   PUBLIC

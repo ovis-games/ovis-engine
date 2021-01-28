@@ -215,7 +215,11 @@ bool SceneEditor::DrawObjectComponentList() {
 
       ImGui::EndChild();
     } else {
-      ImGui::Text("Select an object in the scene to display its components.");
+      if (ImGui::InputJson("Scene", &serialized_scene_, *scene_.GetSchema(), ImGuiInputJsonFlags_IgnoreEnclosingObject)) {
+        // TODO: move to appropriate function and use serialized scene and do not re-serialze each frame
+        scene_.Deserialize(serialized_scene_);
+        object_changed = true;
+      }
     }
   }
   ImGui::EndChild();
