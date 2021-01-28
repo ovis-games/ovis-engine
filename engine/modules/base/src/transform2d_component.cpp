@@ -5,27 +5,7 @@
 
 namespace ovis {
 
-// clang-format off
-const json Transform2DComponent::schema = {
-  {"title", "Transform2D"},
-  {"type", "object"},
-  {"description", "Represents the transformation of an object in a 2D space."},
-  {"properties", {
-    {"Position", {
-      {"type", "vector2"},
-      {"description", "The position of the object."},
-    }},
-    {"Rotation", {
-      {"type", "number"},
-      {"description", "The rotation of the object in radians."},
-    }},
-    {"Scale", {
-      {"type", "vector2"},
-      {"description", "The scaling of the object."},
-    }}
-  }}
-};
-// clang-format on
+const json Transform2DComponent::schema = {{"$ref", "base#/$defs/transform2d"}};
 
 json Transform2DComponent::Serialize() const {
   return {{"Position", glm::vec2(transform_.translation())},

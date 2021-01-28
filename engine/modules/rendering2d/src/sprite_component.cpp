@@ -5,26 +5,8 @@
 
 namespace ovis {
 
-// clang-format off
-const json SpriteComponent::schema = {
-  {"title", "Sprite"},
-  {"type", "object"},
-  {"properties", {
-    {"Size", {
-      {"type", "vector2"},
-      {"description", "The size of the sprite."},
-    }},
-    {"Color", {
-      {"type", "color"},
-      {"description", "The color of the sprite."},
-    }},
-    {"Texture", {
-      {"type", "asset<texture2d>"},
-      {"description", "A texture that will be displayed on the sprite."},
-    }}
-  }}
-};
-// clang-format on
+
+const json SpriteComponent::schema = {{"$ref", "rendering2d#/$defs/sprite"}};
 
 json SpriteComponent::Serialize() const {
   return {{"Size", size_},

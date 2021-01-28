@@ -2,6 +2,7 @@
 add_library(
   ovis-core
   
+  include/ovis/core/json.hpp src/json.cpp
   include/ovis/core/asset_library.hpp src/asset_library.cpp
   include/ovis/core/array_view.hpp
   include/ovis/core/class.hpp
