@@ -234,7 +234,7 @@ void SceneEditor::CreateSceneViewport() {
   ovis::RenderTargetViewportDescription scene_viewport_description;
   scene_viewport_description.color_description.texture_description.width = 512;
   scene_viewport_description.color_description.texture_description.height = 512;
-  scene_viewport_description.color_description.texture_description.format = ovis::TextureFormat::RGBA_UINT8;
+  scene_viewport_description.color_description.texture_description.format = ovis::TextureFormat::RGB_UINT8;
   scene_viewport_description.color_description.texture_description.filter = ovis::TextureFilter::POINT;
   scene_viewport_description.color_description.texture_description.mip_map_count = 0;
   scene_viewport_ = std::make_unique<ovis::RenderTargetViewport>(
