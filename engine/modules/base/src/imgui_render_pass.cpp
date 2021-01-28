@@ -10,7 +10,9 @@
 
 namespace ovis {
 
-ImGuiRenderPass::ImGuiRenderPass(ImGuiContext* context) : ovis::RenderPass("ImGui"), context_(context) {}
+ImGuiRenderPass::ImGuiRenderPass(ImGuiContext* context) : ovis::RenderPass("ImGui"), context_(context) {
+  RenderAfter("Clear");
+}
 
 ImGuiRenderPass::~ImGuiRenderPass() {}
 

@@ -1,7 +1,9 @@
 #include <ovis/base/base_module.hpp>
+#include <ovis/base/clear_render_pass.hpp>
 #include <ovis/base/imgui_render_pass.hpp>
 #include <ovis/base/imgui_scene_controller.hpp>
 #include <ovis/base/transform2d_component.hpp>
+
 #include <ovis/engine/lua.hpp>
 
 namespace ovis {
@@ -54,6 +56,7 @@ BaseModule::BaseModule() : Module("BaseModule") {
   io.KeyMap[ImGuiKey_Y] = SDL_SCANCODE_Y;
   io.KeyMap[ImGuiKey_Z] = SDL_SCANCODE_Z;
 
+  RegisterRenderPass("Clear", [this](Viewport*) { return std::make_unique<ClearRenderPass>(); });
   RegisterRenderPass("ImGui", [this](Viewport*) { return std::make_unique<ImGuiRenderPass>(context_); });
   RegisterSceneController("ImGui", [this](Scene*) { return std::make_unique<ImGuiSceneController>(context_); });
   RegisterSceneObjectComponent<Transform2DComponent>(

@@ -18,6 +18,7 @@ const SceneEditor::SelectedObject SceneEditor::SelectedObject::NONE = {""};
 SceneEditor::SceneEditor(const std::string& scene_asset) : AssetEditor(scene_asset) {
   SetupJsonFile(scene_.Serialize());
   CreateSceneViewport();
+  scene_viewport_->AddRenderPass("Clear");
   scene_viewport_->AddRenderPass("SpriteRenderer");
   scene_viewport_->SetScene(&scene_);
 
@@ -67,11 +68,13 @@ void SceneEditor::DrawContent() {
     state_ = State::STOPPED;
   }
 
-  ImVec4 border_color(0, 0, 0, 0);
+  ImVec4 border_color(0, 0, 0, 1);
   if (state_ == State::RUNNING) {
     border_color = ImGui::GetStyle().Colors[ImGuiCol_NavHighlight];
   }
-  ImGui::Image(scene_viewport_->color_texture()->texture(), {512, 512}, ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1),
+  ImVec2 available_space = ImGui::GetContentRegionAvail();
+  available_space.y -= 2;
+  ImGui::Image(scene_viewport_->color_texture()->texture(), available_space, ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1),
                border_color);
   scene_window_focused_ = ImGui::IsWindowFocused();
 }

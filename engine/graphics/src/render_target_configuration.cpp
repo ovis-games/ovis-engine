@@ -52,6 +52,7 @@ void RenderTargetConfiguration::ClearColor(size_t color_attachment_index, const 
   }
   Bind();
 #if OVIS_EMSCRIPTEN
+  SDL_assert(color_attachment_index == 0);
   glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
   glClear(GL_COLOR_BUFFER_BIT);
 #else
