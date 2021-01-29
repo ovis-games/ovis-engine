@@ -21,7 +21,7 @@ class Camera {
   inline void SetVerticalFieldOfView(float vertical_field_of_view) { vertical_field_of_view_ = vertical_field_of_view; }
   inline float vertical_field_of_view() const { return vertical_field_of_view_; }
 
-  inline void SetAspectRadio(float aspect_ratio) { aspect_ratio_ = aspect_ratio; }
+  inline void SetAspectRatio(float aspect_ratio) { aspect_ratio_ = aspect_ratio; }
   inline float aspect_ratio() const { return aspect_ratio_; }
 
   inline void SetNearClipPlane(float near_clip_plane) { near_clip_plane_ = near_clip_plane; }

@@ -62,7 +62,7 @@ void to_json(json& data, const Camera& camera) {
 void from_json(const json& data, Camera& camera) {
   camera.SetProjectionType(data.at("projectionType"));
   camera.SetVerticalFieldOfView(data.at("verticalFieldOfView"));
-  camera.SetAspectRadio(data.at("aspectRatio"));
+  camera.SetAspectRatio(data.at("aspectRatio"));
   camera.SetNearClipPlane(data.at("nearClipPlane"));
   camera.SetFarClipPlane(data.at("farClipPlane"));
 }
