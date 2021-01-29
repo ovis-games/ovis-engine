@@ -21,11 +21,11 @@ TextureEditor::TextureEditor(const std::string& texture_id) : AssetEditor(textur
 }
 
 void TextureEditor::DrawContent() {
-  if (ImGui::GetIO().KeyCtrl) {
-    scale_ += ImGui::GetIO().MouseWheel * 0.1f;
-  }
   ImVec2 image_size = { description_.width * scale_, description_.height * scale_ };
   ImGui::Image(texture_.get(), image_size);
+  if (ImGui::IsItemHovered() && ImGui::GetIO().KeyCtrl) {
+    scale_ += ImGui::GetIO().MouseWheel * 0.1f;
+  }
 }
 
 void TextureEditor::DrawInspectorContent() {
