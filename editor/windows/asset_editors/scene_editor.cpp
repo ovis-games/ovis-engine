@@ -4,12 +4,13 @@
 #include "../../imgui_extensions/input_asset.hpp"
 #include "../../imgui_extensions/input_serializable.hpp"
 
+#include <imgui_stdlib.h>
+
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/utils.hpp>
 #include <ovis/engine/lua.hpp>
 #include <ovis/engine/scene_controller.hpp>
 #include <ovis/engine/scene_object.hpp>
-#include <imgui_stdlib.h>
 
 namespace ove {
 
@@ -73,10 +74,23 @@ void SceneEditor::DrawContent() {
     border_color = ImGui::GetStyle().Colors[ImGuiCol_NavHighlight];
   }
   ImVec2 available_space = ImGui::GetContentRegionAvail();
+  available_space.x -= 2;
   available_space.y -= 2;
-  ImGui::Image(scene_viewport_->color_texture()->texture(), available_space, ImVec2(0, 0), ImVec2(1, 1), ImVec4(1, 1, 1, 1),
-               border_color);
+  scene_.camera().SetAspectRatio(available_space.x / available_space.y);
+
+  ImGui::Image(scene_viewport_->color_texture()->texture(), available_space, ImVec2(0, 0), ImVec2(1, 1),
+               ImVec4(1, 1, 1, 1), border_color);
   scene_window_focused_ = ImGui::IsWindowFocused();
+  if (ImGui::IsItemHovered()) {
+    scene_.camera().SetVerticalFieldOfView(scene_.camera().vertical_field_of_view() *
+                                           std::powf(2.0, -ImGui::GetIO().MouseWheel));
+
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+      float movement_scaling = scene_.camera().vertical_field_of_view() / available_space.y;
+      scene_.camera().transform().Translate(
+          {-movement_scaling * ImGui::GetIO().MouseDelta.x, -movement_scaling * ImGui::GetIO().MouseDelta.y, 0});
+    }
+  }
 }
 
 void SceneEditor::DrawInspectorContent() {
@@ -148,7 +162,8 @@ bool SceneEditor::DrawObjectList() {
         std::string new_object_name = object->name();
         ImGui::TreePush(object->name().c_str());
         ImGui::PushItemWidth(-1);
-        if (ImGui::InputText("Renaming", &new_object_name, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
+        if (ImGui::InputText("Renaming", &new_object_name,
+                             ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
           if (new_object_name != object->name()) {
             // TODO: check for validity: alphanumeric+underscore+space
             if (scene_.ContainsObject(new_object_name)) {
@@ -218,7 +233,8 @@ bool SceneEditor::DrawObjectComponentList() {
 
       ImGui::EndChild();
     } else {
-      if (ImGui::InputJson("Scene", &serialized_scene_, *scene_.GetSchema(), ImGuiInputJsonFlags_IgnoreEnclosingObject)) {
+      if (ImGui::InputJson("Scene", &serialized_scene_, *scene_.GetSchema(),
+                           ImGuiInputJsonFlags_IgnoreEnclosingObject)) {
         // TODO: move to appropriate function and use serialized scene and do not re-serialze each frame
         scene_.Deserialize(serialized_scene_);
         object_changed = true;
