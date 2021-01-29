@@ -40,7 +40,7 @@ void SpriteRenderer::CreateResources() {
 }
 
 void SpriteRenderer::Render(Scene* scene) {
-  const glm::mat4 projection_matrix = scene->camera().CalculateProjectionMatrix();
+  const glm::mat4 view_projection_matrix = scene->camera().CalculateViewProjectionMatrix();
 
   DrawItem draw_item;
   draw_item.shader_program = shader_program_.get();
@@ -68,8 +68,8 @@ void SpriteRenderer::Render(Scene* scene) {
 
     Transform2DComponent* transform = object->GetComponent<Transform2DComponent>("Transform2D");
     const glm::mat4 world_view_projection =
-        transform ? projection_matrix * transform->transform()->CalculateMatrix() * size_matrix
-                  : projection_matrix * size_matrix;
+        transform ? view_projection_matrix * transform->transform()->CalculateMatrix() * size_matrix
+                  : view_projection_matrix * size_matrix;
 
     shader_program_->SetUniform("WorldViewProjection", world_view_projection);
     shader_program_->SetUniform("Color", color);
