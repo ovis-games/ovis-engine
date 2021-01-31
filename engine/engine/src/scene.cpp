@@ -39,6 +39,9 @@ SceneController* Scene::AddController(std::unique_ptr<SceneController> scene_con
   auto insert_return_value = controllers_.insert(std::make_pair(scene_controller_id, std::move(scene_controller)));
   SDL_assert(insert_return_value.second);
   insert_return_value.first->second->scene_ = this;
+  if (is_playing_) {
+    insert_return_value.first->second->Play();
+  }
   InvalidateControllerOrder();
   return insert_return_value.first->second.get();
 }
@@ -82,6 +85,9 @@ void Scene::RemoveController(const std::string& id) {
   if (scene_controller == controllers_.end()) {
     LogE("The scene does not contain the controller '{}'", id);
   } else {
+    if (is_playing_) {
+      scene_controller->second->Stop();
+    }
     removed_controllers_.push_back(std::move(scene_controller->second));
     controllers_.erase(scene_controller);
     InvalidateControllerOrder();

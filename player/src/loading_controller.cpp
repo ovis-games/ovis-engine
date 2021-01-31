@@ -109,7 +109,6 @@ void LoadingController::Update(std::chrono::microseconds ms) {
       }
 
       scene()->Deserialize(json::parse(*serialized_scene));
-      scene()->Play();
       // Remove(); (not needed, the deserialize above will remove the controller automatically)
     }
   }
