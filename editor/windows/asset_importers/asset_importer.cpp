@@ -4,9 +4,9 @@
 
 #include <stb_image.h>
 
+#include <ovis/core/asset_library.hpp>
 #include <ovis/core/json.hpp>
 #include <ovis/core/utf8.hpp>
-#include <ovis/core/asset_library.hpp>
 
 namespace ove {
 
@@ -25,19 +25,14 @@ void ImportImage(const std::string& filename) {
     parameters["width"] = width;
     parameters["height"] = height;
     parameters["filter"] = "bilinear";
-    parameters["format"] = FORMATS[channels]; // TODO: dangerous, pls change
+    parameters["format"] = FORMATS[channels];  // TODO: dangerous, pls change
 
     std::vector<std::byte> blob(channels * width * height);
     std::memcpy(blob.data(), data, channels * width * height);
-    
+
     if (ovis::GetApplicationAssetLibrary()->CreateAsset(
-      std::filesystem::path(filename).stem(), // TODO: do '.' have to be replaces with e.g., '_'? 
-      "texture2d",
-      {
-        {"json", parameters.dump()},
-        {"0", blob}
-      }
-    )) {
+            std::filesystem::path(filename).stem(),  // TODO: do '.' have to be replaces with e.g., '_'?
+            "texture2d", {{"json", parameters.dump()}, {"0", blob}})) {
       ovis::LogI("Successfully imported {}", std::filesystem::path(filename).filename().string());
     }
   } else {
@@ -50,9 +45,9 @@ void ImportImage(const std::string& filename) {
 void ImportAsset(const std::string& filename) {
   const std::string extension = ovis::to_lower(std::filesystem::path(filename).extension());
 
-  if (extension == ".jpeg" || extension == ".jps" || extension == ".png" || extension == ".tga" ||
-      extension == ".bmp" || extension == ".psd" || extension == ".gif" || extension == ".hdr" || extension == ".pic" ||
-      extension == ".pnm") {
+  if (extension == ".jpeg" || extension == ".jpg" || extension == ".jps" || extension == ".png" ||
+      extension == ".tga" || extension == ".bmp" || extension == ".psd" || extension == ".gif" || extension == ".hdr" ||
+      extension == ".pic" || extension == ".pnm") {
     ImportImage(filename);
   } else {
     ovis::LogE("Unknown file format: {}", extension);

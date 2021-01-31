@@ -5,6 +5,7 @@
 #include "asset_editors/texture_editor.hpp"
 #include "asset_editors/settings_editor.hpp"
 #include "dockspace_window.hpp"
+#include "asset_importers/asset_importer.hpp"
 #include <filesystem>
 #include <fstream>
 
@@ -62,6 +63,16 @@ void AssetViewerWindow::DrawContent() {
     }
   }
   ImGui::EndChild();
+}
+
+bool AssetViewerWindow::ProcessEvent(const SDL_Event& event) {
+  if (event.type == SDL_DROPFILE) {
+    ImportAsset(event.drop.file);
+    SDL_free(event.drop.file);
+    return true;
+  }
+
+  return false;
 }
 
 AssetEditor* AssetViewerWindow::OpenAssetEditor(const std::string& asset_id) {

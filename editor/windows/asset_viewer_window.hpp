@@ -10,7 +10,9 @@ namespace ove {
 class AssetViewerWindow : public UiWindow {
  public:
   AssetViewerWindow();
+
   void DrawContent() override;
+  bool ProcessEvent(const SDL_Event& event) override;
 
  private:
   std::string current_path_;
