@@ -22,6 +22,11 @@ class SceneObject : public Serializable {
 
   inline std::string name() const { return name_; }
 
+  template <typename ComponentType = SceneObjectComponent>
+  inline ComponentType* AddComponent(const std::string& component_id) {
+    return down_cast<ComponentType*>(AddComponent(component_id));
+  }
+
   SceneObjectComponent* AddComponent(const std::string& component_id);
   bool HasComponent(const std::string& component_id) const;
 

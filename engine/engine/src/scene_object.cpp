@@ -86,8 +86,8 @@ void SceneObject::RegisterToLua() {
   sol::usertype<SceneObject> scene_object_type =
       Lua::state.new_usertype<SceneObject>("SceneObject", "name", sol::property(&SceneObject::name), "components",
                                            sol::property(&Module::SceneObjectComponentsWrapper::FromObject));
-  scene_object_type["AddComponent"] = &SceneObject::AddComponent;
-  scene_object_type["HasComponent"] = &SceneObject::AddComponent;
+  scene_object_type["AddComponent"] = static_cast<SceneObjectComponent*(SceneObject::*)(const std::string&)>(&SceneObject::AddComponent);
+  scene_object_type["HasComponent"] = &SceneObject::HasComponent;
 }
 
 }  // namespace ovis
