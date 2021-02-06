@@ -94,4 +94,8 @@ void SetApplicationAssetsDirectory(const std::string& directory);
 AssetLibrary* GetEngineAssetLibrary();
 AssetLibrary* GetApplicationAssetLibrary();
 
+inline AssetLibrary* GetAssetLibraryForAsset(const std::string& asset_id) {
+  return GetApplicationAssetLibrary()->Contains(asset_id) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary();
+}
+
 }  // namespace ovis
