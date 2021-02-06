@@ -34,8 +34,7 @@ bool InputAsset(const char* label, std::string* asset_id, const std::string& ass
     if (candidate_asset_id == "" && flags & ImGuiInputAssetFlags_AcceptEmpty) {
       *asset_id = "";
       asset_changed = true;
-    }
-    else if (IsAssetValid(candidate_asset_id, asset_type)) {
+    } else if (IsAssetValid(candidate_asset_id, asset_type)) {
       *asset_id = candidate_asset_id;
       asset_changed = true;
     }
@@ -47,19 +46,29 @@ bool InputAsset(const char* label, std::string* asset_id, const std::string& ass
   }
 
   if (ImGui::BeginDragDropTarget()) {
-    const std::string payload_type = "asset<" + asset_type + '>';
-    if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(payload_type.c_str())) {
-      const char* dropped_asset_id_ptr = static_cast<const char*>(payload->Data);
-      const std::string dropped_asset_id(dropped_asset_id_ptr, dropped_asset_id_ptr + payload->DataSize);
-      if (IsAssetValid(dropped_asset_id, asset_type)) {
-        *asset_id = dropped_asset_id;
-        asset_changed = true;
-      }
+    std::string dropped_asset_id;
+    if (AcceptDragDropAsset(asset_type, &dropped_asset_id)) {
+      *asset_id = dropped_asset_id;
+      asset_changed = true;
     }
     ImGui::EndDragDropTarget();
   }
 
   return asset_changed;
+}
+
+bool AcceptDragDropAsset(const std::string& asset_type, std::string* asset_id) {
+  const std::string payload_type = "asset<" + asset_type + '>';
+  if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(payload_type.c_str())) {
+    const char* dropped_asset_id_ptr = static_cast<const char*>(payload->Data);
+    const std::string dropped_asset_id(dropped_asset_id_ptr, dropped_asset_id_ptr + payload->DataSize);
+    if (IsAssetValid(dropped_asset_id, asset_type)) {
+      *asset_id = dropped_asset_id;
+      return true;
+    }
+  }
+
+  return false;
 }
 
 }  // namespace ImGui
