@@ -72,7 +72,7 @@ void LogWindow::DrawContent() {
   }
 
   if (scroll_next_frame_) {
-    ImGui::SetScrollHere(1.0f);
+    ImGui::SetScrollHereY(1.0f);
     scroll_next_frame_ = false;
   }
   if (filtered_entries_count != filtered_entries_count_ && auto_scrolling_) {
