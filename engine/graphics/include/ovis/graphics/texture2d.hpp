@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <memory>
 #include <string>
+#include <optional>
 
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/json.hpp>
@@ -40,6 +41,9 @@ class Texture2D : public Texture {
 
 bool LoadTexture2D(GraphicsContext* graphics_context, ResourceManager* resource_manager, const json& parameters,
                    const std::string& id, const std::string& directory);
+
+std::optional<Texture2DDescription> LoadTexture2DDescription(const std::string& asset_id);
+std::optional<Texture2DDescription> LoadTexture2DDescription(AssetLibrary* asset_library, const std::string& asset_id);
 
 std::unique_ptr<Texture2D> LoadTexture2D(const std::string& asset_id, GraphicsContext* graphics_context);
 std::unique_ptr<Texture2D> LoadTexture2D(AssetLibrary* asset_library, const std::string& asset_id,

@@ -181,15 +181,11 @@ bool LoadTexture2D(GraphicsContext* graphics_context, ResourceManager* resource_
   }
 }
 
-std::unique_ptr<Texture2D> LoadTexture2D(const std::string& asset_id, GraphicsContext* graphics_context) {
-  return LoadTexture2D(
-      GetApplicationAssetLibrary()->Contains(asset_id) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary(),
-      asset_id, graphics_context);
+std::optional<Texture2DDescription> LoadTexture2DDescription(const std::string& asset_id) {
+  return LoadTexture2DDescription(GetAssetLibraryForAsset(asset_id), asset_id);
 }
 
-std::unique_ptr<Texture2D> LoadTexture2D(AssetLibrary* asset_library, const std::string& asset_id,
-                                         GraphicsContext* graphics_context) {
-  SDL_assert(graphics_context != nullptr);
+std::optional<Texture2DDescription> LoadTexture2DDescription(AssetLibrary* asset_library, const std::string& asset_id) {
   const std::optional<std::string> parameters_file = asset_library->LoadAssetTextFile(asset_id, "json");
 
   if (!parameters_file) {
@@ -227,16 +223,28 @@ std::unique_ptr<Texture2D> LoadTexture2D(AssetLibrary* asset_library, const std:
       return {};
     }
 
-    std::optional<ovis::Blob> mip_level_data = asset_library->LoadAssetBinaryFile(asset_id, "0");
-
-    if (mip_level_data.has_value()) {
-      return std::make_unique<Texture2D>(graphics_context, description, mip_level_data->data());
-    } else {
-      LogE("Failed to load mip map level 0 for texture '{}'", asset_id);
-      return {};
-    }
+    return description;
   } catch (const ovis::json::parse_error& error) {
     ovis::LogE("Invalid json: {}", error.what());
+    return {};
+  }
+}
+
+std::unique_ptr<Texture2D> LoadTexture2D(const std::string& asset_id, GraphicsContext* graphics_context) {
+  return LoadTexture2D(GetAssetLibraryForAsset(asset_id), asset_id, graphics_context);
+}
+
+std::unique_ptr<Texture2D> LoadTexture2D(AssetLibrary* asset_library, const std::string& asset_id,
+                                         GraphicsContext* graphics_context) {
+  SDL_assert(graphics_context != nullptr);
+
+  std::optional<Texture2DDescription> description = LoadTexture2DDescription(asset_library, asset_id);
+  std::optional<Blob> mip_level_data = asset_library->LoadAssetBinaryFile(asset_id, "0");
+
+  if (description.has_value() && mip_level_data.has_value()) {
+    return std::make_unique<Texture2D>(graphics_context, *description, mip_level_data->data());
+  } else {
+    LogE("Failed to load texture '{}'", asset_id);
     return {};
   }
 }
