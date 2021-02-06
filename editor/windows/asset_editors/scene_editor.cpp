@@ -304,8 +304,6 @@ glm::vec2 SceneEditor::ScreenToWorld(glm::vec2 screen_position) {
   const glm::vec2 camera_translation = glm::vec2(camera.transform().translation());
   const glm::vec2 world_position = (view_space_position - glm::vec2(0.5f, 0.5f)) * field_of_view + camera_translation;
 
-  ovis::LogI("Screen to world: ({},{}) -> ({},{})", screen_position.x, screen_position.y, world_position.x, world_position.y);
-
   return world_position;
 }
 
