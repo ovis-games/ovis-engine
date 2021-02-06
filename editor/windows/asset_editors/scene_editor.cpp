@@ -5,12 +5,14 @@
 #include "../../imgui_extensions/input_serializable.hpp"
 
 #include <imgui_stdlib.h>
+#include <ovis/base/transform2d_component.hpp>
 
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/utils.hpp>
 #include <ovis/engine/lua.hpp>
 #include <ovis/engine/scene_controller.hpp>
 #include <ovis/engine/scene_object.hpp>
+#include <ovis/rendering2d/sprite_component.hpp>
 
 namespace ove {
 
@@ -18,10 +20,6 @@ const SceneEditor::SelectedObject SceneEditor::SelectedObject::NONE = {""};
 
 SceneEditor::SceneEditor(const std::string& scene_asset) : AssetEditor(scene_asset) {
   SetupJsonFile(scene_.Serialize());
-  CreateSceneViewport();
-  scene_viewport_->AddRenderPass("Clear");
-  scene_viewport_->AddRenderPass("SpriteRenderer");
-  scene_viewport_->SetScene(&scene_);
 
   ovis::Lua::on_error.Subscribe([this](const std::string&) {
     if (state_ == State::RUNNING) {
@@ -45,7 +43,6 @@ bool SceneEditor::ProcessEvent(const SDL_Event& event) {
 }
 
 void SceneEditor::DrawContent() {
-  scene_viewport_->Render(false);
   if (state_ == State::RUNNING) {
     if (ImGui::Button("Pause")) {
       state_ = State::PAUSED;
@@ -78,6 +75,13 @@ void SceneEditor::DrawContent() {
   available_space.y -= 2;
   scene_.camera().SetAspectRatio(available_space.x / available_space.y);
 
+  if (!scene_viewport_ || false) {  // Recreate if viewport size changed
+    CreateSceneViewport(available_space);
+  }
+  scene_viewport_->Render(false);
+
+  const glm::vec2 top_left =
+      static_cast<glm::vec2>(ImGui::GetWindowPos()) + static_cast<glm::vec2>(ImGui::GetCursorPos());
   ImGui::Image(scene_viewport_->color_texture()->texture(), available_space, ImVec2(0, 0), ImVec2(1, 1),
                ImVec4(1, 1, 1, 1), border_color);
   scene_window_focused_ = ImGui::IsWindowFocused();
@@ -90,6 +94,28 @@ void SceneEditor::DrawContent() {
       scene_.camera().transform().Translate(
           {-movement_scaling * ImGui::GetIO().MouseDelta.x, -movement_scaling * ImGui::GetIO().MouseDelta.y, 0});
     }
+  }
+
+  if (ImGui::BeginDragDropTarget()) {
+    std::string dropped_asset_id;
+    if (ImGui::AcceptDragDropAsset("texture2d", &dropped_asset_id)) {
+      ovis::SceneObject* object = CreateObject(dropped_asset_id);
+      auto texture_description = ovis::LoadTexture2DDescription(ovis::GetApplicationAssetLibrary(), dropped_asset_id);
+
+      auto* transform2d = object->AddComponent<ovis::Transform2DComponent>("Transform2D");
+      const glm::vec2 mouse_position = ImGui::GetMousePos();
+      ovis::LogI("Top left: ({},{})", top_left.x, top_left.y);
+      ovis::LogI("Mouse position: ({},{})", mouse_position.x, mouse_position.y);
+      transform2d->transform()->SetTranslation(glm::vec3(ScreenToWorld(mouse_position - top_left), 0.0f));
+
+      auto* sprite = object->AddComponent<ovis::SpriteComponent>("Sprite");
+      sprite->SetTexture(dropped_asset_id);
+      sprite->SetSize({texture_description->width, texture_description->height});
+
+      serialized_scene_ = scene_.Serialize();
+      SubmitJsonFile(serialized_scene_);
+    }
+    ImGui::EndDragDropTarget();
   }
 }
 
@@ -246,15 +272,19 @@ bool SceneEditor::DrawObjectComponentList() {
   return object_changed;
 }
 
-void SceneEditor::CreateSceneViewport() {
+void SceneEditor::CreateSceneViewport(ImVec2 size) {
   ovis::RenderTargetViewportDescription scene_viewport_description;
-  scene_viewport_description.color_description.texture_description.width = 512;
-  scene_viewport_description.color_description.texture_description.height = 512;
+  scene_viewport_description.color_description.texture_description.width = static_cast<size_t>(size.x);
+  scene_viewport_description.color_description.texture_description.height = static_cast<size_t>(size.y);
   scene_viewport_description.color_description.texture_description.format = ovis::TextureFormat::RGB_UINT8;
   scene_viewport_description.color_description.texture_description.filter = ovis::TextureFilter::POINT;
   scene_viewport_description.color_description.texture_description.mip_map_count = 0;
   scene_viewport_ = std::make_unique<ovis::RenderTargetViewport>(
       EditorWindow::instance()->context(), EditorWindow::instance()->resource_manager(), scene_viewport_description);
+
+  scene_viewport_->AddRenderPass("Clear");
+  scene_viewport_->AddRenderPass("SpriteRenderer");
+  scene_viewport_->SetScene(&scene_);
 }
 
 void SceneEditor::JsonFileChanged(const ovis::json& data, const std::string& file_type) {
@@ -262,6 +292,31 @@ void SceneEditor::JsonFileChanged(const ovis::json& data, const std::string& fil
     serialized_scene_ = data;
     scene_.Deserialize(serialized_scene_);
   }
+}
+
+glm::vec2 SceneEditor::ScreenToWorld(glm::vec2 screen_position) {
+  const ovis::Camera& camera = scene_.camera();
+  const float vertical_field_of_view = camera.vertical_field_of_view();
+  const float horizontal_field_of_view = camera.aspect_ratio() * vertical_field_of_view;
+  const glm::vec2 field_of_view = {horizontal_field_of_view, vertical_field_of_view};
+
+  const glm::vec2 view_space_position = screen_position / (glm::vec2(scene_viewport_->GetSize() - 1));
+  const glm::vec2 camera_translation = glm::vec2(camera.transform().translation());
+  const glm::vec2 world_position = (view_space_position - glm::vec2(0.5f, 0.5f)) * field_of_view + camera_translation;
+
+  ovis::LogI("Screen to world: ({},{}) -> ({},{})", screen_position.x, screen_position.y, world_position.x, world_position.y);
+
+  return world_position;
+}
+
+ovis::SceneObject* SceneEditor::CreateObject(const std::string& base_name) {
+  std::string object_name = base_name;
+  int counter = 1;
+  while (scene_.ContainsObject(object_name)) {
+    counter++;
+    object_name = base_name + std::to_string(counter);
+  }
+  return scene_.CreateObject(object_name);
 }
 
 }  // namespace ove

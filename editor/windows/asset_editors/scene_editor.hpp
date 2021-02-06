@@ -28,7 +28,10 @@ class SceneEditor : public AssetEditor {
   bool DrawObjectList();
   bool DrawObjectComponentList();
 
-  void CreateSceneViewport();
+  void CreateSceneViewport(ImVec2 size);
+  glm::vec2 ScreenToWorld(glm::vec2 screen_position);
+
+  ovis::SceneObject* CreateObject(const std::string& base_name);
 
   void JsonFileChanged(const ovis::json& data, const std::string& file_type) override;
 
