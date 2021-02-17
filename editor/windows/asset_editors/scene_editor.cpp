@@ -104,8 +104,6 @@ void SceneEditor::DrawContent() {
 
       auto* transform2d = object->AddComponent<ovis::Transform2DComponent>("Transform2D");
       const glm::vec2 mouse_position = ImGui::GetMousePos();
-      ovis::LogI("Top left: ({},{})", top_left.x, top_left.y);
-      ovis::LogI("Mouse position: ({},{})", mouse_position.x, mouse_position.y);
       transform2d->transform()->SetTranslation(glm::vec3(ScreenToWorld(mouse_position - top_left), 0.0f));
 
       auto* sprite = object->AddComponent<ovis::SpriteComponent>("Sprite");
