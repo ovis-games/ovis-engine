@@ -2,7 +2,8 @@
 
 #include "asset_editor.hpp"
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 class SettingsEditor : public AssetEditor {
  public:
@@ -14,9 +15,10 @@ class SettingsEditor : public AssetEditor {
   void Save() override;
 
  private:
-  ovis::json settings_;
+  json settings_;
 
-  void JsonFileChanged(const ovis::json& data, const std::string& file_type) override;
+  void JsonFileChanged(const json& data, const std::string& file_type) override;
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

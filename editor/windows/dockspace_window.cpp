@@ -2,7 +2,8 @@
 
 #include <imgui_internal.h>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 DockspaceWindow::DockspaceWindow() : UiWindow("Dockspace Window", "") {
   SetStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -49,4 +50,5 @@ void DockspaceWindow::DrawContent() {
   ImGui::PopStyleColor();
 }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

@@ -2,20 +2,20 @@
 
 #include <ovis/core/log.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 UiWindow::UiWindow(const std::string& id, const std::string& window_title)
-    : ovis::SceneController(id),
+    : SceneController(id),
       imgui_id_(window_title.length() > 0 ? window_title + "##" + id : id),
-      window_flags_(0) {
-}
+      window_flags_(0) {}
 
 void UiWindow::DrawImGui() {
   if (dock_next_frame_) {
     ImGui::SetNextWindowDockID(dockspace_id_);
     dock_next_frame_ = false;
   }
-  
+
   if (should_focus_) {
     ImGui::SetNextWindowFocus();
     should_focus_ = false;
@@ -53,4 +53,5 @@ void UiWindow::SetFlags(ImGuiWindowFlags window_flags) {
   window_flags_ = window_flags;
 }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

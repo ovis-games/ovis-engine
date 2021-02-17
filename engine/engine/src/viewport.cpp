@@ -120,7 +120,7 @@ std::unique_ptr<RenderTargetConfiguration> Viewport::CreateRenderTargetConfigura
   if (depth_render_target_id.length() > 0) {
     render_target_config_desc.depth_attachment = GetRenderTarget(depth_render_target_id);
   }
-  return std::make_unique<ovis::RenderTargetConfiguration>(graphics_context_, render_target_config_desc);
+  return std::make_unique<RenderTargetConfiguration>(graphics_context_, render_target_config_desc);
 }
 
 void Viewport::SortRenderPasses() {

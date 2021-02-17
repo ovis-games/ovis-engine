@@ -2,7 +2,8 @@
 
 #include "ui_window.hpp"
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 class InspectorWindow : public UiWindow {
  public:
@@ -14,4 +15,5 @@ class InspectorWindow : public UiWindow {
  private:
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

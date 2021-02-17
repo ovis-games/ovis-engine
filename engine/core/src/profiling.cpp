@@ -28,7 +28,7 @@ ProfilingLog::~ProfilingLog() {
 }
 
 ProfilingLog* ProfilingLog::default_log() {
-  return &ovis::default_profiling_log;
+  return &default_profiling_log;
 }
 
 void ProfilingLog::AddProfiler(Profiler* profiler_to_add) {

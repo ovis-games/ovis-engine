@@ -7,7 +7,8 @@
 #include <ovis/engine/render_target_viewport.hpp>
 #include <ovis/engine/scene.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 class SceneEditor : public AssetEditor {
   enum class State { STOPPED, PAUSED, RUNNING };
@@ -31,17 +32,17 @@ class SceneEditor : public AssetEditor {
   void CreateSceneViewport(ImVec2 size);
   glm::vec2 ScreenToWorld(glm::vec2 screen_position);
 
-  ovis::SceneObject* CreateObject(const std::string& base_name);
+  SceneObject* CreateObject(const std::string& base_name);
 
-  void JsonFileChanged(const ovis::json& data, const std::string& file_type) override;
+  void JsonFileChanged(const json& data, const std::string& file_type) override;
 
   State state_ = State::STOPPED;
 
-  std::unique_ptr<ovis::RenderTargetViewport> scene_viewport_;
+  std::unique_ptr<RenderTargetViewport> scene_viewport_;
   bool scene_window_focused_ = false;
 
-  ovis::Scene scene_;
-  ovis::json serialized_scene_;
+  Scene scene_;
+  json serialized_scene_;
 
   struct SelectedScene {};
   struct SelectedObject {
@@ -51,7 +52,8 @@ class SceneEditor : public AssetEditor {
   RenamingState renaming_state_ = RenamingState::IS_NOT_RENAMING;
 
   std::variant<SelectedScene, SelectedObject> selection_;
-  std::vector<ovis::SceneObject*> cached_scene_objects_;
+  std::vector<SceneObject*> cached_scene_objects_;
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

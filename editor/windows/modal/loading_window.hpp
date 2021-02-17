@@ -1,14 +1,14 @@
 #pragma once
 
+#include "modal_window.hpp"
 #include <set>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <emscripten/fetch.h>
 
-#include "modal_window.hpp"
-
-namespace ove {
+namespace ovis {
+namespace editor {
 
 class LoadingWindow : public ModalWindow {
  public:
@@ -27,4 +27,5 @@ class LoadingWindow : public ModalWindow {
   void DownloadNextFile();
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

@@ -1,9 +1,8 @@
-#include <cstring>
-
+#include "editor_asset_library.hpp"
 #include "editor_module.hpp"
 #include "editor_window.hpp"
-#include "editor_asset_library.hpp"
 #include "global.hpp"
+#include <cstring>
 
 #include <emscripten.h>
 #include <emscripten/val.h>
@@ -32,35 +31,43 @@ void EMSCRIPTEN_KEEPALIVE QuitEditor() {
   sdl_event.type = SDL_QUIT;
   SDL_PushEvent(&sdl_event);
 }
-
 }
 
 // Usage: ovis-editor backend_url project_id authentication_token
 int main(int argc, char* argv[]) {
-  ovis::Log::AddListener(ovis::ConsoleLogger);
+  using namespace ovis;
+  using namespace ovis::editor;
+  
+  try {
+    Log::AddListener(ConsoleLogger);
 
-  if (argc != 4) {
-    ovis::LogE("Invalid number of arguments to editor");
-    return -1;
+    if (argc != 4) {
+      LogE("Invalid number of arguments to editor");
+      return -1;
+    }
+
+    backend_url = argv[1];
+    project_id = argv[2];
+    authentication_token = argv[3];
+
+    Init();
+    SetEngineAssetsDirectory("/ovis_assets");
+    CreateApplicationAssetLibrary<EditorAssetLibrary>("/assets/");
+    LoadModule<BaseModule>();
+    LoadModule<Rendering2DModule>();
+    LoadModule<EditorModule>();
+
+    EditorWindow editor_window;
+
+    Run();
+
+    LogI("Quitting editor...");
+
+    Quit();
+  } catch (const std::exception& error) {
+    LogE("An unhandled exception occured: {}", error.what());
+  } catch (...) {
+    LogE("An unhandled exception occured");
   }
-
-  ove::backend_url = argv[1];
-  ove::project_id = argv[2];
-  ove::authentication_token = argv[3];
-
-  ovis::Init();
-  ovis::SetEngineAssetsDirectory("/ovis_assets");
-  ovis::CreateApplicationAssetLibrary<ove::EditorAssetLibrary>("/assets/");
-  ovis::LoadModule<ovis::BaseModule>();
-  ovis::LoadModule<ovis::Rendering2DModule>();
-  ovis::LoadModule<ove::EditorModule>();
-
-  ove::EditorWindow editor_window;
-
-  ovis::Run();
-
-  ovis::LogI("Quitting editor...");
-
-  ovis::Quit();
   return 0;
 }

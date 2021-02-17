@@ -1,14 +1,14 @@
 #pragma once
 
+#include "modal_window.hpp"
 #include <set>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <emscripten/fetch.h>
 
-#include "modal_window.hpp"
-
-namespace ove {
+namespace ovis {
+namespace editor {
 
 class PackagingWindow : public ModalWindow {
  public:
@@ -24,4 +24,5 @@ class PackagingWindow : public ModalWindow {
   float progress_ = 0.0f;
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

@@ -7,9 +7,10 @@
 #include <ovis/core/log.hpp>
 #include <ovis/engine/engine.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
-LogWindow::LogWindow() : UiWindow("Log"), log_history_(ovis::GetModule<EditorModule>()->log_history()) {
+LogWindow::LogWindow() : UiWindow("Log"), log_history_(GetModule<EditorModule>()->log_history()) {
   UpdateAfter("Dockspace Window");
 }
 
@@ -82,4 +83,5 @@ void LogWindow::DrawContent() {
   ImGui::EndChild();
 }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

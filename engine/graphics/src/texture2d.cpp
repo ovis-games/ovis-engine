@@ -224,8 +224,8 @@ std::optional<Texture2DDescription> LoadTexture2DDescription(AssetLibrary* asset
     }
 
     return description;
-  } catch (const ovis::json::parse_error& error) {
-    ovis::LogE("Invalid json: {}", error.what());
+  } catch (const json::parse_error& error) {
+    LogE("Invalid json: {}", error.what());
     return {};
   }
 }

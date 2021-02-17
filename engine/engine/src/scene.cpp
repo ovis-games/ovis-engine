@@ -251,7 +251,7 @@ json Scene::Serialize() const {
 
 bool Scene::Deserialize(const json& serialized_object) {
   if (!serialized_object.contains("version") || serialized_object["version"] != "0.1") {
-    ovis::LogE("Invalid scene object. Version must be 0.1!");
+    LogE("Invalid scene object. Version must be 0.1!");
     return false;
   }
 
@@ -287,7 +287,7 @@ void Scene::InvalidateControllerOrder() {
 
 void Scene::DeleteRemovedControllers() {
   if (removed_controllers_.size() > 0) {
-    ovis::LogD("Delete {} removed controller(s)", removed_controllers_.size());
+    LogD("Delete {} removed controller(s)", removed_controllers_.size());
     removed_controllers_.clear();
   }
 }

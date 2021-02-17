@@ -16,9 +16,9 @@ class SpriteRenderer : public RenderPass {
   void Render(Scene* scene) override;
 
  private:
-  std::unique_ptr<ovis::ShaderProgram> shader_program_;
-  std::unique_ptr<ovis::VertexBuffer> vertex_buffer_;
-  std::unique_ptr<ovis::VertexInput> vertex_input_;
+  std::unique_ptr<ShaderProgram> shader_program_;
+  std::unique_ptr<VertexBuffer> vertex_buffer_;
+  std::unique_ptr<VertexInput> vertex_input_;
   std::unordered_map<std::string, std::unique_ptr<Texture2D>> textures_;
 };
 

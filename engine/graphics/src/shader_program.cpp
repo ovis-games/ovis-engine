@@ -171,13 +171,13 @@ std::unique_ptr<ShaderProgram> LoadShaderProgram(AssetLibrary* asset_library, co
   ShaderProgramDescription description;
 
   if (!asset_library->Contains(asset_id)) {
-    ovis::LogE("Cannot find asset '{}'", asset_id);
+    LogE("Cannot find asset '{}'", asset_id);
     return {};
   }
 
   std::optional<std::string> vertex_shader_source = asset_library->LoadAssetTextFile(asset_id, "vert");
   if (!vertex_shader_source) {
-    ovis::LogE("Shader program '{}' does not have a corresponding vertex shader", asset_id);
+    LogE("Shader program '{}' does not have a corresponding vertex shader", asset_id);
     return {};
   } else {
     description.vertex_shader_source = *vertex_shader_source;
@@ -185,7 +185,7 @@ std::unique_ptr<ShaderProgram> LoadShaderProgram(AssetLibrary* asset_library, co
 
   std::optional<std::string> fragment_shader_source = asset_library->LoadAssetTextFile(asset_id, "frag");
   if (!fragment_shader_source) {
-    ovis::LogE("Shader program '{}' does not have a corresponding fragment shader", asset_id);
+    LogE("Shader program '{}' does not have a corresponding fragment shader", asset_id);
     return {};
   } else {
     description.fragment_shader_source = *fragment_shader_source;

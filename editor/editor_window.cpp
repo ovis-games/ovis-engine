@@ -1,9 +1,9 @@
 #include "editor_window.hpp"
 
-#include "windows/log_window.hpp"
 #include "windows/asset_viewer_window.hpp"
-#include "windows/inspector_window.hpp"
 #include "windows/dockspace_window.hpp"
+#include "windows/inspector_window.hpp"
+#include "windows/log_window.hpp"
 #include "windows/toolbar.hpp"
 
 #include <emscripten/html5.h>
@@ -14,12 +14,13 @@
 #include <ovis/engine/scene.hpp>
 #include <ovis/engine/window.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 namespace {
 
-ovis::WindowDescription CreateWindowDescription() {
-  ovis::WindowDescription window_description;
+WindowDescription CreateWindowDescription() {
+  WindowDescription window_description;
 
   window_description.title = "Ovis Editor";
   window_description.resource_search_paths = {"/resources/", "/assets/"};
@@ -40,7 +41,7 @@ ovis::WindowDescription CreateWindowDescription() {
 
 EditorWindow* EditorWindow::instance_ = nullptr;
 
-EditorWindow::EditorWindow() : ovis::Window(CreateWindowDescription()) {
+EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   SDL_assert(instance_ == nullptr);
   instance_ = this;
 
@@ -63,7 +64,7 @@ void EditorWindow::Update(std::chrono::microseconds delta_time) {
   if (emscripten_get_element_css_size("canvas", &canvas_css_width, &canvas_css_height) == EMSCRIPTEN_RESULT_SUCCESS &&
       emscripten_get_canvas_element_size("canvas", &canvas_width, &canvas_height) == EMSCRIPTEN_RESULT_SUCCESS &&
       (canvas_width != static_cast<int>(canvas_css_width) || canvas_height != static_cast<int>(canvas_css_height))) {
-    ovis::LogV("css: {}x{} vs real: {}x{}", canvas_css_width, canvas_css_height, canvas_width, canvas_height);
+    LogV("css: {}x{} vs real: {}x{}", canvas_css_width, canvas_css_height, canvas_width, canvas_height);
     // emscripten_set_canvas_element_size("canvas",
     // static_cast<int>(canvas_css_width),
     // static_cast<int>(canvas_css_height));
@@ -154,4 +155,5 @@ void EditorWindow::SetUIStyle() {
   colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

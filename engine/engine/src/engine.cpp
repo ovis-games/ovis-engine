@@ -54,9 +54,15 @@ bool Update() {
 
 #ifdef OVIS_EMSCRIPTEN
 void EmscriptenUpdate() {
-  if (!Update()) {
-    LogI("Quitting application!");
-    emscripten_cancel_main_loop();
+  try {
+    if (!Update()) {
+      LogI("Quitting application!");
+      emscripten_cancel_main_loop();
+    }
+  } catch (const std::exception& error) {
+    LogE("An unhandled exception occured: {}", error.what());
+  } catch (...) {
+    LogE("An unhandled exception occured");
   }
 }
 #endif  // OVIS_EMSCRIPTEN
@@ -70,7 +76,7 @@ namespace detail {
 Module* AddModule(std::type_index type, std::unique_ptr<Module> module) {
   const auto loaded_module = loaded_modules.insert(std::make_pair(type, std::move(module)));
   if (!loaded_module.second) {
-    ovis::LogE("Module '{}' already loaded!", type.name());
+    LogE("Module '{}' already loaded!", type.name());
   }
   return loaded_module.second ? loaded_module.first->second.get() : nullptr;
 }
@@ -78,7 +84,7 @@ Module* AddModule(std::type_index type, std::unique_ptr<Module> module) {
 Module* GetModule(std::type_index type) {
   const auto module = loaded_modules.find(type);
   if (module == loaded_modules.end()) {
-    ovis::LogW("Module '{}' not loaded!", type.name());
+    LogW("Module '{}' not loaded!", type.name());
     return nullptr;
   } else {
     return module->second.get();

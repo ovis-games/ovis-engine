@@ -5,7 +5,8 @@
 
 #include <ovis/core/json.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 class AssetViewerWindow : public UiWindow {
  public:
@@ -21,4 +22,5 @@ class AssetViewerWindow : public UiWindow {
   std::string GetNewAssetName(const std::string& base_name) const;
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

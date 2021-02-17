@@ -10,18 +10,19 @@
 #include <ovis/engine/engine.hpp>
 #include <ovis/engine/lua.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 TextureEditor::TextureEditor(const std::string& texture_id) : AssetEditor(texture_id) {
-  // texture_ = EditorWindow::instance()->resource_manager()->Load<ovis::Texture2D>()
-  texture_ = ovis::LoadTexture2D(ovis::GetApplicationAssetLibrary(), texture_id, EditorWindow::instance()->context());
+  // texture_ = EditorWindow::instance()->resource_manager()->Load<Texture2D>()
+  texture_ = LoadTexture2D(GetApplicationAssetLibrary(), texture_id, EditorWindow::instance()->context());
   description_ = texture_->description();
 
   SetFlags(ImGuiWindowFlags_HorizontalScrollbar);
 }
 
 void TextureEditor::DrawContent() {
-  ImVec2 image_size = { description_.width * scale_, description_.height * scale_ };
+  ImVec2 image_size = {description_.width * scale_, description_.height * scale_};
   ImGui::Image(texture_.get(), image_size);
   if (ImGui::IsItemHovered() && ImGui::GetIO().KeyCtrl) {
     scale_ += ImGui::GetIO().MouseWheel * 0.1f;
@@ -43,4 +44,5 @@ void TextureEditor::DrawInspectorContent() {
 
 void TextureEditor::Save() {}
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

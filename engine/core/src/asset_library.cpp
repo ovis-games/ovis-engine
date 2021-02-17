@@ -104,7 +104,7 @@ bool DirectoryAssetLibrary::SaveAssetFile(const std::string& asset_id, const std
   const std::optional<std::string> filename = GetAssetFilename(asset_id, file_type);
 
   if (!filename) {
-    ovis::LogE("Cannot write asset file for unknown asset: '{}'", asset_id);
+    LogE("Cannot write asset file for unknown asset: '{}'", asset_id);
     return false;
   } else {
     if (std::holds_alternative<std::string>(content)) {

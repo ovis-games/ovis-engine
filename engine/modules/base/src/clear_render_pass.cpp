@@ -5,9 +5,9 @@
 
 namespace ovis {
 
-ClearRenderPass::ClearRenderPass() : ovis::RenderPass("Clear") {}
+ClearRenderPass::ClearRenderPass() : RenderPass("Clear") {}
 
-void ClearRenderPass::Render(ovis::Scene* scene) {
+void ClearRenderPass::Render(Scene* scene) {
   viewport()->GetDefaultRenderTargetConfiguration()->ClearColor(0);
   viewport()->GetDefaultRenderTargetConfiguration()->ClearDepth();
 }

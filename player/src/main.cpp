@@ -23,27 +23,29 @@ void EMSCRIPTEN_KEEPALIVE QuitGame() {
 
 // Usage: ovis-player backend_url project_id
 int main(int argc, char* argv[]) {
-  ovis::Log::AddListener(ovis::ConsoleLogger);
+  using namespace ovis;
+
+  Log::AddListener(ConsoleLogger);
 
   if (argc != 3) {
-    ovis::LogE("Invalid number of arguments to player");
+    LogE("Invalid number of arguments to player");
     return -1;
   }
 
-  // ove::backend_url = argv[1];
-  // ove::project_id = argv[2];
+  // backend_url = argv[1];
+  // project_id = argv[2];
 
-  ovis::Init();
-  ovis::SetEngineAssetsDirectory("/ovis_assets");
-  ovis::LoadModule<ovis::BaseModule>();
-  ovis::LoadModule<ovis::Rendering2DModule>();
+  Init();
+  SetEngineAssetsDirectory("/ovis_assets");
+  LoadModule<BaseModule>();
+  LoadModule<Rendering2DModule>();
 
-  ovis::Window window(ovis::WindowDescription{});
+  Window window(WindowDescription{});
 
-  window.scene()->AddController<ovis::player::LoadingController>(true);
+  window.scene()->AddController<player::LoadingController>(true);
 
-  ovis::Run();
+  Run();
 
-  ovis::Quit();
+  Quit();
   return 0;
 }

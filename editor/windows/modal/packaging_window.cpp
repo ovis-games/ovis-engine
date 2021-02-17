@@ -10,7 +10,8 @@
 #include <ovis/engine/fetch.hpp>
 #include <ovis/engine/scene.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 PackagingWindow::PackagingWindow() : ModalWindow("PackagingWindow", "Package game") {}
 
@@ -35,24 +36,24 @@ void PackagingWindow::DrawConfiguration() {
 
   if (ImGui::Button("Package")) {
     is_packaging_ = true;
-    auto package = static_cast<EditorAssetLibrary*>(ovis::GetApplicationAssetLibrary())->Package();
+    auto package = static_cast<EditorAssetLibrary*>(GetApplicationAssetLibrary())->Package();
     progress_ = 0.5;
 
     if (package) {
-      std::string url = fmt::format("{}/v1/games/{}/packages/{}", ove::backend_url, ove::project_id, version_);
-      ovis::FetchOptions options;
-      options.method = ovis::RequestMethod::PUT;
+      std::string url = fmt::format("{}/v1/games/{}/packages/{}", backend_url, project_id, version_);
+      FetchOptions options;
+      options.method = RequestMethod::PUT;
       options.headers["Content-Type"] = "application/octet-stream";
-      options.on_success = [this](const ovis::FetchResponse&) {
-        ovis::LogI("Successfully uploaded package.");
+      options.on_success = [this](const FetchResponse&) {
+        LogI("Successfully uploaded package.");
         Remove();
       };
-      options.on_error = [this](const ovis::FetchResponse&) {
-        ovis::LogE("Failed to upload package");
+      options.on_error = [this](const FetchResponse&) {
+        LogE("Failed to upload package");
         Remove();
       };
-      options.on_progress = [](const ovis::FetchProgress& progress) {
-        ovis::LogD("File upload progress!!");
+      options.on_progress = [](const FetchProgress& progress) {
+        LogD("File upload progress!!");
         // TODO: update loading bar (if possible?)
       };
       Fetch(url, options, std::move(*package));
@@ -70,4 +71,5 @@ void PackagingWindow::DrawProgress() {
   ImGui::ProgressBar(progress_, ImVec2(250, 0));
 }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

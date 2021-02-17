@@ -14,14 +14,15 @@
 #include <ovis/engine/scene_object.hpp>
 #include <ovis/rendering2d/sprite_component.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 const SceneEditor::SelectedObject SceneEditor::SelectedObject::NONE = {""};
 
 SceneEditor::SceneEditor(const std::string& scene_asset) : AssetEditor(scene_asset) {
   SetupJsonFile(scene_.Serialize());
 
-  ovis::Lua::on_error.Subscribe([this](const std::string&) {
+  Lua::on_error.Subscribe([this](const std::string&) {
     if (state_ == State::RUNNING) {
       state_ = State::PAUSED;
     }
@@ -99,14 +100,14 @@ void SceneEditor::DrawContent() {
   if (ImGui::BeginDragDropTarget()) {
     std::string dropped_asset_id;
     if (ImGui::AcceptDragDropAsset("texture2d", &dropped_asset_id)) {
-      ovis::SceneObject* object = CreateObject(dropped_asset_id);
-      auto texture_description = ovis::LoadTexture2DDescription(ovis::GetApplicationAssetLibrary(), dropped_asset_id);
+      SceneObject* object = CreateObject(dropped_asset_id);
+      auto texture_description = LoadTexture2DDescription(GetApplicationAssetLibrary(), dropped_asset_id);
 
-      auto* transform2d = object->AddComponent<ovis::Transform2DComponent>("Transform2D");
+      auto* transform2d = object->AddComponent<Transform2DComponent>("Transform2D");
       const glm::vec2 mouse_position = ImGui::GetMousePos();
       transform2d->transform()->SetTranslation(glm::vec3(ScreenToWorld(mouse_position - top_left), 0.0f));
 
-      auto* sprite = object->AddComponent<ovis::SpriteComponent>("Sprite");
+      auto* sprite = object->AddComponent<SpriteComponent>("Sprite");
       sprite->SetTexture(dropped_asset_id);
       sprite->SetSize({texture_description->width, texture_description->height});
 
@@ -154,9 +155,9 @@ bool SceneEditor::DrawObjectList() {
     }
 
     const std::string selected_object_name =
-        ovis::get_with_default<SelectedObject>(selection_, SelectedObject::NONE).name;
+        get_with_default<SelectedObject>(selection_, SelectedObject::NONE).name;
     scene_.GetObjects(&cached_scene_objects_, true);
-    for (ovis::SceneObject* object : cached_scene_objects_) {
+    for (SceneObject* object : cached_scene_objects_) {
       SDL_assert(object != nullptr);
 
       ImGuiTreeNodeFlags scene_object_flags = tree_node_flags | ImGuiTreeNodeFlags_Leaf;
@@ -224,15 +225,15 @@ bool SceneEditor::DrawObjectComponentList() {
   ImVec2 window_size = ImGui::GetWindowSize();
   if (ImGui::BeginChild("Object Properties", ImVec2(0, window_size.y / 2 - ImGui::GetFrameHeightWithSpacing()))) {
     const std::string selected_object_name =
-        ovis::get_with_default<SelectedObject>(selection_, SelectedObject::NONE).name;
+        get_with_default<SelectedObject>(selection_, SelectedObject::NONE).name;
 
     if (selected_object_name.size() != 0) {
-      ovis::SceneObject* selected_object = scene_.GetObject(selected_object_name);
+      SceneObject* selected_object = scene_.GetObject(selected_object_name);
 
       ImGui::Text("%s", selected_object->name().c_str());
       ImGui::SameLine();
       if (ImGui::BeginCombo("##AddComponent", "Add Component", ImGuiComboFlags_NoArrowButton)) {
-        for (const auto& component_id : ovis::SceneObjectComponent::GetRegisteredComponents()) {
+        for (const auto& component_id : SceneObjectComponent::GetRegisteredComponents()) {
           if (!selected_object->HasComponent(component_id)) {
             if (ImGui::Selectable(component_id.c_str())) {
               selected_object->AddComponent(component_id);
@@ -246,7 +247,7 @@ bool SceneEditor::DrawObjectComponentList() {
       ImGui::BeginChild("Components", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true);
       // TODO: iterate over json object and not the serialize the components on every frame
       for (const auto& component_id : selected_object->GetComponentIds()) {
-        ovis::Serializable* component = selected_object->GetComponent(component_id);
+        Serializable* component = selected_object->GetComponent(component_id);
         if (ImGui::InputSerializable(component_id.c_str(), component)) {
           object_changed = true;
         }
@@ -271,13 +272,13 @@ bool SceneEditor::DrawObjectComponentList() {
 }
 
 void SceneEditor::CreateSceneViewport(ImVec2 size) {
-  ovis::RenderTargetViewportDescription scene_viewport_description;
+  RenderTargetViewportDescription scene_viewport_description;
   scene_viewport_description.color_description.texture_description.width = static_cast<size_t>(size.x);
   scene_viewport_description.color_description.texture_description.height = static_cast<size_t>(size.y);
-  scene_viewport_description.color_description.texture_description.format = ovis::TextureFormat::RGB_UINT8;
-  scene_viewport_description.color_description.texture_description.filter = ovis::TextureFilter::POINT;
+  scene_viewport_description.color_description.texture_description.format = TextureFormat::RGB_UINT8;
+  scene_viewport_description.color_description.texture_description.filter = TextureFilter::POINT;
   scene_viewport_description.color_description.texture_description.mip_map_count = 0;
-  scene_viewport_ = std::make_unique<ovis::RenderTargetViewport>(
+  scene_viewport_ = std::make_unique<RenderTargetViewport>(
       EditorWindow::instance()->context(), EditorWindow::instance()->resource_manager(), scene_viewport_description);
 
   scene_viewport_->AddRenderPass("Clear");
@@ -285,7 +286,7 @@ void SceneEditor::CreateSceneViewport(ImVec2 size) {
   scene_viewport_->SetScene(&scene_);
 }
 
-void SceneEditor::JsonFileChanged(const ovis::json& data, const std::string& file_type) {
+void SceneEditor::JsonFileChanged(const json& data, const std::string& file_type) {
   if (file_type == "json") {
     serialized_scene_ = data;
     scene_.Deserialize(serialized_scene_);
@@ -293,7 +294,7 @@ void SceneEditor::JsonFileChanged(const ovis::json& data, const std::string& fil
 }
 
 glm::vec2 SceneEditor::ScreenToWorld(glm::vec2 screen_position) {
-  const ovis::Camera& camera = scene_.camera();
+  const Camera& camera = scene_.camera();
   const float vertical_field_of_view = camera.vertical_field_of_view();
   const float horizontal_field_of_view = camera.aspect_ratio() * vertical_field_of_view;
   const glm::vec2 field_of_view = {horizontal_field_of_view, vertical_field_of_view};
@@ -305,7 +306,7 @@ glm::vec2 SceneEditor::ScreenToWorld(glm::vec2 screen_position) {
   return world_position;
 }
 
-ovis::SceneObject* SceneEditor::CreateObject(const std::string& base_name) {
+SceneObject* SceneEditor::CreateObject(const std::string& base_name) {
   std::string object_name = base_name;
   int counter = 1;
   while (scene_.ContainsObject(object_name)) {
@@ -315,4 +316,5 @@ ovis::SceneObject* SceneEditor::CreateObject(const std::string& base_name) {
   return scene_.CreateObject(object_name);
 }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

@@ -2,8 +2,10 @@
 
 #include <string>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 void ImportAsset(const std::string& filename);
 
-}  // namespace ove
+}
+}  // namespace ovis

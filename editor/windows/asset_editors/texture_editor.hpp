@@ -1,12 +1,13 @@
 #pragma once
 
-#include <TextEditor.h>
-
 #include "asset_editor.hpp"
+
+#include <TextEditor.h>
 
 #include <ovis/graphics/texture2d.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 class TextureEditor : public AssetEditor {
  public:
@@ -18,9 +19,10 @@ class TextureEditor : public AssetEditor {
   void Save() override;
 
  private:
-  std::unique_ptr<ovis::Texture2D> texture_;
-  ovis::Texture2DDescription description_;
+  std::unique_ptr<Texture2D> texture_;
+  Texture2DDescription description_;
   float scale_ = 1.0f;
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

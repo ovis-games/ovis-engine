@@ -8,7 +8,8 @@
 
 #include <imgui_internal.h>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 Toolbar::Toolbar() : UiWindow("Toolbar", "") {
   SetStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
@@ -18,11 +19,11 @@ Toolbar::Toolbar() : UiWindow("Toolbar", "") {
   SetFlags(ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings);
 
-  icons_.save = ovis::LoadTexture2D("icon-save", EditorWindow::instance()->context());
-  icons_.undo = ovis::LoadTexture2D("icon-undo", EditorWindow::instance()->context());
-  icons_.redo = ovis::LoadTexture2D("icon-redo", EditorWindow::instance()->context());
-  icons_.package = ovis::LoadTexture2D("icon-package", EditorWindow::instance()->context());
-  icons_.windows = ovis::LoadTexture2D("icon-windows", EditorWindow::instance()->context());
+  icons_.save = LoadTexture2D("icon-save", EditorWindow::instance()->context());
+  icons_.undo = LoadTexture2D("icon-undo", EditorWindow::instance()->context());
+  icons_.redo = LoadTexture2D("icon-redo", EditorWindow::instance()->context());
+  icons_.package = LoadTexture2D("icon-package", EditorWindow::instance()->context());
+  icons_.windows = LoadTexture2D("icon-windows", EditorWindow::instance()->context());
 }
 
 void Toolbar::BeforeBegin() {
@@ -51,8 +52,7 @@ void Toolbar::DrawContent() {
     Undo();
   }
   if (ImGui::IsItemHovered()) {
-    if (AssetEditor::last_focused_document_window != nullptr &&
-        AssetEditor::last_focused_document_window->CanUndo()) {
+    if (AssetEditor::last_focused_document_window != nullptr && AssetEditor::last_focused_document_window->CanUndo()) {
       ImGui::SetTooltip("Undo");
     } else {
       ImGui::SetTooltip("Nothing to undo");
@@ -64,8 +64,7 @@ void Toolbar::DrawContent() {
     Redo();
   }
   if (ImGui::IsItemHovered()) {
-    if (AssetEditor::last_focused_document_window != nullptr &&
-        AssetEditor::last_focused_document_window->CanRedo()) {
+    if (AssetEditor::last_focused_document_window != nullptr && AssetEditor::last_focused_document_window->CanRedo()) {
       ImGui::SetTooltip("Redo");
     } else {
       ImGui::SetTooltip("Nothing to redo");
@@ -155,4 +154,5 @@ void Toolbar::Redo() {
 //   return true;
 // }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

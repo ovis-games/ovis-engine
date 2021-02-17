@@ -70,7 +70,8 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
           for (auto property = properties.begin(), end = properties.end(); property != end; ++property) {
             try {
               const int new_depth = flags & ImGuiInputJsonFlags_IgnoreEnclosingObject ? depth : depth + 1;
-              if (InputJson(property.key().c_str(), &value->at(property.key()), property.value(), flags & (~ImGuiInputJsonFlags_IgnoreEnclosingObject), new_depth)) {
+              if (InputJson(property.key().c_str(), &value->at(property.key()), property.value(),
+                            flags & (~ImGuiInputJsonFlags_IgnoreEnclosingObject), new_depth)) {
                 json_changed = true;
               }
             } catch (...) {

@@ -2,7 +2,8 @@
 
 #include "asset_editors/asset_editor.hpp"
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 InspectorWindow::InspectorWindow() : UiWindow("Inspector") {
   UpdateAfter("Dockspace Window");
@@ -14,4 +15,5 @@ void InspectorWindow::DrawContent() {
   }
 }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

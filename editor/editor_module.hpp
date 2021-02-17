@@ -2,9 +2,10 @@
 
 #include <ovis/engine/module.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
-class EditorModule : public ovis::Module {
+class EditorModule : public Module {
  public:
   EditorModule();
 
@@ -14,4 +15,5 @@ class EditorModule : public ovis::Module {
   std::vector<std::string> log_history_;
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

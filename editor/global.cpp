@@ -1,3 +1,5 @@
 #include "global.hpp"
 
-namespace ove {}  // namespace ove
+namespace ovis {
+namespace editor {}
+}  // namespace ovis

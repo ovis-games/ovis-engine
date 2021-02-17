@@ -13,23 +13,24 @@
 #include <ovis/engine/fetch.hpp>
 #include <ovis/engine/lua.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
-EditorAssetLibrary::EditorAssetLibrary(const std::string& directory) : ovis::DirectoryAssetLibrary(directory) {
+EditorAssetLibrary::EditorAssetLibrary(const std::string& directory) : DirectoryAssetLibrary(directory) {
   if (!std::filesystem::exists(directory)) {
     if (!std::filesystem::create_directory(directory)) {
-      ovis::LogE("Failed to create asset library directory '{}'", directory);
+      LogE("Failed to create asset library directory '{}'", directory);
       SDL_assert(false);
     }
   } else if (!std::filesystem::is_directory(directory)) {
-    ovis::LogE("'{}' is not a directory", directory);
+    LogE("'{}' is not a directory", directory);
     SDL_assert(false);
   }
 }
 
 bool EditorAssetLibrary::CreateAsset(
     const std::string& asset_id, const std::string& type,
-    const std::vector<std::pair<std::string, std::variant<std::string, ovis::Blob>>>& files) {
+    const std::vector<std::pair<std::string, std::variant<std::string, Blob>>>& files) {
   if (DirectoryAssetLibrary::CreateAsset(asset_id, type, files)) {
     for (const auto file : files) {
       UploadFile(*GetAssetFilename(asset_id, file.first));
@@ -41,7 +42,7 @@ bool EditorAssetLibrary::CreateAsset(
 }
 
 bool EditorAssetLibrary::SaveAssetFile(const std::string& asset_id, const std::string& file_type,
-                                       std::variant<std::string, ovis::Blob> content) {
+                                       std::variant<std::string, Blob> content) {
   if (DirectoryAssetLibrary::SaveAssetFile(asset_id, file_type, std::move(content))) {
     UploadFile(*GetAssetFilename(asset_id, file_type));
     return true;
@@ -50,7 +51,7 @@ bool EditorAssetLibrary::SaveAssetFile(const std::string& asset_id, const std::s
   }
 }
 
-std::optional<ovis::Blob> EditorAssetLibrary::Package() {
+std::optional<Blob> EditorAssetLibrary::Package() {
   // Should not be necessary but better save than sorry
   Rescan();
 
@@ -76,32 +77,32 @@ std::optional<ovis::Blob> EditorAssetLibrary::Package() {
     for (const std::string& asset_file_type : GetAssetFileTypes(asset_id)) {
       const std::optional<std::string> asset_filename = GetAssetFilename(asset_id, asset_file_type);
       if (!asset_filename) {
-        ovis::LogE("Could not get asset filename for asset id '{}' and file type '{}'", asset_id, asset_file_type);
+        LogE("Could not get asset filename for asset id '{}' and file type '{}'", asset_id, asset_file_type);
         return {};
       }
 
-      ovis::LogV("Add asset file to archive ({},{})", asset_id, asset_file_type);
+      LogV("Add asset file to archive ({},{})", asset_id, asset_file_type);
       // TODO: we should not reallocate this every time!
-      std::optional<ovis::Blob> content = LoadAssetBinaryFile(asset_id, asset_file_type);
+      std::optional<Blob> content = LoadAssetBinaryFile(asset_id, asset_file_type);
       if (!asset_filename) {
-        ovis::LogE("Could load asset file for asset id '{}' and file type '{}'", asset_id, asset_file_type);
+        LogE("Could load asset file for asset id '{}' and file type '{}'", asset_id, asset_file_type);
         return {};
       }
 
       if (int error = mtar_write_file_header(&tar, asset_filename->c_str(), content->size()); error != MTAR_ESUCCESS) {
-        ovis::LogE("Failed to write file header to archive: {}", mtar_strerror(error));
+        LogE("Failed to write file header to archive: {}", mtar_strerror(error));
         return {};
       }
 
       if (int error = mtar_write_data(&tar, content->data(), content->size()); error != MTAR_ESUCCESS) {
-        ovis::LogE("Failed to write file to archive: {}", mtar_strerror(error));
+        LogE("Failed to write file to archive: {}", mtar_strerror(error));
         return {};
       }
     }
   }
 
   if (int error = mtar_finalize(&tar); error != MTAR_ESUCCESS) {
-    ovis::LogE("Failed to finalize archive: {}", mtar_strerror(error));
+    LogE("Failed to finalize archive: {}", mtar_strerror(error));
     return {};
   }
 
@@ -114,10 +115,10 @@ std::optional<ovis::Blob> EditorAssetLibrary::Package() {
 //     const std::string scene_filename = GetAssetFilename(path, id, "scene.json");
 //     SDL_assert(!std::filesystem::exists(scene_filename));
 //     std::ofstream scene_file(scene_filename);
-//     const ovis::json scene_data = {{"version", "0.1"}, {"objects", ovis::json::object()}};
+//     const json scene_data = {{"version", "0.1"}, {"objects", json::object()}};
 //     scene_file << scene_data;
 //     scene_file.close();
-//     ovis::LogV("Created file '{}'", scene_filename);
+//     LogV("Created file '{}'", scene_filename);
 
 //     assets_data_["assets"][id] = {{"type", "scene"}, {"path", path}};
 //     SaveAssetsFile();
@@ -131,10 +132,10 @@ std::optional<ovis::Blob> EditorAssetLibrary::Package() {
 //     const std::string script_options_filename = GetAssetFilename(path, id, "script.json");
 //     SDL_assert(!std::filesystem::exists(script_options_filename));
 //     std::ofstream script_options_file(script_options_filename);
-//     const ovis::json script_options = {{"version", "0.1"}, {"type", "scene_controller"}};
+//     const json script_options = {{"version", "0.1"}, {"type", "scene_controller"}};
 //     script_options_file << script_options;
 //     script_options_file.close();
-//     ovis::LogV("Created file '{}'", script_options_filename);
+//     LogV("Created file '{}'", script_options_filename);
 
 //     const std::string lua_filename = GetAssetFilename(path, id, "script.lua");
 //     SDL_assert(!std::filesystem::exists(lua_filename));
@@ -148,14 +149,14 @@ std::optional<ovis::Blob> EditorAssetLibrary::Package() {
 //         id);
 //     lua_file << source;
 //     lua_file.close();
-//     ovis::LogV("Created file '{}'", lua_filename);
+//     LogV("Created file '{}'", lua_filename);
 
 //     assets_data_["assets"][id] = {{"type", "scene_controller"}, {"path", path}};
 //     SaveAssetsFile();
 
 //     UploadFile(script_options_filename);
 //     UploadFile(lua_filename);
-//     ovis::Lua::LoadSceneControllerScript(id, "/assets/" + id + ".script.lua");
+//     Lua::LoadSceneControllerScript(id, "/assets/" + id + ".script.lua");
 //   }
 // }
 
@@ -172,31 +173,32 @@ void EditorAssetLibrary::UploadNextFile() {
     files_to_upload_.erase(filename);
     is_currently_uploading_ = true;
 
-    auto file_data = ovis::LoadBinaryFile(filename);
+    auto file_data = LoadBinaryFile(filename);
     if (file_data) {
-      ovis::LogI("Uploading {} ({} bytes)", filename, file_data->size());
+      LogI("Uploading {} ({} bytes)", filename, file_data->size());
 
       std::string relative_filename = std::filesystem::relative(filename, directory());
       std::string url =
-          fmt::format("{}/v1/games/{}/assetFiles/{}", ove::backend_url, ove::project_id, relative_filename);
-      ovis::FetchOptions options;
-      options.method = ovis::RequestMethod::PUT;
+          fmt::format("{}/v1/games/{}/assetFiles/{}", backend_url, project_id, relative_filename);
+      FetchOptions options;
+      options.method = RequestMethod::PUT;
       options.headers["Content-Type"] = "application/octet-stream";
-      options.on_success = [this, filename](const ovis::FetchResponse&) {
-        ovis::LogI("Successfully uploaded '{}'", filename);
+      options.on_success = [this, filename](const FetchResponse&) {
+        LogI("Successfully uploaded '{}'", filename);
         is_currently_uploading_ = false;
         UploadNextFile();
       };
-      options.on_error = [this, filename](const ovis::FetchResponse&) {
-        ovis::LogE("Failed to upload '{}'", filename);
+      options.on_error = [this, filename](const FetchResponse&) {
+        LogE("Failed to upload '{}'", filename);
         is_currently_uploading_ = false;
         UploadNextFile();
       };
-      ovis::Fetch(url, options, std::move(*file_data));
+      Fetch(url, options, std::move(*file_data));
     } else {
-      ovis::LogE("Failed to upload '{}' file does not exist", filename);
+      LogE("Failed to upload '{}' file does not exist", filename);
     }
   }
 }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

@@ -2,4 +2,6 @@
 
 #include "action_history.hpp"
 
-namespace ove {}  // namespace ove
+namespace ovis {
+namespace editor {}
+}  // namespace ovis

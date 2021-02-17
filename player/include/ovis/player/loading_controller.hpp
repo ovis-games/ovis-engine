@@ -10,7 +10,7 @@
 namespace ovis {
 namespace player {
 
-class LoadingController : public ovis::SceneController {
+class LoadingController : public SceneController {
   enum class State { DOWNLOADING_PACKAGE, EXTRACTING, ERROR };
 
  public:

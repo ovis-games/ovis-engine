@@ -24,15 +24,15 @@ Window::Window(const WindowDescription& desc)
   all_windows_.push_back(this);
 
   // resource_manager_.RegisterFileLoader(
-  //     ".texture2d", std::bind(&ovis::LoadTexture2D, &graphics_context_, std::placeholders::_1, std::placeholders::_2,
+  //     ".texture2d", std::bind(&LoadTexture2D, &graphics_context_, std::placeholders::_1, std::placeholders::_2,
   //                             std::placeholders::_3, std::placeholders::_4));
 
   // resource_manager_.RegisterFileLoader(
-  //     ".cubemap", std::bind(&ovis::LoadCubemap, &graphics_context_, std::placeholders::_1, std::placeholders::_2,
+  //     ".cubemap", std::bind(&LoadCubemap, &graphics_context_, std::placeholders::_1, std::placeholders::_2,
   //                           std::placeholders::_3, std::placeholders::_4));
 
   // resource_manager_.RegisterFileLoader(
-  //     ".shader", std::bind(&ovis::LoadShaderProgram, &graphics_context_, std::placeholders::_1,
+  //     ".shader", std::bind(&LoadShaderProgram, &graphics_context_, std::placeholders::_1,
   //     std::placeholders::_2,
   //                          std::placeholders::_3, std::placeholders::_4));
 

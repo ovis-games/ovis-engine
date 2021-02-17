@@ -9,11 +9,12 @@
 #include <ovis/core/json.hpp>
 #include <ovis/core/log.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 struct Action {
   std::string id;
-  ovis::json data;
+  json data;
   std::string description;
 };
 
@@ -44,8 +45,8 @@ class ActionHistoryBase {
 template <typename Context>
 class ActionHistory : public ActionHistoryBase {
  public:
-  typedef void (*ActionFunction)(Context* context, const ovis::json& data);
-  typedef std::string (*ActionDescriptionFunction)(Context* context, const ovis::json& data);
+  typedef void (*ActionFunction)(Context* context, const json& data);
+  typedef std::string (*ActionDescriptionFunction)(Context* context, const json& data);
 
   ActionHistory(Context* context) : context_(context) {}
 
@@ -61,7 +62,7 @@ class ActionHistory : public ActionHistoryBase {
   }
 
   template <typename... DesciptionArguments>
-  void Do(const std::string& action_id, const ovis::json& data, const char* description,
+  void Do(const std::string& action_id, const json& data, const char* description,
           DesciptionArguments&&... description_arguments) {
     SDL_assert(do_functions_.count(action_id) == 1);
     do_functions_[action_id](context_, data);
@@ -69,7 +70,7 @@ class ActionHistory : public ActionHistoryBase {
     actions_.push_back(
         Action{action_id, data, fmt::format(description, std::forward<DesciptionArguments>(description_arguments)...)});
     current_position_ = actions_.end();
-    ovis::LogV("{} (action_id={}, data={})", actions_.back().description, action_id, data.dump());
+    LogV("{} (action_id={}, data={})", actions_.back().description, action_id, data.dump());
   }
 
   bool Redo() override {
@@ -77,7 +78,7 @@ class ActionHistory : public ActionHistoryBase {
       return false;
     }
     do_functions_[current_position_->id](context_, current_position_->data);
-    ovis::LogV("Redo: {} (action_id={}, data={})", current_position_->description, current_position_->id,
+    LogV("Redo: {} (action_id={}, data={})", current_position_->description, current_position_->id,
                current_position_->data.dump());
     ++current_position_;
     return true;
@@ -89,7 +90,7 @@ class ActionHistory : public ActionHistoryBase {
     }
     --current_position_;
     undo_functions_[current_position_->id](context_, current_position_->data);
-    ovis::LogV("Undo: {} (action_id={}, data={})", current_position_->description, current_position_->id,
+    LogV("Undo: {} (action_id={}, data={})", current_position_->description, current_position_->id,
                current_position_->data.dump());
     return true;
   }
@@ -101,4 +102,5 @@ class ActionHistory : public ActionHistoryBase {
   std::unordered_map<std::string, ActionFunction> undo_functions_;
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

@@ -6,7 +6,7 @@
 
 namespace ovis {
 
-class ImGuiSceneController : public ovis::SceneController {
+class ImGuiSceneController : public SceneController {
  public:
   ImGuiSceneController(ImGuiContext* context);
 

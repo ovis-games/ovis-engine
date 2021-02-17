@@ -6,17 +6,17 @@
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/file.hpp>
 #include <ovis/core/range.hpp>
-
 #include <ovis/engine/engine.hpp>
 #include <ovis/engine/lua.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 std::vector<LuaError> ParseLuaErrorMessage(const std::string& error_message) {
   std::vector<LuaError> errors;
   std::regex lua_error_regex("^(.+):(\\d+): (.+)");
 
-  for (const auto& match : ovis::make_range(
+  for (const auto& match : make_range(
            std::sregex_iterator(error_message.begin(), error_message.end(), lua_error_regex), std::sregex_iterator())) {
     errors.push_back({match[1].str(), std::stoi(match[2].str()), match[3].str()});
   }
@@ -42,12 +42,12 @@ void ScriptEditor::DrawContent() {
 
 void ScriptEditor::Save() {
   SaveFile("lua", editor_.GetText());
-  sol::protected_function_result result = ovis::Lua::AddSceneController(editor_.GetText(), asset_id());
+  sol::protected_function_result result = Lua::AddSceneController(editor_.GetText(), asset_id());
 
   std::vector<LuaError> errors;
   if (!result.valid()) {
     const std::string error_message = result;
-    ovis::LogE("Failed to load script: {}", error_message);
+    LogE("Failed to load script: {}", error_message);
     errors = ParseLuaErrorMessage(error_message);
   }
 
@@ -65,4 +65,5 @@ void ScriptEditor::SetErrors(const std::vector<LuaError>& errors) {
   editor_.SetErrorMarkers(error_markers);
 }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

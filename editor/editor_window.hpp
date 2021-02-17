@@ -2,9 +2,10 @@
 
 #include <ovis/engine/window.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
-class EditorWindow : public ovis::Window {
+class EditorWindow : public Window {
  public:
   EditorWindow();
 
@@ -20,4 +21,5 @@ class EditorWindow : public ovis::Window {
   void SetUIStyle();
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

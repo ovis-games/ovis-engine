@@ -5,15 +5,17 @@
 
 #include <ovis/engine/game_settings.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 SettingsEditor::SettingsEditor(const std::string& settings_id) : AssetEditor(settings_id) {
-  SetupJsonFile(ovis::GameSettings{});
+  SetupJsonFile(GameSettings{});
 }
 
 void SettingsEditor::DrawContent() {
-  ovis::json settings = settings_;
-  if (ImGui::InputJson("Game Settings", &settings, ovis::GameSettings::SCHEMA, ImGuiInputJsonFlags_IgnoreEnclosingObject)) {
+  json settings = settings_;
+  if (ImGui::InputJson("Game Settings", &settings, GameSettings::SCHEMA,
+                       ImGuiInputJsonFlags_IgnoreEnclosingObject)) {
     settings_ = settings;
     SubmitJsonFile(settings_);
   }
@@ -25,10 +27,11 @@ void SettingsEditor::Save() {
   SaveFile("json", settings_.dump());
 }
 
-void SettingsEditor::JsonFileChanged(const ovis::json& data, const std::string& file_type) {
+void SettingsEditor::JsonFileChanged(const json& data, const std::string& file_type) {
   if (file_type == "json") {
     settings_ = data;
   }
 }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

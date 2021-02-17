@@ -2,7 +2,8 @@
 
 #include "ui_window.hpp"
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 class LogWindow : public UiWindow {
  public:
@@ -23,4 +24,5 @@ class LogWindow : public UiWindow {
   bool scroll_next_frame_ = false;
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

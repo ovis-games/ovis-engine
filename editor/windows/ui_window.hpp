@@ -1,22 +1,24 @@
 #pragma once
 
-#include <vector>
 #include <tuple>
 #include <variant>
+#include <vector>
+
 #include <imgui.h>
 
 #include <ovis/engine/scene_controller.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
-class UiWindow : public ovis::SceneController {
+class UiWindow : public SceneController {
  public:
   UiWindow(const std::string& id, const std::string& window_title = "");
 
   void DrawImGui() override;
 
   inline void Focus() { should_focus_ = true; }
-  inline bool has_focus() const { return has_focus_;  }
+  inline bool has_focus() const { return has_focus_; }
 
   inline ImGuiID dockspace_id() const { return dockspace_id_; }
   inline void SetDockSpaceId(ImGuiID dockspace_id) {
@@ -43,4 +45,5 @@ class UiWindow : public ovis::SceneController {
   std::vector<std::tuple<ImGuiStyleVar, ImGuiStyleValue>> style_vars_;
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

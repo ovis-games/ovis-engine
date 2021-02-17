@@ -2,14 +2,15 @@
 
 #include "../ui_window.hpp"
 
-namespace ove
-{
-  
+namespace ovis {
+namespace editor {
+
 class ModalWindow : public UiWindow {
-public:
+ public:
   ModalWindow(const std::string& id, const std::string& window_title = "");
 
   void DrawImGui() override;
 };
 
-} // namespace ove
+}  // namespace editor
+}  // namespace ovis

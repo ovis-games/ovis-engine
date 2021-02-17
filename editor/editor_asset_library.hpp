@@ -1,7 +1,7 @@
 #pragma once
 
-#include <set>
 #include <optional>
+#include <set>
 
 #include <emscripten/fetch.h>
 
@@ -9,27 +9,29 @@
 #include <ovis/core/file.hpp>
 #include <ovis/core/json.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
-class EditorAssetLibrary : public ovis::DirectoryAssetLibrary {
+class EditorAssetLibrary : public DirectoryAssetLibrary {
  public:
   EditorAssetLibrary(const std::string& directory);
 
   bool CreateAsset(const std::string& asset_id, const std::string& type,
-                   const std::vector<std::pair<std::string, std::variant<std::string, ovis::Blob>>>& files) override;
+                   const std::vector<std::pair<std::string, std::variant<std::string, Blob>>>& files) override;
 
   bool SaveAssetFile(const std::string& asset_id, const std::string& file_type,
-                     std::variant<std::string, ovis::Blob> content) override;
-  std::optional<ovis::Blob> Package();
+                     std::variant<std::string, Blob> content) override;
+  std::optional<Blob> Package();
 
   void UploadFile(const std::string& filename);
 
  private:
   std::set<std::string> files_to_upload_;
-  ovis::Blob current_file_content_;
+  Blob current_file_content_;
   bool is_currently_uploading_ = false;
 
   void UploadNextFile();
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

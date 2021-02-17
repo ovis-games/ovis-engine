@@ -6,7 +6,8 @@
 
 #include <ovis/graphics/texture2d.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 class Toolbar : public UiWindow {
  public:
@@ -18,11 +19,11 @@ class Toolbar : public UiWindow {
 
  private:
   struct Icons {
-    std::unique_ptr<ovis::Texture2D> save;
-    std::unique_ptr<ovis::Texture2D> undo;
-    std::unique_ptr<ovis::Texture2D> redo;
-    std::unique_ptr<ovis::Texture2D> package;
-    std::unique_ptr<ovis::Texture2D> windows;
+    std::unique_ptr<Texture2D> save;
+    std::unique_ptr<Texture2D> undo;
+    std::unique_ptr<Texture2D> redo;
+    std::unique_ptr<Texture2D> package;
+    std::unique_ptr<Texture2D> windows;
   } icons_;
   ImVec2 icon_size_ = {28, 28};
 
@@ -31,4 +32,5 @@ class Toolbar : public UiWindow {
   void Redo();
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

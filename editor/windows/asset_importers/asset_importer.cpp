@@ -8,10 +8,11 @@
 #include <ovis/core/json.hpp>
 #include <ovis/core/utf8.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
 void ImportImage(const std::string& filename) {
-  ovis::LogV("Importing image: {}", filename);
+  LogV("Importing image: {}", filename);
 
   int width;
   int height;
@@ -21,7 +22,7 @@ void ImportImage(const std::string& filename) {
   if (data != nullptr) {
     static const char* const FORMATS[] = {"", "R_UINT8", "RG_UINT8", "RGB_UINT8", "RGBA_UINT8"};
 
-    ovis::json parameters;
+    json parameters;
     parameters["width"] = width;
     parameters["height"] = height;
     parameters["filter"] = "bilinear";
@@ -30,28 +31,29 @@ void ImportImage(const std::string& filename) {
     std::vector<std::byte> blob(channels * width * height);
     std::memcpy(blob.data(), data, channels * width * height);
 
-    if (ovis::GetApplicationAssetLibrary()->CreateAsset(
+    if (GetApplicationAssetLibrary()->CreateAsset(
             std::filesystem::path(filename).stem(),  // TODO: do '.' have to be replaces with e.g., '_'?
             "texture2d", {{"json", parameters.dump()}, {"0", blob}})) {
-      ovis::LogI("Successfully imported {}", std::filesystem::path(filename).filename().string());
+      LogI("Successfully imported {}", std::filesystem::path(filename).filename().string());
     }
   } else {
-    ovis::LogE("Failed to load image: {}", stbi_failure_reason());
+    LogE("Failed to load image: {}", stbi_failure_reason());
   }
 
   stbi_image_free(data);
 }
 
 void ImportAsset(const std::string& filename) {
-  const std::string extension = ovis::to_lower(std::filesystem::path(filename).extension());
+  const std::string extension = to_lower(std::filesystem::path(filename).extension());
 
   if (extension == ".jpeg" || extension == ".jpg" || extension == ".jps" || extension == ".png" ||
       extension == ".tga" || extension == ".bmp" || extension == ".psd" || extension == ".gif" || extension == ".hdr" ||
       extension == ".pic" || extension == ".pnm") {
     ImportImage(filename);
   } else {
-    ovis::LogE("Unknown file format: {}", extension);
+    LogE("Unknown file format: {}", extension);
   }
 }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

@@ -1,10 +1,11 @@
 #pragma once
 
-#include <TextEditor.h>
-
 #include "asset_editor.hpp"
 
-namespace ove {
+#include <TextEditor.h>
+
+namespace ovis {
+namespace editor {
 
 struct LuaError {
   std::string asset_id;
@@ -31,4 +32,5 @@ class ScriptEditor : public AssetEditor {
   TextEditor editor_;
 };
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

@@ -29,7 +29,7 @@ void SpriteRenderer::CreateResources() {
   VertexBufferDescription vb_desc;
   vb_desc.vertex_size_in_bytes = 4 * sizeof(float);
   vb_desc.size_in_bytes = 4 * vb_desc.vertex_size_in_bytes;
-  vertex_buffer_ = std::make_unique<ovis::VertexBuffer>(context(), vb_desc, vertices);
+  vertex_buffer_ = std::make_unique<VertexBuffer>(context(), vb_desc, vertices);
 
   VertexInputDescription vi_desc;
   vi_desc.vertex_buffers = {vertex_buffer_.get()};
@@ -49,8 +49,8 @@ void SpriteRenderer::Render(Scene* scene) {
   draw_item.count = 4;
   draw_item.render_target_configuration = viewport()->GetDefaultRenderTargetConfiguration();
   draw_item.blend_state.enabled = true;
-  draw_item.blend_state.source_color_factor = ovis::SourceBlendFactor::SOURCE_ALPHA;
-  draw_item.blend_state.destination_color_factor = ovis::DestinationBlendFactor::ONE_MINUS_SOURCE_ALPHA;
+  draw_item.blend_state.source_color_factor = SourceBlendFactor::SOURCE_ALPHA;
+  draw_item.blend_state.destination_color_factor = DestinationBlendFactor::ONE_MINUS_SOURCE_ALPHA;
 
   const auto objects_with_sprites = scene->GetSceneObjectsWithComponent("Sprite");
 

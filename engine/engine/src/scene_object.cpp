@@ -77,7 +77,7 @@ bool SceneObject::Deserialize(const json& serialized_object) {
       AddComponent(component.key())->Deserialize(component.value());
     }
   } else {
-    ovis::LogV("SceneObject deserialization: no 'components' property available!");
+    LogV("SceneObject deserialization: no 'components' property available!");
   }
   return true;
 }

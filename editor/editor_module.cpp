@@ -11,13 +11,14 @@
 #include <ovis/graphics/render_target_configuration.hpp>
 #include <ovis/engine/render_pass.hpp>
 
-namespace ove {
+namespace ovis {
+namespace editor {
 
-class ClearRenderPass : public ovis::RenderPass {
+class ClearRenderPass : public RenderPass {
  public:
-  ClearRenderPass() : ovis::RenderPass("ClearRenderPass") { RenderBefore("ImGui"); }
+  ClearRenderPass() : RenderPass("ClearRenderPass") { RenderBefore("ImGui"); }
 
-  void Render(ovis::Scene* scene) override {
+  void Render(Scene* scene) override {
     context()->default_render_target_configuration()->ClearColor(0, clear_color_);
   }
 
@@ -25,12 +26,13 @@ class ClearRenderPass : public ovis::RenderPass {
   glm::vec4 clear_color_;
 };
 
-EditorModule::EditorModule() : ovis::Module("Editor") {
-  RegisterRenderPass("ClearRenderPass", [](ovis::Viewport*) { return std::make_unique<ClearRenderPass>(); });
-  RegisterSceneController("LoadingWindow", [this](ovis::Scene*) { return std::make_unique<LoadingWindow>(); });
-  RegisterSceneController("PackagingWindow", [this](ovis::Scene*) { return std::make_unique<PackagingWindow>(); });
+EditorModule::EditorModule() : Module("Editor") {
+  RegisterRenderPass("ClearRenderPass", [](Viewport*) { return std::make_unique<ClearRenderPass>(); });
+  RegisterSceneController("LoadingWindow", [this](Scene*) { return std::make_unique<LoadingWindow>(); });
+  RegisterSceneController("PackagingWindow", [this](Scene*) { return std::make_unique<PackagingWindow>(); });
 
-  ovis::Log::AddListener([this](ovis::LogLevel, const std::string& text) { log_history_.push_back(text); });
+  Log::AddListener([this](LogLevel, const std::string& text) { log_history_.push_back(text); });
 }
 
-}  // namespace ove
+}  // namespace editor
+}  // namespace ovis

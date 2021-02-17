@@ -80,7 +80,7 @@ void LoadingController::Update(std::chrono::microseconds ms) {
       progress_ = static_cast<float>(tar_.pos) / package_.size();
     } else {
       // We are done
-      ovis::SetApplicationAssetsDirectory("/assets");
+      SetApplicationAssetsDirectory("/assets");
       const std::optional<GameSettings> settings = LoadGameSettings();
 
       // TODO: handle errors here appropriately
