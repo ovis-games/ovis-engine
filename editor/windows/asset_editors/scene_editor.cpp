@@ -3,6 +3,7 @@
 #include "../../editor_window.hpp"
 #include "../../imgui_extensions/input_asset.hpp"
 #include "../../imgui_extensions/input_serializable.hpp"
+#include "../../imgui_extensions/texture_button.hpp"
 
 #include <imgui_stdlib.h>
 #include <ovis/base/transform2d_component.hpp>
@@ -27,6 +28,13 @@ SceneEditor::SceneEditor(const std::string& scene_asset) : AssetEditor(scene_ass
       state_ = State::PAUSED;
     }
   });
+
+  icons_.play = LoadTexture2D("icon-play", EditorWindow::instance()->context());
+  icons_.pause = LoadTexture2D("icon-pause", EditorWindow::instance()->context());
+  icons_.stop = LoadTexture2D("icon-stop", EditorWindow::instance()->context());
+  icons_.move = LoadTexture2D("icon-move", EditorWindow::instance()->context());
+  icons_.rotate = LoadTexture2D("icon-rotate", EditorWindow::instance()->context());
+  icons_.scale = LoadTexture2D("icon-scale", EditorWindow::instance()->context());
 }
 
 void SceneEditor::Update(std::chrono::microseconds delta_time) {
@@ -44,12 +52,16 @@ bool SceneEditor::ProcessEvent(const SDL_Event& event) {
 }
 
 void SceneEditor::DrawContent() {
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(48, 48, 48)));
   if (state_ == State::RUNNING) {
-    if (ImGui::Button("Pause")) {
+    if (ImGui::TextureButton(icons_.pause.get())) {
       state_ = State::PAUSED;
     }
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Pause");
+    }
   } else {
-    if (ImGui::Button("Play")) {
+    if (ImGui::TextureButton(icons_.play.get())) {
       if (state_ == State::STOPPED) {
         serialized_scene_ = scene_.Serialize();
         // Reload so scripts are upt to date
@@ -58,14 +70,50 @@ void SceneEditor::DrawContent() {
       }
       state_ = State::RUNNING;
     }
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Play");
+    }
   }
-  if (ImGui::Button("Stop")) {
+  ImGui::SameLine();
+  if (ImGui::TextureButton(icons_.stop.get())) {
     if (state_ != State::STOPPED) {
       scene_.Stop();
       scene_.Deserialize(serialized_scene_);
     }
     state_ = State::STOPPED;
   }
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("Stop");
+  }
+
+  ImGui::SameLine();
+  ImGui::Dummy(ImVec2(20, 0));
+
+  ImGui::SameLine();
+  if (ImGui::TextureButton(icons_.move.get())) {
+    editing_mode_ = EditingMode::MOVE;
+  }
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("Move");
+  }
+
+  ImGui::SameLine();
+  if (ImGui::TextureButton(icons_.rotate.get())) {
+    editing_mode_ = EditingMode::ROTATE;
+  }
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("Rotate");
+  }
+
+  ImGui::SameLine();
+  if (ImGui::TextureButton(icons_.scale.get())) {
+    editing_mode_ = EditingMode::SCALE;
+  }
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("Scale");
+  }
+
+  ImGui::PopStyleColor();
 
   ImVec4 border_color(0, 0, 0, 1);
   if (state_ == State::RUNNING) {
@@ -94,6 +142,44 @@ void SceneEditor::DrawContent() {
       float movement_scaling = scene_.camera().vertical_field_of_view() / available_space.y;
       scene_.camera().transform().Translate(
           {-movement_scaling * ImGui::GetIO().MouseDelta.x, -movement_scaling * ImGui::GetIO().MouseDelta.y, 0});
+    }
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+      const glm::vec2 mouse_position = ImGui::GetMousePos();
+      SceneObject* object = GetObjectAtPosition(ScreenToWorld(mouse_position - top_left));
+      if (object == nullptr) {
+        selection_ = SelectedScene{};
+        LogI("Selecting scene");
+      } else {
+        selection_ = SelectedObject{object->name()};
+        LogI("Selecting object: {}", object->name());
+      }
+    }
+
+    SceneObject* selected_object = GetSelectedObject();
+    if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && selected_object != nullptr) {
+      const glm::vec2 mouse_position = ImGui::GetMousePos();
+      move_state_.drag_start_mouse_position = ScreenToWorld(mouse_position - top_left);
+
+      if (selected_object->HasComponent("Transform2D")) {
+        move_state_.original_position =
+            selected_object->GetComponent<Transform2DComponent>("Transform2D")->transform()->translation();
+
+        LogI("Original position: ({},{})", move_state_.original_position.x, move_state_.original_position.y);
+      }
+    }
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && selected_object != nullptr) {
+      const glm::vec2 mouse_position = ImGui::GetMousePos();
+      const glm::vec2 current_mouse_pos = ScreenToWorld(mouse_position - top_left);
+      const glm::vec2 position_delta = current_mouse_pos - move_state_.drag_start_mouse_position;
+      const glm::vec2 object_position = move_state_.original_position + position_delta;
+
+      if (selected_object->HasComponent("Transform2D")) {
+        selected_object->GetComponent<Transform2DComponent>("Transform2D")
+            ->transform()
+            ->SetTranslation(glm::vec3(object_position, 0.0f));
+      }
+
+      // LogI("Mouse delta: ({},{})", object_position.x, object_position.y);
     }
   }
 
@@ -154,8 +240,7 @@ bool SceneEditor::DrawObjectList() {
       selection_ = SelectedScene{};
     }
 
-    const std::string selected_object_name =
-        get_with_default<SelectedObject>(selection_, SelectedObject::NONE).name;
+    const std::string selected_object_name = get_with_default<SelectedObject>(selection_, SelectedObject::NONE).name;
     scene_.GetObjects(&cached_scene_objects_, true);
     for (SceneObject* object : cached_scene_objects_) {
       SDL_assert(object != nullptr);
@@ -224,8 +309,7 @@ bool SceneEditor::DrawObjectComponentList() {
 
   ImVec2 window_size = ImGui::GetWindowSize();
   if (ImGui::BeginChild("Object Properties", ImVec2(0, window_size.y / 2 - ImGui::GetFrameHeightWithSpacing()))) {
-    const std::string selected_object_name =
-        get_with_default<SelectedObject>(selection_, SelectedObject::NONE).name;
+    const std::string selected_object_name = get_with_default<SelectedObject>(selection_, SelectedObject::NONE).name;
 
     if (selected_object_name.size() != 0) {
       SceneObject* selected_object = scene_.GetObject(selected_object_name);
@@ -314,6 +398,45 @@ SceneObject* SceneEditor::CreateObject(const std::string& base_name) {
     object_name = base_name + std::to_string(counter);
   }
   return scene_.CreateObject(object_name);
+}
+
+SceneObject* SceneEditor::GetSelectedObject() {
+  if (std::holds_alternative<SelectedObject>(selection_)) {
+    return scene_.GetObject(std::get<SelectedObject>(selection_).name);
+  } else {
+    return nullptr;
+  }
+}
+
+SceneObject* SceneEditor::GetObjectAtPosition(glm::vec2 world_position) {
+  SceneObject* object_at_position = nullptr;
+
+  for (SceneObject* object : scene_.GetObjects()) {
+    glm::vec2 size;
+    if (object->HasComponent("Sprite")) {
+      size = object->GetComponent<SpriteComponent>("Sprite")->size();
+    }
+
+    glm::vec2 position(0.0f, 0.0f);
+    if (object->HasComponent("Transform2D")) {
+      Transform* transform = object->GetComponent<Transform2DComponent>("Transform2D")->transform();
+      position = transform->translation();
+      size *= glm::vec2(transform->scale());
+    }
+
+    const glm::vec2 half_size = size * 0.5f;
+
+    LogI("World position: ({},{})", world_position.x, world_position.y);
+    LogI("Object position: ({},{})", position.x, position.y);
+    LogI("Object Size: ({},{})", size.x, size.y);
+
+    if (position.x - half_size.x <= world_position.x && world_position.x <= position.x + half_size.x &&
+        position.y - half_size.y <= world_position.y && world_position.y <= position.y + half_size.y) {
+      object_at_position = object;
+    }
+  }
+
+  return object_at_position;
 }
 
 }  // namespace editor

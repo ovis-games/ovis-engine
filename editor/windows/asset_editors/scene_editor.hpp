@@ -13,6 +13,12 @@ namespace editor {
 class SceneEditor : public AssetEditor {
   enum class State { STOPPED, PAUSED, RUNNING };
   enum class RenamingState { IS_NOT_RENAMING, STARTED_RENAMING, IS_RENAMING };
+  enum class EditingMode { MOVE, ROTATE, SCALE };
+
+  struct MoveState {
+    glm::vec2 original_position;
+    glm::vec2 drag_start_mouse_position;
+  };
 
  public:
   SceneEditor(const std::string& scene_asset);
@@ -33,6 +39,8 @@ class SceneEditor : public AssetEditor {
   glm::vec2 ScreenToWorld(glm::vec2 screen_position);
 
   SceneObject* CreateObject(const std::string& base_name);
+  SceneObject* GetSelectedObject();
+  SceneObject* GetObjectAtPosition(glm::vec2 world_position);
 
   void JsonFileChanged(const json& data, const std::string& file_type) override;
 
@@ -53,6 +61,18 @@ class SceneEditor : public AssetEditor {
 
   std::variant<SelectedScene, SelectedObject> selection_;
   std::vector<SceneObject*> cached_scene_objects_;
+
+  struct Icons {
+    std::unique_ptr<Texture2D> play;
+    std::unique_ptr<Texture2D> pause;
+    std::unique_ptr<Texture2D> stop;
+    std::unique_ptr<Texture2D> move;
+    std::unique_ptr<Texture2D> rotate;
+    std::unique_ptr<Texture2D> scale;
+  } icons_;
+
+  EditingMode editing_mode_ = EditingMode::MOVE;
+  MoveState move_state_;
 };
 
 }  // namespace editor
