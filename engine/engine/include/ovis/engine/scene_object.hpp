@@ -40,6 +40,16 @@ class SceneObject : public Serializable {
     }
   }
 
+  template <typename ComponentType = SceneObjectComponent>
+  const ComponentType* GetComponent(const std::string& component_id) const {
+    auto component = components_.find(component_id);
+    if (component == components_.end()) {
+      return nullptr;
+    } else {
+      return down_cast<ComponentType*>(component->second.get());
+    }
+  }
+
   void GetComponentIds(std::vector<std::string>* component_ids) const;
   inline std::vector<std::string> GetComponentIds() const {
     std::vector<std::string> component_ids;
