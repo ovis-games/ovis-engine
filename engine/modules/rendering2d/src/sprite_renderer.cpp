@@ -52,7 +52,25 @@ void SpriteRenderer::Render(Scene* scene) {
   draw_item.blend_state.source_color_factor = SourceBlendFactor::SOURCE_ALPHA;
   draw_item.blend_state.destination_color_factor = DestinationBlendFactor::ONE_MINUS_SOURCE_ALPHA;
 
-  const auto objects_with_sprites = scene->GetSceneObjectsWithComponent("Sprite");
+  // TODO: "cache" vector (to avoid reallocation)
+  auto objects_with_sprites = scene->GetSceneObjectsWithComponent("Sprite");
+
+  std::sort(objects_with_sprites.begin(), objects_with_sprites.end(), [](SceneObject* lhs, SceneObject* rhs) {
+    glm::vec3 lhs_position;
+    TransformComponent* lhs_transform = lhs->GetComponent<TransformComponent>("Transform");
+    if (lhs_transform != nullptr) {
+      lhs_position = lhs_transform->transform()->translation();
+    }
+    
+    glm::vec3 rhs_position;
+    TransformComponent* rhs_transform = rhs->GetComponent<TransformComponent>("Transform");
+    if (rhs_transform != nullptr) {
+      rhs_position = rhs_transform->transform()->translation();
+    }
+
+    // TODO: project into camera view axis instead of using the z coordinates
+    return lhs_position.z > rhs_position.z;
+  });
 
   for (SceneObject* object : objects_with_sprites) {
     SpriteComponent* sprite = object->GetComponent<SpriteComponent>("Sprite");
