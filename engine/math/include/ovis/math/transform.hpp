@@ -26,6 +26,12 @@ class Transform {
     rotation_ = glm::angleAxis(yaw, glm::vec3{0.0f, 1.0f, 0.0f}) * glm::angleAxis(pitch, glm::vec3{-1.0f, 0.0f, 0.0f}) *
                 glm::angleAxis(roll, glm::vec3{0.0f, 0.0f, 1.0f});
   }
+  inline void GetYawPitchRoll(float* yaw, float* pitch, float* roll) const {
+    const glm::vec3 euler = glm::eulerAngles(rotation_);
+    *yaw = euler.y;
+    *pitch = euler.x;
+    *roll = euler.z;
+  }
 
   glm::mat4 CalculateMatrix() const;
   glm::mat4 CalculateInverseMatrix() const;
