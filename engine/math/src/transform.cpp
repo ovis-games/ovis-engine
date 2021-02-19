@@ -1,4 +1,3 @@
-#include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/transform.hpp>
 
 #include <ovis/core/log.hpp>
