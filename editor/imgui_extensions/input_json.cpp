@@ -89,29 +89,29 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
         ImGui::TreePop();
       }
     } else if (type == "number") {
-      float object = *value;
-      if (ImGui::InputFloat(label, &object, 0.0f, 0.0f, "%0.1f", ImGuiInputTextFlags_EnterReturnsTrue)) {
-        *value = object;
+      float number = *value;
+      if (ImGui::DragFloat(label, &number, 1.0f, 0.0f, 0.0f, "%.2f")) {
+        *value = number;
         json_changed = true;
       }
       DisplayTooltip(schema);
     } else if (type == "vector2") {
       glm::vec2 vector = *value;
-      if (ImGui::InputFloat2(label, glm::value_ptr(vector), "%0.1f", ImGuiInputTextFlags_EnterReturnsTrue)) {
+      if (ImGui::DragFloat2(label, glm::value_ptr(vector), 1.0f, 0.0f, 0.0f, "%.2f")) {
         *value = vector;
         json_changed = true;
       }
       DisplayTooltip(schema);
     } else if (type == "vector3") {
       glm::vec3 vector = *value;
-      if (ImGui::InputFloat3(label, glm::value_ptr(vector), "%0.1f", ImGuiInputTextFlags_EnterReturnsTrue)) {
+      if (ImGui::DragFloat3(label, glm::value_ptr(vector), 1.0f, 0.0f, 0.0f, "%.2f")) {
         *value = vector;
         json_changed = true;
       }
       DisplayTooltip(schema);
     } else if (type == "vector4") {
       glm::vec4 vector = *value;
-      if (ImGui::InputFloat4(label, glm::value_ptr(vector), "%0.1f", ImGuiInputTextFlags_EnterReturnsTrue)) {
+      if (ImGui::DragFloat4(label, glm::value_ptr(vector), 1.0f, 0.0f, 0.0f, "%.2f")) {
         *value = vector;
         json_changed = true;
       }
