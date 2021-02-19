@@ -5,7 +5,7 @@
 
 namespace ovis {
 
-class Transform2DComponent : public SceneObjectComponent {
+class TransformComponent : public SceneObjectComponent {
  public:
   inline Transform* transform() { return &transform_; }
   inline const Transform* transform() const { return &transform_; }

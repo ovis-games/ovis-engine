@@ -5,7 +5,7 @@ add_library(
   include/ovis/base/clear_render_pass.hpp src/clear_render_pass.cpp
   include/ovis/base/imgui_render_pass.hpp src/imgui_render_pass.cpp
   include/ovis/base/imgui_scene_controller.hpp src/imgui_scene_controller.cpp
-  include/ovis/base/transform2d_component.hpp src/transform2d_component.cpp
+  include/ovis/base/transform_component.hpp src/transform_component.cpp
 )
 add_library(ovis::base ALIAS ovis-base)
 

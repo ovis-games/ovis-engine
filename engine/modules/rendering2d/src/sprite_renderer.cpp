@@ -4,7 +4,7 @@
 #include <ovis/core/asset_library.hpp>
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/render_target_configuration.hpp>
-#include <ovis/base/transform2d_component.hpp>
+#include <ovis/base/transform_component.hpp>
 #include <ovis/engine/viewport.hpp>
 #include <ovis/rendering2d/sprite_component.hpp>
 #include <ovis/rendering2d/sprite_renderer.hpp>
@@ -66,7 +66,7 @@ void SpriteRenderer::Render(Scene* scene) {
     }
     const std::unique_ptr<Texture2D>& texture = texture_iterator->second;
 
-    Transform2DComponent* transform = object->GetComponent<Transform2DComponent>("Transform2D");
+    TransformComponent* transform = object->GetComponent<TransformComponent>("Transform");
     const glm::mat4 world_view_projection =
         transform ? view_projection_matrix * transform->transform()->CalculateMatrix() * size_matrix
                   : view_projection_matrix * size_matrix;

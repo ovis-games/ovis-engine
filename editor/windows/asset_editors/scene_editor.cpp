@@ -6,7 +6,7 @@
 #include "../../imgui_extensions/texture_button.hpp"
 
 #include <imgui_stdlib.h>
-#include <ovis/base/transform2d_component.hpp>
+#include <ovis/base/transform_component.hpp>
 
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/utils.hpp>
@@ -160,9 +160,9 @@ void SceneEditor::DrawContent() {
       const glm::vec2 mouse_position = ImGui::GetMousePos();
       move_state_.drag_start_mouse_position = ScreenToWorld(mouse_position - top_left);
 
-      if (selected_object->HasComponent("Transform2D")) {
+      if (selected_object->HasComponent("Transform")) {
         move_state_.original_position =
-            selected_object->GetComponent<Transform2DComponent>("Transform2D")->transform()->translation();
+            selected_object->GetComponent<TransformComponent>("Transform")->transform()->translation();
 
         LogI("Original position: ({},{})", move_state_.original_position.x, move_state_.original_position.y);
       }
@@ -173,8 +173,8 @@ void SceneEditor::DrawContent() {
       const glm::vec2 position_delta = current_mouse_pos - move_state_.drag_start_mouse_position;
       const glm::vec2 object_position = move_state_.original_position + position_delta;
 
-      if (selected_object->HasComponent("Transform2D")) {
-        selected_object->GetComponent<Transform2DComponent>("Transform2D")
+      if (selected_object->HasComponent("Transform")) {
+        selected_object->GetComponent<TransformComponent>("Transform")
             ->transform()
             ->SetTranslation(glm::vec3(object_position, 0.0f));
       }
@@ -189,9 +189,9 @@ void SceneEditor::DrawContent() {
       SceneObject* object = CreateObject(dropped_asset_id);
       auto texture_description = LoadTexture2DDescription(GetApplicationAssetLibrary(), dropped_asset_id);
 
-      auto* transform2d = object->AddComponent<Transform2DComponent>("Transform2D");
+      auto* transform = object->AddComponent<TransformComponent>("Transform");
       const glm::vec2 mouse_position = ImGui::GetMousePos();
-      transform2d->transform()->SetTranslation(glm::vec3(ScreenToWorld(mouse_position - top_left), 0.0f));
+      transform->transform()->SetTranslation(glm::vec3(ScreenToWorld(mouse_position - top_left), 0.0f));
 
       auto* sprite = object->AddComponent<SpriteComponent>("Sprite");
       sprite->SetTexture(dropped_asset_id);
@@ -418,8 +418,8 @@ SceneObject* SceneEditor::GetObjectAtPosition(glm::vec2 world_position) {
     }
 
     glm::vec2 position(0.0f, 0.0f);
-    if (object->HasComponent("Transform2D")) {
-      Transform* transform = object->GetComponent<Transform2DComponent>("Transform2D")->transform();
+    if (object->HasComponent("Transform")) {
+      Transform* transform = object->GetComponent<TransformComponent>("Transform")->transform();
       position = transform->translation();
       size *= glm::vec2(transform->scale());
     }

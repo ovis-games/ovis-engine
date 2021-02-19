@@ -2,7 +2,7 @@
 #include <ovis/base/clear_render_pass.hpp>
 #include <ovis/base/imgui_render_pass.hpp>
 #include <ovis/base/imgui_scene_controller.hpp>
-#include <ovis/base/transform2d_component.hpp>
+#include <ovis/base/transform_component.hpp>
 
 #include <ovis/engine/lua.hpp>
 
@@ -59,16 +59,16 @@ BaseModule::BaseModule() : Module("BaseModule") {
   RegisterRenderPass("Clear", [this](Viewport*) { return std::make_unique<ClearRenderPass>(); });
   RegisterRenderPass("ImGui", [this](Viewport*) { return std::make_unique<ImGuiRenderPass>(context_); });
   RegisterSceneController("ImGui", [this](Scene*) { return std::make_unique<ImGuiSceneController>(context_); });
-  RegisterSceneObjectComponent<Transform2DComponent>(
-      "Transform2D", [](SceneObject*) { return std::make_unique<Transform2DComponent>(); });
+  RegisterSceneObjectComponent<TransformComponent>(
+      "Transform", [](SceneObject*) { return std::make_unique<TransformComponent>(); });
 
-  sol::usertype<Transform2DComponent> transform2d_component_type =
-      Lua::state.new_usertype<Transform2DComponent>("Transform2D");
-  transform2d_component_type["position"] = sol::property(
-      [](const Transform2DComponent* transform_component) {
+  sol::usertype<TransformComponent> transform_component_type =
+      Lua::state.new_usertype<TransformComponent>("Transform");
+  transform_component_type["position"] = sol::property(
+      [](const TransformComponent* transform_component) {
         return glm::vec2(transform_component->transform()->translation());
       },
-      [](Transform2DComponent* transform_component, glm::vec2 position) {
+      [](TransformComponent* transform_component, glm::vec2 position) {
         return transform_component->transform()->SetTranslation(glm::vec3(position, 0.0f));
       });
 }

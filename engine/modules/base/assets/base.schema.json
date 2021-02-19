@@ -2,24 +2,25 @@
   "$schema": "http://json-schema.org/draft/2019-09/schema#",
 
   "$defs": {
-    "transform2d": {
-      "title": "Transform2D",
+    "transform": {
+      "title": "Transform",
       "type": "object",
       "description": "Represents the transformation of an object in a 2D space.",
       "properties": {
         "Position": {
-          "type": "vector2",
+          "type": "vector3",
           "description": "The position of the object.",
-          "default": [0, 0]
+          "default": [0, 0, 0]
         },
         "Rotation": {
-          "type": "number",
-          "description": "The rotation of the object in radians."
+          "type": "vector3",
+          "description": "The rotation of the object in degree.",
+          "default": [0, 0, 0]
         },
         "Scale": {
-          "type": "vector2",
+          "type": "vector3",
           "description": "The scaling of the object.",
-          "default": [1, 1]
+          "default": [1, 1, 1]
         }
       }
     }
