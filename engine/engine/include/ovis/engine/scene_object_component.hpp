@@ -24,4 +24,26 @@ class SceneObjectComponent : public Serializable {
   static std::vector<std::string> GetRegisteredComponents();
 };
 
+template <typename T, const json* COMPONENT_SCHEMA = nullptr>
+class SimpleSceneObjectComponent : public SceneObjectComponent, public T {
+public:
+  json Serialize() const override {
+    json data = static_cast<const T&>(*this);
+    return data;
+  }
+
+  bool Deserialize(const json& data) override {
+    try {
+      static_cast<T&>(*this) = data;
+      return true;
+    } catch (...) {
+      return false;
+    }
+  }
+
+  const json* GetSchema() const override {
+    return COMPONENT_SCHEMA;
+  }
+};
+
 }  // namespace ovis
