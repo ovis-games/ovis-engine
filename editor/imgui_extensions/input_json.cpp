@@ -36,7 +36,7 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
       return false;
     }
     const std::string schema_file_reference = reference.substr(0, hashtag_position);
-    const std::string schema_reference_pointer = reference.substr(hashtag_position + 1);
+    const std::string schema_reference = reference.substr(hashtag_position + 1);
 
     std::shared_ptr<ovis::json> referenced_schema_file = ovis::LoadJsonSchema(schema_file_reference);
     if (!referenced_schema_file) {
@@ -44,7 +44,13 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
       return false;
     }
 
-    ovis::json referenced_schema = referenced_schema_file->at(ovis::json::json_pointer(schema_reference_pointer));
+
+    ovis::json::json_pointer schema_reference_pointer(schema_reference);
+    if (!referenced_schema_file->contains(schema_reference_pointer)) {
+      ovis::LogE("Invalid schema reference. Pointer '{}' does not exist in {}", schema_reference, schema_file_reference);
+      return false;
+    }
+    ovis::json referenced_schema = referenced_schema_file->at(schema_reference_pointer);
     // TODO: patch referenced_schema with values overriden in 'schema' variable
 
     json_changed = InputJson(label, value, referenced_schema, flags, depth);
