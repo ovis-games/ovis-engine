@@ -3,6 +3,7 @@
 #include <ovis/base/imgui_render_pass.hpp>
 #include <ovis/base/imgui_scene_controller.hpp>
 #include <ovis/base/transform_component.hpp>
+#include <ovis/base/camera_component.hpp>
 
 #include <ovis/engine/lua.hpp>
 
@@ -61,6 +62,8 @@ BaseModule::BaseModule() : Module("BaseModule") {
   RegisterSceneController("ImGui", [this](Scene*) { return std::make_unique<ImGuiSceneController>(context_); });
   RegisterSceneObjectComponent<TransformComponent>(
       "Transform", [](SceneObject*) { return std::make_unique<TransformComponent>(); });
+  RegisterSceneObjectComponent<CameraComponent>(
+    "Camera", [](SceneObject*) { return std::make_unique<CameraComponent>(); });
 
   sol::usertype<TransformComponent> transform_component_type =
       Lua::state.new_usertype<TransformComponent>("Transform");
