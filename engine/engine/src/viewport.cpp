@@ -148,6 +148,7 @@ void Viewport::SortRenderPasses() {
     }
   }
 
+  LogV("Sorting render passes:");
   render_pass_order_.clear();
   render_pass_order_.reserve(render_passes_.size());
   while (render_passes_left_.size() > 0) {
@@ -155,6 +156,7 @@ void Viewport::SortRenderPasses() {
                              [&dependencies](const std::string& value) { return dependencies.count(value) == 0; });
 
     SDL_assert(next != render_passes_left_.end());
+    LogV(" {}", *next);
 
     SDL_assert(render_passes_.find(*next) != render_passes_.end());
     render_pass_order_.push_back(render_passes_[*next].get());
@@ -168,6 +170,7 @@ void Viewport::SortRenderPasses() {
     render_passes_left_.erase(next);
   }
 
+  LogV("Render passes sorted!");
   render_passes_sorted_ = true;
 }
 
