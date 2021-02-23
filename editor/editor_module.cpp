@@ -2,6 +2,7 @@
 
 #include "windows/modal/loading_window.hpp"
 #include "windows/modal/packaging_window.hpp"
+#include "windows/asset_editors/scene_editor/scene_editor_render_pass.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
@@ -28,6 +29,7 @@ class ClearRenderPass : public RenderPass {
 
 EditorModule::EditorModule() : Module("Editor") {
   RegisterRenderPass("ClearRenderPass", [](Viewport*) { return std::make_unique<ClearRenderPass>(); });
+  RegisterRenderPass("SceneEditorRenderPass", [](Viewport*) { return std::make_unique<SceneEditorRenderPass>(nullptr); });
   RegisterSceneController("LoadingWindow", [this](Scene*) { return std::make_unique<LoadingWindow>(); });
   RegisterSceneController("PackagingWindow", [this](Scene*) { return std::make_unique<PackagingWindow>(); });
 

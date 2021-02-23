@@ -131,7 +131,7 @@ void SceneEditor::DrawContent() {
 
   const glm::vec2 top_left =
       static_cast<glm::vec2>(ImGui::GetWindowPos()) + static_cast<glm::vec2>(ImGui::GetCursorPos());
-  ImGui::Image(scene_viewport_->color_texture()->texture(), available_space, ImVec2(0, 0), ImVec2(1, 1),
+  ImGui::Image(scene_viewport_->color_texture()->texture(), available_space, ImVec2(0, 1), ImVec2(1, 0),
                ImVec4(1, 1, 1, 1), border_color);
   scene_window_focused_ = ImGui::IsWindowFocused();
   if (ImGui::IsItemHovered()) {
@@ -367,6 +367,7 @@ void SceneEditor::CreateSceneViewport(ImVec2 size) {
 
   scene_viewport_->AddRenderPass("Clear");
   scene_viewport_->AddRenderPass("SpriteRenderer");
+  scene_viewport_->AddRenderPass("SceneEditorRenderPass");
   scene_viewport_->SetScene(&scene_);
 }
 
