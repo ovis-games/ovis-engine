@@ -40,4 +40,7 @@ class Transform {
   glm::quat rotation_;
 };
 
+void to_json(json& data, const Transform& transform);
+void from_json(const json& data, Transform& transform);
+
 }  // namespace ovis

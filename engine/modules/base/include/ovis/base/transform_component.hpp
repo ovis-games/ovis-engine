@@ -5,19 +5,12 @@
 
 namespace ovis {
 
-class TransformComponent : public SceneObjectComponent {
+const json TRANSFORM_COMPONENT_SCHEMA = {{"$ref", "base#/$defs/transform"}};
+
+class TransformComponent : public SimpleSceneObjectComponent<Transform, &TRANSFORM_COMPONENT_SCHEMA> {
  public:
-  inline Transform* transform() { return &transform_; }
-  inline const Transform* transform() const { return &transform_; }
-
-  json Serialize() const override;
-  bool Deserialize(const json& data) override;
-  const json* GetSchema() const override { return &schema; }
-
- private:
-  Transform transform_;
-
-  static const json schema;
+  matrix4 CalculateGlobalMatrix() const { return CalculateMatrix(); }
+  matrix4 CalculateGlobalInverseMatrix() const { return CalculateInverseMatrix(); }
 };
 
 }  // namespace ovis

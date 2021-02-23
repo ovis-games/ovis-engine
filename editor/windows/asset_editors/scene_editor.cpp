@@ -171,7 +171,7 @@ void SceneEditor::DrawContent() {
 
       if (selected_object->HasComponent("Transform")) {
         move_state_.original_position =
-            selected_object->GetComponent<TransformComponent>("Transform")->transform()->translation();
+            selected_object->GetComponent<TransformComponent>("Transform")->translation();
 
         LogI("Original position: {}", move_state_.original_position);
       }
@@ -184,7 +184,6 @@ void SceneEditor::DrawContent() {
 
       if (selected_object->HasComponent("Transform")) {
         selected_object->GetComponent<TransformComponent>("Transform")
-            ->transform()
             ->SetTranslation(vector3(object_position, 0.0f));
       }
     }
@@ -198,7 +197,7 @@ void SceneEditor::DrawContent() {
 
       auto* transform = object->AddComponent<TransformComponent>("Transform");
       const vector2 mouse_position = ImGui::GetMousePos();
-      transform->transform()->SetTranslation(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
+      transform->SetTranslation(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
 
       auto* sprite = object->AddComponent<SpriteComponent>("Sprite");
       sprite->SetTexture(dropped_asset_id);
@@ -414,7 +413,7 @@ SceneObject* SceneEditor::GetObjectAtPosition(vector2 world_position) {
 
     vector2 position(0.0f, 0.0f);
     if (object->HasComponent("Transform")) {
-      Transform* transform = object->GetComponent<TransformComponent>("Transform")->transform();
+      Transform* transform = object->GetComponent<TransformComponent>("Transform");
       position = transform->translation();
       size *= vector2(transform->scale());
     }

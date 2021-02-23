@@ -57,13 +57,13 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
     vector3 lhs_position;
     TransformComponent* lhs_transform = lhs->GetComponent<TransformComponent>("Transform");
     if (lhs_transform != nullptr) {
-      lhs_position = lhs_transform->transform()->translation();
+      lhs_position = lhs_transform->translation();
     }
     
     vector3 rhs_position;
     TransformComponent* rhs_transform = rhs->GetComponent<TransformComponent>("Transform");
     if (rhs_transform != nullptr) {
-      rhs_position = rhs_transform->transform()->translation();
+      rhs_position = rhs_transform->translation();
     }
 
     // TODO: project into camera view axis instead of using the z coordinates
@@ -84,7 +84,7 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
 
     TransformComponent* transform = object->GetComponent<TransformComponent>("Transform");
     const matrix4 world_view_projection =
-        transform ? render_context.view_projection_matrix * transform->transform()->CalculateMatrix() * size_matrix
+        transform ? render_context.view_projection_matrix * transform->CalculateMatrix() * size_matrix
                   : render_context.view_projection_matrix * size_matrix;
 
     shader_program_->SetUniform("WorldViewProjection", world_view_projection);
