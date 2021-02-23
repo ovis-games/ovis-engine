@@ -47,7 +47,7 @@ void to_json(json& data, const Camera& camera) {
 // clang-format off
   data = json{
     {"projectionType", camera.projection_type()},
-    {"verticalFieldOfView", camera.vertical_field_of_view()},
+    {"verticalFieldOfView", glm::degrees(camera.vertical_field_of_view())},
     {"aspectRatio", camera.aspect_ratio()},
     {"nearClipPlane", camera.near_clip_plane()},
     {"farClipPlane", camera.far_clip_plane()}
@@ -57,7 +57,7 @@ void to_json(json& data, const Camera& camera) {
 
 void from_json(const json& data, Camera& camera) {
   camera.SetProjectionType(data.at("projectionType"));
-  camera.SetVerticalFieldOfView(data.at("verticalFieldOfView"));
+  camera.SetVerticalFieldOfView(glm::radians(static_cast<float>(data.at("verticalFieldOfView"))));
   camera.SetAspectRatio(data.at("aspectRatio"));
   camera.SetNearClipPlane(data.at("nearClipPlane"));
   camera.SetFarClipPlane(data.at("farClipPlane"));
