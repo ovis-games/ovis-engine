@@ -9,7 +9,7 @@
 
 #include <ovis/core/log.hpp>
 #include <ovis/core/serialize.hpp>
-#include <ovis/math/json_serialization.hpp>
+#include <ovis/math/basic_types.hpp>
 
 namespace ImGui {
 
@@ -109,28 +109,28 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
       }
       DisplayTooltip(schema);
     } else if (type == "vector2") {
-      glm::vec2 vector = *value;
+      ovis::vector2 vector = *value;
       if (ImGui::DragFloat2(label, glm::value_ptr(vector), 1.0f, 0.0f, 0.0f, "%.2f")) {
         *value = vector;
         json_changed = true;
       }
       DisplayTooltip(schema);
     } else if (type == "vector3") {
-      glm::vec3 vector = *value;
+      ovis::vector3 vector = *value;
       if (ImGui::DragFloat3(label, glm::value_ptr(vector), 1.0f, 0.0f, 0.0f, "%.2f")) {
         *value = vector;
         json_changed = true;
       }
       DisplayTooltip(schema);
     } else if (type == "vector4") {
-      glm::vec4 vector = *value;
+      ovis::vector4 vector = *value;
       if (ImGui::DragFloat4(label, glm::value_ptr(vector), 1.0f, 0.0f, 0.0f, "%.2f")) {
         *value = vector;
         json_changed = true;
       }
       DisplayTooltip(schema);
     } else if (type == "color") {
-      glm::vec4 color = *value;
+      ovis::vector4 color = *value;
       if (ImGui::ColorEdit4(label, glm::value_ptr(color))) {
         *value = color;
         json_changed = true;

@@ -14,9 +14,9 @@ void SceneEditorRenderPass::CreateResources() {
   line_shader_ = LoadShaderProgram("line", context());
 
   line_vertices_.resize(2);
-  line_vertices_[0].position = glm::vec3(0.0f, 0.0f, 0.0f);
+  line_vertices_[0].position = vector3(0.0f, 0.0f, 0.0f);
   line_vertices_[0].color = glm::tvec4<std::uint8_t>(255, 0, 0, 255);
-  line_vertices_[1].position = glm::vec3(1.0f, 1.0f, 0.0f);
+  line_vertices_[1].position = vector3(1.0f, 1.0f, 0.0f);
   line_vertices_[1].color = glm::tvec4<std::uint8_t>(255, 0, 0, 255);
 
   VertexBufferDescription line_buffer_desc;
@@ -37,7 +37,10 @@ void SceneEditorRenderPass::ReleaseResources() {
 }
 
 void SceneEditorRenderPass::Render(const RenderContext& render_context) {
-  line_shader_->SetUniform("WorldViewProjection", glm::mat4());
+
+  const auto camera_onbjects = render_context.scene->GetSceneObjectsWithComponent("Camera");
+
+  line_shader_->SetUniform("WorldViewProjection", matrix4());
 
   DrawItem draw_item;
   draw_item.vertex_input = line_vertex_input.get();

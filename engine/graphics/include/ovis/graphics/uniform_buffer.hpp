@@ -10,9 +10,7 @@
 #include <glm/mat2x2.hpp>
 #include <glm/mat3x3.hpp>
 #include <glm/mat4x4.hpp>
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include <ovis/math/basic_types.hpp>
 
 #include <ovis/core/log.hpp>
 #include <ovis/graphics/cubemap.hpp>
@@ -59,19 +57,19 @@ class UniformBuffer : public GraphicsResource {
     memcpy(GetUniformPointer(uniform_index), &value, sizeof(value));
   }
 
-  inline void SetUniform(std::size_t uniform_index, const glm::vec2& value) {
+  inline void SetUniform(std::size_t uniform_index, const vector2& value) {
     SDL_assert(uniform_index < m_uniform_descriptions.size());
     SDL_assert(m_uniform_descriptions[uniform_index].type == GL_FLOAT_VEC2);
     memcpy(GetUniformPointer(uniform_index), glm::value_ptr(value), sizeof(value));
   }
 
-  inline void SetUniform(std::size_t uniform_index, const glm::vec3& value) {
+  inline void SetUniform(std::size_t uniform_index, const vector3& value) {
     SDL_assert(uniform_index < m_uniform_descriptions.size());
     SDL_assert(m_uniform_descriptions[uniform_index].type == GL_FLOAT_VEC3);
     memcpy(GetUniformPointer(uniform_index), glm::value_ptr(value), sizeof(value));
   }
 
-  inline void SetUniform(std::size_t uniform_index, const glm::vec4& value) {
+  inline void SetUniform(std::size_t uniform_index, const vector4& value) {
     SDL_assert(uniform_index < m_uniform_descriptions.size());
     SDL_assert(m_uniform_descriptions[uniform_index].type == GL_FLOAT_VEC4);
     memcpy(GetUniformPointer(uniform_index), glm::value_ptr(value), sizeof(value));
@@ -89,7 +87,7 @@ class UniformBuffer : public GraphicsResource {
     memcpy(GetUniformPointer(uniform_index), glm::value_ptr(value), sizeof(value));
   }
 
-  inline void SetUniform(std::size_t uniform_index, const glm::mat4& value) {
+  inline void SetUniform(std::size_t uniform_index, const matrix4& value) {
     SDL_assert(uniform_index < m_uniform_descriptions.size());
     SDL_assert(m_uniform_descriptions[uniform_index].type == GL_FLOAT_MAT4);
     memcpy(GetUniformPointer(uniform_index), glm::value_ptr(value), sizeof(value));

@@ -23,11 +23,11 @@ struct RenderContext {
   const Scene* scene;
 
   Camera camera;
-  glm::mat4 view_matrix;
-  glm::mat4 inverse_view_matrix;
-  glm::mat4 projection_matrix;
-  glm::mat4 inverse_projection_matrix;
-  glm::mat4 view_projection_matrix;
+  matrix4 view_matrix;
+  matrix4 inverse_view_matrix;
+  matrix4 projection_matrix;
+  matrix4 inverse_projection_matrix;
+  matrix4 view_projection_matrix;
 };
 
 class RenderPass {

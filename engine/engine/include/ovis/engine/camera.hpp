@@ -30,12 +30,12 @@ class Camera {
   inline void SetFarClipPlane(float far_clip_plane) { far_clip_plane_ = far_clip_plane; }
   inline float far_clip_plane() const { return far_clip_plane_; }
 
-  void LookAt(const glm::vec3& target, const glm::vec3& up = {0.0f, 1.0f, 0.0f});
+  void LookAt(const vector3& target, const vector3& up = {0.0f, 1.0f, 0.0f});
 
-  glm::mat4 CalculateProjectionMatrix() const;
+  matrix4 CalculateProjectionMatrix() const;
 
-  glm::vec3 ScreenSpaceToViewSpace(glm::vec3 screen_space_position);
-  glm::vec3 ViewSpaceToScreenSpace(glm::vec3 view_space_position);
+  vector3 ScreenSpaceToViewSpace(vector3 screen_space_position);
+  vector3 ViewSpaceToScreenSpace(vector3 view_space_position);
 
  private:
   ProjectionType projection_type_ = ProjectionType::PERSPECTIVE;

@@ -1,7 +1,6 @@
 #include <SDL_assert.h>
 
 #include <ovis/rendering2d/sprite_component.hpp>
-#include <ovis/math/json_serialization.hpp>
 
 namespace ovis {
 

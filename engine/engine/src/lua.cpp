@@ -24,23 +24,23 @@ void Lua::SetupEnvironment() {
   state["OvisErrorHandler"] = [](const std::string& message) { on_error.Invoke(message); };
   sol::protected_function::set_default_handler(state["OvisErrorHandler"]);
 
-  sol::usertype<glm::vec2> vector2_type =
-      state.new_usertype<glm::vec2>("Vector2", sol::constructors<glm::vec2(), glm::vec2(float, float)>());
-  vector2_type["x"] = &glm::vec2::x;
-  vector2_type["y"] = &glm::vec2::y;
+  sol::usertype<vector2> vector2_type =
+      state.new_usertype<vector2>("Vector2", sol::constructors<vector2(), vector2(float, float)>());
+  vector2_type["x"] = &vector2::x;
+  vector2_type["y"] = &vector2::y;
 
-  sol::usertype<glm::vec3> vector3_type =
-      state.new_usertype<glm::vec3>("Vector3", sol::constructors<glm::vec3(), glm::vec3(float, float, float)>());
-  vector3_type["x"] = &glm::vec3::x;
-  vector3_type["y"] = &glm::vec3::y;
-  vector3_type["z"] = &glm::vec3::z;
+  sol::usertype<vector3> vector3_type =
+      state.new_usertype<vector3>("Vector3", sol::constructors<vector3(), vector3(float, float, float)>());
+  vector3_type["x"] = &vector3::x;
+  vector3_type["y"] = &vector3::y;
+  vector3_type["z"] = &vector3::z;
 
-  sol::usertype<glm::vec4> vector4_type =
-      state.new_usertype<glm::vec4>("Vector4", sol::constructors<glm::vec4(), glm::vec4(float, float, float, float)>());
-  vector4_type["x"] = &glm::vec4::x;
-  vector4_type["y"] = &glm::vec4::y;
-  vector4_type["z"] = &glm::vec4::z;
-  vector4_type["w"] = &glm::vec4::w;
+  sol::usertype<vector4> vector4_type =
+      state.new_usertype<vector4>("Vector4", sol::constructors<vector4(), vector4(float, float, float, float)>());
+  vector4_type["x"] = &vector4::x;
+  vector4_type["y"] = &vector4::y;
+  vector4_type["z"] = &vector4::z;
+  vector4_type["w"] = &vector4::w;
 
   sol::usertype<Scene> scene_type = state.new_usertype<Scene>("Scene");
   scene_type["CreateObject"] = static_cast<SceneObject* (Scene::*)(const std::string&)>(&Scene::CreateObject);

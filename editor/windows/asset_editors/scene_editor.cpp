@@ -129,7 +129,7 @@ void SceneEditor::DrawContent() {
   camera_.SetAspectRatio(available_space.x / available_space.y);
 
   if (!scene_viewport_ ||
-      (glm::ivec2(glm::vec2(available_space)) != scene_viewport_->GetSize() &&
+      (glm::ivec2(vector2(available_space)) != scene_viewport_->GetSize() &&
        !ImGui::IsMouseDown(ImGuiMouseButton_Left))) {  // TODO: this check should be optimizied. Dragging can mean a
                                                        // lot of things not necessarily resizing the window
     LogI("Creating viewport");
@@ -138,8 +138,8 @@ void SceneEditor::DrawContent() {
   scene_viewport_->SetCamera(camera_, camera_transform_.CalculateMatrix());
   scene_viewport_->Render(false);
 
-  const glm::vec2 top_left =
-      static_cast<glm::vec2>(ImGui::GetWindowPos()) + static_cast<glm::vec2>(ImGui::GetCursorPos());
+  const vector2 top_left =
+      static_cast<vector2>(ImGui::GetWindowPos()) + static_cast<vector2>(ImGui::GetCursorPos());
   ImGui::Image(scene_viewport_->color_texture()->texture(), available_space, ImVec2(0, 1), ImVec2(1, 0),
                ImVec4(1, 1, 1, 1), border_color);
   scene_window_focused_ = ImGui::IsWindowFocused();
@@ -147,12 +147,12 @@ void SceneEditor::DrawContent() {
     camera_.SetVerticalFieldOfView(camera_.vertical_field_of_view() * std::powf(2.0, -ImGui::GetIO().MouseWheel));
 
     if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-      const glm::vec3 world0 = scene_viewport_->DeviceCoordinatesToWorldSpace({0.0f, 0.0f});
-      const glm::vec3 world1 = scene_viewport_->DeviceCoordinatesToWorldSpace(ImGui::GetIO().MouseDelta);
+      const vector3 world0 = scene_viewport_->DeviceCoordinatesToWorldSpace({0.0f, 0.0f});
+      const vector3 world1 = scene_viewport_->DeviceCoordinatesToWorldSpace(ImGui::GetIO().MouseDelta);
       camera_transform_.Translate(world0 - world1);
     }
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-      const glm::vec2 mouse_position = ImGui::GetMousePos();
+      const vector2 mouse_position = ImGui::GetMousePos();
       SceneObject* object =
           GetObjectAtPosition(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
       if (object == nullptr) {
@@ -166,29 +166,27 @@ void SceneEditor::DrawContent() {
 
     SceneObject* selected_object = GetSelectedObject();
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && selected_object != nullptr) {
-      const glm::vec2 mouse_position = ImGui::GetMousePos();
+      const vector2 mouse_position = ImGui::GetMousePos();
       move_state_.drag_start_mouse_position = scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
 
       if (selected_object->HasComponent("Transform")) {
         move_state_.original_position =
             selected_object->GetComponent<TransformComponent>("Transform")->transform()->translation();
 
-        LogI("Original position: ({},{})", move_state_.original_position.x, move_state_.original_position.y);
+        LogI("Original position: {}", move_state_.original_position);
       }
     }
     if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && selected_object != nullptr) {
-      const glm::vec2 mouse_position = ImGui::GetMousePos();
-      const glm::vec2 current_mouse_pos = scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
-      const glm::vec2 position_delta = current_mouse_pos - move_state_.drag_start_mouse_position;
-      const glm::vec2 object_position = move_state_.original_position + position_delta;
+      const vector2 mouse_position = ImGui::GetMousePos();
+      const vector2 current_mouse_pos = scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
+      const vector2 position_delta = current_mouse_pos - move_state_.drag_start_mouse_position;
+      const vector2 object_position = move_state_.original_position + position_delta;
 
       if (selected_object->HasComponent("Transform")) {
         selected_object->GetComponent<TransformComponent>("Transform")
             ->transform()
-            ->SetTranslation(glm::vec3(object_position, 0.0f));
+            ->SetTranslation(vector3(object_position, 0.0f));
       }
-
-      // LogI("Mouse delta: ({},{})", object_position.x, object_position.y);
     }
   }
 
@@ -199,7 +197,7 @@ void SceneEditor::DrawContent() {
       auto texture_description = LoadTexture2DDescription(GetApplicationAssetLibrary(), dropped_asset_id);
 
       auto* transform = object->AddComponent<TransformComponent>("Transform");
-      const glm::vec2 mouse_position = ImGui::GetMousePos();
+      const vector2 mouse_position = ImGui::GetMousePos();
       transform->transform()->SetTranslation(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
 
       auto* sprite = object->AddComponent<SpriteComponent>("Sprite");
@@ -405,27 +403,27 @@ SceneObject* SceneEditor::GetSelectedObject() {
   }
 }
 
-SceneObject* SceneEditor::GetObjectAtPosition(glm::vec2 world_position) {
+SceneObject* SceneEditor::GetObjectAtPosition(vector2 world_position) {
   SceneObject* object_at_position = nullptr;
 
   for (SceneObject* object : scene_.GetObjects()) {
-    glm::vec2 size;
+    vector2 size;
     if (object->HasComponent("Sprite")) {
       size = object->GetComponent<SpriteComponent>("Sprite")->size();
     }
 
-    glm::vec2 position(0.0f, 0.0f);
+    vector2 position(0.0f, 0.0f);
     if (object->HasComponent("Transform")) {
       Transform* transform = object->GetComponent<TransformComponent>("Transform")->transform();
       position = transform->translation();
-      size *= glm::vec2(transform->scale());
+      size *= vector2(transform->scale());
     }
 
-    const glm::vec2 half_size = size * 0.5f;
+    const vector2 half_size = size * 0.5f;
 
-    LogI("World position: ({},{})", world_position.x, world_position.y);
-    LogI("Object position: ({},{})", position.x, position.y);
-    LogI("Object Size: ({},{})", size.x, size.y);
+    LogI("World position: {}", world_position);
+    LogI("Object position: {}", position);
+    LogI("Object Size: {}", size);
 
     if (position.x - half_size.x <= world_position.x && world_position.x <= position.x + half_size.x &&
         position.y - half_size.y <= world_position.y && world_position.y <= position.y + half_size.y) {

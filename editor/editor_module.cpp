@@ -24,7 +24,7 @@ class ClearRenderPass : public RenderPass {
   }
 
  private:
-  glm::vec4 clear_color_;
+  vector4 clear_color_;
 };
 
 EditorModule::EditorModule() : Module("Editor") {

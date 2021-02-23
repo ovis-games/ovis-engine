@@ -20,7 +20,7 @@ class Viewport {
 
   inline Scene* scene() const { return scene_; }
   inline void SetScene(Scene* scene) { scene_ = scene; }
-  inline void SetCamera(const Camera& camera, const glm::mat4& camera_transform) {
+  inline void SetCamera(const Camera& camera, const matrix4& camera_transform) {
     render_context_.scene = scene_;
     render_context_.camera = camera;
     render_context_.inverse_view_matrix = camera_transform;
@@ -48,22 +48,22 @@ class Viewport {
   virtual void DrawImGui() {}
   virtual void Render(bool render_gui = true);
 
-  inline glm::vec2 DeviceCoordinatesToNormalizedDeviceCoordinates(glm::vec2 device_coordinates) {
-    return (2.0f * device_coordinates / glm::vec2(GetSize() - 1) - 1.0f) * glm::vec2(1.0f, -1.0f);
+  inline vector2 DeviceCoordinatesToNormalizedDeviceCoordinates(vector2 device_coordinates) {
+    return (2.0f * device_coordinates / vector2(GetSize() - 1) - 1.0f) * vector2(1.0f, -1.0f);
   }
 
-  inline glm::vec3 NormalizedDeviceCoordinatesToViewSpace(glm::vec3 ndc) {
-    return render_context_.inverse_projection_matrix * glm::vec4(ndc, 1.0f);
+  inline vector3 NormalizedDeviceCoordinatesToViewSpace(vector3 ndc) {
+    return render_context_.inverse_projection_matrix * vector4(ndc, 1.0f);
   }
 
-  inline glm::vec3 DeviceCoordinatesToViewSpace(const glm::vec2& device_coordinates, float normalized_depth = -1.0f) {
+  inline vector3 DeviceCoordinatesToViewSpace(const vector2& device_coordinates, float normalized_depth = -1.0f) {
     return NormalizedDeviceCoordinatesToViewSpace(
-        glm::vec3(DeviceCoordinatesToNormalizedDeviceCoordinates(device_coordinates), normalized_depth));
+        vector3(DeviceCoordinatesToNormalizedDeviceCoordinates(device_coordinates), normalized_depth));
   }
 
-  inline glm::vec3 DeviceCoordinatesToWorldSpace(const glm::vec2& device_coordinates, float normalized_depth = -1.0f) {
+  inline vector3 DeviceCoordinatesToWorldSpace(const vector2& device_coordinates, float normalized_depth = -1.0f) {
     return render_context_.inverse_view_matrix *
-           glm::vec4(DeviceCoordinatesToViewSpace(device_coordinates, normalized_depth), 1.0f);
+           vector4(DeviceCoordinatesToViewSpace(device_coordinates, normalized_depth), 1.0f);
   }
 
  protected:

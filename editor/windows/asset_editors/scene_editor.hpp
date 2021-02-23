@@ -16,8 +16,8 @@ class SceneEditor : public AssetEditor {
   enum class EditingMode { MOVE, ROTATE, SCALE };
 
   struct MoveState {
-    glm::vec2 original_position;
-    glm::vec2 drag_start_mouse_position;
+    vector2 original_position;
+    vector2 drag_start_mouse_position;
   };
 
  public:
@@ -39,7 +39,7 @@ class SceneEditor : public AssetEditor {
 
   SceneObject* CreateObject(const std::string& base_name);
   SceneObject* GetSelectedObject();
-  SceneObject* GetObjectAtPosition(glm::vec2 world_position);
+  SceneObject* GetObjectAtPosition(vector2 world_position);
 
   void JsonFileChanged(const json& data, const std::string& file_type) override;
 

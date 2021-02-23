@@ -46,7 +46,7 @@ void ImGuiRenderPass::Render(const RenderContext& render_context) {
   float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
   float T = draw_data->DisplayPos.y;
   float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
-  const glm::mat4 ortho_projection = {
+  const matrix4 ortho_projection = {
       {2.0f / (R - L), 0.0f, 0.0f, 0.0f},
       {0.0f, 2.0f / (T - B), 0.0f, 0.0f},
       {0.0f, 0.0f, -1.0f, 0.0f},

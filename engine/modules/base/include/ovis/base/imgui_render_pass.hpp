@@ -1,6 +1,6 @@
 #include <memory>
 
-#include <glm/vec2.hpp>
+#include <ovis/math/basic_types.hpp>
 #include <imgui.h>
 
 #include <ovis/core/resource.hpp>

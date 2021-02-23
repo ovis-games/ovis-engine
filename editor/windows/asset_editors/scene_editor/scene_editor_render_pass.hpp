@@ -5,8 +5,7 @@
 #include <ovis/graphics/vertex_buffer.hpp>
 #include <ovis/graphics/shader_program.hpp>
 #include <ovis/engine/render_pass.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include <ovis/math/basic_types.hpp>
 #include <ovis/graphics/vertex_input.hpp>
 
 namespace ovis {
@@ -25,7 +24,7 @@ class SceneEditorRenderPass : public RenderPass {
 
  private:
   struct LineVertex {
-    glm::vec3 position;
+    vector3 position;
     glm::tvec4<std::uint8_t> color;
   };
   static_assert(sizeof(LineVertex) == 16);

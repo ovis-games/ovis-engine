@@ -4,9 +4,7 @@
 #include <variant>
 #include <vector>
 
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include <ovis/math/basic_types.hpp>
 
 #include <ovis/core/class.hpp>
 #include <ovis/core/json.hpp>

@@ -5,7 +5,7 @@
 namespace ovis {
 
 struct Plane {
-  glm::vec3 axis;
+  vector3 axis;
   float distance;
 };
 static_assert(sizeof(Plane) == 16, "");

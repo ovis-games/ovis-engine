@@ -17,8 +17,8 @@ void SpriteRenderer::CreateResources() {
   shader_program_ = LoadShaderProgram(GetEngineAssetLibrary(), "sprite", context());
 
   struct Vertex {
-    glm::vec2 position;
-    glm::vec2 texture_coordinates;
+    vector2 position;
+    vector2 texture_coordinates;
   };
 
   Vertex vertices[] = {{{-0.5f, 0.5f}, {0.0f, 0.0f}},
@@ -54,13 +54,13 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
   auto objects_with_sprites = render_context.scene->GetSceneObjectsWithComponent("Sprite");
 
   std::sort(objects_with_sprites.begin(), objects_with_sprites.end(), [](SceneObject* lhs, SceneObject* rhs) {
-    glm::vec3 lhs_position;
+    vector3 lhs_position;
     TransformComponent* lhs_transform = lhs->GetComponent<TransformComponent>("Transform");
     if (lhs_transform != nullptr) {
       lhs_position = lhs_transform->transform()->translation();
     }
     
-    glm::vec3 rhs_position;
+    vector3 rhs_position;
     TransformComponent* rhs_transform = rhs->GetComponent<TransformComponent>("Transform");
     if (rhs_transform != nullptr) {
       rhs_position = rhs_transform->transform()->translation();
@@ -72,8 +72,8 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
 
   for (SceneObject* object : objects_with_sprites) {
     SpriteComponent* sprite = object->GetComponent<SpriteComponent>("Sprite");
-    const glm::mat4 size_matrix = glm::scale(glm::vec3(sprite->size(), 1.0f));
-    const glm::vec4 color = sprite->color();
+    const matrix4 size_matrix = glm::scale(vector3(sprite->size(), 1.0f));
+    const vector4 color = sprite->color();
     const std::string texture_asset = sprite->texture_asset();
 
     auto texture_iterator = textures_.find(texture_asset);
@@ -83,7 +83,7 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
     const std::unique_ptr<Texture2D>& texture = texture_iterator->second;
 
     TransformComponent* transform = object->GetComponent<TransformComponent>("Transform");
-    const glm::mat4 world_view_projection =
+    const matrix4 world_view_projection =
         transform ? render_context.view_projection_matrix * transform->transform()->CalculateMatrix() * size_matrix
                   : render_context.view_projection_matrix * size_matrix;
 

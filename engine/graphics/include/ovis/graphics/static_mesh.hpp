@@ -1,7 +1,6 @@
 #pragma once
 
-#include <glm/vec2.hpp>
-#include <glm/vec3.hpp>
+#include <ovis/math/basic_types.hpp>
 
 #include <ovis/core/log.hpp>
 #include <ovis/graphics/graphics_context.hpp>
@@ -148,12 +147,12 @@ struct Vertex<ATTRIBUTE, ATTRIBUTES...> : public Vertex<ATTRIBUTE>, public Verte
 
 template <>
 struct Vertex<VertexAttribute::POSITION2D> {
-  glm::vec2 position;
+  vector2 position;
 };
 
 template <>
 struct Vertex<VertexAttribute::POSITION3D> {
-  glm::vec3 position;
+  vector3 position;
 };
 
 inline std::vector<VertexAttributeDescription> GetVertexAttributesDescription(
