@@ -21,7 +21,7 @@ class SceneEditorRenderPass : public RenderPass {
   void CreateResources() override;
   void ReleaseResources() override;
 
-  void Render(Scene* scene) override;
+  void Render(const RenderContext& render_context) override;
 
  private:
   struct LineVertex {

@@ -33,7 +33,6 @@ class Scene : public Serializable {
   virtual ~Scene();
 
   inline bool is_playing() const { return is_playing_; }
-  inline Camera& camera() { return camera_; }
 
   inline ResourceManager* resource_manager() const { return resource_manager_; }
   inline void SetResourceManager(ResourceManager* resource_manager) { resource_manager_ = resource_manager; }
@@ -107,7 +106,6 @@ class Scene : public Serializable {
 
   std::unordered_map<std::string, std::unique_ptr<SceneObject>> objects_;
   ResourceManager* resource_manager_;
-  Camera camera_;
   bool is_playing_ = false;
 
   static const json schema_;

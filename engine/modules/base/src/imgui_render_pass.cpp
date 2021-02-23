@@ -37,7 +37,7 @@ void ImGuiRenderPass::CreateResources() {
   ImGui::GetIO().Fonts->TexID = font_texture_.get();
 }
 
-void ImGuiRenderPass::Render(Scene* scene) {
+void ImGuiRenderPass::Render(const RenderContext& render_context) {
   ImGui::SetCurrentContext(context_);
   ImGui::Render();
   ImDrawData* draw_data = ImGui::GetDrawData();

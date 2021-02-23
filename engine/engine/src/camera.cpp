@@ -43,10 +43,6 @@ glm::mat4 Camera::CalculateProjectionMatrix() const {
   }
 }
 
-glm::mat4 Camera::CalculateViewProjectionMatrix() const {
-  return CalculateProjectionMatrix() * transform_.CalculateInverseMatrix();
-}
-
 void to_json(json& data, const Camera& camera) {
 // clang-format off
   data = json{

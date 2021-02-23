@@ -7,9 +7,6 @@
       "type": "object",
       "description": "A scene describes a collection of scene objects and controllers.",
       "properties": {
-        "camera": {
-          "$ref": "engine#/$defs/camera"
-        }
       }
     },
     

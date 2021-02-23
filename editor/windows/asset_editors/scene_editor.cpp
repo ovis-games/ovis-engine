@@ -35,6 +35,10 @@ SceneEditor::SceneEditor(const std::string& scene_asset) : AssetEditor(scene_ass
   icons_.move = LoadTexture2D("icon-move", EditorWindow::instance()->context());
   icons_.rotate = LoadTexture2D("icon-rotate", EditorWindow::instance()->context());
   icons_.scale = LoadTexture2D("icon-scale", EditorWindow::instance()->context());
+
+  camera_.SetProjectionType(ProjectionType::ORTHOGRAPHIC);
+  camera_.SetNearClipPlane(0.0f);
+  camera_.SetFarClipPlane(1000.0f);
 }
 
 void SceneEditor::Update(std::chrono::microseconds delta_time) {
@@ -122,11 +126,16 @@ void SceneEditor::DrawContent() {
   ImVec2 available_space = ImGui::GetContentRegionAvail();
   available_space.x -= 2;
   available_space.y -= 2;
-  scene_.camera().SetAspectRatio(available_space.x / available_space.y);
+  camera_.SetAspectRatio(available_space.x / available_space.y);
 
-  if (!scene_viewport_ || false) {  // Recreate if viewport size changed
+  if (!scene_viewport_ ||
+      (glm::ivec2(glm::vec2(available_space)) != scene_viewport_->GetSize() &&
+       !ImGui::IsMouseDown(ImGuiMouseButton_Left))) {  // TODO: this check should be optimizied. Dragging can mean a
+                                                       // lot of things not necessarily resizing the window
+    LogI("Creating viewport");
     CreateSceneViewport(available_space);
   }
+  scene_viewport_->SetCamera(camera_, camera_transform_.CalculateMatrix());
   scene_viewport_->Render(false);
 
   const glm::vec2 top_left =
@@ -135,17 +144,17 @@ void SceneEditor::DrawContent() {
                ImVec4(1, 1, 1, 1), border_color);
   scene_window_focused_ = ImGui::IsWindowFocused();
   if (ImGui::IsItemHovered()) {
-    scene_.camera().SetVerticalFieldOfView(scene_.camera().vertical_field_of_view() *
-                                           std::powf(2.0, -ImGui::GetIO().MouseWheel));
+    camera_.SetVerticalFieldOfView(camera_.vertical_field_of_view() * std::powf(2.0, -ImGui::GetIO().MouseWheel));
 
     if (ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
-      float movement_scaling = scene_.camera().vertical_field_of_view() / available_space.y;
-      scene_.camera().transform().Translate(
-          {-movement_scaling * ImGui::GetIO().MouseDelta.x, -movement_scaling * ImGui::GetIO().MouseDelta.y, 0});
+      const glm::vec3 world0 = scene_viewport_->DeviceCoordinatesToWorldSpace({0.0f, 0.0f});
+      const glm::vec3 world1 = scene_viewport_->DeviceCoordinatesToWorldSpace(ImGui::GetIO().MouseDelta);
+      camera_transform_.Translate(world0 - world1);
     }
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
       const glm::vec2 mouse_position = ImGui::GetMousePos();
-      SceneObject* object = GetObjectAtPosition(ScreenToWorld(mouse_position - top_left));
+      SceneObject* object =
+          GetObjectAtPosition(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
       if (object == nullptr) {
         selection_ = SelectedScene{};
         LogI("Selecting scene");
@@ -158,7 +167,7 @@ void SceneEditor::DrawContent() {
     SceneObject* selected_object = GetSelectedObject();
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && selected_object != nullptr) {
       const glm::vec2 mouse_position = ImGui::GetMousePos();
-      move_state_.drag_start_mouse_position = ScreenToWorld(mouse_position - top_left);
+      move_state_.drag_start_mouse_position = scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
 
       if (selected_object->HasComponent("Transform")) {
         move_state_.original_position =
@@ -169,7 +178,7 @@ void SceneEditor::DrawContent() {
     }
     if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && selected_object != nullptr) {
       const glm::vec2 mouse_position = ImGui::GetMousePos();
-      const glm::vec2 current_mouse_pos = ScreenToWorld(mouse_position - top_left);
+      const glm::vec2 current_mouse_pos = scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
       const glm::vec2 position_delta = current_mouse_pos - move_state_.drag_start_mouse_position;
       const glm::vec2 object_position = move_state_.original_position + position_delta;
 
@@ -191,7 +200,7 @@ void SceneEditor::DrawContent() {
 
       auto* transform = object->AddComponent<TransformComponent>("Transform");
       const glm::vec2 mouse_position = ImGui::GetMousePos();
-      transform->transform()->SetTranslation(glm::vec3(ScreenToWorld(mouse_position - top_left), 0.0f));
+      transform->transform()->SetTranslation(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
 
       auto* sprite = object->AddComponent<SpriteComponent>("Sprite");
       sprite->SetTexture(dropped_asset_id);
@@ -376,19 +385,6 @@ void SceneEditor::JsonFileChanged(const json& data, const std::string& file_type
     serialized_scene_ = data;
     scene_.Deserialize(serialized_scene_);
   }
-}
-
-glm::vec2 SceneEditor::ScreenToWorld(glm::vec2 screen_position) {
-  const Camera& camera = scene_.camera();
-  const float vertical_field_of_view = camera.vertical_field_of_view();
-  const float horizontal_field_of_view = camera.aspect_ratio() * vertical_field_of_view;
-  const glm::vec2 field_of_view = {horizontal_field_of_view, vertical_field_of_view};
-
-  const glm::vec2 view_space_position = screen_position / (glm::vec2(scene_viewport_->GetSize() - 1));
-  const glm::vec2 camera_translation = glm::vec2(camera.transform().translation());
-  const glm::vec2 world_position = (view_space_position - glm::vec2(0.5f, 0.5f)) * field_of_view + camera_translation;
-
-  return world_position;
 }
 
 SceneObject* SceneEditor::CreateObject(const std::string& base_name) {

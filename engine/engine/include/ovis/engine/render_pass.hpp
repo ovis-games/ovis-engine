@@ -9,12 +9,26 @@
 #include <ovis/graphics/gpu_time_profiler.hpp>
 #endif
 
+#include <ovis/engine/scene.hpp>
+#include <ovis/engine/camera.hpp>
+#include <glm/mat4x4.hpp>
+
 namespace ovis {
 
 class Viewport;
 class GraphicsContext;
 class ResourceManager;
-class Scene;
+
+struct RenderContext {
+  const Scene* scene;
+
+  Camera camera;
+  glm::mat4 view_matrix;
+  glm::mat4 inverse_view_matrix;
+  glm::mat4 projection_matrix;
+  glm::mat4 inverse_projection_matrix;
+  glm::mat4 view_projection_matrix;
+};
 
 class RenderPass {
   friend class Viewport;
@@ -30,7 +44,7 @@ class RenderPass {
 
   virtual void CreateResources() {}
   virtual void ReleaseResources() {}
-  virtual void Render(Scene* scene) = 0;
+  virtual void Render(const RenderContext& render_context) = 0;
 
   virtual void DrawImGui() {}
 
@@ -53,12 +67,12 @@ class RenderPass {
   std::unique_ptr<GPUTimeProfiler> gpu_render_profiler_;
 #endif
 
-  inline void RenderWrapper(Scene* scene) {
+  inline void RenderWrapper(const RenderContext& render_context) {
 #if OVIS_ENABLE_BUILT_IN_PROFILING
     cpu_render_profiler_.BeginMeasurement();
     gpu_render_profiler_->BeginMeasurement();
 #endif
-    Render(scene);
+    Render(render_context);
 #if OVIS_ENABLE_BUILT_IN_PROFILING
     cpu_render_profiler_.EndMeasurement();
     gpu_render_profiler_->EndMeasurement();

@@ -14,19 +14,27 @@
 
 namespace ovis {
 
+class SceneObject;
+
 class SceneObjectComponent : public Serializable {
   MAKE_NON_COPY_OR_MOVABLE(SceneObjectComponent);
+  friend class SceneObject;
 
  public:
   SceneObjectComponent() = default;
   virtual ~SceneObjectComponent() = default;
 
   static std::vector<std::string> GetRegisteredComponents();
+
+  inline SceneObject* scene_object() const { return scene_object_; }
+
+ private:
+  SceneObject* scene_object_;
 };
 
 template <typename T, const json* COMPONENT_SCHEMA = nullptr>
 class SimpleSceneObjectComponent : public SceneObjectComponent, public T {
-public:
+ public:
   json Serialize() const override {
     json data = static_cast<const T&>(*this);
     return data;
@@ -41,9 +49,7 @@ public:
     }
   }
 
-  const json* GetSchema() const override {
-    return COMPONENT_SCHEMA;
-  }
+  const json* GetSchema() const override { return COMPONENT_SCHEMA; }
 };
 
 }  // namespace ovis

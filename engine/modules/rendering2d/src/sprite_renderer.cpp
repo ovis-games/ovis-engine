@@ -21,10 +21,10 @@ void SpriteRenderer::CreateResources() {
     glm::vec2 texture_coordinates;
   };
 
-  Vertex vertices[] = {{{-0.5f, 0.5f}, {0.0f, 1.0f}},
-                       {{-0.5f, -0.5f}, {0.0f, 0.0f}},
-                       {{0.5f, 0.5f}, {1.0f, 1.0f}},
-                       {{0.5f, -0.5f}, {1.0f, 0.0f}}};
+  Vertex vertices[] = {{{-0.5f, 0.5f}, {0.0f, 0.0f}},
+                       {{-0.5f, -0.5f}, {0.0f, 1.0f}},
+                       {{0.5f, 0.5f}, {1.0f, 0.0f}},
+                       {{0.5f, -0.5f}, {1.0f, 1.0f}}};
 
   VertexBufferDescription vb_desc;
   vb_desc.vertex_size_in_bytes = 4 * sizeof(float);
@@ -39,9 +39,7 @@ void SpriteRenderer::CreateResources() {
   vertex_input_ = std::make_unique<VertexInput>(context(), vi_desc);
 }
 
-void SpriteRenderer::Render(Scene* scene) {
-  const glm::mat4 view_projection_matrix = scene->camera().CalculateViewProjectionMatrix();
-
+void SpriteRenderer::Render(const RenderContext& render_context) {
   DrawItem draw_item;
   draw_item.shader_program = shader_program_.get();
   draw_item.vertex_input = vertex_input_.get();
@@ -53,7 +51,7 @@ void SpriteRenderer::Render(Scene* scene) {
   draw_item.blend_state.destination_color_factor = DestinationBlendFactor::ONE_MINUS_SOURCE_ALPHA;
 
   // TODO: "cache" vector (to avoid reallocation)
-  auto objects_with_sprites = scene->GetSceneObjectsWithComponent("Sprite");
+  auto objects_with_sprites = render_context.scene->GetSceneObjectsWithComponent("Sprite");
 
   std::sort(objects_with_sprites.begin(), objects_with_sprites.end(), [](SceneObject* lhs, SceneObject* rhs) {
     glm::vec3 lhs_position;
@@ -86,8 +84,8 @@ void SpriteRenderer::Render(Scene* scene) {
 
     TransformComponent* transform = object->GetComponent<TransformComponent>("Transform");
     const glm::mat4 world_view_projection =
-        transform ? view_projection_matrix * transform->transform()->CalculateMatrix() * size_matrix
-                  : view_projection_matrix * size_matrix;
+        transform ? render_context.view_projection_matrix * transform->transform()->CalculateMatrix() * size_matrix
+                  : render_context.view_projection_matrix * size_matrix;
 
     shader_program_->SetUniform("WorldViewProjection", world_view_projection);
     shader_program_->SetUniform("Color", color);

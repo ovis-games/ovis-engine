@@ -13,7 +13,7 @@ class SpriteRenderer : public RenderPass {
 
   void CreateResources() override;
 
-  void Render(Scene* scene) override;
+  void Render(const RenderContext& render_context) override;
 
  private:
   std::unique_ptr<ShaderProgram> shader_program_;

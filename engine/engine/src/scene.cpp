@@ -244,8 +244,6 @@ json Scene::Serialize() const {
     objects[object.first] = object.second->Serialize();
   }
 
-  serialized_object["camera"] = camera_;
-
   return serialized_object;
 }
 
@@ -272,10 +270,6 @@ bool Scene::Deserialize(const json& serialized_object) {
     for (const auto& object : serialized_object["objects"].items()) {
       CreateObject(object.key(), object.value());
     }
-  }
-
-  if (serialized_object.contains("camera")) {
-    camera_ = serialized_object["camera"];
   }
 
   return true;

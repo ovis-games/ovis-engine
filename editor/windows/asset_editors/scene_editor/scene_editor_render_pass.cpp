@@ -36,7 +36,7 @@ void SceneEditorRenderPass::ReleaseResources() {
   line_shader_.reset();
 }
 
-void SceneEditorRenderPass::Render(Scene* scene) {
+void SceneEditorRenderPass::Render(const RenderContext& render_context) {
   line_shader_->SetUniform("WorldViewProjection", glm::mat4());
 
   DrawItem draw_item;

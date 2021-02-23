@@ -19,7 +19,7 @@ class ClearRenderPass : public RenderPass {
  public:
   ClearRenderPass() : RenderPass("ClearRenderPass") { RenderBefore("ImGui"); }
 
-  void Render(Scene* scene) override {
+  void Render(const RenderContext& render_context) override {
     context()->default_render_target_configuration()->ClearColor(0, clear_color_);
   }
 

@@ -26,6 +26,7 @@ SceneObjectComponent* SceneObject::AddComponent(const std::string& component_id)
     } else {
       auto component = factory->second(this);
       SDL_assert(component != nullptr);
+      component->scene_object_ = this;
       return components_.insert(std::make_pair(component_id, std::move(component))).first->second.get();
     }
   }

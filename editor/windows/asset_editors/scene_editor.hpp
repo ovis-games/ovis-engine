@@ -36,7 +36,6 @@ class SceneEditor : public AssetEditor {
   bool DrawObjectComponentList();
 
   void CreateSceneViewport(ImVec2 size);
-  glm::vec2 ScreenToWorld(glm::vec2 screen_position);
 
   SceneObject* CreateObject(const std::string& base_name);
   SceneObject* GetSelectedObject();
@@ -58,6 +57,9 @@ class SceneEditor : public AssetEditor {
     static const SelectedObject NONE;
   };
   RenamingState renaming_state_ = RenamingState::IS_NOT_RENAMING;
+
+  Camera camera_;
+  Transform camera_transform_;
 
   std::variant<SelectedScene, SelectedObject> selection_;
   std::vector<SceneObject*> cached_scene_objects_;

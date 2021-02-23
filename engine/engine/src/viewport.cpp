@@ -30,8 +30,9 @@ void Viewport::Render(bool render_gui) {
     ImGui::EndFrame();
   }
 
+  render_context_.scene = scene_;
   for (RenderPass* render_pass : render_pass_order_) {
-    render_pass->Render(scene_);
+    render_pass->Render(render_context_);
   }
 }
 

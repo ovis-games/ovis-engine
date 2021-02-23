@@ -8,7 +8,7 @@ class ClearRenderPass : public RenderPass {
  public:
   ClearRenderPass();
 
-  void Render(Scene* scene) override;
+  void Render(const RenderContext& render_context) override;
 
  private:
 };
