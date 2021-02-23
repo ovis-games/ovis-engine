@@ -42,8 +42,18 @@ void ImGuiRenderPass::Render(Scene* scene) {
   ImGui::Render();
   ImDrawData* draw_data = ImGui::GetDrawData();
 
-  shader_program_->SetUniform("HalfScreenSize",
-                              0.5f * glm::vec2(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y));
+  float L = draw_data->DisplayPos.x;
+  float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
+  float T = draw_data->DisplayPos.y;
+  float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
+  const glm::mat4 ortho_projection = {
+      {2.0f / (R - L), 0.0f, 0.0f, 0.0f},
+      {0.0f, 2.0f / (T - B), 0.0f, 0.0f},
+      {0.0f, 0.0f, -1.0f, 0.0f},
+      {(R + L) / (L - R), (T + B) / (B - T), 0.0f, 1.0f},
+  };
+  shader_program_->SetUniform("Projection", ortho_projection);
+
   for (int i = 0; i < draw_data->CmdListsCount; ++i) {
     auto command_list = draw_data->CmdLists[i];
 
