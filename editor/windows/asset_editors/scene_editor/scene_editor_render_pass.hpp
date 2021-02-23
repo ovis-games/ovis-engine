@@ -33,6 +33,12 @@ class SceneEditorRenderPass : public RenderPass {
   std::unique_ptr<VertexBuffer> line_vertex_buffer_;
   std::unique_ptr<ShaderProgram> line_shader_;
   std::unique_ptr<VertexInput> line_vertex_input;
+
+  const size_t vertex_buffer_size = 100;
+
+  void RenderLine(vector3 start, vector3 end, vector4 color = vector4(1.0f));
+  void RenderLine(vector3 start, vector4 start_color, vector3 end, vector4 end_color);
+  void RenderLineLoop(std::vector<vector3> points, vector4 color = vector4(1.0f));
 };
 
 }  // namespace editor
