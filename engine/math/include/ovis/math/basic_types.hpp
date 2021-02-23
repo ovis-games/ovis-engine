@@ -75,6 +75,24 @@ struct fmt::formatter<ovis::vector4> {
   }
 };
 
+template <>
+struct fmt::formatter<ovis::quaternion> {
+  char presentation = 'f';
+
+  // Parses format specifications of the form ['f' | 'e'].
+  constexpr auto parse(format_parse_context& ctx) {
+    auto it = ctx.begin(), end = ctx.end();
+    if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
+    if (it != end && *it != '}') throw format_error("invalid format");
+    return it;
+  }
+
+  template <typename FormatContext>
+  auto format(const ovis::quaternion& vector, FormatContext& ctx) {
+    return format_to(ctx.out(), presentation == 'f' ? "({:.1f}, {:.1f}, {:.1f}, {:.1f})" : "({:.1e}, {:.1e}, {:.1e}, {:.1e})", vector.x, vector.y, vector.z, vector.w);
+  }
+};
+
 }
 
 namespace nlohmann {
