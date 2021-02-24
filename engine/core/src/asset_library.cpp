@@ -115,6 +115,20 @@ bool DirectoryAssetLibrary::SaveAssetFile(const std::string& asset_id, const std
   }
 }
 
+bool DirectoryAssetLibrary::DeleteAsset(const std::string& asset_id) {
+  const std::vector<std::string> file_types = GetAssetFileTypes(asset_id);
+
+  for (const std::string& file_type : file_types) {
+    const std::optional<std::string> asset_filename = GetAssetFilename(asset_id, file_type);
+    if (asset_filename) {
+      std::filesystem::remove(*asset_filename);
+    }
+  }
+
+  Rescan();
+  return true;
+}
+
 void DirectoryAssetLibrary::Rescan() {
   assets_.clear();
   assets_with_type_.clear();

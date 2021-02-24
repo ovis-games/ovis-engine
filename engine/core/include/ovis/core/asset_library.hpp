@@ -32,6 +32,10 @@ class AssetLibrary {
                              std::variant<std::string, Blob> content) {
     return false;
   }
+
+  virtual bool DeleteAsset(const std::string& asset_id) {
+    return false;
+  }
 };
 
 class DirectoryAssetLibrary : public AssetLibrary {
@@ -52,6 +56,8 @@ class DirectoryAssetLibrary : public AssetLibrary {
 
   bool SaveAssetFile(const std::string& asset_id, const std::string& file_type,
                      std::variant<std::string, Blob> content) override;
+
+  bool DeleteAsset(const std::string& asset_id) override;
 
   void Rescan();
   inline std::string directory() const { return directory_; }
