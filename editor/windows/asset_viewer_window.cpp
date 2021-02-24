@@ -31,21 +31,21 @@ AssetViewerWindow::AssetViewerWindow() : UiWindow("Assets"), current_path_("/") 
 }
 
 void AssetViewerWindow::DrawContent() {
-  ImGui::TextColored(ImVec4(1.0, 1.0, 1.0, 1.0), "/");
-  ImGui::SameLine();
-  if (ImGui::BeginCombo("###AddAsset", "Add Asset", ImGuiComboFlags_NoArrowButton)) {
-    if (ImGui::Selectable("Scene")) {
-      // asset_library_.AddScene(GetNewAssetName("NewScene"));
+  ImGui::BeginChild("AssetView", ImVec2(0, 0), false);
+  if (ImGui::BeginPopupContextWindow()) {
+    if (ImGui::BeginMenu("Create")) {
+      if (ImGui::Selectable("Scene")) {
+        SceneEditor::CreateNew(GetNewAssetName("New Scene"));
+      }
+      ImGui::EndMenu();
     }
-    if (ImGui::Selectable("Scene Controller")) {
-      // asset_library_.AddSceneControllerScript(GetNewAssetName("NewSceneController"));
-    }
-    ImGui::EndCombo();
+    ImGui::EndPopup();
   }
 
-  ImGui::BeginChild("AssetView", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), false);
+  std::vector<std::string> assets = GetApplicationAssetLibrary()->GetAssets();
+  std::sort(assets.begin(), assets.end());
 
-  for (const auto& asset_id : GetApplicationAssetLibrary()->GetAssets()) {
+  for (const auto& asset_id : assets) {
     ImGui::Selectable(asset_id.c_str());
 
     if (ImGui::BeginDragDropSource()) {
@@ -57,12 +57,20 @@ void AssetViewerWindow::DrawContent() {
       ImGui::EndDragDropSource();
     }
 
+    if (ImGui::BeginPopupContextItem()) {
+      if (ImGui::Selectable("Delete")) {
+        GetApplicationAssetLibrary()->DeleteAsset(asset_id);
+      }
+      ImGui::EndPopup();
+    }
+
     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
       if (auto asset_editor = OpenAssetEditor(asset_id); asset_editor != nullptr) {
         asset_editor->SetDockSpaceId(scene()->GetController<DockspaceWindow>("Dockspace Window")->dockspace_main());
       }
     }
   }
+
   ImGui::EndChild();
 }
 
@@ -98,10 +106,19 @@ AssetEditor* AssetViewerWindow::OpenAssetEditor(const std::string& asset_id) {
   }
 }
 
+bool AssetViewerWindow::CloseAssetEditor(const std::string& asset_id) {
+  auto editor = scene()->GetController<AssetEditor>(AssetEditor::GetAssetEditorId(asset_id));
+  if (editor) {
+    editor->Remove();
+    return true;
+  } else {
+    return true;
+  }
+}
+
 std::string AssetViewerWindow::GetNewAssetName(const std::string& base_name) const {
   std::string asset_name = base_name;
-  for (int i = 0; GetApplicationAssetLibrary()->Contains(asset_name);
-       asset_name = base_name + std::to_string(++i))
+  for (int i = 0; GetApplicationAssetLibrary()->Contains(asset_name); asset_name = base_name + std::to_string(++i))
     ;
   return asset_name;
 }
