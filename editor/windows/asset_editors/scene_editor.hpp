@@ -16,8 +16,8 @@ class SceneEditor : public AssetEditor {
   enum class EditingMode { MOVE, ROTATE, SCALE };
 
   struct MoveState {
-    vector2 original_position;
-    vector2 drag_start_mouse_position;
+    vector3 original_position;
+    vector3 drag_start_mouse_position;
   };
 
  public:
@@ -27,6 +27,8 @@ class SceneEditor : public AssetEditor {
   bool ProcessEvent(const SDL_Event& event) override;
   // void DrawPropertyWindows() override;
   void Save() override;
+
+  static void CreateNew(const std::string& asset_id);
 
  private:
   void DrawContent() override;

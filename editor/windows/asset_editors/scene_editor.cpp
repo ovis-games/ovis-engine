@@ -138,8 +138,7 @@ void SceneEditor::DrawContent() {
   scene_viewport_->SetCamera(camera_, camera_transform_.CalculateMatrix());
   scene_viewport_->Render(false);
 
-  const vector2 top_left =
-      static_cast<vector2>(ImGui::GetWindowPos()) + static_cast<vector2>(ImGui::GetCursorPos());
+  const vector2 top_left = static_cast<vector2>(ImGui::GetWindowPos()) + static_cast<vector2>(ImGui::GetCursorPos());
   ImGui::Image(scene_viewport_->color_texture()->texture(), available_space, ImVec2(0, 1), ImVec2(1, 0),
                ImVec4(1, 1, 1, 1), border_color);
   scene_window_focused_ = ImGui::IsWindowFocused();
@@ -170,21 +169,19 @@ void SceneEditor::DrawContent() {
       move_state_.drag_start_mouse_position = scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
 
       if (selected_object->HasComponent("Transform")) {
-        move_state_.original_position =
-            selected_object->GetComponent<TransformComponent>("Transform")->translation();
+        move_state_.original_position = selected_object->GetComponent<TransformComponent>("Transform")->translation();
 
         LogI("Original position: {}", move_state_.original_position);
       }
     }
     if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && selected_object != nullptr) {
       const vector2 mouse_position = ImGui::GetMousePos();
-      const vector2 current_mouse_pos = scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
-      const vector2 position_delta = current_mouse_pos - move_state_.drag_start_mouse_position;
-      const vector2 object_position = move_state_.original_position + position_delta;
+      const vector3 current_mouse_pos = scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
+      const vector3 position_delta = current_mouse_pos - move_state_.drag_start_mouse_position;
+      const vector3 object_position = move_state_.original_position + position_delta;
 
       if (selected_object->HasComponent("Transform")) {
-        selected_object->GetComponent<TransformComponent>("Transform")
-            ->SetTranslation(vector3(object_position, 0.0f));
+        selected_object->GetComponent<TransformComponent>("Transform")->SetTranslation(object_position);
       }
     }
   }
@@ -226,6 +223,10 @@ void SceneEditor::DrawInspectorContent() {
 
 void SceneEditor::Save() {
   SaveFile("json", serialized_scene_.dump());
+}
+
+void SceneEditor::CreateNew(const std::string& asset_id) {
+  GetApplicationAssetLibrary()->CreateAsset(asset_id, "scene", {std::make_pair("json", Scene().Serialize().dump())});
 }
 
 bool SceneEditor::DrawObjectList() {
@@ -404,6 +405,7 @@ SceneObject* SceneEditor::GetSelectedObject() {
 
 SceneObject* SceneEditor::GetObjectAtPosition(vector2 world_position) {
   SceneObject* object_at_position = nullptr;
+  float z = std::numeric_limits<float>::infinity();
 
   for (SceneObject* object : scene_.GetObjects()) {
     vector2 size;
@@ -411,7 +413,7 @@ SceneObject* SceneEditor::GetObjectAtPosition(vector2 world_position) {
       size = object->GetComponent<SpriteComponent>("Sprite")->size();
     }
 
-    vector2 position(0.0f, 0.0f);
+    vector3 position(0.0f, 0.0f, 0.0f);
     if (object->HasComponent("Transform")) {
       Transform* transform = object->GetComponent<TransformComponent>("Transform");
       position = transform->translation();
@@ -420,13 +422,16 @@ SceneObject* SceneEditor::GetObjectAtPosition(vector2 world_position) {
 
     const vector2 half_size = size * 0.5f;
 
+    LogI("Candidate: {}", object->name());
     LogI("World position: {}", world_position);
     LogI("Object position: {}", position);
     LogI("Object Size: {}", size);
 
     if (position.x - half_size.x <= world_position.x && world_position.x <= position.x + half_size.x &&
-        position.y - half_size.y <= world_position.y && world_position.y <= position.y + half_size.y) {
+        position.y - half_size.y <= world_position.y && world_position.y <= position.y + half_size.y &&
+        position.z < z) {
       object_at_position = object;
+      z = position.z;
     }
   }
 
