@@ -16,8 +16,8 @@ std::vector<LuaError> ParseLuaErrorMessage(const std::string& error_message) {
   std::vector<LuaError> errors;
   std::regex lua_error_regex("^(.+):(\\d+): (.+)");
 
-  for (const auto& match : make_range(
-           std::sregex_iterator(error_message.begin(), error_message.end(), lua_error_regex), std::sregex_iterator())) {
+  for (const auto& match : make_range(std::sregex_iterator(error_message.begin(), error_message.end(), lua_error_regex),
+                                      std::sregex_iterator())) {
     errors.push_back({match[1].str(), std::stoi(match[2].str()), match[3].str()});
   }
 
@@ -63,6 +63,32 @@ void ScriptEditor::SetErrors(const std::vector<LuaError>& errors) {
   }
 
   editor_.SetErrorMarkers(error_markers);
+}
+
+void ScriptEditor::CreateNew(const std::string& asset_id) {
+  std::string scene_controller_name;
+  std::copy_if(
+      asset_id.begin(), asset_id.end(), std::back_insert_iterator<std::string>(scene_controller_name),
+      [](char c) { return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_'; });
+
+  if (scene_controller_name.size() == 0 || (scene_controller_name[0] >= '0' && scene_controller_name[0] <= '9')) {
+    scene_controller_name = '_' + scene_controller_name;
+  }
+
+  const std::string lua_code = fmt::format(R"LUA({0} = class('{0}')
+
+function {0}:Play()
+  LogI('{0}:Play()')
+end
+
+function {0}:Update(delta_time)
+  LogI('{0}:Update()')
+end
+
+return {0})LUA",
+                                           scene_controller_name);
+
+  GetApplicationAssetLibrary()->CreateAsset(asset_id, "scene_controller", {std::make_pair("lua", lua_code)});
 }
 
 }  // namespace editor

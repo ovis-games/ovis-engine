@@ -37,6 +37,9 @@ void AssetViewerWindow::DrawContent() {
       if (ImGui::Selectable("Scene")) {
         SceneEditor::CreateNew(GetNewAssetName("New Scene"));
       }
+      if (ImGui::Selectable("Scene Controller")) {
+        ScriptEditor::CreateNew(GetNewAssetName("New Scene Controller"));
+      }
       ImGui::EndMenu();
     }
     ImGui::EndPopup();

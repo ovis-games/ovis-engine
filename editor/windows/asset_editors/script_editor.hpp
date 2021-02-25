@@ -28,6 +28,8 @@ class ScriptEditor : public AssetEditor {
   void ClearErrors() { SetErrors({}); }
   void SetErrors(const std::vector<LuaError>& errors);
 
+  static void CreateNew(const std::string& asset_id);
+
  private:
   TextEditor editor_;
 };
