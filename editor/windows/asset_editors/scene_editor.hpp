@@ -39,7 +39,7 @@ class SceneEditor : public AssetEditor {
 
   void CreateSceneViewport(ImVec2 size);
 
-  SceneObject* CreateObject(const std::string& base_name);
+  SceneObject* CreateObject(const std::string& base_name, bool initiate_rename = false);
   SceneObject* GetSelectedObject();
   SceneObject* GetObjectAtPosition(vector2 world_position);
 

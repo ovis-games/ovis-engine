@@ -189,7 +189,7 @@ void SceneEditor::DrawContent() {
   if (ImGui::BeginDragDropTarget()) {
     std::string dropped_asset_id;
     if (ImGui::AcceptDragDropAsset("texture2d", &dropped_asset_id)) {
-      SceneObject* object = CreateObject(dropped_asset_id);
+      SceneObject* object = CreateObject(dropped_asset_id, false);
       auto texture_description = LoadTexture2DDescription(GetApplicationAssetLibrary(), dropped_asset_id);
 
       auto* transform = object->AddComponent<TransformComponent>("Transform");
@@ -234,6 +234,12 @@ bool SceneEditor::DrawObjectList() {
 
   ImVec2 window_size = ImGui::GetWindowSize();
   ImGui::BeginChild("ObjectView", ImVec2(0, window_size.y / 2), true);
+  if (ImGui::BeginPopupContextWindow()) {
+    if (ImGui::Selectable("Create Object")) {
+      CreateObject("New Object", true);
+    }
+    ImGui::EndPopup();
+  }
 
   ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
                                        ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
@@ -243,6 +249,12 @@ bool SceneEditor::DrawObjectList() {
     scene_node_flags |= ImGuiTreeNodeFlags_Selected;
   }
   if (ImGui::TreeNodeEx(asset_id().c_str(), scene_node_flags)) {
+    if (ImGui::BeginPopupContextItem()) {
+      if (ImGui::Selectable("Create Object")) {
+        CreateObject("New Object", true);
+      }
+      ImGui::EndPopup();
+    }
     if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
       selection_ = SelectedScene{};
     }
@@ -385,12 +397,16 @@ void SceneEditor::JsonFileChanged(const json& data, const std::string& file_type
   }
 }
 
-SceneObject* SceneEditor::CreateObject(const std::string& base_name) {
+SceneObject* SceneEditor::CreateObject(const std::string& base_name, bool initiate_rename) {
   std::string object_name = base_name;
   int counter = 1;
   while (scene_.ContainsObject(object_name)) {
     counter++;
     object_name = base_name + std::to_string(counter);
+  }
+  selection_ = SelectedObject{object_name};
+  if (initiate_rename) {
+    renaming_state_ = RenamingState::STARTED_RENAMING;
   }
   return scene_.CreateObject(object_name);
 }
