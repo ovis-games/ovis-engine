@@ -1,5 +1,6 @@
 #include <middleclass.hpp>
 
+#include <ovis/engine/input.hpp>
 #include <ovis/engine/lua.hpp>
 #include <ovis/engine/module.hpp>
 #include <ovis/engine/scene.hpp>
@@ -24,22 +25,41 @@ void Lua::SetupEnvironment() {
   state["OvisErrorHandler"] = [](const std::string& message) { on_error.Invoke(message); };
   sol::protected_function::set_default_handler(state["OvisErrorHandler"]);
 
+  struct InputKeyStates {
+    Input* input;
+  };
+  sol::usertype<InputKeyStates> input_key_state_type =
+      state.new_usertype<InputKeyStates>("InputKeyStates", sol::no_constructor);
+  input_key_state_type["__index"] = [](InputKeyStates* key_states, const std::string& key_code) {
+    return key_states->input->GetKeyState(key_code);
+  };
+
+  sol::usertype<Input> input_type = state.new_usertype<Input>("Input", sol::no_constructor);
+  input_type["key_states"] = sol::property([](Input* input) { return InputKeyStates{input}; });
+
+  state["input"] = &ovis::input;
+
   sol::usertype<vector2> vector2_type =
       state.new_usertype<vector2>("Vector2", sol::constructors<vector2(), vector2(float, float)>());
   vector2_type["x"] = &vector2::x;
   vector2_type["y"] = &vector2::y;
   vector2_type["__tostring"] = [](const vector3& vector) { return fmt::format("{}", vector); };
 
-  auto vector3_factories = sol::factories([](sol::table table) {
-    return vector3(table[1], table[2], table[3]);
-  });
+  auto vector3_factories = sol::factories([](sol::table table) { return vector3(table[1], table[2], table[3]); });
   sol::usertype<vector3> vector3_type = state.new_usertype<vector3>(
-      "Vector3", sol::constructors<vector3(), vector3(float, float, float)>(), sol::call_constructor, sol::constructors<vector3(), vector3(float, float, float)>(),
-      sol::meta_function::construct, vector3_factories);
+      "Vector3", sol::constructors<vector3(), vector3(float, float, float)>(), sol::call_constructor,
+      sol::constructors<vector3(), vector3(float, float, float)>(), sol::meta_function::construct, vector3_factories);
   vector3_type["x"] = &vector3::x;
   vector3_type["y"] = &vector3::y;
   vector3_type["z"] = &vector3::z;
   vector3_type["__tostring"] = [](const vector3& vector) { return fmt::format("{}", vector); };
+
+  vector3_type[sol::meta_function::multiplication] = [](const vector3& vector, float scalar) {
+    return vector * scalar;
+  };
+  vector3_type[sol::meta_function::unary_minus] = [](const vector3& vector) {
+    return -vector;
+  };
 
   sol::usertype<vector4> vector4_type =
       state.new_usertype<vector4>("Vector4", sol::constructors<vector4(), vector4(float, float, float, float)>());

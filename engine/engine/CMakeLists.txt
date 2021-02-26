@@ -16,6 +16,7 @@ add_library(
   include/ovis/engine/lua.hpp src/lua.cpp
   include/ovis/engine/fetch.hpp src/fetch.cpp
   include/ovis/engine/game_settings.hpp src/game_settings.cpp
+  include/ovis/engine/input.hpp src/input.cpp
 )
 add_library(ovis::engine ALIAS ovis-engine)
 

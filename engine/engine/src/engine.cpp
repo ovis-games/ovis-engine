@@ -7,6 +7,7 @@
 #include <ovis/engine/lua.hpp>
 #include <ovis/engine/module.hpp>
 #include <ovis/engine/window.hpp>
+#include <ovis/engine/input.hpp>
 
 namespace ovis {
 
@@ -18,6 +19,12 @@ bool ProcessEvents() {
     if (event.type == SDL_QUIT) {
       return false;
     }
+
+    if (event.type == SDL_KEYDOWN) {
+      input()->SetKeyState(event.key.keysym.scancode, true);
+    } else if (event.type == SDL_KEYUP) {
+      input()->SetKeyState(event.key.keysym.scancode, false);
+    } 
 
     // TODO: only post events to the according window
     for (auto window : Window::all_windows()) {
