@@ -1,9 +1,9 @@
 #include <ovis/base/base_module.hpp>
+#include <ovis/base/camera_component.hpp>
 #include <ovis/base/clear_render_pass.hpp>
 #include <ovis/base/imgui_render_pass.hpp>
 #include <ovis/base/imgui_scene_controller.hpp>
 #include <ovis/base/transform_component.hpp>
-#include <ovis/base/camera_component.hpp>
 
 #include <ovis/engine/lua.hpp>
 
@@ -60,20 +60,20 @@ BaseModule::BaseModule() : Module("BaseModule") {
   RegisterRenderPass("Clear", [this](Viewport*) { return std::make_unique<ClearRenderPass>(); });
   RegisterRenderPass("ImGui", [this](Viewport*) { return std::make_unique<ImGuiRenderPass>(context_); });
   RegisterSceneController("ImGui", [this](Scene*) { return std::make_unique<ImGuiSceneController>(context_); });
-  RegisterSceneObjectComponent<TransformComponent>(
-      "Transform", [](SceneObject*) { return std::make_unique<TransformComponent>(); });
-  RegisterSceneObjectComponent<CameraComponent>(
-    "Camera", [](SceneObject*) { return std::make_unique<CameraComponent>(); });
+  RegisterSceneObjectComponent<TransformComponent>("Transform",
+                                                   [](SceneObject*) { return std::make_unique<TransformComponent>(); });
+  RegisterSceneObjectComponent<CameraComponent>("Camera",
+                                                [](SceneObject*) { return std::make_unique<CameraComponent>(); });
 
-  sol::usertype<TransformComponent> transform_component_type =
-      Lua::state.new_usertype<TransformComponent>("Transform");
-  transform_component_type["position"] = sol::property(
-      [](const TransformComponent* transform_component) {
-        return vector2(transform_component->translation());
-      },
-      [](TransformComponent* transform_component, vector2 position) {
-        return transform_component->SetTranslation(vector3(position, 0.0f));
-      });
+  sol::usertype<TransformComponent> transform_component_type = Lua::state.new_usertype<TransformComponent>("Transform");
+  transform_component_type["position"] =
+      sol::property([](const TransformComponent* transform_component) { return transform_component->translation(); },
+                    [](TransformComponent* transform_component, vector3 position) {
+                      return transform_component->SetTranslation(position);
+                    });
+  transform_component_type["transform_direction"] = &TransformComponent::TransformDirection;
+  transform_component_type["rotate"] =
+      static_cast<void (TransformComponent::*)(vector3, float)>(&TransformComponent::Rotate);
 }
 
 BaseModule::~BaseModule() {

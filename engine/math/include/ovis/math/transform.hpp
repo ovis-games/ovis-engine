@@ -31,6 +31,10 @@ class Transform {
     *roll = euler.z;
   }
 
+  vector3 TransformDirection(vector3 direction) const {
+    return rotation_ * direction * glm::conjugate(rotation_);
+  }
+
   matrix4 CalculateMatrix() const;
   matrix4 CalculateInverseMatrix() const;
 

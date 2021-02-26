@@ -4,9 +4,8 @@
 
 namespace ovis {
 
-ScriptSceneController::ScriptSceneController(const std::string& name) : SceneController(name) {
-  sol::table object = Lua::state[name];
-  SDL_assert(object != sol::lua_nil);
+ScriptSceneController::ScriptSceneController(const std::string& name, sol::table class_table) : SceneController(name) {
+  sol::table object = class_table;
   sol::protected_function new_function = object["new"];
   SDL_assert(new_function != sol::lua_nil);
   instance_ = new_function.call(object);
@@ -17,8 +16,10 @@ ScriptSceneController::ScriptSceneController(const std::string& name) : SceneCon
 
 void ScriptSceneController::Play() {
   instance_["scene"] = scene();
-  if (instance_["Play"] != sol::lua_nil) {
-    instance_["Play"](instance_);
+
+  sol::protected_function play_function = instance_["Play"];
+  if (play_function != sol::lua_nil) {
+    sol::protected_function_result pfr = play_function.call(instance_);
   }
 }
 

@@ -8,7 +8,7 @@ namespace ovis {
 
 class ScriptSceneController : public SceneController {
  public:
-  ScriptSceneController(const std::string& name);
+  ScriptSceneController(const std::string& name, sol::table class_table);
 
   void Play() override;
   void Stop() override;

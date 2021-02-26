@@ -48,10 +48,14 @@ void ScriptEditor::Save() {
   if (!result.valid()) {
     const std::string error_message = result;
     LogE("Failed to load script: {}", error_message);
-    errors = ParseLuaErrorMessage(error_message);
+    if (error_message.length() > 0) {
+      errors = ParseLuaErrorMessage(error_message);
+      SetErrors(errors);
+    }
+  } else {
+    SetErrors({});
   }
 
-  SetErrors(errors);
 }
 
 void ScriptEditor::SetErrors(const std::vector<LuaError>& errors) {

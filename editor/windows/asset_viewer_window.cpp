@@ -22,6 +22,8 @@ AssetViewerWindow::AssetViewerWindow() : UiWindow("Assets"), current_path_("/") 
   UpdateAfter("Dockspace Window");
 
   Lua::on_error.Subscribe([this](const std::string& error_message) {
+    LogE("Lua error: {}", error_message);
+
     std::vector<LuaError> errors = ParseLuaErrorMessage(error_message);
     if (errors.size() > 0) {
       ScriptEditor* script_editor = down_cast<ScriptEditor*>(OpenAssetEditor(errors[0].asset_id));
@@ -68,9 +70,7 @@ void AssetViewerWindow::DrawContent() {
     }
 
     if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-      if (auto asset_editor = OpenAssetEditor(asset_id); asset_editor != nullptr) {
-        asset_editor->SetDockSpaceId(scene()->GetController<DockspaceWindow>("Dockspace Window")->dockspace_main());
-      }
+      OpenAssetEditor(asset_id);
     }
   }
 
@@ -95,18 +95,23 @@ AssetEditor* AssetViewerWindow::OpenAssetEditor(const std::string& asset_id) {
   }
 
   const std::string asset_type = GetApplicationAssetLibrary()->GetAssetType(asset_id);
+  AssetEditor* asset_editor = nullptr;
   if (asset_type == "scene") {
-    return scene()->AddController<SceneEditor>(asset_id);
+    asset_editor = scene()->AddController<SceneEditor>(asset_id);
   } else if (asset_type == "scene_controller") {
-    return scene()->AddController<ScriptEditor>(asset_id);
+    asset_editor = scene()->AddController<ScriptEditor>(asset_id);
   } else if (asset_type == "texture2d") {
-    return scene()->AddController<TextureEditor>(asset_id);
+    asset_editor = scene()->AddController<TextureEditor>(asset_id);
   } else if (asset_type == "settings") {
-    return scene()->AddController<SettingsEditor>(asset_id);
+    asset_editor = scene()->AddController<SettingsEditor>(asset_id);
   } else {
     LogE("Unknown asset type: {}", asset_type);
-    return nullptr;
   }
+
+  if (asset_editor != nullptr) {
+    asset_editor->SetDockSpaceId(scene()->GetController<DockspaceWindow>("Dockspace Window")->dockspace_main());
+  }
+  return asset_editor;
 }
 
 bool AssetViewerWindow::CloseAssetEditor(const std::string& asset_id) {

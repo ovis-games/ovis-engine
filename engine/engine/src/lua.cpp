@@ -28,12 +28,18 @@ void Lua::SetupEnvironment() {
       state.new_usertype<vector2>("Vector2", sol::constructors<vector2(), vector2(float, float)>());
   vector2_type["x"] = &vector2::x;
   vector2_type["y"] = &vector2::y;
+  vector2_type["__tostring"] = [](const vector3& vector) { return fmt::format("{}", vector); };
 
-  sol::usertype<vector3> vector3_type =
-      state.new_usertype<vector3>("Vector3", sol::constructors<vector3(), vector3(float, float, float)>());
+  auto vector3_factories = sol::factories([](sol::table table) {
+    return vector3(table[1], table[2], table[3]);
+  });
+  sol::usertype<vector3> vector3_type = state.new_usertype<vector3>(
+      "Vector3", sol::constructors<vector3(), vector3(float, float, float)>(), sol::call_constructor, sol::constructors<vector3(), vector3(float, float, float)>(),
+      sol::meta_function::construct, vector3_factories);
   vector3_type["x"] = &vector3::x;
   vector3_type["y"] = &vector3::y;
   vector3_type["z"] = &vector3::z;
+  vector3_type["__tostring"] = [](const vector3& vector) { return fmt::format("{}", vector); };
 
   sol::usertype<vector4> vector4_type =
       state.new_usertype<vector4>("Vector4", sol::constructors<vector4(), vector4(float, float, float, float)>());
@@ -41,6 +47,7 @@ void Lua::SetupEnvironment() {
   vector4_type["y"] = &vector4::y;
   vector4_type["z"] = &vector4::z;
   vector4_type["w"] = &vector4::w;
+  vector4_type["__tostring"] = [](const vector4& vector) { return fmt::format("{}", vector); };
 
   sol::usertype<Scene> scene_type = state.new_usertype<Scene>("Scene");
   scene_type["CreateObject"] = static_cast<SceneObject* (Scene::*)(const std::string&)>(&Scene::CreateObject);
@@ -55,8 +62,15 @@ sol::protected_function_result Lua::AddSceneController(const std::string& code, 
   if (Module::IsSceneControllerRegistered(id)) {
     Module::DeregisterSceneController(id);
   }
-  Module::RegisterSceneController(id, [id](Scene*) { return std::make_unique<ScriptSceneController>(id); });
-  return state.do_string(code, "=" + id);
+  sol::protected_function_result result = state.do_string(code, "=" + id);
+  if (result.valid() && result.get_type() == sol::type::table) {
+    LogI("Before table assignment");
+    sol::table class_table = result.get<sol::table>();
+    LogI("After table assignment");
+    Module::RegisterSceneController(
+        id, [id, class_table](Scene*) { return std::make_unique<ScriptSceneController>(id, class_table); });
+  }
+  return result;
 }
 
 // bool LoadScript(ResourceManager* resource_manager, const json& parameters, const std::string& id,
