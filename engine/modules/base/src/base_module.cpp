@@ -74,6 +74,7 @@ BaseModule::BaseModule() : Module("BaseModule") {
   transform_component_type["transform_direction"] = &TransformComponent::TransformDirection;
   transform_component_type["rotate"] =
       static_cast<void (TransformComponent::*)(vector3, float)>(&TransformComponent::Rotate);
+  transform_component_type["move"] = &TransformComponent::Translate;
 }
 
 BaseModule::~BaseModule() {
