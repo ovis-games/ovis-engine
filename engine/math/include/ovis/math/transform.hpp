@@ -32,7 +32,7 @@ class Transform {
   }
 
   vector3 TransformDirection(vector3 direction) const {
-    return rotation_ * direction * glm::conjugate(rotation_);
+    return rotation_ * direction;
   }
 
   matrix4 CalculateMatrix() const;
