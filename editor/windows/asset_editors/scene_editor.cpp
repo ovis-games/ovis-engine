@@ -361,11 +361,21 @@ bool SceneEditor::DrawObjectComponentList() {
 
       ImGui::EndChild();
     } else {
-      if (ImGui::InputJson("Scene", &serialized_scene_, *scene_.GetSchema(),
-                           ImGuiInputJsonFlags_IgnoreEnclosingObject)) {
-        // TODO: move to appropriate function and use serialized scene and do not re-serialze each frame
-        scene_.Deserialize(serialized_scene_);
-        object_changed = true;
+      // if (ImGui::InputJson("Scene", &serialized_scene_, *scene_.GetSchema(),
+      //                      ImGuiInputJsonFlags_IgnoreEnclosingObject)) {
+      //   // TODO: move to appropriate function and use serialized scene and do not re-serialze each frame
+      //   scene_.Deserialize(serialized_scene_);
+      //   object_changed = true;
+      // }
+      for (const std::string& controller : GetApplicationAssetLibrary()->GetAssetsWithType("scene_controller")) {
+        bool controller_enabled = scene_.GetController(controller) != nullptr;
+        if (ImGui::Checkbox(controller.c_str(), &controller_enabled)) {
+          if (controller_enabled) {
+            scene_.AddController(controller);
+          } else {
+            scene_.RemoveController(controller);
+          }
+        }
       }
     }
   }
@@ -375,19 +385,23 @@ bool SceneEditor::DrawObjectComponentList() {
 }
 
 void SceneEditor::CreateSceneViewport(ImVec2 size) {
-  RenderTargetViewportDescription scene_viewport_description;
-  scene_viewport_description.color_description.texture_description.width = static_cast<size_t>(size.x);
-  scene_viewport_description.color_description.texture_description.height = static_cast<size_t>(size.y);
-  scene_viewport_description.color_description.texture_description.format = TextureFormat::RGB_UINT8;
-  scene_viewport_description.color_description.texture_description.filter = TextureFilter::POINT;
-  scene_viewport_description.color_description.texture_description.mip_map_count = 0;
-  scene_viewport_ = std::make_unique<RenderTargetViewport>(
-      EditorWindow::instance()->context(), EditorWindow::instance()->resource_manager(), scene_viewport_description);
+  if (!scene_viewport_) {
+    RenderTargetViewportDescription scene_viewport_description;
+    scene_viewport_description.color_description.texture_description.width = static_cast<size_t>(size.x);
+    scene_viewport_description.color_description.texture_description.height = static_cast<size_t>(size.y);
+    scene_viewport_description.color_description.texture_description.format = TextureFormat::RGB_UINT8;
+    scene_viewport_description.color_description.texture_description.filter = TextureFilter::POINT;
+    scene_viewport_description.color_description.texture_description.mip_map_count = 0;
+    scene_viewport_ = std::make_unique<RenderTargetViewport>(
+        EditorWindow::instance()->context(), EditorWindow::instance()->resource_manager(), scene_viewport_description);
 
-  scene_viewport_->AddRenderPass("Clear");
-  scene_viewport_->AddRenderPass("SpriteRenderer");
-  scene_viewport_->AddRenderPass("SceneEditorRenderPass");
-  scene_viewport_->SetScene(&scene_);
+    scene_viewport_->AddRenderPass("Clear");
+    scene_viewport_->AddRenderPass("SpriteRenderer");
+    scene_viewport_->AddRenderPass("SceneEditorRenderPass");
+    scene_viewport_->SetScene(&scene_);
+  } else {
+    scene_viewport_->Resize(size.x, size.y);
+  }
 }
 
 void SceneEditor::JsonFileChanged(const json& data, const std::string& file_type) {

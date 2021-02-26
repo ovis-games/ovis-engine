@@ -18,6 +18,8 @@ class Viewport {
   virtual glm::ivec2 GetSize() = 0;
   virtual RenderTargetConfiguration* GetDefaultRenderTargetConfiguration() = 0;
 
+  inline GraphicsContext* context() const { return graphics_context_; }
+
   inline Scene* scene() const { return scene_; }
   inline void SetScene(Scene* scene) { scene_ = scene; }
   inline void SetCamera(const Camera& camera, const matrix4& camera_transform) {

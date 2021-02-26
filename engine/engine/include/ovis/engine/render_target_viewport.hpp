@@ -15,6 +15,7 @@ class RenderTargetViewport : public Viewport {
   RenderTargetViewport(GraphicsContext* graphics_context, ResourceManager* resource_manager,
                        const RenderTargetViewportDescription& description);
 
+  void Resize(std::size_t width, std::size_t height);
   glm::ivec2 GetSize() override;
   RenderTargetConfiguration* GetDefaultRenderTargetConfiguration() override;
   inline RenderTargetTexture2D* color_texture() { return color_.get(); }
@@ -25,6 +26,8 @@ class RenderTargetViewport : public Viewport {
   std::unique_ptr<RenderTargetTexture2D> color_;
   std::unique_ptr<RenderTargetTexture2D> depth_;
   std::unique_ptr<RenderTargetConfiguration> render_target_configuration_;
+
+  void CreateRenderTargets();
 };
 
 }  // namespace ovis
