@@ -105,8 +105,7 @@ void Scene::ClearControllers() {
 
 SceneObject* Scene::CreateObject(const std::string& object_name) {
   auto result = objects_.insert(std::make_pair(object_name, std::make_unique<SceneObject>(this, object_name)));
-  SDL_assert(result.second);
-  return result.first->second.get();
+  return result.second ? result.first->second.get() : nullptr;
 }
 
 SceneObject* Scene::CreateObject(const std::string& object_name, const json& serialized_object) {
