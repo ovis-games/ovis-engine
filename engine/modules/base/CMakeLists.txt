@@ -21,14 +21,10 @@ target_link_libraries(
     ovis::engine
 )
 
-add_custom_command(
-  TARGET ovis-base
-  PRE_LINK
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
-)
+target_add_assets(
+  ovis-base
 
-target_link_options(
- ovis-base
- PUBLIC
-  --preload-file ${CMAKE_BINARY_DIR}/assets@/ovis_assets
+  assets/base.schema.json
+  assets/ui.shader.vert
+  assets/ui.shader.frag
 )

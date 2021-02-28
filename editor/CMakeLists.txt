@@ -69,13 +69,35 @@ target_link_options(
     "SHELL:-s ALLOW_MEMORY_GROWTH=1"
     "SHELL:-s EXPORT_NAME=createEditorModule"
     "SHELL:-s EXTRA_EXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap']"
-    "--preload-file ${CMAKE_BINARY_DIR}/assets@/ovis_assets"
 )
 
-add_custom_command(
-  TARGET ovis-editor
-  PRE_LINK
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
+target_add_assets(
+  ovis-editor
+
+  assets/icon-move.texture2d.0
+  assets/icon-move.texture2d.json
+  assets/icon-package.texture2d.0
+  assets/icon-package.texture2d.json
+  assets/icon-pause.texture2d.0
+  assets/icon-pause.texture2d.json
+  assets/icon-play.texture2d.0
+  assets/icon-play.texture2d.json
+  assets/icon-redo.texture2d.0
+  assets/icon-redo.texture2d.json
+  assets/icon-rotate.texture2d.0
+  assets/icon-rotate.texture2d.json
+  assets/icon-save.texture2d.0
+  assets/icon-save.texture2d.json
+  assets/icon-scale.texture2d.0
+  assets/icon-scale.texture2d.json
+  assets/icon-stop.texture2d.0
+  assets/icon-stop.texture2d.json
+  assets/icon-undo.texture2d.0
+  assets/icon-undo.texture2d.json
+  assets/icon-windows.texture2d.0
+  assets/icon-windows.texture2d.json
+  assets/line.shader.frag
+  assets/line.shader.vert
 )
 
 add_custom_target(

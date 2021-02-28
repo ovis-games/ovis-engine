@@ -20,14 +20,10 @@ target_link_libraries(
     ovis::base
 )
 
-add_custom_command(
-  TARGET ovis-rendering2d
-  PRE_LINK
-  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets ${CMAKE_BINARY_DIR}/assets
-)
+target_add_assets(
+  ovis-rendering2d
 
-target_link_options(
- ovis-rendering2d
- PUBLIC
-  --preload-file ${CMAKE_BINARY_DIR}/assets@/ovis_assets
+  assets/rendering2d.schema.json
+  assets/sprite.shader.vert
+  assets/sprite.shader.frag
 )

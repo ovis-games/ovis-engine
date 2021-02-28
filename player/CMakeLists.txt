@@ -25,7 +25,6 @@ target_link_options(
     "SHELL:-s ALLOW_MEMORY_GROWTH=1"
     "SHELL:-s EXPORT_NAME=createPlayerModule"
     "SHELL:-s EXTRA_EXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap']"
-    "--preload-file ${CMAKE_BINARY_DIR}/assets@/ovis_assets"
 )
 
 target_link_libraries(
