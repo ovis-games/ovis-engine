@@ -8,16 +8,15 @@
       "description": "Represents a 2D object in a scene.",
       "properties": {
         "Color": {
-          "type": "color",
-          "description": "The color of the sprite.",
-          "default": [1, 1, 1, 1]
+          "$ref": "math#/$defs/color",
+          "description": "The color of the sprite."
         },
         "Texture": {
           "type": "asset<texture2d>",
           "description": "A texture that will be displayed on the sprite."
         },
         "Size": {
-          "type": "vector2",
+          "$ref": "math#/$defs/vector2",
           "description": "The size of the sprite.",
           "default": [100, 100]
         }
