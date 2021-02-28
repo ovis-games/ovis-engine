@@ -2,6 +2,8 @@
 #include "editor_module.hpp"
 #include "editor_window.hpp"
 #include "global.hpp"
+#include "imgui_extensions/input_json.hpp"
+#include "imgui_extensions/input_math.hpp"
 #include <cstring>
 
 #include <emscripten.h>
@@ -37,6 +39,11 @@ void EMSCRIPTEN_KEEPALIVE QuitEditor() {
 int main(int argc, char* argv[]) {
   using namespace ovis;
   using namespace ovis::editor;
+
+  ImGui::SetCustomJsonFunction("math#/$defs/vector2", &ImGui::InputVector2);
+  ImGui::SetCustomJsonFunction("math#/$defs/vector3", &ImGui::InputVector3);
+  ImGui::SetCustomJsonFunction("math#/$defs/vector4", &ImGui::InputVector4);
+  ImGui::SetCustomJsonFunction("math#/$defs/color", &ImGui::InputColor);
   
   try {
     Log::AddListener(ConsoleLogger);

@@ -27,3 +27,9 @@ target_link_libraries(
   PUBLIC
     ovis::core 
 )
+
+target_add_assets(
+  ovis-math
+
+  assets/math.schema.json
+)

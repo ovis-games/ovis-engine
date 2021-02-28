@@ -15,6 +15,8 @@ namespace ImGui {
 
 namespace {
 
+std::unordered_map<std::string, InputJsonFunction> custom_functions;
+
 void DisplayTooltip(const ovis::json& schema) {
   if (ImGui::IsItemHovered()) {
     if (schema.contains("description")) {
@@ -30,30 +32,34 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
 
   if (schema.contains("$ref")) {
     const std::string reference = schema["$ref"];
-    const unsigned hashtag_position = reference.find('#');
-    if (hashtag_position == std::string::npos) {
-      ovis::LogE("Invalid JSON reference: {}", reference);
-      return false;
+    if (custom_functions.count(reference) == 1) {
+      json_changed = custom_functions[reference](label, value, schema, flags);
+    } else {
+      const unsigned hashtag_position = reference.find('#');
+      if (hashtag_position == std::string::npos) {
+        ovis::LogE("Invalid JSON reference: {}", reference);
+        return false;
+      }
+      const std::string schema_file_reference = reference.substr(0, hashtag_position);
+      const std::string schema_reference = reference.substr(hashtag_position + 1);
+
+      std::shared_ptr<ovis::json> referenced_schema_file = ovis::LoadJsonSchema(schema_file_reference);
+      if (!referenced_schema_file) {
+        ovis::LogE("Failed to load schema: {}", schema_file_reference);
+        return false;
+      }
+
+      ovis::json::json_pointer schema_reference_pointer(schema_reference);
+      if (!referenced_schema_file->contains(schema_reference_pointer)) {
+        ovis::LogE("Invalid schema reference. Pointer '{}' does not exist in {}", schema_reference,
+                   schema_file_reference);
+        return false;
+      }
+      ovis::json referenced_schema = referenced_schema_file->at(schema_reference_pointer);
+      // TODO: patch referenced_schema with values overriden in 'schema' variable
+
+      json_changed = InputJson(label, value, referenced_schema, flags, depth);
     }
-    const std::string schema_file_reference = reference.substr(0, hashtag_position);
-    const std::string schema_reference = reference.substr(hashtag_position + 1);
-
-    std::shared_ptr<ovis::json> referenced_schema_file = ovis::LoadJsonSchema(schema_file_reference);
-    if (!referenced_schema_file) {
-      ovis::LogE("Failed to load schema: {}", schema_file_reference);
-      return false;
-    }
-
-
-    ovis::json::json_pointer schema_reference_pointer(schema_reference);
-    if (!referenced_schema_file->contains(schema_reference_pointer)) {
-      ovis::LogE("Invalid schema reference. Pointer '{}' does not exist in {}", schema_reference, schema_file_reference);
-      return false;
-    }
-    ovis::json referenced_schema = referenced_schema_file->at(schema_reference_pointer);
-    // TODO: patch referenced_schema with values overriden in 'schema' variable
-
-    json_changed = InputJson(label, value, referenced_schema, flags, depth);
   } else if (schema.contains("type")) {
     const std::string type = schema["type"];
     if (type == "object") {
@@ -108,34 +114,6 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
         json_changed = true;
       }
       DisplayTooltip(schema);
-    } else if (type == "vector2") {
-      ovis::vector2 vector = *value;
-      if (ImGui::DragFloat2(label, glm::value_ptr(vector), 1.0f, 0.0f, 0.0f, "%.2f")) {
-        *value = vector;
-        json_changed = true;
-      }
-      DisplayTooltip(schema);
-    } else if (type == "vector3") {
-      ovis::vector3 vector = *value;
-      if (ImGui::DragFloat3(label, glm::value_ptr(vector), 1.0f, 0.0f, 0.0f, "%.2f")) {
-        *value = vector;
-        json_changed = true;
-      }
-      DisplayTooltip(schema);
-    } else if (type == "vector4") {
-      ovis::vector4 vector = *value;
-      if (ImGui::DragFloat4(label, glm::value_ptr(vector), 1.0f, 0.0f, 0.0f, "%.2f")) {
-        *value = vector;
-        json_changed = true;
-      }
-      DisplayTooltip(schema);
-    } else if (type == "color") {
-      ovis::vector4 color = *value;
-      if (ImGui::ColorEdit4(label, glm::value_ptr(color))) {
-        *value = color;
-        json_changed = true;
-      }
-      DisplayTooltip(schema);
     } else if (type.size() > 7 && strncmp(type.c_str(), "asset<", 5) == 0 &&
                type.back() == '>') {  // 7 = strlen("asset<>"")
       const std::string asset_type = type.substr(6, type.size() - 7);
@@ -155,6 +133,10 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
 
 bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, int flags) {
   return InputJson(label, value, schema, flags, 0);
+}
+
+void SetCustomJsonFunction(const std::string& schema_reference, InputJsonFunction function) {
+  custom_functions[schema_reference] = function;
 }
 
 }  // namespace ImGui
