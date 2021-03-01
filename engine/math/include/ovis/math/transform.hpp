@@ -26,14 +26,12 @@ class Transform {
   }
   inline void GetYawPitchRoll(float* yaw, float* pitch, float* roll) const {
     const vector3 euler = glm::eulerAngles(rotation_);
-    *yaw = euler.y;
-    *pitch = euler.x;
-    *roll = euler.z;
+    if (yaw != nullptr) *yaw = euler.y;
+    if (pitch != nullptr) *pitch = euler.x;
+    if (roll != nullptr) *roll = euler.z;
   }
 
-  vector3 TransformDirection(vector3 direction) const {
-    return rotation_ * direction;
-  }
+  vector3 TransformDirection(vector3 direction) const { return rotation_ * direction; }
 
   matrix4 CalculateMatrix() const;
   matrix4 CalculateInverseMatrix() const;
