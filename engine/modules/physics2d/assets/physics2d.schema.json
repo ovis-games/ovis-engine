@@ -134,7 +134,10 @@
         },
         "vertices": {
           "title": "Vertices",
-          "type": "array"
+          "type": "array",
+          "items": {
+            "$ref": "math#/$defs/vector2"
+          }
         },
         "radius": {
           "title": "Radius",

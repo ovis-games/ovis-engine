@@ -1,4 +1,5 @@
 #include <box2d/b2_circle_shape.h>
+#include <box2d/b2_polygon_shape.h>
 
 #include <ovis/physics2d/rigid_body2d.hpp>
 
@@ -121,6 +122,18 @@ json RigidBody2D::SerializeShape() const {
 
     data["type"] = "circle";
     data["radius"] = circle->m_radius;
+  } else if (shape_->GetType() == b2Shape::e_polygon) {
+    b2PolygonShape* polygon = static_cast<b2PolygonShape*>(shape_.get());
+
+    data["type"] = "polygon";
+
+    std::vector<vector2> vertices(polygon->m_count);
+    for (int i = 0; i < polygon->m_count; ++i) {
+      vertices[i].x = polygon->m_vertices[i].x;
+      vertices[i].y = polygon->m_vertices[i].y;
+    }
+
+    data["vertices"] = vertices;
   }
 
   return data;
@@ -132,6 +145,23 @@ void RigidBody2D::DeserializeShape(const json& data) {
     if (data.contains("radius")) {
       shape_->m_radius = data.at("radius");
     }
+  } else if (data["type"] == "polygon") {
+    auto polygon_shape = std::make_unique<b2PolygonShape>();
+
+    if (data.contains("vertices")) {
+      std::vector<vector2> vertices = data.at("vertices");
+      std::vector<b2Vec2> box2d_vertices;
+      
+      box2d_vertices.reserve(vertices.size());
+      for (const auto& vertex : vertices) {
+        box2d_vertices.push_back(b2Vec2(vertex.x, vertex.y));
+      }
+      polygon_shape->Set(box2d_vertices.data(), box2d_vertices.size());
+    } else {
+      polygon_shape->SetAsBox(1.0f, 1.0f);
+    }
+
+    shape_ = std::move(polygon_shape);
   }
 
   fixture_definition_.shape = shape_.get();
