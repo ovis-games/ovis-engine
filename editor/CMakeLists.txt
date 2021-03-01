@@ -115,6 +115,7 @@ target_link_libraries(
     ovis::engine
     ovis::base
     ovis::rendering2d
+    ovis::physics2d
     nlohmann_json
     ImGuiColorTextEdit
     stb

@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+
+  "$defs": {
+    "physics_world2d": {
+      "title": "Physics2D Controller",
+      "type": "object"
+    },
+    "rigid_body_2d": {
+      "title": "Rigid Body 2D",
+      "type": "object"
+    },
+    "collision_shape_2d": {
+      "title": "CollisionShape2D",
+      "type": "object",
+      "description": "Represents a 2 dimensional collision shape.",
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "enum": ["circle", "polygon", "edge", "chain"],
+          "default": ["circle"]
+        },
+        "vertices": {
+          "title": "Vertices",
+          "type": "array"
+        }
+      }
+    }
+  }
+}

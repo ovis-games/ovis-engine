@@ -367,6 +367,16 @@ bool SceneEditor::DrawObjectComponentList() {
       //   scene_.Deserialize(serialized_scene_);
       //   object_changed = true;
       // }
+      for (const std::string& controller : SceneController::GetRegisteredControllers()) {
+        bool controller_enabled = scene_.GetController(controller) != nullptr;
+        if (ImGui::Checkbox(controller.c_str(), &controller_enabled)) {
+          if (controller_enabled) {
+            scene_.AddController(controller);
+          } else {
+            scene_.RemoveController(controller);
+          }
+        }
+      }
       for (const std::string& controller : GetApplicationAssetLibrary()->GetAssetsWithType("scene_controller")) {
         bool controller_enabled = scene_.GetController(controller) != nullptr;
         if (ImGui::Checkbox(controller.c_str(), &controller_enabled)) {

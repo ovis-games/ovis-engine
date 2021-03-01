@@ -33,6 +33,10 @@ IncludeCategories:
     Priority:        3
     SortPriority:    8
 
+  - Regex:           '^<ovis\/physics2d'
+    Priority:        3
+    SortPriority:    9
+
   - Regex:           '\.(hpp|hh|h)>$'
     Priority:        2
 

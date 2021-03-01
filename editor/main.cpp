@@ -14,6 +14,7 @@
 #include <ovis/core/log.hpp>
 #include <ovis/engine/engine.hpp>
 #include <ovis/rendering2d/rendering2d_module.hpp>
+#include <ovis/physics2d/physics2d_module.hpp>
 
 extern "C" {
 
@@ -44,7 +45,7 @@ int main(int argc, char* argv[]) {
   ImGui::SetCustomJsonFunction("math#/$defs/vector3", &ImGui::InputVector3);
   ImGui::SetCustomJsonFunction("math#/$defs/vector4", &ImGui::InputVector4);
   ImGui::SetCustomJsonFunction("math#/$defs/color", &ImGui::InputColor);
-  
+
   try {
     Log::AddListener(ConsoleLogger);
 
@@ -62,6 +63,7 @@ int main(int argc, char* argv[]) {
     CreateApplicationAssetLibrary<EditorAssetLibrary>("/assets/");
     LoadModule<BaseModule>();
     LoadModule<Rendering2DModule>();
+    LoadModule<Physics2DModule>();
     LoadModule<EditorModule>();
 
     EditorWindow editor_window;
