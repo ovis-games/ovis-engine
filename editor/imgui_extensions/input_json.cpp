@@ -78,10 +78,12 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
       }
 
       if (display_properties) {
+        ImGui::BeginGroup();
+
         const ovis::json& properties = schema.contains("properties") ? schema["properties"] : ovis::json::object();
         if (properties.is_object()) {
           for (auto property = properties.begin(), end = properties.end(); property != end; ++property) {
-            try {
+            if (value->contains(property.key())) {
               const int new_depth = flags & ImGuiInputJsonFlags_IgnoreEnclosingObject ? depth : depth + 1;
               std::string label;
               if (property.value().contains("title")) {
@@ -94,12 +96,47 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
                             flags & (~ImGuiInputJsonFlags_IgnoreEnclosingObject), new_depth)) {
                 json_changed = true;
               }
-            } catch (...) {
-              // value->at(property.key()) may throw if the value does not exists
-              // Should we ignore it?
-              ovis::LogV("Missing property '{}' in {}", property.key(), value->dump());
             }
           }
+        }
+        
+        ImGui::EndGroup();
+      } else {
+        DisplayTooltip(schema);
+      }
+
+      if (pushed) {
+        ImGui::TreePop();
+      }
+    } else if (type == "array") {
+      bool display_items = true;
+      bool pushed = false;
+
+      if ((flags & ImGuiInputJsonFlags_IgnoreEnclosingObject) == 0) {
+        if (depth > 0) {
+          ImGui::TreePush(label);
+          pushed = true;
+        }
+
+        display_items = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
+        DisplayTooltip(schema);
+      }
+
+      if (display_items) {
+        const ovis::json& items = schema.contains("items") ? schema["items"] : ovis::json::object();
+        if (value->is_array()) {
+          ImGui::BeginGroup();
+          const int new_depth = flags & ImGuiInputJsonFlags_IgnoreEnclosingObject ? depth : depth + 1;
+          for (size_t i = 0; i < value->size(); ++i) {
+            ovis::json array_item = value->at(i);
+            std::string item_label = std::string(label) + "[" + std::to_string(i) + "]";
+            if (InputJson(item_label.c_str(), &array_item, items, flags & (~ImGuiInputJsonFlags_IgnoreEnclosingObject),
+                          new_depth)) {
+              value->at(i) = array_item;
+              json_changed = true;
+            }
+          }
+          ImGui::EndGroup();
         }
       } else {
         DisplayTooltip(schema);
