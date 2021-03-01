@@ -46,6 +46,7 @@ class AssetEditor : public UiWindow {
  protected:
   void SetupJsonFile(const json& default_data, const std::string& file_type = "json");
   void SubmitJsonFile(const json& data, const std::string& file_type = "json");
+  json GetCurrentJsonFileState(const std::string& file_type = "json");
   virtual void JsonFileChanged(const json& data, const std::string& file_type) {}
 
  private:

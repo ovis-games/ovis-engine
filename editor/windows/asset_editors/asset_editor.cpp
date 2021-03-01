@@ -76,12 +76,21 @@ void AssetEditor::SubmitJsonFile(const json& data, const std::string& file_type)
   json& current_data = json_files_[file_type];
   const json redo_patch = json::diff(current_data, data);
   const json undo_patch = json::diff(data, current_data);
-  changes_.erase(current_undo_redo_position_, changes_.end());
-  changes_.push_back(JsonFileChange{file_type, undo_patch, redo_patch});
-  current_undo_redo_position_ = changes_.end();
-  LogD("Scene patch: {}", redo_patch.dump());
-  LogD("Scene undo patch: {}", undo_patch.dump());
-  current_data = data;
+
+  if (redo_patch.size() == 0 && undo_patch.size() == 0) {
+    LogD("No changes detected!");
+  } else {
+    changes_.erase(current_undo_redo_position_, changes_.end());
+    changes_.push_back(JsonFileChange{file_type, undo_patch, redo_patch});
+    current_undo_redo_position_ = changes_.end();
+    LogD("Scene patch: {}", redo_patch.dump());
+    LogD("Scene undo patch: {}", undo_patch.dump());
+    current_data = data;
+  }
+}
+
+json AssetEditor::GetCurrentJsonFileState(const std::string& file_type) {
+  return json_files_[file_type];
 }
 
 }  // namespace editor
