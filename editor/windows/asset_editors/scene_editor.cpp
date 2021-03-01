@@ -375,6 +375,7 @@ bool SceneEditor::DrawObjectComponentList() {
           } else {
             scene_.RemoveController(controller);
           }
+          object_changed = true;
         }
       }
       for (const std::string& controller : GetApplicationAssetLibrary()->GetAssetsWithType("scene_controller")) {
