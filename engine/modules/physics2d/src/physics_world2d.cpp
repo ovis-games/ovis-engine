@@ -18,16 +18,16 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
     RigidBody2D* body = object->GetComponent<RigidBody2D>("RigidBody2D");
     SDL_assert(body != nullptr);
 
-    if (body->body_ != nullptr) {
-      if (transform) {
-        float roll;
-        transform->GetYawPitchRoll(nullptr, nullptr, &roll);
-        body->body_->SetTransform(b2Vec2(transform->translation().x, transform->translation().y), glm::radians(roll));
-      }
-    } else {
+    if (body->body_ == nullptr) {
       body->body_ = world_.CreateBody(&body->body_definition_);
       SDL_assert(body->body_);
       body->fixture_ = body->body_->CreateFixture(body->shape_.get(), 0.5f);
+    }
+
+    if (transform) {
+      float roll;
+      transform->GetYawPitchRoll(nullptr, nullptr, &roll);
+      body->body_->SetTransform(b2Vec2(transform->translation().x, transform->translation().y), glm::radians(roll));
     }
   }
 
