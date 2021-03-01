@@ -6,12 +6,89 @@
       "title": "Physics2D Controller",
       "type": "object"
     },
+    "box2d_body": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string",
+          "enum": ["static", "kinematic", "dynamic"],
+          "default": "static",
+          "description": "The body type: static, kinematic, or dynamic.\nstatic: zero mass, zero velocity, may be manually moved\nkinematic: zero mass, non-zero velocity set by user, moved by solver\n dynamic: positive mass, non-zero velocity determined by forces, moved by solver\nNote: if a dynamic body would have zero mass, the mass is set to one."
+        },
+        "linear_velocity": {
+          "$ref": "math#/$defs/vector2",
+          "title": "Linear Velocity",
+          "default": [0, 0],
+          "description": "The linear velocity of the body's origin in world co-ordinates."
+        },
+        "angular_velocity": {
+          "title": "Angular Velocity",
+          "type": "number",
+          "default": 0,
+          "description": "The angular velocity of the body."
+        },
+        "linear_damping": {
+          "title": "Linear Damping",
+          "type": "number",
+          "default": 0,
+          "description": "Linear damping is use to reduce the linear velocity. The damping parameter can be larger than 1.0f but the damping effect becomes sensitive to the time step when the damping parameter is large.\nUnits are 1/time"
+        },
+        "angular_damping": {
+          "title": "Angular Damping",
+          "type": "number",
+          "default": 0,
+          "description": "Angular damping is use to reduce the angular velocity. The damping parameter can be larger than 1.0f but the damping effect becomes sensitive to the time step when the damping parameter is large.\nUnits are 1/time"
+        },
+        "allow_sleep": {
+          "title": "Allow Sleep",
+          "type": "boolean",
+          "default": true,
+          "description": "Set this flag to false if this body should never fall asleep. Note that this increases CPU usage."
+        },
+        "awake": {
+          "title": "Awake",
+          "type": "boolean",
+          "default": true,
+          "description": "Is this body initially awake or sleeping?"
+        },
+        "fixed_rotation": {
+          "title": "Fixed Rotation",
+          "type": "boolean",
+          "default": false,
+          "description": "Should this body be prevented from rotating? Useful for characters."
+        },
+        "bullet": {
+          "title": "Is Bullet",
+          "type": "boolean",
+          "default": false,
+          "description": "Is this a fast moving body that should be prevented from tunneling through other moving bodies? Note that all bodies are prevented from tunneling through kinematic and static bodies. This setting is only considered on dynamic bodies.\nWARNING You should use this flag sparingly since it increases processing time."
+        },
+        "enabled": {
+          "title": "Enabled",
+          "type": "boolean",
+          "default": true,
+          "description": "Does this body start out enabled?"
+        },
+        "gravity_scale": {
+          "title": "Gravity Scale",
+          "type": "number",
+          "default": 1,
+          "description": "Scale the gravity applied to this body."
+        }
+      }
+    },
     "rigid_body_2d": {
       "title": "Rigid Body 2D",
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "shape": {
+          "$ref": "physics2d#/$defs/collision_shape_2d"
+        }
+      }
     },
     "collision_shape_2d": {
-      "title": "CollisionShape2D",
+      "title": "Collision Shape 2D",
       "type": "object",
       "description": "Represents a 2 dimensional collision shape.",
       "properties": {
@@ -24,6 +101,10 @@
         "vertices": {
           "title": "Vertices",
           "type": "array"
+        },
+        "radius": {
+          "title": "Radius",
+          "type": "number"
         }
       }
     }
