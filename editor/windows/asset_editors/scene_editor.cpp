@@ -18,8 +18,6 @@
 namespace ovis {
 namespace editor {
 
-const SceneEditor::SelectedObject SceneEditor::SelectedObject::NONE = {""};
-
 SceneEditor::SceneEditor(const std::string& scene_asset) : AssetEditor(scene_asset) {
   SetupJsonFile(scene_.Serialize());
 
@@ -58,6 +56,8 @@ bool SceneEditor::ProcessEvent(const SDL_Event& event) {
 void SceneEditor::DrawContent() {
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(48, 48, 48)));
   if (state_ == State::RUNNING) {
+    serialized_scene_working_copy_ = scene_.Serialize();
+
     if (ImGui::TextureButton(icons_.pause.get())) {
       state_ = State::PAUSED;
     }
@@ -67,9 +67,8 @@ void SceneEditor::DrawContent() {
   } else {
     if (ImGui::TextureButton(icons_.play.get())) {
       if (state_ == State::STOPPED) {
-        serialized_scene_ = scene_.Serialize();
-        // Reload so scripts are upt to date
-        scene_.Deserialize(serialized_scene_);
+        // Reload so scripts are up to date (TODO: this should be done in a better way)
+        scene_.Deserialize(serialized_scene_working_copy_);
         scene_.Play();
       }
       state_ = State::RUNNING;
@@ -82,7 +81,8 @@ void SceneEditor::DrawContent() {
   if (ImGui::TextureButton(icons_.stop.get())) {
     if (state_ != State::STOPPED) {
       scene_.Stop();
-      scene_.Deserialize(serialized_scene_);
+      serialized_scene_working_copy_ = GetCurrentJsonFileState();
+      scene_.Deserialize(serialized_scene_working_copy_);
     }
     state_ = State::STOPPED;
   }
@@ -142,6 +142,7 @@ void SceneEditor::DrawContent() {
   ImGui::Image(scene_viewport_->color_texture()->texture(), available_space, ImVec2(0, 1), ImVec2(1, 0),
                ImVec4(1, 1, 1, 1), border_color);
   scene_window_focused_ = ImGui::IsWindowFocused();
+
   if (ImGui::IsItemHovered()) {
     camera_.SetVerticalFieldOfView(camera_.vertical_field_of_view() * std::powf(2.0, -ImGui::GetIO().MouseWheel));
 
@@ -155,34 +156,41 @@ void SceneEditor::DrawContent() {
       SceneObject* object =
           GetObjectAtPosition(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
       if (object == nullptr) {
-        selection_ = SelectedScene{};
-        LogI("Selecting scene");
+        selected_object_.reset();
       } else {
-        selection_ = SelectedObject{object->name()};
-        LogI("Selecting object: {}", object->name());
+        selected_object_ = object->name();
       }
     }
 
     SceneObject* selected_object = GetSelectedObject();
     if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && selected_object != nullptr) {
-      const vector2 mouse_position = ImGui::GetMousePos();
-      move_state_.drag_start_mouse_position = scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
-
       if (selected_object->HasComponent("Transform")) {
-        move_state_.original_position = selected_object->GetComponent<TransformComponent>("Transform")->translation();
+        move_state_.emplace();
+        move_state_->object_name = selected_object->name();
 
-        LogI("Original position: {}", move_state_.original_position);
+        const vector2 mouse_position = ImGui::GetMousePos();
+        move_state_->drag_start_mouse_position =
+            scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
+
+        move_state_->original_position = selected_object->GetComponent<TransformComponent>("Transform")->translation();
       }
     }
-    if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && selected_object != nullptr) {
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && move_state_.has_value()) {
       const vector2 mouse_position = ImGui::GetMousePos();
       const vector3 current_mouse_pos = scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
-      const vector3 position_delta = current_mouse_pos - move_state_.drag_start_mouse_position;
-      const vector3 object_position = move_state_.original_position + position_delta;
+      const vector3 position_delta = current_mouse_pos - move_state_->drag_start_mouse_position;
+      const vector3 object_position = move_state_->original_position + position_delta;
 
       if (selected_object->HasComponent("Transform")) {
-        selected_object->GetComponent<TransformComponent>("Transform")->SetTranslation(object_position);
+        TransformComponent* transform_component = selected_object->GetComponent<TransformComponent>("Transform");
+        transform_component->SetTranslation(object_position);
+        serialized_scene_working_copy_[GetComponentPath(selected_object->name(), "Transform")] =
+            transform_component->Serialize();
       }
+    }
+    if (!ImGui::IsMouseDown(ImGuiMouseButton_Left) && move_state_.has_value()) {
+      move_state_.reset();
+      SubmitJsonFile(serialized_scene_working_copy_);
     }
   }
 
@@ -200,199 +208,194 @@ void SceneEditor::DrawContent() {
       sprite->SetTexture(dropped_asset_id);
       sprite->SetSize({texture_description->width, texture_description->height});
 
-      serialized_scene_ = scene_.Serialize();
-      SubmitJsonFile(serialized_scene_);
+      serialized_scene_working_copy_ = scene_.Serialize();
+      SubmitJsonFile(serialized_scene_working_copy_);
     }
     ImGui::EndDragDropTarget();
   }
 }
 
 void SceneEditor::DrawInspectorContent() {
-  bool scene_changed = false;
-  if (DrawObjectList()) {
-    scene_changed = true;
-  }
-  if (DrawObjectComponentList()) {
-    scene_changed = true;
-  }
-  if (scene_changed) {
-    serialized_scene_ = scene_.Serialize();
-    SubmitJsonFile(serialized_scene_);
-  }
+  DrawObjectTree();
+  DrawSelectionProperties();
 }
 
-void SceneEditor::Save() {
-  SaveFile("json", serialized_scene_.dump());
-}
-
-void SceneEditor::CreateNew(const std::string& asset_id) {
-  GetApplicationAssetLibrary()->CreateAsset(asset_id, "scene", {std::make_pair("json", Scene().Serialize().dump())});
-}
-
-bool SceneEditor::DrawObjectList() {
-  bool scene_changed = false;
-
-  ImVec2 window_size = ImGui::GetWindowSize();
-  ImGui::BeginChild("ObjectView", ImVec2(0, window_size.y / 2), true);
-  if (ImGui::BeginPopupContextWindow()) {
-    if (ImGui::Selectable("Create Object")) {
-      CreateObject("New Object", true);
-    }
-    ImGui::EndPopup();
-  }
-
-  ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
-                                       ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
-
-  ImGuiTreeNodeFlags scene_node_flags = tree_node_flags | ImGuiTreeNodeFlags_AllowItemOverlap;
-  if (std::holds_alternative<SelectedScene>(selection_)) {
-    scene_node_flags |= ImGuiTreeNodeFlags_Selected;
-  }
-  if (ImGui::TreeNodeEx(asset_id().c_str(), scene_node_flags)) {
-    if (ImGui::BeginPopupContextItem()) {
+void SceneEditor::DrawObjectTree() {
+  ImVec2 available_content_region = ImGui::GetContentRegionAvail();
+  if (ImGui::BeginChild("ObjectView", ImVec2(0, available_content_region.y / 2), true)) {
+    if (ImGui::BeginPopupContextWindow()) {
       if (ImGui::Selectable("Create Object")) {
         CreateObject("New Object", true);
       }
       ImGui::EndPopup();
     }
-    if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-      selection_ = SelectedScene{};
+
+    if (selected_object_.has_value() && !scene_.ContainsObject(*selected_object_)) {
+      // If the selected object does not exist anymore, remove the selection
+      selected_object_.reset();
     }
 
-    const std::string selected_object_name = get_with_default<SelectedObject>(selection_, SelectedObject::NONE).name;
-    scene_.GetObjects(&cached_scene_objects_, true);
-    for (SceneObject* object : cached_scene_objects_) {
-      SDL_assert(object != nullptr);
+    ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
+                                         ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
 
-      ImGuiTreeNodeFlags scene_object_flags = tree_node_flags | ImGuiTreeNodeFlags_Leaf;
-      if (object->name() == selected_object_name) {
-        scene_object_flags |= ImGuiTreeNodeFlags_Selected;
+    ImGuiTreeNodeFlags scene_node_flags = tree_node_flags | ImGuiTreeNodeFlags_AllowItemOverlap;
+    if (!selected_object_.has_value()) {
+      // If there is no selected object, the scene is selected
+      scene_node_flags |= ImGuiTreeNodeFlags_Selected;
+    }
+    if (ImGui::TreeNodeEx(asset_id().c_str(), scene_node_flags)) {
+      if (ImGui::BeginPopupContextItem()) {
+        if (ImGui::Selectable("Create Object")) {
+          CreateObject("New Object", true);
+        }
+        ImGui::EndPopup();
+      }
+      if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+        selected_object_.reset();
       }
 
-      if (renaming_state_ == RenamingState::IS_NOT_RENAMING || object->name() != selected_object_name) {
-        if (ImGui::TreeNodeEx(object->name().c_str(), scene_object_flags)) {
-          if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-            selection_ = SelectedObject{object->name()};
-            // is_renaming_selected_object_ = false;
-          }
-          if (ImGui::BeginPopupContextItem()) {
-            if (ImGui::Selectable("Rename")) {
-              renaming_state_ = RenamingState::STARTED_RENAMING;
+      scene_.GetObjects(&cached_scene_objects_, true);
+      for (SceneObject* object : cached_scene_objects_) {
+        SDL_assert(object != nullptr);
+
+        const bool is_object_selected = selected_object_.has_value() && object->name() == *selected_object_;
+
+        ImGuiTreeNodeFlags scene_object_flags = tree_node_flags | ImGuiTreeNodeFlags_Leaf;
+        if (is_object_selected) {
+          scene_object_flags |= ImGuiTreeNodeFlags_Selected;
+        }
+
+        if (renaming_state_ == RenamingState::IS_NOT_RENAMING || !is_object_selected) {
+          // This object is currently not beeing renamed
+          if (ImGui::TreeNodeEx(object->name().c_str(), scene_object_flags)) {
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+              selected_object_ = object->name();
             }
-            if (ImGui::Selectable("Remove")) {
-              scene_.DeleteObject(object->name());
-              scene_changed = true;
+            if (ImGui::BeginPopupContextItem()) {
+              if (ImGui::Selectable("Rename")) {
+                renaming_state_ = RenamingState::STARTED_RENAMING;
+              }
+              if (ImGui::Selectable("Remove")) {
+                scene_.DeleteObject(object->name());
+                SubmitChangesToScene();
+              }
+              ImGui::EndPopup();
             }
-            ImGui::EndPopup();
+            ImGui::TreePop();
           }
+        } else {
+          // This object is currently beeing renamed
+          std::string new_object_name = object->name();
+          ImGui::TreePush(object->name().c_str());
+          ImGui::PushItemWidth(-1);
+          if (ImGui::InputText("Renaming", &new_object_name,
+                               ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
+            if (new_object_name != object->name()) {
+              // TODO: check for validity: alphanumeric+underscore+space
+              if (scene_.ContainsObject(new_object_name)) {
+                // TODO: Show message box
+              } else {
+                scene_.CreateObject(new_object_name, object->Serialize());
+                scene_.DeleteObject(object->name());
+                SubmitChangesToScene();
+              }
+            }
+            renaming_state_ = RenamingState::IS_NOT_RENAMING;
+          }
+          if (renaming_state_ == RenamingState::STARTED_RENAMING) {
+            ImGui::SetKeyboardFocusHere();
+            renaming_state_ = RenamingState::IS_RENAMING;
+          } else if (!ImGui::IsItemActive()) {
+            renaming_state_ = RenamingState::IS_NOT_RENAMING;
+          }
+          ImGui::PopItemWidth();
           ImGui::TreePop();
         }
-      } else {
-        std::string new_object_name = object->name();
-        ImGui::TreePush(object->name().c_str());
-        ImGui::PushItemWidth(-1);
-        if (ImGui::InputText("Renaming", &new_object_name,
-                             ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
-          if (new_object_name != object->name()) {
-            // TODO: check for validity: alphanumeric+underscore+space
-            if (scene_.ContainsObject(new_object_name)) {
-              // TODO: Show message box
-            } else {
-              scene_.CreateObject(new_object_name, object->Serialize());
-              scene_.DeleteObject(object->name());
-              scene_changed = true;
-            }
-          }
-          renaming_state_ = RenamingState::IS_NOT_RENAMING;
-        }
-        if (renaming_state_ == RenamingState::STARTED_RENAMING) {
-          ImGui::SetKeyboardFocusHere();
-          renaming_state_ = RenamingState::IS_RENAMING;
-        } else if (!ImGui::IsItemActive()) {
-          renaming_state_ = RenamingState::IS_NOT_RENAMING;
-        }
-        ImGui::PopItemWidth();
-        ImGui::TreePop();
       }
-    }
 
-    ImGui::TreePop();
+      ImGui::TreePop();
+    }
   }
   ImGui::EndChild();
-
-  return scene_changed;
 }
 
-bool SceneEditor::DrawObjectComponentList() {
-  bool object_changed = false;
-
-  ImVec2 window_size = ImGui::GetWindowSize();
-  if (ImGui::BeginChild("Object Properties", ImVec2(0, window_size.y / 2 - ImGui::GetFrameHeightWithSpacing()))) {
-    const std::string selected_object_name = get_with_default<SelectedObject>(selection_, SelectedObject::NONE).name;
-
-    if (selected_object_name.size() != 0) {
-      SceneObject* selected_object = scene_.GetObject(selected_object_name);
-
-      ImGui::Text("%s", selected_object->name().c_str());
-      ImGui::SameLine();
-      if (ImGui::BeginCombo("##AddComponent", "Add Component", ImGuiComboFlags_NoArrowButton)) {
-        for (const auto& component_id : SceneObjectComponent::GetRegisteredComponents()) {
-          if (!selected_object->HasComponent(component_id)) {
-            if (ImGui::Selectable(component_id.c_str())) {
-              selected_object->AddComponent(component_id);
-              object_changed = true;
-            }
-          }
-        }
-        ImGui::EndCombo();
-      }
-
-      ImGui::BeginChild("Components", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), true);
-      // TODO: iterate over json object and not the serialize the components on every frame
-      for (const auto& component_id : selected_object->GetComponentIds()) {
-        Serializable* component = selected_object->GetComponent(component_id);
-        if (ImGui::InputSerializable(component_id.c_str(), component)) {
-          object_changed = true;
-        }
-      }
-      ImGui::EndChild();
-
-      ImGui::BeginChild("Scene Object Buttons");
-
-      ImGui::EndChild();
+void SceneEditor::DrawSelectionProperties() {
+  ImVec2 available_content_region = ImGui::GetContentRegionAvail();
+  if (ImGui::BeginChild("SelectionProperties", ImVec2(0, available_content_region.y), true)) {
+    if (selected_object_.has_value()) {
+      DrawSceneObjectProperties();
     } else {
-      // if (ImGui::InputJson("Scene", &serialized_scene_, *scene_.GetSchema(),
-      //                      ImGuiInputJsonFlags_IgnoreEnclosingObject)) {
-      //   // TODO: move to appropriate function and use serialized scene and do not re-serialze each frame
-      //   scene_.Deserialize(serialized_scene_);
-      //   object_changed = true;
-      // }
-      for (const std::string& controller : SceneController::GetRegisteredControllers()) {
-        bool controller_enabled = scene_.GetController(controller) != nullptr;
-        if (ImGui::Checkbox(controller.c_str(), &controller_enabled)) {
-          if (controller_enabled) {
-            scene_.AddController(controller);
-          } else {
-            scene_.RemoveController(controller);
-          }
-          object_changed = true;
-        }
-      }
-      for (const std::string& controller : GetApplicationAssetLibrary()->GetAssetsWithType("scene_controller")) {
-        bool controller_enabled = scene_.GetController(controller) != nullptr;
-        if (ImGui::Checkbox(controller.c_str(), &controller_enabled)) {
-          if (controller_enabled) {
-            scene_.AddController(controller);
-          } else {
-            scene_.RemoveController(controller);
-          }
-        }
-      }
+      DrawSceneProperties();
     }
   }
   ImGui::EndChild();
+}
 
-  return object_changed;
+void SceneEditor::DrawSceneObjectProperties() {
+  SceneObject* selected_object = GetSelectedObject();
+
+  if (!selected_object) {
+    return;
+  }
+
+  for (const auto& component_id : selected_object->GetComponentIds()) {
+    Serializable* component = selected_object->GetComponent(component_id);
+
+    // Get component path
+    const json::json_pointer component_path = GetComponentPath(*selected_object_, component_id);
+    if (serialized_scene_working_copy_.contains(component_path)) {
+      json& serialized_component = serialized_scene_working_copy_[component_path];
+      const ovis::json* component_schema = component->GetSchema();
+
+      if (ImGui::InputJson(component_id.c_str(), &serialized_component,
+                           component_schema ? *component_schema : ovis::json{})) {
+        component->Deserialize(serialized_component);
+      }
+      if (ImGui::IsItemDeactivated()) {
+        // After editing is finished reserialize the component so the input gets "validated"
+        serialized_scene_working_copy_[component_path] = component->Serialize();
+        SubmitJsonFile(serialized_scene_working_copy_);
+      }
+    }
+  }
+}
+
+void SceneEditor::DrawSceneProperties() {
+  for (const std::string& controller : SceneController::GetRegisteredControllers()) {
+    bool controller_enabled = scene_.GetController(controller) != nullptr;
+    if (ImGui::Checkbox(controller.c_str(), &controller_enabled)) {
+      if (controller_enabled) {
+        scene_.AddController(controller);
+      } else {
+        scene_.RemoveController(controller);
+      }
+      SubmitChangesToScene();
+    }
+  }
+  for (const std::string& controller : GetApplicationAssetLibrary()->GetAssetsWithType("scene_controller")) {
+    bool controller_enabled = scene_.GetController(controller) != nullptr;
+    if (ImGui::Checkbox(controller.c_str(), &controller_enabled)) {
+      if (controller_enabled) {
+        scene_.AddController(controller);
+      } else {
+        scene_.RemoveController(controller);
+      }
+      SubmitChangesToScene();
+    }
+  }
+}
+
+void SceneEditor::SubmitChangesToScene() {
+  serialized_scene_working_copy_ = scene_.Serialize();
+  SubmitJsonFile(serialized_scene_working_copy_);
+}
+
+void SceneEditor::Save() {
+  SaveFile("json", GetCurrentJsonFileState().dump());
+}
+
+void SceneEditor::CreateNew(const std::string& asset_id) {
+  GetApplicationAssetLibrary()->CreateAsset(asset_id, "scene", {std::make_pair("json", Scene().Serialize().dump())});
 }
 
 void SceneEditor::CreateSceneViewport(ImVec2 size) {
@@ -417,8 +420,8 @@ void SceneEditor::CreateSceneViewport(ImVec2 size) {
 
 void SceneEditor::JsonFileChanged(const json& data, const std::string& file_type) {
   if (file_type == "json") {
-    serialized_scene_ = data;
-    scene_.Deserialize(serialized_scene_);
+    serialized_scene_working_copy_ = data;
+    scene_.Deserialize(serialized_scene_working_copy_);
   }
 }
 
@@ -429,7 +432,7 @@ SceneObject* SceneEditor::CreateObject(const std::string& base_name, bool initia
     counter++;
     object_name = base_name + std::to_string(counter);
   }
-  selection_ = SelectedObject{object_name};
+  selected_object_ = object_name;
   if (initiate_rename) {
     renaming_state_ = RenamingState::STARTED_RENAMING;
   }
@@ -437,8 +440,8 @@ SceneObject* SceneEditor::CreateObject(const std::string& base_name, bool initia
 }
 
 SceneObject* SceneEditor::GetSelectedObject() {
-  if (std::holds_alternative<SelectedObject>(selection_)) {
-    return scene_.GetObject(std::get<SelectedObject>(selection_).name);
+  if (selected_object_.has_value()) {
+    return scene_.GetObject(*selected_object_);
   } else {
     return nullptr;
   }
