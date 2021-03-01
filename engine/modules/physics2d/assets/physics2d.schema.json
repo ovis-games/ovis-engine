@@ -7,6 +7,7 @@
       "type": "object"
     },
     "box2d_body": {
+      "title": "Rigid Body 2D",
       "type": "object",
       "properties": {
         "type": {
@@ -14,7 +15,7 @@
           "type": "string",
           "enum": ["static", "kinematic", "dynamic"],
           "default": "static",
-          "description": "The body type: static, kinematic, or dynamic.\nstatic: zero mass, zero velocity, may be manually moved\nkinematic: zero mass, non-zero velocity set by user, moved by solver\n dynamic: positive mass, non-zero velocity determined by forces, moved by solver\nNote: if a dynamic body would have zero mass, the mass is set to one."
+          "description": "The body type: static, kinematic, or dynamic.\nstatic: zero mass, zero velocity, may be manually moved\nkinematic: zero mass, non-zero velocity set by user, moved by solver\ndynamic: positive mass, non-zero velocity determined by forces, moved by solver\nNote: if a dynamic body would have zero mass, the mass is set to one."
         },
         "linear_velocity": {
           "$ref": "math#/$defs/vector2",
@@ -75,6 +76,39 @@
           "type": "number",
           "default": 1,
           "description": "Scale the gravity applied to this body."
+        },
+        "friction": {
+          "title": "Friction",
+          "type": "number",
+          "default": 0.2,
+          "description": "The friction coefficient, usually in the range [0,1]."
+        },
+        "restitution": {
+          "title": "Restitution",
+          "type": "number",
+          "default": 0,
+          "description": "The restitution (elasticity) usually in the range [0,1]."
+        },
+        "restitution_threshold": {
+          "title": "Restitution Threshold",
+          "type": "number",
+          "default": 1,
+          "description": "Restitution velocity threshold, usually in m/s. Collisions above this speed have restitution applied (will bounce)."
+        },
+        "density": {
+          "title": "Density",
+          "type": "number",
+          "default": 0,
+          "description": "The density, usually in kg/m^2."
+        },
+        "is_sensor": {
+          "title": "Is Sensor",
+          "type": "boolean",
+          "default": false,
+          "description": "A sensor shape collects contact information but never generates a collision response."
+        },
+        "shape": {
+          "$ref": "physics2d#/$defs/collision_shape_2d"
         }
       }
     },

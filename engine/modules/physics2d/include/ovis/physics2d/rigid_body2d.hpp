@@ -26,6 +26,9 @@ class RigidBody2D : public SceneObjectComponent {
   b2Fixture* fixture_ = nullptr;
 
   static const json SCHEMA;
+
+  json SerializeShape() const;
+  void DeserializeShape(const json& data);
 };
 
 }  // namespace ovis

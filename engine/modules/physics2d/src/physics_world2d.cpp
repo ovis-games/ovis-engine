@@ -21,13 +21,13 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
     if (body->body_ == nullptr) {
       body->body_ = world_.CreateBody(&body->body_definition_);
       SDL_assert(body->body_);
-      body->fixture_ = body->body_->CreateFixture(body->shape_.get(), 0.5f);
+      body->fixture_ = body->body_->CreateFixture(&body->fixture_definition_);
     }
 
     if (transform) {
       float roll;
       transform->GetYawPitchRoll(nullptr, nullptr, &roll);
-      body->body_->SetTransform(b2Vec2(transform->translation().x, transform->translation().y), glm::radians(roll));
+      body->body_->SetTransform(b2Vec2(transform->translation().x, transform->translation().y), roll);
     }
   }
 
@@ -45,6 +45,7 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
       float yaw, pitch, roll;
       transform->GetYawPitchRoll(&yaw, &pitch, &roll);
       transform->SetYawPitchRoll(yaw, pitch, body->body_->GetAngle());
+
     }
   }
 }
