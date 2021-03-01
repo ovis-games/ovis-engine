@@ -6,6 +6,7 @@
 #include <SDL2/SDL_assert.h>
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
+#include <imgui_stdlib.h>
 
 #include <ovis/core/log.hpp>
 #include <ovis/core/serialize.hpp>
@@ -113,6 +114,41 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
         *value = number;
         json_changed = true;
       }
+      DisplayTooltip(schema);
+    } else if (type == "boolean") {
+      bool boolean = *value;
+      // const std::string cb_label = std::string("###") + label;
+      if (ImGui::Checkbox(label, &boolean)) {
+        *value = boolean;
+        json_changed = true;
+      }
+      // ImGui::SameLine();
+      // ImGui::LabelText(label, "");
+      DisplayTooltip(schema);
+    } else if (type == "string") {
+      std::string string = *value;
+
+      if (schema.contains("enum")) {
+        std::vector<std::string> enum_values = schema.at("enum");
+        std::vector<const char*> enum_values_c_str(enum_values.size());
+        int current_item = 0;
+        for (int i = 0; i < enum_values.size(); ++i) {
+          enum_values_c_str[i] = enum_values[i].c_str();
+          if (enum_values[i] == string) {
+            current_item = i;
+          }
+        }
+        if (ImGui::Combo(label, &current_item, enum_values_c_str.data(), enum_values_c_str.size())) {
+          *value = enum_values[current_item];
+          json_changed = true;
+        }
+      } else {
+        if (ImGui::InputText(label, &string)) {
+          *value = string;
+          json_changed = true;
+        }
+      }
+
       DisplayTooltip(schema);
     } else if (type.size() > 7 && strncmp(type.c_str(), "asset<", 5) == 0 &&
                type.back() == '>') {  // 7 = strlen("asset<>"")
