@@ -77,7 +77,7 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
       }
 
       if (display_properties) {
-        const auto& properties = schema["properties"];
+        const ovis::json& properties = schema.contains("properties") ? schema["properties"] : ovis::json::object();
         if (properties.is_object()) {
           for (auto property = properties.begin(), end = properties.end(); property != end; ++property) {
             try {
