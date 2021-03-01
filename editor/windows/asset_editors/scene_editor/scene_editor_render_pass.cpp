@@ -1,8 +1,14 @@
 #include "scene_editor_render_pass.hpp"
 
+#include <cmath>
+
+#include <glm/gtc/constants.hpp>
+#include <ovis/base/camera_component.hpp>
+
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/engine/viewport.hpp>
-#include <ovis/base/camera_component.hpp>
+#include <ovis/physics2d/physics_world2d.hpp>
+#include <ovis/core/log.hpp>
 
 namespace ovis {
 namespace editor {
@@ -24,6 +30,9 @@ void SceneEditorRenderPass::CreateResources() {
       {*line_shader_->GetAttributeLocation("Position"), 0, 0, VertexAttributeType::FLOAT32_VECTOR3},
       {*line_shader_->GetAttributeLocation("Color"), 12, 0, VertexAttributeType::UINT8_NORM_VECTOR4}};
   line_vertex_input = std::make_unique<VertexInput>(context(), vertex_input_desc);
+  
+  
+  SetFlags(e_shapeBit | e_jointBit | e_jointBit | e_aabbBit | e_pairBit | e_centerOfMassBit);
 }
 
 void SceneEditorRenderPass::ReleaseResources() {
@@ -31,7 +40,14 @@ void SceneEditorRenderPass::ReleaseResources() {
 }
 
 void SceneEditorRenderPass::Render(const RenderContext& render_context) {
+  is_rendering_ = true;
   line_vertices_.clear();
+
+  PhysicsWorld2D* physics_world_2d = render_context.scene->GetController<PhysicsWorld2D>("PhysicsWorld2D");
+  if (physics_world_2d) {
+    physics_world_2d->world()->SetDebugDraw(this);
+    physics_world_2d->world()->DebugDraw();
+  }
 
   auto objects_with_cameras = render_context.scene->GetSceneObjectsWithComponent("Camera");
 
@@ -82,6 +98,56 @@ void SceneEditorRenderPass::Render(const RenderContext& render_context) {
 
     line_vertex_offset += vertices_to_render;
   }
+
+  is_rendering_ = false;
+}
+
+void SceneEditorRenderPass::DrawPolygon(const b2Vec2* vertices, int32 vertex_count, const b2Color& color) {
+  SDL_assert(is_rendering_);
+
+  std::vector<vector3> points(vertex_count);
+  for (int i = 0; i < vertex_count; ++i) {
+    points[i].x = vertices[i].x;
+    points[i].y = vertices[i].y;
+  }
+  RenderLineLoop(points, {color.r, color.g, color.b, color.a});
+}
+
+void SceneEditorRenderPass::DrawSolidPolygon(const b2Vec2* vertices, int32 vertex_count, const b2Color& color) {
+  DrawPolygon(vertices, vertex_count, color);
+}
+
+void SceneEditorRenderPass::DrawCircle(const b2Vec2& center, float radius, const b2Color& color) {
+  SDL_assert(is_rendering_);
+
+  constexpr int CIRCLE_VERTEX_COUNT = 20;
+
+  std::vector<vector3> circle_vertices(CIRCLE_VERTEX_COUNT);
+  for (int i = 0; i < CIRCLE_VERTEX_COUNT; ++i) {
+    const float angle = i * 2.0f * glm::pi<float>() / CIRCLE_VERTEX_COUNT;
+
+    circle_vertices[i].x = center.x + std::sin(angle) * radius;
+    circle_vertices[i].y = center.y + std::cos(angle) * radius;
+  }
+  RenderLineLoop(circle_vertices, {color.r, color.g, color.b, color.a});
+}
+
+void SceneEditorRenderPass::DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2& axis,
+                                            const b2Color& color) {
+  DrawCircle(center, radius, color);
+}
+
+void SceneEditorRenderPass::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {
+  RenderLine({p1.x, p1.y, 0.0f}, {p2.x, p2.y, 0.0f}, {color.r, color.g, color.b, color.a});
+}
+
+void SceneEditorRenderPass::DrawTransform(const b2Transform& xf) {
+  DrawSegment(xf.p, xf.p + b2Vec2(xf.q.c, xf.q.s), b2Color(1.0f, 0.0f, 0.0f));
+  DrawSegment(xf.p, xf.p + b2Vec2(xf.q.s, xf.q.c), b2Color(0.0f, 1.0f, 0.0f));
+}
+
+void SceneEditorRenderPass::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {
+  DrawSolidCircle(p, size, b2Vec2(), color);
 }
 
 void SceneEditorRenderPass::RenderLine(vector3 start, vector3 end, vector4 color) {
@@ -104,7 +170,16 @@ void SceneEditorRenderPass::RenderLine(vector3 start, vector4 start_color, vecto
 }
 
 void SceneEditorRenderPass::RenderLineLoop(std::vector<vector3> points, vector4 color) {
-  
+  if (points.size() < 2) {
+    return;
+  }
+
+  for (size_t i = 0; i < points.size() - 1; ++i) {
+    RenderLine(points[i], points[i + 1], color);
+  }
+  if (points.size() > 2) {
+    RenderLine(points.back(), points.front(), color);
+  }
 }
 
 }  // namespace editor
