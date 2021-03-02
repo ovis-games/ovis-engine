@@ -13,6 +13,7 @@ add_library(
   include/ovis/engine/scene.hpp src/scene.cpp
   include/ovis/engine/module.hpp src/module.cpp
   include/ovis/engine/render_pass.hpp src/render_pass.cpp
+  include/ovis/engine/debug_render_pass.hpp src/debug_render_pass.cpp
   include/ovis/engine/lua.hpp src/lua.cpp
   include/ovis/engine/fetch.hpp src/fetch.cpp
   include/ovis/engine/game_settings.hpp src/game_settings.cpp
@@ -53,4 +54,12 @@ target_link_options(
   ovis-engine
   PUBLIC
     "SHELL:-s FETCH=1"
+)
+
+target_add_assets(
+  ovis-engine
+
+  assets/engine.schema.json
+  assets/debug_pass_point.shader.vert assets/debug_pass_point.shader.frag
+  assets/debug_pass.shader.vert assets/debug_pass.shader.frag
 )

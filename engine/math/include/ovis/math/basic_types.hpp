@@ -14,6 +14,7 @@ namespace ovis {
 using vector2 = glm::vec2;
 using vector3 = glm::vec3;
 using vector4 = glm::vec4;
+using color = glm::vec4;
 using matrix4 = glm::mat4;
 using quaternion = glm::quat;
 
