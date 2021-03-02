@@ -4,6 +4,7 @@ add_library(
   include/ovis/physics2d/physics2d_module.hpp src/physics2d_module.cpp
   include/ovis/physics2d/physics_world2d.hpp src/physics_world2d.cpp
   include/ovis/physics2d/rigid_body2d.hpp src/rigid_body2d.cpp
+  include/ovis/physics2d/physics2d_debug_layer.hpp src/physics2d_debug_layer.cpp
 )
 add_library(ovis::physics2d ALIAS ovis-physics2d)
 

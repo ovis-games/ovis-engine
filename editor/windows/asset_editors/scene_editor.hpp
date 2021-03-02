@@ -75,6 +75,7 @@ class SceneEditor : public AssetEditor {
     std::unique_ptr<Texture2D> move;
     std::unique_ptr<Texture2D> rotate;
     std::unique_ptr<Texture2D> scale;
+    std::unique_ptr<Texture2D> eye;
   } icons_;
 
   EditingMode editing_mode_ = EditingMode::MOVE;

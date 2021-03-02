@@ -14,6 +14,7 @@
 #include <ovis/engine/scene_controller.hpp>
 #include <ovis/engine/scene_object.hpp>
 #include <ovis/rendering2d/sprite_component.hpp>
+#include <ovis/physics2d/physics2d_debug_layer.hpp>
 
 namespace ovis {
 namespace editor {
@@ -33,6 +34,7 @@ SceneEditor::SceneEditor(const std::string& scene_asset) : AssetEditor(scene_ass
   icons_.move = LoadTexture2D("icon-move", EditorWindow::instance()->context());
   icons_.rotate = LoadTexture2D("icon-rotate", EditorWindow::instance()->context());
   icons_.scale = LoadTexture2D("icon-scale", EditorWindow::instance()->context());
+  icons_.eye = LoadTexture2D("icon-eye", EditorWindow::instance()->context());
 
   camera_.SetProjectionType(ProjectionType::ORTHOGRAPHIC);
   camera_.SetNearClipPlane(0.0f);
@@ -115,6 +117,48 @@ void SceneEditor::DrawContent() {
   }
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Scale");
+  }
+
+  ImGui::SameLine();
+  ImGui::Dummy(ImVec2(20, 0));
+
+  ImGui::SameLine();
+  ImVec2 eyebutton_pos = ImGui::GetCursorScreenPos();
+  if (ImGui::TextureButton(icons_.eye.get())) {
+    ImGui::OpenPopup("Overlay Settings");
+  }
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("Overlay settings");
+  }
+  ImVec2 next_line_pos = ImGui::GetCursorScreenPos();
+  ImGui::SetNextWindowPos({eyebutton_pos.x, next_line_pos.y});
+  if (ImGui::BeginPopup("Overlay Settings")) {
+    Physics2DDebugLayer* overlay = scene_viewport_->GetRenderPass<Physics2DDebugLayer>("Physics2DDebugLayer");
+    if (ImGui::BeginMenu("Physics World 2D Debug Layer")) {
+      auto draw_setting = [overlay](const char* label, uint32 flag) {
+        bool display = (overlay->GetFlags() & flag) != 0;
+        if (ImGui::Checkbox(label, &display)) {
+          if (display) {
+            overlay->AppendFlags(flag);
+          } else {
+            overlay->ClearFlags(flag);
+          }
+        }
+      };
+      draw_setting("Display Shapes", b2Draw::e_shapeBit);
+      draw_setting("Display Joints", b2Draw::e_jointBit);
+      draw_setting("Display Bounding Boxes", b2Draw::e_aabbBit);
+      draw_setting("Display Broad Phase Pairs", b2Draw::e_pairBit);
+      draw_setting("Display Center of Mass", b2Draw::e_centerOfMassBit);
+      float transform_size = overlay->GetTransformLineLength();
+      if (ImGui::DragFloat("Transform Size", &transform_size, 1.0f, 0.0f, std::numeric_limits<float>::infinity(),
+                           "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+        overlay->SetTransformLineLength(transform_size);
+      }
+
+      ImGui::EndMenu();
+    }
+    ImGui::EndPopup();
   }
 
   ImGui::PopStyleColor();
@@ -412,6 +456,7 @@ void SceneEditor::CreateSceneViewport(ImVec2 size) {
     scene_viewport_->AddRenderPass("Clear");
     scene_viewport_->AddRenderPass("SpriteRenderer");
     scene_viewport_->AddRenderPass("SceneEditorRenderPass");
+    scene_viewport_->AddRenderPass("Physics2DDebugLayer");
     scene_viewport_->SetScene(&scene_);
   } else {
     scene_viewport_->Resize(size.x, size.y);

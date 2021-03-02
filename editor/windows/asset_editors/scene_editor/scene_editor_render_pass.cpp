@@ -15,6 +15,7 @@ namespace editor {
 
 SceneEditorRenderPass::SceneEditorRenderPass(SceneEditor* scene_editor) : RenderPass("SceneEditorRenderPass") {
   RenderAfter("SpriteRenderer");
+  RenderBefore("Physics2DDebugLayer");
 }
 
 void SceneEditorRenderPass::CreateResources() {
@@ -43,11 +44,6 @@ void SceneEditorRenderPass::Render(const RenderContext& render_context) {
   is_rendering_ = true;
   line_vertices_.clear();
 
-  PhysicsWorld2D* physics_world_2d = render_context.scene->GetController<PhysicsWorld2D>("PhysicsWorld2D");
-  if (physics_world_2d) {
-    physics_world_2d->world()->SetDebugDraw(this);
-    physics_world_2d->world()->DebugDraw();
-  }
 
   auto objects_with_cameras = render_context.scene->GetSceneObjectsWithComponent("Camera");
 
