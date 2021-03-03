@@ -10,7 +10,7 @@
 namespace ovis {
 
 sol::state Lua::state;
-Event<void(const std::string&)> Lua::on_error;
+EventHandler<void(const std::string&)> Lua::on_error;
 
 void Lua::SetupEnvironment() {
   state.open_libraries(sol::lib::base, sol::lib::coroutine, sol::lib::string, sol::lib::math);
@@ -24,20 +24,6 @@ void Lua::SetupEnvironment() {
 
   state["OvisErrorHandler"] = [](const std::string& message) { on_error.Invoke(message); };
   sol::protected_function::set_default_handler(state["OvisErrorHandler"]);
-
-  struct InputKeyStates {
-    Input* input;
-  };
-  sol::usertype<InputKeyStates> input_key_state_type =
-      state.new_usertype<InputKeyStates>("InputKeyStates", sol::no_constructor);
-  input_key_state_type["__index"] = [](InputKeyStates* key_states, const std::string& key_code) {
-    return key_states->input->GetKeyState(key_code);
-  };
-
-  sol::usertype<Input> input_type = state.new_usertype<Input>("Input", sol::no_constructor);
-  input_type["key_states"] = sol::property([](Input* input) { return InputKeyStates{input}; });
-
-  state["input"] = &ovis::input;
 
   sol::usertype<vector2> vector2_type =
       state.new_usertype<vector2>("Vector2", sol::constructors<vector2(), vector2(float, float)>());

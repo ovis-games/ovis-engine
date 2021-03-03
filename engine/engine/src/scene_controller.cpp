@@ -25,10 +25,23 @@ void SceneController::Remove() {
   scene()->RemoveController(name());
 }
 
+bool SceneController::IsSubscribedToEvent(const std::string& event_type) const {
+  return subscribed_events_.count(event_type) > 0;
+}
+
+void SceneController::SubscribeToEvent(std::string event_type) {
+  subscribed_events_.insert(std::move(event_type));
+}
+
+void SceneController::UnsubscribeFromEvent(const std::string& event_type) {
+  subscribed_events_.erase(event_type);
+}
+
 void SceneController::Update(std::chrono::microseconds /*delta_time*/) {}
 
-bool SceneController::ProcessEvent(const SDL_Event& /*event*/) {
-  return false;
+void SceneController::ProcessEvent(Event* event) {
+  SDL_assert(IsSubscribedToEvent(std::string(event->type())));
+  (void)event;
 }
 
 std::vector<std::string> SceneController::GetRegisteredControllers() {

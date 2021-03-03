@@ -56,7 +56,7 @@ class Window : public Viewport {
   glm::ivec2 GetSize() override;
   void Resize(int width, int height);
 
-  bool SendEvent(const SDL_Event& event);
+  virtual bool SendEvent(const SDL_Event& event);
   virtual void Update(std::chrono::microseconds delta_time);
   void Render(bool render_gui = true) override;
 

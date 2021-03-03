@@ -5,6 +5,7 @@
 #include "windows/inspector_window.hpp"
 #include "windows/log_window.hpp"
 #include "windows/toolbar.hpp"
+#include "windows/asset_importers/asset_importer.hpp"
 
 #include <emscripten/html5.h>
 #include <imgui.h>
@@ -54,6 +55,16 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   scene()->AddController(std::make_unique<InspectorWindow>());
 
   SetUIStyle();
+}
+
+bool EditorWindow::SendEvent(const SDL_Event& event) {
+  if (event.type == SDL_DROPFILE) {
+    ImportAsset(event.drop.file);
+    SDL_free(event.drop.file);
+    return true;
+  } else {
+    return Window::SendEvent(event);
+  }
 }
 
 void EditorWindow::Update(std::chrono::microseconds delta_time) {

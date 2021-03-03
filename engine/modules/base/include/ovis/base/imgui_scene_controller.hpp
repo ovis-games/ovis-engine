@@ -10,10 +10,15 @@ class ImGuiSceneController : public SceneController {
  public:
   ImGuiSceneController(ImGuiContext* context);
 
-  bool ProcessEvent(const SDL_Event& event) override;
+  void DrawImGui() override;
+  void ProcessEvent(Event* event) override;
 
  private:
   ImGuiContext* context_;
+
+  // Indicates whether a mouse button was just pressed
+  bool mouse_button_pressed_[5] = {false, false, false, false, false};
+  bool mouse_button_down_[5] = {false, false, false, false, false};
 };
 
 }  // namespace ovis

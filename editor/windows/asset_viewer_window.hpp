@@ -13,7 +13,7 @@ class AssetViewerWindow : public UiWindow {
   AssetViewerWindow();
 
   void DrawContent() override;
-  bool ProcessEvent(const SDL_Event& event) override;
+  // bool ProcessEvent(const SDL_Event& event) override;
 
  private:
   std::string current_path_;

@@ -47,14 +47,6 @@ void SceneEditor::Update(std::chrono::microseconds delta_time) {
   }
 }
 
-bool SceneEditor::ProcessEvent(const SDL_Event& event) {
-  if (scene_window_focused_) {
-    return scene_.ProcessEvent(event);
-  } else {
-    return false;
-  }
-}
-
 void SceneEditor::DrawContent() {
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(48, 48, 48)));
   if (state_ == State::RUNNING) {

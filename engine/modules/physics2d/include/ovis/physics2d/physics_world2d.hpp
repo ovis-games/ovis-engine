@@ -13,7 +13,6 @@ class PhysicsWorld2D : public SceneController {
   PhysicsWorld2D();
 
   void Update(std::chrono::microseconds delta_time) override;
-  bool ProcessEvent(const SDL_Event& event) override;
 
  private:
   b2World world_;

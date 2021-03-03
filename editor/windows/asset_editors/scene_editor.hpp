@@ -25,8 +25,6 @@ class SceneEditor : public AssetEditor {
   SceneEditor(const std::string& scene_asset);
 
   void Update(std::chrono::microseconds delta_time) override;
-  bool ProcessEvent(const SDL_Event& event) override;
-  // void DrawPropertyWindows() override;
   void Save() override;
 
   static void CreateNew(const std::string& asset_id);

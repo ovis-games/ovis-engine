@@ -50,8 +50,4 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
   }
 }
 
-bool PhysicsWorld2D::ProcessEvent(const SDL_Event& event) {
-  return false;
-}
-
 }  // namespace ovis

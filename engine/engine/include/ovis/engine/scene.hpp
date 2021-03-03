@@ -7,7 +7,7 @@
 #include <type_traits>
 
 #include <SDL2/SDL_assert.h>
-#include <SDL2/SDL_events.h>
+#include <ovis/engine/event.hpp>
 #include <ovis/math/basic_types.hpp>
 
 #include <ovis/core/down_cast.hpp>
@@ -82,7 +82,7 @@ class Scene : public Serializable {
   void AfterUpdate();
   void Update(std::chrono::microseconds delta_time);
 
-  bool ProcessEvent(const SDL_Event& event);
+  void ProcessEvent(Event* event);
 
   void DrawImGui();
 
@@ -95,9 +95,6 @@ class Scene : public Serializable {
   void DeleteRemovedControllers();
   void SortControllers();
   SceneController* GetControllerInternal(const std::string& controller_name) const;
-
-  virtual bool BeforeEventProcessing(const SDL_Event& /*event*/) { return false; }
-  virtual bool AfterEventProcessing(const SDL_Event& /*event*/) { return false; }
 
   std::unordered_map<std::string, std::unique_ptr<SceneController>> controllers_;
   std::vector<SceneController*> controller_order_;

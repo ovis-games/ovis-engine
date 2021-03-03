@@ -6,6 +6,7 @@
 #include <ovis/graphics/cubemap.hpp>
 #include <ovis/graphics/shader_program.hpp>
 #include <ovis/graphics/texture2d.hpp>
+#include <ovis/engine/input.hpp>
 #include <ovis/engine/lua.hpp>
 #include <ovis/engine/scene.hpp>
 #include <ovis/engine/window.hpp>
@@ -86,7 +87,53 @@ bool Window::SendEvent(const SDL_Event& event) {
     }
   }
 
-  return scene_.ProcessEvent(event);
+  switch (event.type) {
+    case SDL_MOUSEWHEEL: {
+      MouseWheelEvent mouse_wheel_event(event.wheel.x, event.wheel.y);
+      scene_.ProcessEvent(&mouse_wheel_event);
+      return !mouse_wheel_event.is_propagating();
+    }
+
+    case SDL_MOUSEMOTION: {
+      MouseMoveEvent mouse_move_event(this, {event.motion.x, event.motion.y}, {event.motion.xrel, event.motion.yrel});
+      scene_.ProcessEvent(&mouse_move_event);
+      return !mouse_move_event.is_propagating();
+    }
+
+    case SDL_MOUSEBUTTONDOWN: {
+      MouseButtonPressEvent mouse_button_event(this, {event.button.x, event.button.y},
+                                               static_cast<MouseButton>(event.button.button));
+      scene_.ProcessEvent(&mouse_button_event);
+      return !mouse_button_event.is_propagating();
+    }
+
+    case SDL_MOUSEBUTTONUP: {
+      MouseButtonReleaseEvent mouse_button_event(this, {event.button.x, event.button.y},
+                                                 static_cast<MouseButton>(event.button.button));
+      scene_.ProcessEvent(&mouse_button_event);
+      return !mouse_button_event.is_propagating();
+    }
+
+    case SDL_TEXTINPUT: {
+      TextInputEvent text_input_event(event.text.text);
+      scene_.ProcessEvent(&text_input_event);
+      return !text_input_event.is_propagating();
+    }
+
+    case SDL_KEYDOWN: {
+      KeyPressEvent key_press_event({static_cast<uint16_t>(event.key.keysym.scancode)});
+      scene_.ProcessEvent(&key_press_event);
+      return !key_press_event.is_propagating();
+    }
+
+    case SDL_KEYUP: {
+      KeyReleaseEvent key_release_event({static_cast<uint16_t>(event.key.keysym.scancode)});
+      scene_.ProcessEvent(&key_release_event);
+      return !key_release_event.is_propagating();
+    }
+  }
+
+  return false;
 }
 
 void Window::Update(std::chrono::microseconds delta_time) {

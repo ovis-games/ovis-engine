@@ -77,15 +77,11 @@ void AssetViewerWindow::DrawContent() {
   ImGui::EndChild();
 }
 
-bool AssetViewerWindow::ProcessEvent(const SDL_Event& event) {
-  if (event.type == SDL_DROPFILE) {
-    ImportAsset(event.drop.file);
-    SDL_free(event.drop.file);
-    return true;
-  }
+// bool AssetViewerWindow::ProcessEvent(const SDL_Event& event) {
 
-  return false;
-}
+
+//   return false;
+// }
 
 AssetEditor* AssetViewerWindow::OpenAssetEditor(const std::string& asset_id) {
   auto editor = scene()->GetController<AssetEditor>(AssetEditor::GetAssetEditorId(asset_id));

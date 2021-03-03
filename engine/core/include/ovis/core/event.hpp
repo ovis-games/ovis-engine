@@ -7,41 +7,41 @@
 
 namespace ovis {
 
-class EventBase {
+class EventHandlerBase {
  public:
-  virtual ~EventBase() = default;
+  virtual ~EventHandlerBase() = default;
 
  protected:
-  EventBase() = default;
+  EventHandlerBase() = default;
 
  private:
   virtual void Unsubscribe(std::size_t subscription_index) = 0;
 };
 
 template <class T>
-class Event;
+class EventHandler;
 
-class EventSubscription {
+class EventHandlerSubscription {
   template <typename T>
-  friend class Event;
+  friend class EventHandler;
 
  public:
   void Unsubscribe();
 
  private:
-  EventSubscription(EventBase* event, std::size_t subscription_index)
+  EventHandlerSubscription(EventHandlerBase* event, std::size_t subscription_index)
       : event_(event), subscription_index_(subscription_index) {}
 
-  EventBase* event_;
+  EventHandlerBase* event_;
   std::size_t subscription_index_;
 };
 
 template <typename... ArgumentTypes>
-class Event<void(ArgumentTypes...)> : public EventBase {
+class EventHandler<void(ArgumentTypes...)> : public EventHandlerBase {
  public:
   using FunctionType = std::function<void(ArgumentTypes...)>;
 
-  EventSubscription Subscribe(const FunctionType& function) {
+  EventHandlerSubscription Subscribe(const FunctionType& function) {
     std::size_t subscription_index = 0;
     while (subscription_index < subscriptions_.size()) {
       if (!subscriptions_[subscription_index]) {

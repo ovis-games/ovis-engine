@@ -211,18 +211,17 @@ void Scene::Update(std::chrono::microseconds delta_time) {
   }
 }
 
-bool Scene::ProcessEvent(const SDL_Event& event) {
-  if (BeforeEventProcessing(event)) {
-    return true;
-  }
+void Scene::ProcessEvent(Event* event) {
+  const std::string event_type(event->type());
 
   for (const auto& controller : controller_order_) {
-    if (controller->ProcessEvent(event)) {
-      return true;
+    if (controller->IsSubscribedToEvent(event_type)) {
+      controller->ProcessEvent(event);
+      if (!event->is_propagating()) {
+        break;
+      }
     }
   }
-
-  return AfterEventProcessing(event);
 }
 
 void Scene::DrawImGui() {

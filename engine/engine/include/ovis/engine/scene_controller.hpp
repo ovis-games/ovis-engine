@@ -5,9 +5,8 @@
 #include <string>
 #include <unordered_map>
 
-#include <SDL2/SDL_events.h>
-
 #include <ovis/core/class.hpp>
+#include <ovis/engine/event.hpp>
 
 #if OVIS_ENABLE_BUILT_IN_PROFILING == 1
 #include <ovis/core/profiling.hpp>
@@ -30,13 +29,17 @@ class SceneController {
 
   void Remove();
 
+  bool IsSubscribedToEvent(const std::string& event_type) const;
+  void SubscribeToEvent(std::string event_type);
+  void UnsubscribeFromEvent(const std::string& event_type);
+
   virtual void Play() {}
   virtual void Stop() {}
   virtual void BeforeUpdate() {}
   virtual void AfterUpdate() {}
   virtual void Update(std::chrono::microseconds delta_time);
 
-  virtual bool ProcessEvent(const SDL_Event& event);
+  virtual void ProcessEvent(Event* event);
   virtual void DrawImGui() {}
 
   static std::vector<std::string> GetRegisteredControllers();
@@ -50,6 +53,7 @@ class SceneController {
   std::string name_;
   std::set<std::string> update_before_list_;
   std::set<std::string> update_after_list_;
+  std::set<std::string> subscribed_events_;
 
 #if OVIS_ENABLE_BUILT_IN_PROFILING
   CPUTimeProfiler update_profiler_;

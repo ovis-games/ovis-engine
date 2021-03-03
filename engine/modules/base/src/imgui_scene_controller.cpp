@@ -1,67 +1,129 @@
 #include <imgui.h>
-
 #include <ovis/base/imgui_scene_controller.hpp>
+
+#include <ovis/core/down_cast.hpp>
+#include <ovis/engine/input.hpp>
 #include <ovis/engine/scene.hpp>
 #include <ovis/engine/window.hpp>
 
 namespace ovis {
 
-ImGuiSceneController::ImGuiSceneController(ImGuiContext* context) : SceneController("ImGui"), context_(context) {
-  ImGui::SetCurrentContext(context_);
+namespace {
+
+int GetImGuiButtonIndex(MouseButton button) {
+  // clang-format off
+  switch (button) {
+    case MouseButton::LEFT: return ImGuiMouseButton_Left;
+    case MouseButton::MIDDLE: return ImGuiMouseButton_Middle;
+    case MouseButton::RIGHT: return ImGuiMouseButton_Right;
+    case MouseButton::EXTRA1: return 3;
+    case MouseButton::EXTRA2: return 4;
+    default: SDL_assert(false);
+  }
+  // clang-format off
 }
 
-bool ImGuiSceneController::ProcessEvent(const SDL_Event& event) {
+}  // namespace
+
+ImGuiSceneController::ImGuiSceneController(ImGuiContext* context) : SceneController("ImGui"), context_(context) {
+  ImGui::SetCurrentContext(context_);
+
+  SubscribeToEvent(MouseMoveEvent::TYPE);
+  SubscribeToEvent(MouseButtonPressEvent::TYPE);
+  SubscribeToEvent(MouseButtonReleaseEvent::TYPE);
+  SubscribeToEvent(MouseWheelEvent::TYPE);
+  SubscribeToEvent(TextInputEvent::TYPE);
+  SubscribeToEvent(KeyPressEvent::TYPE);
+  SubscribeToEvent(KeyReleaseEvent::TYPE);
+}
+
+void ImGuiSceneController::DrawImGui() {
+  ImGuiIO& io = ImGui::GetIO();
+  ImGui::SetCurrentContext(context_);
+  for (int i = 0; i < 5; ++i) {
+    io.MouseDown[i] = mouse_button_pressed_[i] || mouse_button_down_[i];
+    mouse_button_pressed_[i] = false;
+  }
+}
+
+void ImGuiSceneController::ProcessEvent(Event* event) {
   ImGuiIO& io = ImGui::GetIO();
   ImGui::SetCurrentContext(context_);
 
-  switch (event.type) {
-    case SDL_MOUSEWHEEL: {
-      if (event.wheel.x > 0) io.MouseWheelH += 1;
-      if (event.wheel.x < 0) io.MouseWheelH -= 1;
-      if (event.wheel.y > 0) io.MouseWheel += 1;
-      if (event.wheel.y < 0) io.MouseWheel -= 1;
-      return io.WantCaptureMouse;
+  if (event->type() == MouseMoveEvent::TYPE) {
+    MouseMoveEvent* mouse_event = down_cast<MouseMoveEvent*>(event);
+    io.MousePos.x = mouse_event->device_coordinates().x;
+    io.MousePos.y = mouse_event->device_coordinates().y;
+    if (io.WantCaptureMouse) {
+      event->StopPropagation();
     }
-    case SDL_MOUSEMOTION: {
-      io.MousePos = ImVec2(event.motion.x, event.motion.y);
-      io.MouseDown[0] = (event.motion.state & SDL_BUTTON_LMASK) != 0;
-      io.MouseDown[1] = (event.motion.state & SDL_BUTTON_RMASK) != 0;
-      io.MouseDown[2] = (event.motion.state & SDL_BUTTON_MMASK) != 0;
-      return io.WantCaptureMouse;
+  } else if (event->type() == MouseButtonPressEvent::TYPE) {
+    MouseButtonPressEvent* button_event = down_cast<MouseButtonPressEvent*>(event);
+    const int button_index = GetImGuiButtonIndex(button_event->button());
+    mouse_button_pressed_[button_index] = mouse_button_down_[button_index] = true;
+    if (io.WantCaptureMouse) {
+      event->StopPropagation();
     }
-    case SDL_MOUSEBUTTONDOWN: {
-      if (event.button.button == SDL_BUTTON_LEFT) io.MouseDown[0] = true;
-      if (event.button.button == SDL_BUTTON_RIGHT) io.MouseDown[1] = true;
-      if (event.button.button == SDL_BUTTON_MIDDLE) io.MouseDown[2] = true;
-      return io.WantCaptureMouse;
+  } else if (event->type() == MouseButtonReleaseEvent::TYPE) {
+    MouseButtonReleaseEvent* button_event = down_cast<MouseButtonReleaseEvent*>(event);
+    mouse_button_down_[GetImGuiButtonIndex(button_event->button())] = false;
+    if (io.WantCaptureMouse) {
+      event->StopPropagation();
     }
-    case SDL_MOUSEBUTTONUP: {
-      if (event.button.button == SDL_BUTTON_LEFT) io.MouseDown[0] = false;
-      if (event.button.button == SDL_BUTTON_RIGHT) io.MouseDown[1] = false;
-      if (event.button.button == SDL_BUTTON_MIDDLE) io.MouseDown[2] = false;
-      return io.WantCaptureMouse;
+  } else if (event->type() == MouseWheelEvent::TYPE) {
+    MouseWheelEvent* mouse_event = down_cast<MouseWheelEvent*>(event);
+    if (mouse_event->delta_x() > 0) {
+      io.MouseWheelH += 1;
     }
-    case SDL_TEXTINPUT: {
-      io.AddInputCharactersUTF8(event.text.text);
-      return io.WantCaptureKeyboard;
+    if (mouse_event->delta_x() < 0) {
+      io.MouseWheelH -= 1;
     }
-    case SDL_KEYDOWN:
-    case SDL_KEYUP: {
-      int key = event.key.keysym.scancode;
-      IM_ASSERT(key >= 0 && key < IM_ARRAYSIZE(io.KeysDown));
-      io.KeysDown[key] = (event.type == SDL_KEYDOWN);
-      io.KeyShift = ((SDL_GetModState() & KMOD_SHIFT) != 0);
-      io.KeyCtrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
-      io.KeyAlt = ((SDL_GetModState() & KMOD_ALT) != 0);
+    if (mouse_event->delta_y() > 0) {
+      io.MouseWheel += 1;
+    }
+    if (mouse_event->delta_y() < 0) {
+      io.MouseWheel -= 1;
+    }
+    if (io.WantCaptureMouse) {
+      event->StopPropagation();
+    }
+  } else if (event->type() == TextInputEvent::TYPE) {
+    TextInputEvent* text_event = down_cast<TextInputEvent*>(event);
+    io.AddInputCharactersUTF8(text_event->text().c_str());
+    if (io.WantCaptureKeyboard) {
+      event->StopPropagation();
+    }
+  } else if (event->type() == KeyPressEvent::TYPE) {
+    KeyPressEvent* key_event = down_cast<KeyPressEvent*>(event);
+    SDL_assert(key_event->key().code < IM_ARRAYSIZE(io.KeysDown));
+    io.KeysDown[key_event->key().code] = true;
+    io.KeyShift = ((SDL_GetModState() & KMOD_SHIFT) != 0);
+    io.KeyCtrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
+    io.KeyAlt = ((SDL_GetModState() & KMOD_ALT) != 0);
 #ifdef _WIN32
-      io.KeySuper = false;
+    io.KeySuper = false;
 #else
-      io.KeySuper = ((SDL_GetModState() & KMOD_GUI) != 0);
+    io.KeySuper = ((SDL_GetModState() & KMOD_GUI) != 0);
 #endif
-      return io.WantCaptureKeyboard;
+    if (io.WantCaptureKeyboard) {
+      event->StopPropagation();
+    }
+  } else if (event->type() == KeyReleaseEvent::TYPE) {
+    KeyReleaseEvent* key_event = down_cast<KeyReleaseEvent*>(event);
+    SDL_assert(key_event->key().code < IM_ARRAYSIZE(io.KeysDown));
+    io.KeysDown[key_event->key().code] = false;
+    io.KeyShift = ((SDL_GetModState() & KMOD_SHIFT) != 0);
+    io.KeyCtrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
+    io.KeyAlt = ((SDL_GetModState() & KMOD_ALT) != 0);
+#ifdef _WIN32
+    io.KeySuper = false;
+#else
+    io.KeySuper = ((SDL_GetModState() & KMOD_GUI) != 0);
+#endif
+    if (io.WantCaptureKeyboard) {
+      event->StopPropagation();
     }
   }
-  return false;
 }
 
 }  // namespace ovis
