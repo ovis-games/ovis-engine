@@ -459,6 +459,7 @@ void SceneViewEditor::SetSerializedScene(const json& data) {
   ChangeRunState(RunState::STOPPED);
   game_scene()->Deserialize(data);
   SubmitJsonFile(data);
+  serialized_scene_editing_copy_ = data;
 }
 
 void SceneViewEditor::SubmitChangesToScene() {
