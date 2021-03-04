@@ -54,7 +54,8 @@ add_executable(
   windows/asset_editors/scene_editor.hpp windows/asset_editors/scene_editor.cpp
 
   windows/asset_editors/scene_editor/scene_editor_render_pass.hpp windows/asset_editors/scene_editor/scene_editor_render_pass.cpp
-  # windows/asset_editors/scene_editor/scene_proxy.hpp windows/asset_editors/scene_editor/scene_proxy.cpp
+
+  windows/asset_editors/editing_controllers/editor_camera_controller.hpp windows/asset_editors/editing_controllers/editor_camera_controller.cpp
 
   windows/asset_importers/asset_importer.hpp windows/asset_importers/asset_importer.cpp
 )

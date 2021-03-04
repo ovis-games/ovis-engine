@@ -4,6 +4,7 @@
 #include "../../imgui_extensions/input_asset.hpp"
 #include "../../imgui_extensions/input_serializable.hpp"
 #include "../../imgui_extensions/texture_button.hpp"
+#include "editing_controllers/editor_camera_controller.hpp"
 
 #include <imgui_stdlib.h>
 #include <ovis/base/transform_component.hpp>
@@ -477,6 +478,9 @@ void SceneViewEditor::CreateSceneViewport(ImVec2 size) {
     scene_viewport_description.color_description.texture_description.mip_map_count = 0;
     scene_viewport_ = std::make_unique<RenderTargetViewport>(
         EditorWindow::instance()->context(), EditorWindow::instance()->resource_manager(), scene_viewport_description);
+
+    
+    editing_scene()->AddController<EditorCameraController>(scene_viewport_.get());
 
     scene_viewport_->AddRenderPass("Clear");
     scene_viewport_->AddRenderPass("SpriteRenderer");
