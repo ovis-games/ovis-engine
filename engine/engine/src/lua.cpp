@@ -13,14 +13,14 @@ sol::state Lua::state;
 EventHandler<void(const std::string&)> Lua::on_error;
 
 void Lua::SetupEnvironment() {
-  state.open_libraries(sol::lib::base, sol::lib::coroutine, sol::lib::string, sol::lib::math);
+  state.open_libraries(sol::lib::base, sol::lib::coroutine, sol::lib::string, sol::lib::math, sol::lib::table);
   state.require_script("class", middleclass::SOURCE);
 
-  state["LogE"] = [](const std::string& message) { LogE("{}", message); };
-  state["LogW"] = [](const std::string& message) { LogW("{}", message); };
-  state["LogI"] = [](const std::string& message) { LogI("{}", message); };
-  state["LogD"] = [](const std::string& message) { LogD("{}", message); };
-  state["LogV"] = [](const std::string& message) { LogV("{}", message); };
+  state["log_error"] = [](const std::string& message) { LogE("{}", message); };
+  state["log_warning"] = [](const std::string& message) { LogW("{}", message); };
+  state["log_info"] = [](const std::string& message) { LogI("{}", message); };
+  state["log_debug"] = [](const std::string& message) { LogD("{}", message); };
+  state["log_verbose"] = [](const std::string& message) { LogV("{}", message); };
 
   state["OvisErrorHandler"] = [](const std::string& message) { on_error.Invoke(message); };
   sol::protected_function::set_default_handler(state["OvisErrorHandler"]);
@@ -43,9 +43,7 @@ void Lua::SetupEnvironment() {
   vector3_type[sol::meta_function::multiplication] = [](const vector3& vector, float scalar) {
     return vector * scalar;
   };
-  vector3_type[sol::meta_function::unary_minus] = [](const vector3& vector) {
-    return -vector;
-  };
+  vector3_type[sol::meta_function::unary_minus] = [](const vector3& vector) { return -vector; };
 
   sol::usertype<vector4> vector4_type =
       state.new_usertype<vector4>("Vector4", sol::constructors<vector4(), vector4(float, float, float, float)>());
@@ -55,60 +53,19 @@ void Lua::SetupEnvironment() {
   vector4_type["w"] = &vector4::w;
   vector4_type["__tostring"] = [](const vector4& vector) { return fmt::format("{}", vector); };
 
-  sol::usertype<Scene> scene_type = state.new_usertype<Scene>("Scene");
-  scene_type["CreateObject"] = static_cast<SceneObject* (Scene::*)(const std::string&)>(&Scene::CreateObject);
-  scene_type["DeleteObject"] = &Scene::DeleteObject;
-  scene_type["GetObject"] = &Scene::GetObject;
+  // sol::usertype<Scene> scene_type = state.new_usertype<Scene>("Scene");
+  // scene_type["CreateObject"] = static_cast<SceneObject* (Scene::*)(const std::string&)>(&Scene::CreateObject);
+  // scene_type["DeleteObject"] = &Scene::DeleteObject;
+  // scene_type["GetObject"] = &Scene::GetObject;
 
   Module::RegisterToLua();
   SceneObject::RegisterToLua();
+  SceneController::RegisterToLua();
+  ScriptSceneController::RegisterToLua();
 }
 
-sol::protected_function_result Lua::AddSceneController(const std::string& code, const std::string& id) {
-  if (Module::IsSceneControllerRegistered(id)) {
-    Module::DeregisterSceneController(id);
-  }
-  sol::protected_function_result result = state.do_string(code, "=" + id);
-  if (result.valid() && result.get_type() == sol::type::table) {
-    LogI("Before table assignment");
-    sol::table class_table = result.get<sol::table>();
-    LogI("After table assignment");
-    Module::RegisterSceneController(
-        id, [id, class_table](Scene*) { return std::make_unique<ScriptSceneController>(id, class_table); });
-  }
-  return result;
+sol::protected_function_result Lua::Execute(const std::string& code, const std::string& chunk_name) {
+  return state.do_string(code, "=" + chunk_name);
 }
-
-// bool LoadScript(ResourceManager* resource_manager, const json& parameters, const std::string& id,
-//                 const std::string& directory) {
-//   if (!parameters.contains("type")) {
-//     LogE("Script has no type!");
-//     return false;
-//   }
-//   if (!parameters.contains("type")) {
-//     LogE("Script has no type!");
-//     return false;
-//   }
-
-//   const std::string type = parameters["type"];
-//   if (type == "scene_controller") {
-//     const std::string source_filename = directory + '/' + id + ".lua";
-//     state.script_file(source_filename);
-//     auto source_code = LoadTextFile(source_filename);
-//     if (!source_code) {
-//       LogE("Cannot open source file: '{}'", source_filename);
-//       return false;
-//     } else {
-//       state.script(*source_code);
-//       const std::string controller_id = id.substr(0, id.find('.'));
-//       Module::RegisterSceneController(
-//           controller_id, [controller_id](Scene*) { return std::make_unique<ScriptSceneController>(controller_id); });
-//       return true;
-//     }
-//   } else {
-//     LogE("Invalid script type: '{}'", type);
-//     return false;
-//   }
-// }
 
 }  // namespace ovis

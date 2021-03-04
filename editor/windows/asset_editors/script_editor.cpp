@@ -8,6 +8,7 @@
 #include <ovis/core/range.hpp>
 #include <ovis/engine/engine.hpp>
 #include <ovis/engine/lua.hpp>
+#include <ovis/engine/script_scene_controller.hpp>
 
 namespace ovis {
 namespace editor {
@@ -41,8 +42,10 @@ void ScriptEditor::DrawContent() {
 }
 
 void ScriptEditor::Save() {
-  SaveFile("lua", editor_.GetText());
-  sol::protected_function_result result = Lua::AddSceneController(editor_.GetText(), asset_id());
+  const std::string code = editor_.GetText();
+  SaveFile("lua", code);
+
+  sol::protected_function_result result = Lua::state.do_string(code, "=" + asset_id());
 
   std::vector<LuaError> errors;
   if (!result.valid()) {
@@ -55,7 +58,6 @@ void ScriptEditor::Save() {
   } else {
     SetErrors({});
   }
-
 }
 
 void ScriptEditor::SetErrors(const std::vector<LuaError>& errors) {

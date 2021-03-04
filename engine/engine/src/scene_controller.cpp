@@ -3,6 +3,7 @@
 #include <SDL2/SDL_assert.h>
 
 #include <ovis/core/log.hpp>
+#include <ovis/engine/lua.hpp>
 #include <ovis/engine/module.hpp>
 #include <ovis/engine/scene.hpp>
 #include <ovis/engine/scene_controller.hpp>
@@ -42,6 +43,11 @@ void SceneController::Update(std::chrono::microseconds /*delta_time*/) {}
 void SceneController::ProcessEvent(Event* event) {
   SDL_assert(IsSubscribedToEvent(std::string(event->type())));
   (void)event;
+}
+
+void SceneController::RegisterToLua() {
+  // auto& lua = Lua::state;
+  // sol::usertype<SceneController> scene_controller_type = lua.new_usertype<SceneController>("SceneController");
 }
 
 std::vector<std::string> SceneController::GetRegisteredControllers() {

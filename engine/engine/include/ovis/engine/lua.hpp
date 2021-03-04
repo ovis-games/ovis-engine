@@ -15,8 +15,7 @@ class Lua {
   static sol::state state;
 
   static void SetupEnvironment();
-  static sol::protected_function_result Execute(const std::string& code);
-  static sol::protected_function_result AddSceneController(const std::string& code, const std::string& id);
+  static sol::protected_function_result Execute(const std::string& code, const std::string& chunk_name);
 
   static EventHandler<void(const std::string&)> on_error;
 };

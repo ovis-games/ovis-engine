@@ -42,6 +42,7 @@ class SceneController {
   virtual void ProcessEvent(Event* event);
   virtual void DrawImGui() {}
 
+  static void RegisterToLua();
   static std::vector<std::string> GetRegisteredControllers();
 
  protected:

@@ -15,6 +15,7 @@
 #include <ovis/engine/scene.hpp>
 #include <ovis/engine/scene_controller.hpp>
 #include <ovis/engine/scene_object.hpp>
+#include <ovis/engine/script_scene_controller.hpp>
 
 namespace ovis {
 
@@ -52,27 +53,14 @@ SceneController* Scene::AddController(const std::string& scene_controller_id) {
     return nullptr;
   }
 
-  auto controller_factory = Module::scene_controller_factory_functions()->find(scene_controller_id);
-  if (controller_factory == Module::scene_controller_factory_functions()->end()) {
-    if (GetApplicationAssetLibrary() != nullptr && GetApplicationAssetLibrary()->Contains(scene_controller_id) &&
-        GetApplicationAssetLibrary()->GetAssetType(scene_controller_id) == "scene_controller") {
-      std::optional<std::string> code = GetApplicationAssetLibrary()->LoadAssetTextFile(scene_controller_id, "lua");
-
-      if (code) {
-        Lua::AddSceneController(*code, scene_controller_id);
-        controller_factory = Module::scene_controller_factory_functions()->find(scene_controller_id);
-        SDL_assert(controller_factory != Module::scene_controller_factory_functions()->end());
-      } else {
-        LogE("Failed to loead scene controller '{}'", scene_controller_id);
-        return nullptr;
-      }
-    } else {
-      LogE("Cannot find scene controller '{}'", scene_controller_id);
-      return nullptr;
-    }
+  std::unique_ptr<SceneController> controller;
+  if (auto controller_factory = Module::scene_controller_factory_functions()->find(scene_controller_id);
+      controller_factory != Module::scene_controller_factory_functions()->end()) {
+    controller = controller_factory->second(this);
+  } else {
+    controller = LoadScriptSceneController(scene_controller_id, &Lua::state);
   }
 
-  auto controller = controller_factory->second(this);
   if (controller == nullptr) {
     LogE("Failed to create scene controller '{}'", scene_controller_id);
     return nullptr;
