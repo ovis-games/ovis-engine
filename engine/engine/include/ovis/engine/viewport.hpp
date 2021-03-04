@@ -44,6 +44,9 @@ class Viewport {
     static_assert(std::is_base_of<RenderPass, RenderPassType>::value, "");
     return down_cast<RenderPassType*>(GetRenderPassInternal(render_pass_name));
   }
+  inline void AddRenderPassDependency(std::string rendered_first, std::string rendered_second) {
+    render_pass_dependencies_.insert(std::make_pair(std::move(rendered_second), std::move(rendered_first)));
+  }
 
   RenderTargetTexture2D* CreateRenderTarget2D(const std::string& id,
                                               const RenderTargetTexture2DDescription& description);
@@ -87,6 +90,7 @@ class Viewport {
   Scene* scene_ = nullptr;
   RenderContext render_context_;
 
+  std::multimap<std::string, std::string> render_pass_dependencies_;
   std::unordered_map<std::string, std::unique_ptr<RenderPass>> render_passes_;
   std::vector<RenderPass*> render_pass_order_;
   bool render_passes_sorted_;

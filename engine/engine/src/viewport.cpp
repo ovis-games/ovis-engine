@@ -126,7 +126,7 @@ std::unique_ptr<RenderTargetConfiguration> Viewport::CreateRenderTargetConfigura
 
 void Viewport::SortRenderPasses() {
   // First depends on second beeing already rendered
-  std::multimap<std::string, std::string> dependencies;
+  std::multimap<std::string, std::string> dependencies = render_pass_dependencies_;
   std::set<std::string> render_passes_left_;
 
   for (const auto& name_renderer_pair : render_passes_) {

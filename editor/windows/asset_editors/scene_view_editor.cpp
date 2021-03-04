@@ -485,8 +485,8 @@ void SceneViewEditor::CreateSceneViewport(ImVec2 size) {
 
     scene_viewport_->AddRenderPass("Clear");
     scene_viewport_->AddRenderPass("SpriteRenderer");
-    scene_viewport_->AddRenderPass("SceneViewEditorRenderPass");
     scene_viewport_->AddRenderPass("Physics2DDebugLayer");
+    scene_viewport_->AddRenderPassDependency("SpriteRenderer", "Physics2DDebugLayer");
     scene_viewport_->SetScene(game_scene());
   } else {
     scene_viewport_->Resize(size.x, size.y);
