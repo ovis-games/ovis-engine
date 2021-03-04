@@ -24,7 +24,11 @@ bool ProcessEvents() {
       input()->SetKeyState(event.key.keysym.scancode, true);
     } else if (event.type == SDL_KEYUP) {
       input()->SetKeyState(event.key.keysym.scancode, false);
-    } 
+    } else if (event.type == SDL_MOUSEBUTTONDOWN) {
+      input()->SetMouseButtonState(static_cast<MouseButton>(event.button.button), true);
+    } else if (event.type == SDL_MOUSEBUTTONUP) {
+      input()->SetMouseButtonState(static_cast<MouseButton>(event.button.button), false);
+    }
 
     // TODO: only post events to the according window
     for (auto window : Window::all_windows()) {

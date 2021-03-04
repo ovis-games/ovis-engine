@@ -11,6 +11,14 @@
 
 namespace ovis {
 
+enum class MouseButton : uint8_t {
+  LEFT = SDL_BUTTON_LEFT,
+  MIDDLE = SDL_BUTTON_MIDDLE,
+  RIGHT = SDL_BUTTON_RIGHT,
+  EXTRA1 = SDL_BUTTON_X1,
+  EXTRA2 = SDL_BUTTON_X2,
+};
+
 class Input {
  public:
   Input();
@@ -18,10 +26,19 @@ class Input {
   inline void SetKeyState(SDL_Scancode scan_code, bool pressed) { key_states_[scan_code] = pressed; }
   bool GetKeyState(Key key) const { return key_states_[key.code]; }
 
+  inline void SetMouseButtonState(MouseButton button, bool pressed) {
+    mouse_button_states_[static_cast<uint8_t>(button) - 1] = pressed;
+  }
+
+  inline bool GetMouseButtonState(MouseButton button) {
+    return mouse_button_states_[static_cast<uint8_t>(button) - 1];
+  }
+
   static void RegisterToLua();
 
  private:
   bool key_states_[SDL_NUM_SCANCODES] = {false};
+  bool mouse_button_states_[5] = {false};
 };
 
 Input* input();
@@ -96,14 +113,6 @@ class MouseMoveEvent : public MouseEvent {
   vector2 relative_device_coordinates_;
 };
 
-enum class MouseButton : uint8_t {
-  LEFT = SDL_BUTTON_LEFT,
-  MIDDLE = SDL_BUTTON_MIDDLE,
-  RIGHT = SDL_BUTTON_RIGHT,
-  EXTRA1 = SDL_BUTTON_X1,
-  EXTRA2 = SDL_BUTTON_X2,
-};
-
 class MouseButtonEvent : public MouseEvent {
  public:
   inline MouseButtonEvent(std::string type, Viewport* viewport, vector2 device_coordinates, MouseButton button)
@@ -135,8 +144,7 @@ class MouseWheelEvent : public Event {
  public:
   inline static const std::string TYPE = "MouseWheelEvent";
 
-  inline MouseWheelEvent(int delta_x, int delta_y)
-      : Event(TYPE), delta_x_(delta_x), delta_y_(delta_y) {}
+  inline MouseWheelEvent(int delta_x, int delta_y) : Event(TYPE), delta_x_(delta_x), delta_y_(delta_y) {}
 
   inline int delta_x() const { return delta_x_; }
   inline int delta_y() const { return delta_y_; }
