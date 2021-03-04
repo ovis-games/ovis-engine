@@ -18,6 +18,11 @@ class Viewport {
   virtual glm::ivec2 GetSize() = 0;
   virtual RenderTargetConfiguration* GetDefaultRenderTargetConfiguration() = 0;
 
+  inline float GetAspectRatio() {
+    const vector2 size = GetSize();
+    return size.x / size.y;
+  }
+
   inline GraphicsContext* context() const { return graphics_context_; }
 
   inline Scene* scene() const { return scene_; }
