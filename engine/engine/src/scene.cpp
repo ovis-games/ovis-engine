@@ -39,12 +39,13 @@ SceneController* Scene::AddController(std::unique_ptr<SceneController> scene_con
 
   auto insert_return_value = controllers_.insert(std::make_pair(scene_controller_id, std::move(scene_controller)));
   SDL_assert(insert_return_value.second);
-  insert_return_value.first->second->scene_ = this;
-  if (is_playing_) {
-    insert_return_value.first->second->Play();
-  }
+  SceneController* inserted_scene_controller = insert_return_value.first->second.get();
+  inserted_scene_controller->scene_ = this;
   InvalidateControllerOrder();
-  return insert_return_value.first->second.get();
+  if (is_playing_) {
+    inserted_scene_controller->Play();
+  }
+  return inserted_scene_controller;
 }
 
 SceneController* Scene::AddController(const std::string& scene_controller_id) {
