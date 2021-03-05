@@ -37,7 +37,8 @@ class Viewport {
     render_context_.view_projection_matrix = render_context_.projection_matrix * render_context_.view_matrix;
   }
 
-  void AddRenderPass(const std::string& render_pass_id);
+  RenderPass* AddRenderPass(std::unique_ptr<RenderPass> render_pass);
+  RenderPass* AddRenderPass(const std::string& render_pass_id);
   void RemoveRenderPass(const std::string& render_pass_id);
   template <typename RenderPassType = RenderPass>
   inline RenderPassType* GetRenderPass(const std::string& render_pass_name) const {

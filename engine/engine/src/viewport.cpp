@@ -36,22 +36,16 @@ void Viewport::Render(bool render_gui) {
   }
 }
 
-void Viewport::AddRenderPass(const std::string& render_pass_id) {
-  const auto render_pass_factory = Module::render_pass_factory_functions()->find(render_pass_id);
-  if (render_pass_factory == Module::render_pass_factory_functions()->end()) {
-    LogE("Cannot find render pass '{}'", render_pass_id);
-    return;
+RenderPass* Viewport::AddRenderPass(std::unique_ptr<RenderPass> render_pass) {
+    if (!render_pass) {
+    LogE("Scene controller is null!");
+    return nullptr;
   }
 
+  const std::string render_pass_id = render_pass->name();
   if (render_passes_.count(render_pass_id) != 0) {
     LogE("Render pass '{}' already added", render_pass_id);
-    return;
-  }
-
-  auto render_pass = render_pass_factory->second(this);
-  if (render_pass == nullptr) {
-    LogE("Failed to create render pass '{}'", render_pass_id);
-    return;
+    return nullptr;
   }
 
   auto insert_return_value = render_passes_.insert(std::make_pair(render_pass_id, std::move(render_pass)));
@@ -63,6 +57,29 @@ void Viewport::AddRenderPass(const std::string& render_pass_id) {
     insert_return_value.first->second->CreateResourcesWrapper();
   }
   render_passes_sorted_ = false;
+
+  return insert_return_value.first->second.get();
+}
+
+RenderPass* Viewport::AddRenderPass(const std::string& render_pass_id) {
+  const auto render_pass_factory = Module::render_pass_factory_functions()->find(render_pass_id);
+  if (render_pass_factory == Module::render_pass_factory_functions()->end()) {
+    LogE("Cannot find render pass '{}'", render_pass_id);
+    return nullptr;
+  }
+
+  if (render_passes_.count(render_pass_id) != 0) {
+    LogE("Render pass '{}' already added", render_pass_id);
+    return nullptr;
+  }
+
+  auto render_pass = render_pass_factory->second(this);
+  if (render_pass == nullptr) {
+    LogE("Failed to create render pass '{}'", render_pass_id);
+    return nullptr;
+  }
+
+  return AddRenderPass(std::move(render_pass));
 }
 
 void Viewport::SetGraphicsContext(GraphicsContext* graphics_context) {
