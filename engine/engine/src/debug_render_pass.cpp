@@ -1,3 +1,5 @@
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <ovis/engine/debug_render_pass.hpp>
 #include <ovis/engine/viewport.hpp>
 
@@ -61,6 +63,11 @@ void DebugRenderPass::ReleaseResources() {
   resources_.reset();
 }
 
+void DebugRenderPass::SetDrawSpace(DrawSpace space) {
+  SDL_assert(!is_drawing_);
+  draw_space_ = space;
+}
+
 void DebugRenderPass::BeginDraw(const RenderContext& render_context) {
   SDL_assert(!is_drawing_);
   SDL_assert(resources_);
@@ -70,8 +77,16 @@ void DebugRenderPass::BeginDraw(const RenderContext& render_context) {
   resources_->line_vertices.clear();
   resources_->triangle_vertices.clear();
 
-  resources_->point_shader->SetUniform("ViewProjection", render_context.view_projection_matrix);
-  resources_->shader->SetUniform("ViewProjection", render_context.view_projection_matrix);
+  matrix4 view_projection;
+  if (draw_space_ == DrawSpace::WORLD) {
+    view_projection = render_context.view_projection_matrix;
+  } else {
+    const vector2 viewport_size = viewport()->GetSize();
+    view_projection = glm::orthoLH(0.0f, viewport_size.x, viewport_size.y, 0.0f, -1.0f, 1.0f);
+  }
+
+  resources_->point_shader->SetUniform("ViewProjection", view_projection);
+  resources_->shader->SetUniform("ViewProjection", view_projection);
 }
 
 void DebugRenderPass::EndDraw() {
@@ -159,7 +174,7 @@ void DebugRenderPass::DrawTriangle(const vector3& v0, const vector3& v1, const v
 }
 
 void DebugRenderPass::DrawDisc(const vector3& center, float radius, const color& color, size_t num_segments,
-                                 const vector3& support_vector0, const vector3& support_vector1) {
+                               const vector3& support_vector0, const vector3& support_vector1) {
   SDL_assert(num_segments > 2);
 
   const vector3 base_position = center + radius * support_vector1;

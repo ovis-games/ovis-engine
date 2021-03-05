@@ -16,10 +16,15 @@ namespace ovis {
 
 class DebugRenderPass : public RenderPass {
  public:
+  enum class DrawSpace { WORLD, VIEWPORT };
+
   DebugRenderPass(const std::string& name);
 
   void CreateResources() override;
   void ReleaseResources() override;
+
+  void SetDrawSpace(DrawSpace space);
+  inline DrawSpace draw_space() const { return draw_space_; }
 
  protected:
   void BeginDraw(const RenderContext& render_context);
@@ -61,6 +66,7 @@ class DebugRenderPass : public RenderPass {
   bool enable_alpha_blending_ = false;
 
  private:
+  DrawSpace draw_space_ = DrawSpace::WORLD;
   bool is_drawing_ = false;
 
   static constexpr size_t POINT_VERTEX_BUFFER_ELEMENT_COUNT = 1024 / sizeof(PointVertex);
@@ -82,6 +88,11 @@ class DebugRenderPass : public RenderPass {
   void FlushPoints();
   void FlushLines();
   void FlushTriangles();
+  inline void Flush() {
+    FlushPoints();
+    FlushLines();
+    FlushTriangles();
+  }
 };
 
 }  // namespace ovis
