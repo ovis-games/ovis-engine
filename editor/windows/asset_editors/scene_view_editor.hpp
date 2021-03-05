@@ -42,7 +42,6 @@ class SceneViewEditor : public AssetEditor {
   void CreateSceneViewport(ImVec2 size);
 
   SceneObject* CreateObject(const std::string& base_name, bool initiate_rename = false);
-  SceneObject* GetSelectedObject();
   SceneObject* GetObjectAtPosition(vector2 world_position);
   json::json_pointer GetComponentPath(const std::string& object_name, const std::string& component_id) {
     return json::json_pointer("/objects/" + object_name + "/components/" + component_id);
@@ -57,7 +56,6 @@ class SceneViewEditor : public AssetEditor {
   enum class RenamingState { IS_NOT_RENAMING, STARTED_RENAMING, IS_RENAMING };
   RenamingState renaming_state_ = RenamingState::IS_NOT_RENAMING;
 
-  std::optional<std::string> selected_object_;
   std::vector<SceneObject*> cached_scene_objects_;
 
   struct Icons {

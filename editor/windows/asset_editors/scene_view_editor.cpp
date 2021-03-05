@@ -5,6 +5,9 @@
 #include "../../imgui_extensions/input_serializable.hpp"
 #include "../../imgui_extensions/texture_button.hpp"
 #include "editing_controllers/editor_camera_controller.hpp"
+#include "editing_controllers/object_selection_controller.hpp"
+#include "editor_overlays/selected_object_bounding_box.hpp"
+#include "editor_overlays/gizmo_renderer.hpp"
 
 #include <imgui_stdlib.h>
 #include <ovis/base/transform_component.hpp>
@@ -54,6 +57,7 @@ SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(s
   icons_.eye = LoadTexture2D("icon-eye", EditorWindow::instance()->context());
 
   editing_scene()->Play();
+  editing_scene()->AddController<ObjectSelectionController>(game_scene());
 }
 
 void SceneViewEditor::Update(std::chrono::microseconds delta_time) {
@@ -292,6 +296,8 @@ void SceneViewEditor::DrawInspectorContent() {
 }
 
 void SceneViewEditor::DrawObjectTree() {
+  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>("ObjectSelectionController");
+
   ImVec2 available_content_region = ImGui::GetContentRegionAvail();
   if (ImGui::BeginChild("ObjectView", ImVec2(0, available_content_region.y / 2), true)) {
     if (ImGui::BeginPopupContextWindow()) {
@@ -301,16 +307,11 @@ void SceneViewEditor::DrawObjectTree() {
       ImGui::EndPopup();
     }
 
-    // If the selected object does not exist anymore, remove the selection
-    if (selected_object_.has_value() && !game_scene()->ContainsObject(*selected_object_)) {
-      selected_object_.reset();
-    }
-
     ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
                                          ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
 
     ImGuiTreeNodeFlags scene_node_flags = tree_node_flags | ImGuiTreeNodeFlags_AllowItemOverlap;
-    if (!selected_object_.has_value()) {
+    if (!object_selection_controller->has_selected_object()) {
       // If there is no selected object, the scene is selected
       scene_node_flags |= ImGuiTreeNodeFlags_Selected;
     }
@@ -322,14 +323,15 @@ void SceneViewEditor::DrawObjectTree() {
         ImGui::EndPopup();
       }
       if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-        selected_object_.reset();
+        object_selection_controller->ClearSelection();
       }
 
       game_scene()->GetObjects(&cached_scene_objects_, true);
       for (SceneObject* object : cached_scene_objects_) {
         SDL_assert(object != nullptr);
+        SDL_assert(game_scene()->ContainsObject(object->name()));
 
-        const bool is_object_selected = selected_object_.has_value() && object->name() == *selected_object_;
+        const bool is_object_selected = object_selection_controller->selected_object_name() == object->name();
 
         ImGuiTreeNodeFlags scene_object_flags = tree_node_flags | ImGuiTreeNodeFlags_Leaf;
         if (is_object_selected) {
@@ -340,7 +342,8 @@ void SceneViewEditor::DrawObjectTree() {
           // This object is currently not beeing renamed
           if (ImGui::TreeNodeEx(object->name().c_str(), scene_object_flags)) {
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-              selected_object_ = object->name();
+              object_selection_controller->SelectObject(object);
+              SDL_assert(object_selection_controller->selected_object_name() == object->name());
             }
             if (ImGui::BeginPopupContextItem()) {
               if (ImGui::Selectable("Rename")) {
@@ -391,9 +394,11 @@ void SceneViewEditor::DrawObjectTree() {
 }
 
 void SceneViewEditor::DrawSelectionProperties() {
+  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>("ObjectSelectionController");
+
   ImVec2 available_content_region = ImGui::GetContentRegionAvail();
   if (ImGui::BeginChild("SelectionProperties", ImVec2(0, available_content_region.y), true)) {
-    if (selected_object_.has_value()) {
+    if (object_selection_controller->has_selected_object()) {
       DrawSceneObjectProperties();
     } else {
       DrawSceneProperties();
@@ -403,7 +408,9 @@ void SceneViewEditor::DrawSelectionProperties() {
 }
 
 void SceneViewEditor::DrawSceneObjectProperties() {
-  SceneObject* selected_object = GetSelectedObject();
+  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>("ObjectSelectionController");
+
+  SceneObject* selected_object = object_selection_controller->selected_object();
 
   if (!selected_object) {
     return;
@@ -413,7 +420,7 @@ void SceneViewEditor::DrawSceneObjectProperties() {
     Serializable* component = selected_object->GetComponent(component_id);
 
     // Get component path
-    const json::json_pointer component_path = GetComponentPath(*selected_object_, component_id);
+    const json::json_pointer component_path = GetComponentPath(object_selection_controller->selected_object_name(), component_id);
     if (serialized_scene_editing_copy_.contains(component_path)) {
       json& serialized_component = serialized_scene_editing_copy_[component_path];
       const ovis::json* component_schema = component->GetSchema();
@@ -486,7 +493,12 @@ void SceneViewEditor::CreateSceneViewport(ImVec2 size) {
     scene_viewport_->AddRenderPass("Clear");
     scene_viewport_->AddRenderPass("SpriteRenderer");
     scene_viewport_->AddRenderPass("Physics2DDebugLayer");
+    scene_viewport_->AddRenderPass(std::make_unique<SelectedObjectBoundingBox>(editing_scene()));
+    scene_viewport_->AddRenderPass(std::make_unique<GizmoRenderer>(editing_scene()));
     scene_viewport_->AddRenderPassDependency("SpriteRenderer", "Physics2DDebugLayer");
+    scene_viewport_->AddRenderPassDependency("SpriteRenderer", "SelectedObjectBoundingBox");
+    scene_viewport_->AddRenderPassDependency("SelectedObjectBoundingBox", "GizmoRenderer");
+    scene_viewport_->AddRenderPassDependency("SpriteRenderer", "GizmoRenderer");
     scene_viewport_->SetScene(game_scene());
   } else {
     scene_viewport_->Resize(size.x, size.y);
@@ -500,19 +512,11 @@ SceneObject* SceneViewEditor::CreateObject(const std::string& base_name, bool in
     counter++;
     object_name = base_name + std::to_string(counter);
   }
-  selected_object_ = object_name;
+  editing_scene()->GetController<ObjectSelectionController>("ObjectSelectionController")->SelectObject(object_name);
   if (initiate_rename) {
     renaming_state_ = RenamingState::STARTED_RENAMING;
   }
   return game_scene()->CreateObject(object_name);
-}
-
-SceneObject* SceneViewEditor::GetSelectedObject() {
-  if (selected_object_.has_value()) {
-    return game_scene()->GetObject(*selected_object_);
-  } else {
-    return nullptr;
-  }
 }
 
 SceneObject* SceneViewEditor::GetObjectAtPosition(vector2 world_position) {

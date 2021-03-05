@@ -56,6 +56,11 @@ add_executable(
   windows/asset_editors/scene_editor/scene_editor_render_pass.hpp windows/asset_editors/scene_editor/scene_editor_render_pass.cpp
 
   windows/asset_editors/editing_controllers/editor_camera_controller.hpp windows/asset_editors/editing_controllers/editor_camera_controller.cpp
+  windows/asset_editors/editing_controllers/object_selection_controller.hpp windows/asset_editors/editing_controllers/object_selection_controller.cpp
+  windows/asset_editors/editing_controllers/gizmo_controller.hpp windows/asset_editors/editing_controllers/gizmo_controller.cpp
+
+  windows/asset_editors/editor_overlays/selected_object_bounding_box.hpp windows/asset_editors/editor_overlays/selected_object_bounding_box.cpp
+  windows/asset_editors/editor_overlays/gizmo_renderer.hpp windows/asset_editors/editor_overlays/gizmo_renderer.cpp
 
   windows/asset_importers/asset_importer.hpp windows/asset_importers/asset_importer.cpp
 )
