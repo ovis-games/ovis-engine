@@ -20,6 +20,7 @@ class SceneObject : public Serializable {
   SceneObject(Scene* scene, const std::string& name);
   ~SceneObject();
 
+  inline Scene* scene() const { return scene_; }
   inline std::string name() const { return name_; }
 
   template <typename ComponentType = SceneObjectComponent>
