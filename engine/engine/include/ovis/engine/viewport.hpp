@@ -63,6 +63,10 @@ class Viewport {
     return (2.0f * device_coordinates / vector2(GetSize() - 1) - 1.0f) * vector2(1.0f, -1.0f);
   }
 
+  inline vector2 NormalizedDeviceCoordinatesToDeviceCoordinates(vector2 normalized_device_coordinates) {
+    return ((0.5f * vector2(1.0f, -1.0f) * normalized_device_coordinates) + 0.5f) * vector2(GetSize() - 1);
+  }
+
   inline vector3 NormalizedDeviceCoordinatesToViewSpace(vector3 ndc) {
     return render_context_.inverse_projection_matrix * vector4(ndc, 1.0f);
   }
