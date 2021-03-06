@@ -15,7 +15,7 @@ void Viewport::Render(bool render_gui) {
   }
 
   if (render_gui) {
-    const glm::ivec2 viewport_size = GetSize();
+    const Vector2 viewport_size = GetDimensionsAsVector2();
     ImGui::GetIO().DisplaySize.x = viewport_size.x;
     ImGui::GetIO().DisplaySize.y = viewport_size.y;
 

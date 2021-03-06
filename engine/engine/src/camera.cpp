@@ -25,26 +25,28 @@ void from_json(const json& data, ProjectionType& projection_type) {
   }
 }
 
-matrix4 Camera::CalculateProjectionMatrix() const {
+Matrix4 Camera::CalculateProjectionMatrix() const {
   switch (projection_type_) {
     case ProjectionType::ORTHOGRAPHIC: {
       const float half_height = vertical_field_of_view_ * 0.5f;
       const float half_width = half_height * aspect_ratio_;
-      return glm::orthoLH(-half_width, half_width, -half_height, half_height, near_clip_plane_, far_clip_plane_);
+      return Matrix4::FromOrthographicProjection(-half_width, half_width, -half_height, half_height, near_clip_plane_,
+                                                 far_clip_plane_);
     }
 
     case ProjectionType::PERSPECTIVE: {
-      return glm::perspectiveLH(vertical_field_of_view_, aspect_ratio_, near_clip_plane_, far_clip_plane_);
+      return Matrix4::FromPerspectiveProjection(vertical_field_of_view_, aspect_ratio_, near_clip_plane_,
+                                                far_clip_plane_);
     }
 
     default:
       SDL_assert(false && "");
-      return matrix4{};
+      return Matrix4{};
   }
 }
 
 void to_json(json& data, const Camera& camera) {
-// clang-format off
+  // clang-format off
   data = json{
     {"projectionType", camera.projection_type()},
     {"verticalFieldOfView", glm::degrees(camera.vertical_field_of_view())},
@@ -52,7 +54,7 @@ void to_json(json& data, const Camera& camera) {
     {"nearClipPlane", camera.near_clip_plane()},
     {"farClipPlane", camera.far_clip_plane()}
   };
-// clang-format on
+  // clang-format on
 }
 
 void from_json(const json& data, Camera& camera) {

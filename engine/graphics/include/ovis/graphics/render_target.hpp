@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ovis/math/basic_types.hpp>
+#include <cstddef>
 
 #include <ovis/graphics/gl.hpp>
 #include <ovis/graphics/graphics_resource.hpp>

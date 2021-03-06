@@ -4,7 +4,6 @@
 
 namespace ovis {
 
-
 const json SpriteComponent::schema = {{"$ref", "rendering2d#/$defs/sprite"}};
 
 json SpriteComponent::Serialize() const {

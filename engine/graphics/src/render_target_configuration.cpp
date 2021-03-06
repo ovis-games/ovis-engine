@@ -45,7 +45,7 @@ RenderTargetConfiguration::~RenderTargetConfiguration() {
   }
 }
 
-void RenderTargetConfiguration::ClearColor(size_t color_attachment_index, const vector4& clear_color) {
+void RenderTargetConfiguration::ClearColor(size_t color_attachment_index, const Color& clear_color) {
   if (context()->scissoring_enabled_) {
     glDisable(GL_SCISSOR_TEST);
     context()->scissoring_enabled_ = false;

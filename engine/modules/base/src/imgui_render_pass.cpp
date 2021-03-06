@@ -46,12 +46,7 @@ void ImGuiRenderPass::Render(const RenderContext& render_context) {
   float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
   float T = draw_data->DisplayPos.y;
   float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
-  const matrix4 ortho_projection = {
-      {2.0f / (R - L), 0.0f, 0.0f, 0.0f},
-      {0.0f, 2.0f / (T - B), 0.0f, 0.0f},
-      {0.0f, 0.0f, -1.0f, 0.0f},
-      {(R + L) / (L - R), (T + B) / (B - T), 0.0f, 1.0f},
-  };
+  const Matrix4 ortho_projection = Matrix4::FromOrthographicProjection(L, R, B, T, -1.0f, 1.0f);
   shader_program_->SetUniform("Projection", ortho_projection);
 
   for (int i = 0; i < draw_data->CmdListsCount; ++i) {

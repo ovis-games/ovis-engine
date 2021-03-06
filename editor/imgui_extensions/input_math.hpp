@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ovis/math/basic_types.hpp>
+#include <ovis/math/vector.hpp>
 #include <ovis/core/json.hpp>
 
 namespace ImGui

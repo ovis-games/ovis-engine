@@ -12,7 +12,7 @@ class SceneEditorController : public SceneController {
 
 
     // if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-    //   const vector2 mouse_position = ImGui::GetMousePos();
+    //   const Vector2 mouse_position = ImGui::GetMousePos();
     //   SceneObject* object =
     //       GetObjectAtPosition(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
     //   if (object == nullptr) {
@@ -28,7 +28,7 @@ class SceneEditorController : public SceneController {
     //     move_state_.emplace();
     //     move_state_->object_name = selected_object->name();
 
-    //     const vector2 mouse_position = ImGui::GetMousePos();
+    //     const Vector2 mouse_position = ImGui::GetMousePos();
     //     move_state_->drag_start_mouse_position =
     //         scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
 
@@ -36,10 +36,10 @@ class SceneEditorController : public SceneController {
     //   }
     // }
     // if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && move_state_.has_value()) {
-    //   const vector2 mouse_position = ImGui::GetMousePos();
-    //   const vector3 current_mouse_pos = scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
-    //   const vector3 position_delta = current_mouse_pos - move_state_->drag_start_mouse_position;
-    //   const vector3 object_position = move_state_->original_position + position_delta;
+    //   const Vector2 mouse_position = ImGui::GetMousePos();
+    //   const Vector3 current_mouse_pos = scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left);
+    //   const Vector3 position_delta = current_mouse_pos - move_state_->drag_start_mouse_position;
+    //   const Vector3 object_position = move_state_->original_position + position_delta;
 
     //   if (selected_object->HasComponent("Transform")) {
     //     TransformComponent* transform_component = selected_object->GetComponent<TransformComponent>("Transform");

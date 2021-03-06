@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include <ovis/math/basic_types.hpp>
+#include <ovis/math/color.hpp>
 
 #include <ovis/graphics/gl.hpp>
 #include <ovis/graphics/graphics_resource.hpp>
@@ -24,7 +24,7 @@ class RenderTargetConfiguration : public GraphicsResource {
   RenderTargetConfiguration(GraphicsContext* context, const RenderTargetConfigurationDescription& description);
   virtual ~RenderTargetConfiguration() override;
 
-  void ClearColor(size_t color_attachment_index, const vector4& color = {0.0f, 0.0f, 0.0f, 1.0f});
+  void ClearColor(size_t color_attachment_index, const Color& color = Color::Black());
   void ClearDepth(float depth = 1.0f);
 
   inline std::size_t width() const { return width_; }

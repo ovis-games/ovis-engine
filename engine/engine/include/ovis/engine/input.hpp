@@ -81,41 +81,41 @@ class TextInputEvent : public Event {
 
 class MouseEvent : public Event {
  public:
-  inline MouseEvent(std::string type, Viewport* viewport, vector2 device_coordinates)
+  inline MouseEvent(std::string type, Viewport* viewport, Vector2 device_coordinates)
       : Event(std::move(type)), viewport_(viewport), device_coordinates_(device_coordinates) {}
 
   inline Viewport* viewport() const { return viewport_; }
-  inline vector2 device_coordinates() const { return device_coordinates_; }
-  inline vector2 normalized_device_coordinates() const {
+  inline Vector2 device_coordinates() const { return device_coordinates_; }
+  inline Vector2 normalized_device_coordinates() const {
     SDL_assert(viewport() != nullptr);
     return viewport_->DeviceCoordinatesToNormalizedDeviceCoordinates(device_coordinates_);
   }
 
  private:
   Viewport* viewport_;
-  vector2 device_coordinates_;
+  Vector2 device_coordinates_;
 };
 
 class MouseMoveEvent : public MouseEvent {
  public:
   inline static const std::string TYPE = "MouseMove";
 
-  inline MouseMoveEvent(Viewport* viewport, vector2 device_coordinates, vector2 relative_device_coordinates)
+  inline MouseMoveEvent(Viewport* viewport, Vector2 device_coordinates, Vector2 relative_device_coordinates)
       : MouseEvent(TYPE, viewport, device_coordinates), relative_device_coordinates_(relative_device_coordinates) {}
 
-  inline vector2 relative_device_coordinates() const { return relative_device_coordinates_; }
-  inline vector2 relative_normalized_device_coordinates() const {
+  inline Vector2 relative_device_coordinates() const { return relative_device_coordinates_; }
+  inline Vector2 relative_normalized_device_coordinates() const {
     SDL_assert(viewport() != nullptr);
     return viewport()->DeviceCoordinatesToNormalizedDeviceCoordinates(relative_device_coordinates_);
   }
 
  private:
-  vector2 relative_device_coordinates_;
+  Vector2 relative_device_coordinates_;
 };
 
 class MouseButtonEvent : public MouseEvent {
  public:
-  inline MouseButtonEvent(std::string type, Viewport* viewport, vector2 device_coordinates, MouseButton button)
+  inline MouseButtonEvent(std::string type, Viewport* viewport, Vector2 device_coordinates, MouseButton button)
       : MouseEvent(std::move(type), viewport, device_coordinates), button_(button) {}
 
   inline MouseButton button() const { return button_; }
@@ -128,7 +128,7 @@ class MouseButtonPressEvent : public MouseButtonEvent {
  public:
   inline static const std::string TYPE = "MouseButtonPress";
 
-  inline MouseButtonPressEvent(Viewport* viewport, vector2 device_coordinates, MouseButton button)
+  inline MouseButtonPressEvent(Viewport* viewport, Vector2 device_coordinates, MouseButton button)
       : MouseButtonEvent(TYPE, viewport, device_coordinates, button) {}
 };
 
@@ -136,7 +136,7 @@ class MouseButtonReleaseEvent : public MouseButtonEvent {
  public:
   inline static const std::string TYPE = "MouseButtonRelease";
 
-  inline MouseButtonReleaseEvent(Viewport* viewport, vector2 device_coordinates, MouseButton button)
+  inline MouseButtonReleaseEvent(Viewport* viewport, Vector2 device_coordinates, MouseButton button)
       : MouseButtonEvent(TYPE, viewport, device_coordinates, button) {}
 };
 

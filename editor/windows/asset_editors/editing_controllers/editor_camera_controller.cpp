@@ -35,9 +35,9 @@ void EditorCameraController::ProcessEvent(Event* event) {
       MouseMoveEvent* mouse_move_event = static_cast<MouseMoveEvent*>(event);
 
       SDL_assert(viewport_ == mouse_move_event->viewport());
-      const vector3 world0 = viewport_->DeviceCoordinatesToWorldSpace({0.0f, 0.0f});
-      const vector3 world1 = viewport_->DeviceCoordinatesToWorldSpace(mouse_move_event->relative_device_coordinates());
-      transform_.Translate(world0 - world1);
+      const Vector3 world0 = viewport_->DeviceCoordinatesToWorldSpace(Vector3::Zero());
+      const Vector3 world1 = viewport_->DeviceCoordinatesToWorldSpace(mouse_move_event->relative_device_coordinates());
+      transform_.Move(world0 - world1);
       event->StopPropagation();
     }
   } else if (event->type() == MouseWheelEvent::TYPE) {

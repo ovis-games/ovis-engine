@@ -14,8 +14,7 @@
 
 #pragma once
 
-#include <glm/vec2.hpp>
-#include <glm/vec4.hpp>
+#include <ovis/math/vector.hpp>
 
 //---- Define assertion handler. Defaults to calling assert().
 // If your macro uses multiple statements, make sure is enclosed in a 'do { .. } while (0)' block so it can be used as a single statement.
@@ -70,12 +69,12 @@
 // This will be inlined as part of ImVec2 and ImVec4 class declarations.
 
 #define IM_VEC2_CLASS_EXTRA                                                 \
-        ImVec2(const glm::vec2& v) { x = v.x; y = v.y; }                       \
-        operator glm::vec2() const { return glm::vec2(x,y); }
+        ImVec2(const ovis::Vector2& v) { x = v.x; y = v.y; }                       \
+        operator ovis::Vector2() const { return {x, y}; }
 
 #define IM_VEC4_CLASS_EXTRA                                                 \
-        ImVec4(const glm::vec4& v) { x = v.x; y = v.y; z = v.z; w = v.w; }     \
-        operator glm::vec4() const { return glm::vec4(x,y,z,w); }
+        ImVec4(const ovis::Vector4& v) { x = v.x; y = v.y; z = v.z; w = v.w; }     \
+        operator ovis::Vector4() const { return {x, y, z, w}; }
 
 
 //---- Use 32-bit vertex indices (default is 16-bit) is one way to allow large meshes with more than 64K vertices.

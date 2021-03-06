@@ -5,7 +5,8 @@
 #include <map>
 #include <memory>
 
-#include <ovis/math/basic_types.hpp>
+#include <ovis/math/color.hpp>
+#include <ovis/math/vector.hpp>
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/shader_program.hpp>
 #include <ovis/graphics/vertex_buffer.hpp>
@@ -31,36 +32,36 @@ class DebugRenderPass : public RenderPass {
   void EndDraw();
 
   struct PointVertex {
-    vector3 position;
+    float position[3];
     float size;
-    glm::tvec4<std::uint8_t> color;
+    uint32_t color;
   };
   static_assert(sizeof(PointVertex) == 20);
 
   struct Vertex {
-    vector3 position;
-    glm::tvec4<std::uint8_t> color;
+    float position[3];
+    uint32_t color;
   };
   static_assert(sizeof(Vertex) == 16);
 
   // Point Drawing
-  void DrawPoint(const vector3& v0, float size, const color& color);
+  void DrawPoint(const Vector3& v0, float size, const Color& color);
   void DrawPoints(const PointVertex* vertices, size_t num_vertices);
 
   // Line Drawing
-  void DrawLine(const vector3& v0, const vector3& v1, const color& color);
-  void DrawLoop(const vector3* positions, size_t num_positions, const color& color);
-  void DrawCircle(const vector3& center, float radius, const color& color, size_t num_segments = 20,
-                  const vector3& support_vector0 = vector3(1.0f, 0.0f, 0.0f),
-                  const vector3& support_vector1 = vector3(0.0f, 1.0f, 0.0f));
+  void DrawLine(const Vector3& v0, const Vector3& v1, const Color& color);
+  void DrawLoop(const Vector3* positions, size_t num_positions, const Color& color);
+  void DrawCircle(const Vector3& center, float radius, const Color& color, size_t num_segments = 20,
+                  const Vector3& support_vector0 = Vector3::PositiveX(),
+                  const Vector3& support_vector1 = Vector3::PositiveY());
   void DrawLines(const Vertex* vertices, size_t num_vertices);
 
   // Solid Drawing
-  void DrawTriangle(const vector3& v0, const vector3& v1, const vector3& v2, const color& color);
-  void DrawDisc(const vector3& center, float radius, const color& color, size_t num_segments = 20,
-                const vector3& support_vector0 = vector3(1.0f, 0.0f, 0.0f),
-                const vector3& support_vector1 = vector3(0.0f, 1.0f, 0.0f));
-  void DrawConvexPolygon(const vector3* positions, size_t num_positions, const color& color);
+  void DrawTriangle(const Vector3& v0, const Vector3& v1, const Vector3& v2, const Color& color);
+  void DrawDisc(const Vector3& center, float radius, const Color& color, size_t num_segments = 20,
+                const Vector3& support_vector0 = Vector3::PositiveX(),
+                const Vector3& support_vector1 = Vector3::PositiveY());
+  void DrawConvexPolygon(const Vector3* positions, size_t num_positions, const Color& color);
   void DrawTriangles(const Vertex* vertices, size_t num_vertices);
 
   bool enable_alpha_blending_ = false;

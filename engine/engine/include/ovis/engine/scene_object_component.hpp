@@ -4,7 +4,7 @@
 #include <variant>
 #include <vector>
 
-#include <ovis/math/basic_types.hpp>
+#include <ovis/math/vector.hpp>
 
 #include <ovis/core/class.hpp>
 #include <ovis/core/json.hpp>

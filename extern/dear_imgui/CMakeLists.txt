@@ -14,5 +14,10 @@ target_include_directories(
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/cpp
-    ${OVIS_ROOT}/extern/glm/include
+)
+
+target_link_libraries(
+  DearImGui
+  PUBLIC
+    ovis::math
 )

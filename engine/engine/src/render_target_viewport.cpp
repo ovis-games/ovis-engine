@@ -20,9 +20,9 @@ void RenderTargetViewport::Resize(std::size_t width, std::size_t height) {
   CreateRenderTargets();
 }
 
-glm::ivec2 RenderTargetViewport::GetSize() {
-  return {description_.color_description.texture_description.width,
-          description_.color_description.texture_description.height};
+void RenderTargetViewport::GetDimensions(size_t* width, size_t* height) {
+  *width = description_.color_description.texture_description.width;
+  *height = description_.color_description.texture_description.height;
 }
 
 RenderTargetConfiguration* RenderTargetViewport::GetDefaultRenderTargetConfiguration() {

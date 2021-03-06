@@ -1,6 +1,7 @@
 #include <box2d/b2_circle_shape.h>
 #include <box2d/b2_polygon_shape.h>
 
+#include <ovis/math/constants.hpp>
 #include <ovis/physics2d/rigid_body2d.hpp>
 
 namespace ovis {
@@ -24,8 +25,8 @@ json RigidBody2D::Serialize() const {
     data["type"] = "dynamic";
   }
 
-  data["linear_velocity"] = glm::vec2(body_definition_.linearVelocity.x, body_definition_.linearVelocity.y);
-  data["angular_velocity"] = glm::degrees(body_definition_.angularVelocity);
+  data["linear_velocity"] = Vector2{body_definition_.linearVelocity.x, body_definition_.linearVelocity.y};
+  data["angular_velocity"] = body_definition_.angularVelocity * RadiansToDegreesFactor<float>();
   data["linear_damping"] = body_definition_.linearDamping;
   data["angular_damping"] = body_definition_.angularDamping;
   data["allow_sleep"] = body_definition_.allowSleep;
@@ -59,12 +60,12 @@ bool RigidBody2D::Deserialize(const json& data) {
   }
 
   if (data.contains("linear_velocity")) {
-    const glm::vec2 linear_velocity = data.at("linear_velocity");
+    const Vector2 linear_velocity = data.at("linear_velocity");
     body_definition_.linearVelocity.x = linear_velocity.x;
     body_definition_.linearVelocity.y = linear_velocity.y;
   }
   if (data.contains("angular_velocity")) {
-    body_definition_.angularVelocity = glm::radians<float>(data.at("angular_velocity"));
+    body_definition_.angularVelocity = static_cast<float>(data.at("angular_velocity")) * DegreesToRadiansFactor<float>();
   }
   if (data.contains("linear_damping")) {
     body_definition_.linearDamping = data.at("linear_damping");
@@ -127,7 +128,7 @@ json RigidBody2D::SerializeShape() const {
 
     data["type"] = "polygon";
 
-    std::vector<vector2> vertices(polygon->m_count);
+    std::vector<Vector2> vertices(polygon->m_count);
     for (int i = 0; i < polygon->m_count; ++i) {
       vertices[i].x = polygon->m_vertices[i].x;
       vertices[i].y = polygon->m_vertices[i].y;
@@ -149,9 +150,9 @@ void RigidBody2D::DeserializeShape(const json& data) {
     auto polygon_shape = std::make_unique<b2PolygonShape>();
 
     if (data.contains("vertices")) {
-      std::vector<vector2> vertices = data.at("vertices");
+      std::vector<Vector2> vertices = data.at("vertices");
       std::vector<b2Vec2> box2d_vertices;
-      
+
       box2d_vertices.reserve(vertices.size());
       for (const auto& vertex : vertices) {
         box2d_vertices.push_back(b2Vec2(vertex.x, vertex.y));

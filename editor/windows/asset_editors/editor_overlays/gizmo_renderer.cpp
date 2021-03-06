@@ -21,9 +21,8 @@ void GizmoRenderer::Render(const RenderContext& render_context) {
 
     TransformComponent* transform = scene_object->GetComponent<TransformComponent>("Transform");
     if (transform != nullptr) {
-      vector3 x_direction = transform->TransformDirection(vector3(1.0f, 0.0f, 0.0f));
-      DrawLine(transform->translation(), transform->translation() + gizmo_radius_ * x_direction,
-               color(1.0f, 0.0f, 0.0f, 1.0f));
+      Vector3 x_direction = transform->TransformDirection(Vector3::PositiveX());
+      DrawLine(transform->position(), transform->position() + gizmo_radius_ * x_direction, Color::Red());
     }
 
     EndDraw();

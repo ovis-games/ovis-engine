@@ -22,8 +22,8 @@ bool InputVector2(const char* label, ovis::json* value, const ovis::json& schema
   SDL_assert(value != nullptr);
   bool json_changed = false;
 
-  ovis::vector2 vector = *value;
-  if (ImGui::DragFloat2(label, glm::value_ptr(vector), 1.0f, 0.0f, 0.0f, "%.2f")) {
+  ovis::Vector2 vector = *value;
+  if (ImGui::DragFloat2(label, vector.data, 1.0f, 0.0f, 0.0f, "%.2f")) {
     *value = vector;
     json_changed = true;
   }
@@ -36,8 +36,8 @@ bool InputVector3(const char* label, ovis::json* value, const ovis::json& schema
   SDL_assert(value != nullptr);
   bool json_changed = false;
 
-  ovis::vector3 vector = *value;
-  if (ImGui::DragFloat3(label, glm::value_ptr(vector), 1.0f, 0.0f, 0.0f, "%.2f")) {
+  ovis::Vector3 vector = *value;
+  if (ImGui::DragFloat3(label, vector.data, 1.0f, 0.0f, 0.0f, "%.2f")) {
     *value = vector;
     json_changed = true;
   }
@@ -50,8 +50,8 @@ bool InputVector4(const char* label, ovis::json* value, const ovis::json& schema
   SDL_assert(value != nullptr);
   bool json_changed = false;
 
-  ovis::vector4 vector = *value;
-  if (ImGui::DragFloat4(label, glm::value_ptr(vector), 1.0f, 0.0f, 0.0f, "%.2f")) {
+  ovis::Vector4 vector = *value;
+  if (ImGui::DragFloat4(label, vector.data, 1.0f, 0.0f, 0.0f, "%.2f")) {
     *value = vector;
     json_changed = true;
   }
@@ -64,8 +64,8 @@ bool InputColor(const char* label, ovis::json* value, const ovis::json& schema, 
   SDL_assert(value != nullptr);
   bool json_changed = false;
 
-  ovis::vector4 color = *value;
-  if (ImGui::ColorEdit4(label, glm::value_ptr(color))) {
+  ovis::Color color = *value;
+  if (ImGui::ColorEdit4(label, color.data)) {
     *value = color;
     json_changed = true;
   }

@@ -15,11 +15,18 @@ class Viewport {
   Viewport() = default;
   virtual ~Viewport() = default;
 
-  virtual glm::ivec2 GetSize() = 0;
+  virtual void GetDimensions(size_t* width, size_t* height) = 0;
   virtual RenderTargetConfiguration* GetDefaultRenderTargetConfiguration() = 0;
 
+  inline Vector2 GetDimensionsAsVector2() {
+    size_t width;
+    size_t height;
+    GetDimensions(&width, &height);
+    return {static_cast<float>(width), static_cast<float>(height)};
+  }
+
   inline float GetAspectRatio() {
-    const vector2 size = GetSize();
+    const Vector2 size = GetDimensionsAsVector2();
     return size.x / size.y;
   }
 
@@ -27,14 +34,21 @@ class Viewport {
 
   inline Scene* scene() const { return scene_; }
   inline void SetScene(Scene* scene) { scene_ = scene; }
-  inline void SetCamera(const Camera& camera, const matrix4& camera_transform) {
+  inline void SetCamera(const Camera& camera, const Matrix4& camera_transform) {
     render_context_.scene = scene_;
     render_context_.camera = camera;
     render_context_.inverse_view_matrix = camera_transform;
-    render_context_.view_matrix = glm::inverse(camera_transform);
+    render_context_.view_matrix = Invert(camera_transform);  // TODO: use faster invert method
     render_context_.projection_matrix = camera.CalculateProjectionMatrix();
-    render_context_.inverse_projection_matrix = glm::inverse(render_context_.projection_matrix);
+    render_context_.inverse_projection_matrix = Invert(render_context_.projection_matrix);
     render_context_.view_projection_matrix = render_context_.projection_matrix * render_context_.view_matrix;
+    
+    LogV("inverse_view_matrix: {}", render_context_.inverse_view_matrix);
+    LogV("view_matrix: {}", render_context_.view_matrix);
+    LogV("projection_matrix: {}", render_context_.projection_matrix);
+    LogV("inverse_projection_matrix: {}", render_context_.inverse_projection_matrix);
+    LogV("view_projection_matrix: {}", render_context_.view_projection_matrix);
+    LogV("camera.CalculateProjectionMatrix(): {}", camera.CalculateProjectionMatrix());
   }
 
   RenderPass* AddRenderPass(std::unique_ptr<RenderPass> render_pass);
@@ -59,26 +73,28 @@ class Viewport {
   virtual void DrawImGui() {}
   virtual void Render(bool render_gui = true);
 
-  inline vector2 DeviceCoordinatesToNormalizedDeviceCoordinates(vector2 device_coordinates) {
-    return (2.0f * device_coordinates / vector2(GetSize() - 1) - 1.0f) * vector2(1.0f, -1.0f);
+  inline Vector2 DeviceCoordinatesToNormalizedDeviceCoordinates(Vector2 device_coordinates) {
+    return (2.0f * device_coordinates / (GetDimensionsAsVector2() - Vector2::One()) -
+            Vector2::One() * Vector2{1.0f, -1.0f});
   }
 
-  inline vector2 NormalizedDeviceCoordinatesToDeviceCoordinates(vector2 normalized_device_coordinates) {
-    return ((0.5f * vector2(1.0f, -1.0f) * normalized_device_coordinates) + 0.5f) * vector2(GetSize() - 1);
+  inline Vector2 NormalizedDeviceCoordinatesToDeviceCoordinates(Vector2 normalized_device_coordinates) {
+    return ((0.5f * Vector2{1.0f, -1.0f} * normalized_device_coordinates) + Vector2{0.5f, 0.5f}) *
+           (GetDimensionsAsVector2() - Vector2::One());
   }
 
-  inline vector3 NormalizedDeviceCoordinatesToViewSpace(vector3 ndc) {
-    return render_context_.inverse_projection_matrix * vector4(ndc, 1.0f);
+  inline Vector3 NormalizedDeviceCoordinatesToViewSpace(Vector3 ndc) {
+    return TransformPosition(render_context_.inverse_projection_matrix, ndc);
   }
 
-  inline vector3 DeviceCoordinatesToViewSpace(const vector2& device_coordinates, float normalized_depth = -1.0f) {
-    return NormalizedDeviceCoordinatesToViewSpace(
-        vector3(DeviceCoordinatesToNormalizedDeviceCoordinates(device_coordinates), normalized_depth));
+  inline Vector3 DeviceCoordinatesToViewSpace(const Vector2& device_coordinates, float normalized_depth = -1.0f) {
+    const Vector2 ndc = DeviceCoordinatesToNormalizedDeviceCoordinates(device_coordinates);
+    return NormalizedDeviceCoordinatesToViewSpace(Vector3::FromVector2(ndc, normalized_depth));
   }
 
-  inline vector3 DeviceCoordinatesToWorldSpace(const vector2& device_coordinates, float normalized_depth = -1.0f) {
-    return render_context_.inverse_view_matrix *
-           vector4(DeviceCoordinatesToViewSpace(device_coordinates, normalized_depth), 1.0f);
+  inline Vector3 DeviceCoordinatesToWorldSpace(const Vector2& device_coordinates, float normalized_depth = -1.0f) {
+    return TransformPosition(render_context_.inverse_view_matrix,
+                             DeviceCoordinatesToViewSpace(device_coordinates, normalized_depth));
   }
 
  protected:

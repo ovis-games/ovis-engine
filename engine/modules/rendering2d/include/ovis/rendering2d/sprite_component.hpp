@@ -1,6 +1,7 @@
 #pragma once
 
-#include <ovis/math/basic_types.hpp>
+#include <ovis/math/vector.hpp>
+#include <ovis/math/color.hpp>
 
 #include <ovis/core/resource.hpp>
 #include <ovis/graphics/texture2d.hpp>
@@ -10,12 +11,12 @@ namespace ovis {
 
 class SpriteComponent : public SceneObjectComponent {
  public:
-  inline vector4 color() const { return color_; }
-  inline vector2 size() const { return size_; }
+  inline Color color() const { return color_; }
+  inline Vector2 size() const { return size_; }
   inline std::string texture_asset() const { return texture_asset_; }
 
-  inline void SetColor(const vector4& color) { color_ = color; }
-  inline void SetSize(const vector2& size) { size_ = size; }
+  inline void SetColor(const Color& color) { color_ = color; }
+  inline void SetSize(const Vector2& size) { size_ = size; }
   inline void SetTexture(const std::string& texture_asset) { texture_asset_ = texture_asset; }
 
   json Serialize() const override;
@@ -24,8 +25,8 @@ class SpriteComponent : public SceneObjectComponent {
 
  private:
   std::string texture_asset_;
-  vector2 size_;
-  vector4 color_ = {1.0, 1.0, 1.0, 1.0};
+  Vector2 size_;
+  Color color_ = {1.0, 1.0, 1.0, 1.0};
 
   static const json schema;
 };

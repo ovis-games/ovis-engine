@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ovis/math/transform.hpp>
+#include <ovis/math/constants.hpp>
 #include <ovis/core/json.hpp>
 
 namespace ovis {
@@ -30,16 +31,16 @@ class Camera {
   inline void SetFarClipPlane(float far_clip_plane) { far_clip_plane_ = far_clip_plane; }
   inline float far_clip_plane() const { return far_clip_plane_; }
 
-  void LookAt(const vector3& target, const vector3& up = {0.0f, 1.0f, 0.0f});
+  void LookAt(const Vector3& target, const Vector3& up = Vector3::PositiveY());
 
-  matrix4 CalculateProjectionMatrix() const;
+  Matrix4 CalculateProjectionMatrix() const;
 
-  vector3 ScreenSpaceToViewSpace(vector3 screen_space_position);
-  vector3 ViewSpaceToScreenSpace(vector3 view_space_position);
+  Vector3 ScreenSpaceToViewSpace(Vector3 screen_space_position);
+  Vector3 ViewSpaceToScreenSpace(Vector3 view_space_position);
 
  private:
   ProjectionType projection_type_ = ProjectionType::PERSPECTIVE;
-  float vertical_field_of_view_ = glm::radians(90.0f);
+  float vertical_field_of_view_ = 90.0f * DegreesToRadiansFactor<float>();
   float aspect_ratio_ = 1.0f;
   float near_clip_plane_ = 0.1f;
   float far_clip_plane_ = 1000.0f;

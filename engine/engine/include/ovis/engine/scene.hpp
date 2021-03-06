@@ -8,7 +8,7 @@
 
 #include <SDL2/SDL_assert.h>
 #include <ovis/engine/event.hpp>
-#include <ovis/math/basic_types.hpp>
+#include <ovis/math/vector.hpp>
 
 #include <ovis/core/down_cast.hpp>
 #include <ovis/core/json.hpp>

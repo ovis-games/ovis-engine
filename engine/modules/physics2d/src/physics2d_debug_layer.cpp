@@ -7,15 +7,15 @@ namespace ovis {
 
 namespace {
 
-vector3 ConvertVector(const b2Vec2& vector) {
+Vector3 ConvertVector(const b2Vec2& vector) {
   return {vector.x, vector.y, 0.0f};
 }
 
-color ConvertColor(const b2Color& color) {
+Color ConvertColor(const b2Color& color) {
   return {color.r, color.g, color.b, color.a};
 }
 
-color GetSolidColor(const b2Color& color) {
+Color GetSolidColor(const b2Color& color) {
   return {color.r * 0.5f, color.g * 0.5f, color.b * 0.5f, 0.5f};
 }
 
@@ -39,7 +39,7 @@ void Physics2DDebugLayer::Render(const RenderContext& render_context) {
 }
 
 void Physics2DDebugLayer::DrawPolygon(const b2Vec2* vertices, int32 vertex_count, const b2Color& color) {
-  std::vector<vector3> positions(vertex_count);
+  std::vector<Vector3> positions(vertex_count);
   for (int32 i = 0; i < vertex_count; ++i) {
     positions[i] = ConvertVector(vertices[i]);
   }
@@ -47,7 +47,7 @@ void Physics2DDebugLayer::DrawPolygon(const b2Vec2* vertices, int32 vertex_count
 }
 
 void Physics2DDebugLayer::DrawSolidPolygon(const b2Vec2* vertices, int32 vertex_count, const b2Color& color) {
-  std::vector<vector3> positions(vertex_count);
+  std::vector<Vector3> positions(vertex_count);
   for (int32 i = 0; i < vertex_count; ++i) {
     positions[i] = ConvertVector(vertices[i]);
   }
@@ -61,9 +61,9 @@ void Physics2DDebugLayer::DrawCircle(const b2Vec2& center, float radius, const b
 
 void Physics2DDebugLayer::DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2& axis,
                                           const b2Color& color) {
-  const ovis::color converted_color = ConvertColor(color);
+  const Color converted_color = ConvertColor(color);
 
-  vector3 converted_center = ConvertVector(center);
+  Vector3 converted_center = ConvertVector(center);
   DebugRenderPass::DrawDisc(converted_center, radius, GetSolidColor(color));
   DebugRenderPass::DrawCircle(converted_center, radius, converted_color);
   DebugRenderPass::DrawLine(converted_center, converted_center + radius * ConvertVector(axis), converted_color);
@@ -74,9 +74,9 @@ void Physics2DDebugLayer::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const 
 }
 
 void Physics2DDebugLayer::DrawTransform(const b2Transform& xf) {
-  const vector3 center = ConvertVector(xf.p);
-  DrawLine(center, center + transform_line_length_ * vector3(xf.q.c, xf.q.s, 0.0f), color(1.0f, 0.0f, 0.0f, 1.0f));
-  DrawLine(center, center + transform_line_length_ * vector3(-xf.q.s, xf.q.c, 0.0f), color(0.0f, 1.0f, 0.0f, 1.0f));
+  const Vector3 center = ConvertVector(xf.p);
+  DrawLine(center, center + transform_line_length_ * Vector3{xf.q.c, xf.q.s, 0.0f}, Color{1.0f, 0.0f, 0.0f, 1.0f});
+  DrawLine(center, center + transform_line_length_ * Vector3{-xf.q.s, xf.q.c, 0.0f}, Color{0.0f, 1.0f, 0.0f, 1.0f});
 }
 
 void Physics2DDebugLayer::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {

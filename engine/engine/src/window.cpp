@@ -68,10 +68,12 @@ RenderTargetConfiguration* Window::GetDefaultRenderTargetConfiguration() {
   return graphics_context_.default_render_target_configuration();
 }
 
-glm::ivec2 Window::GetSize() {
-  glm::ivec2 window_size;
-  SDL_GetWindowSize(sdl_window_, &window_size.x, &window_size.y);
-  return window_size;
+void Window::GetDimensions(size_t* width, size_t* height) {
+  int int_width;
+  int int_height;
+  SDL_GetWindowSize(sdl_window_, &int_width, &int_height);
+  *width = static_cast<size_t>(int_width);
+  *height = static_cast<size_t>(int_height);
 }
 
 void Window::Resize(int width, int height) {
@@ -95,21 +97,24 @@ bool Window::SendEvent(const SDL_Event& event) {
     }
 
     case SDL_MOUSEMOTION: {
-      MouseMoveEvent mouse_move_event(this, {event.motion.x, event.motion.y}, {event.motion.xrel, event.motion.yrel});
+      MouseMoveEvent mouse_move_event(this, {static_cast<float>(event.motion.x), static_cast<float>(event.motion.y)},
+                                      {static_cast<float>(event.motion.xrel), static_cast<float>(event.motion.yrel)});
       scene_.ProcessEvent(&mouse_move_event);
       return !mouse_move_event.is_propagating();
     }
 
     case SDL_MOUSEBUTTONDOWN: {
-      MouseButtonPressEvent mouse_button_event(this, {event.button.x, event.button.y},
+      MouseButtonPressEvent mouse_button_event(this,
+                                               {static_cast<float>(event.button.x), static_cast<float>(event.button.y)},
                                                static_cast<MouseButton>(event.button.button));
       scene_.ProcessEvent(&mouse_button_event);
       return !mouse_button_event.is_propagating();
     }
 
     case SDL_MOUSEBUTTONUP: {
-      MouseButtonReleaseEvent mouse_button_event(this, {event.button.x, event.button.y},
-                                                 static_cast<MouseButton>(event.button.button));
+      MouseButtonReleaseEvent mouse_button_event(
+          this, {static_cast<float>(event.button.x), static_cast<float>(event.button.y)},
+          static_cast<MouseButton>(event.button.button));
       scene_.ProcessEvent(&mouse_button_event);
       return !mouse_button_event.is_propagating();
     }

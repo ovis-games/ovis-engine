@@ -228,15 +228,15 @@ void SceneViewEditor::DrawViewport() {
   available_space.y -= 2;
 
   if (!scene_viewport_ ||
-      (glm::ivec2(vector2(available_space)) != scene_viewport_->GetSize() &&
-       !ImGui::IsMouseDown(ImGuiMouseButton_Left))) {  // TODO: this check should be optimizied. Dragging can mean a
+      (Vector2{available_space.x, available_space.y}) != scene_viewport_->GetDimensionsAsVector2() &&
+       !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {  // TODO: this check should be optimizied. Dragging can mean a
                                                        // lot of things not necessarily resizing the window
     LogI("Creating viewport");
     CreateSceneViewport(available_space);
   }
   scene_viewport_->Render(false);
 
-  const vector2 top_left = static_cast<vector2>(ImGui::GetWindowPos()) + static_cast<vector2>(ImGui::GetCursorPos());
+  const Vector2 top_left = static_cast<Vector2>(ImGui::GetWindowPos()) + static_cast<Vector2>(ImGui::GetCursorPos());
   ImGui::Image(scene_viewport_->color_texture()->texture(), available_space, ImVec2(0, 1), ImVec2(1, 0),
                ImVec4(1, 1, 1, 1), border_color);
   scene_window_focused_ = ImGui::IsWindowFocused();
@@ -247,10 +247,10 @@ void SceneViewEditor::DrawViewport() {
       MouseWheelEvent mouse_wheel_event(io.MouseWheelH, io.MouseWheel);
       ProcessViewportInputEvent(&mouse_wheel_event);
     }
-    const vector2 mouse_position = vector2(ImGui::GetMousePos()) - top_left;
+    const Vector2 mouse_position = Vector2(ImGui::GetMousePos()) - top_left;
     if (mouse_position != latest_mouse_position_) {
-      const vector2 relative_position =
-          glm::any(glm::isnan(latest_mouse_position_)) ? vector2(0.0f, 0.0f) : mouse_position - latest_mouse_position_;
+      const Vector2 relative_position =
+          std::isnan(latest_mouse_position_.x) || std::isnan(latest_mouse_position_.y) ? Vector2::Zero() : mouse_position - latest_mouse_position_;
       MouseMoveEvent mouse_move_event(scene_viewport_.get(), mouse_position, relative_position);
       ProcessViewportInputEvent(&mouse_move_event);
       latest_mouse_position_ = mouse_position;
@@ -266,7 +266,7 @@ void SceneViewEditor::DrawViewport() {
       }
     }
   } else {
-    latest_mouse_position_ = vector2(std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::quiet_NaN());
+    latest_mouse_position_ = Vector2::NotANumber();
   }
 
   if (ImGui::BeginDragDropTarget()) {
@@ -277,12 +277,12 @@ void SceneViewEditor::DrawViewport() {
         auto texture_description = LoadTexture2DDescription(GetApplicationAssetLibrary(), dropped_asset_id);
 
         auto* transform = object->AddComponent<TransformComponent>("Transform");
-        const vector2 mouse_position = ImGui::GetMousePos();
-        transform->SetTranslation(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
+        const Vector2 mouse_position = ImGui::GetMousePos();
+        transform->SetPosition(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
 
         auto* sprite = object->AddComponent<SpriteComponent>("Sprite");
         sprite->SetTexture(dropped_asset_id);
-        sprite->SetSize({texture_description->width, texture_description->height});
+        sprite->SetSize({static_cast<float>(texture_description->width), static_cast<float>(texture_description->height)});
 
         SubmitChangesToScene();
     }
@@ -519,24 +519,24 @@ SceneObject* SceneViewEditor::CreateObject(const std::string& base_name, bool in
   return game_scene()->CreateObject(object_name);
 }
 
-SceneObject* SceneViewEditor::GetObjectAtPosition(vector2 world_position) {
+SceneObject* SceneViewEditor::GetObjectAtPosition(Vector2 world_position) {
   SceneObject* object_at_position = nullptr;
   float z = std::numeric_limits<float>::infinity();
 
   for (SceneObject* object : game_scene()->GetObjects()) {
-    vector2 size;
+    Vector2 size;
     if (object->HasComponent("Sprite")) {
       size = object->GetComponent<SpriteComponent>("Sprite")->size();
     }
 
-    vector3 position(0.0f, 0.0f, 0.0f);
+    Vector3 position = Vector3::Zero();
     if (object->HasComponent("Transform")) {
       Transform* transform = object->GetComponent<TransformComponent>("Transform");
-      position = transform->translation();
-      size *= vector2(transform->scale());
+      position = transform->position();
+      size *= Vector2(transform->scale());
     }
 
-    const vector2 half_size = size * 0.5f;
+    const Vector2 half_size = size * 0.5f;
 
     LogI("Candidate: {}", object->name());
     LogI("World position: {}", world_position);

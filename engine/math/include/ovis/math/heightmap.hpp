@@ -3,16 +3,15 @@
 #include <cassert>
 #include <vector>
 
-#include <gm/vec3.hpp>
-
 #include <ovis/core/array_view.hpp>
+#include <ovis/math/vector.hpp>
 
 namespace ovis {
 
 template <typename T>
-inline std::vector<vector3> GenerateHeightmapVertices(array_view<T> values, std::size_t width, std::size_t depth) {
+inline std::vector<Vector3> GenerateHeightmapVertices(array_view<T> values, std::size_t width, std::size_t depth) {
   assert(values.size() == width * depth);
-  std::vector<vector3> vertices;
+  std::vector<Vector3> vertices;
   vertices.reserve(width * depth);
 
   const float x_offset = -0.5f * (width - 1);

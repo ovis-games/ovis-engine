@@ -27,7 +27,7 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
     if (transform) {
       float roll;
       transform->GetYawPitchRoll(nullptr, nullptr, &roll);
-      body->body_->SetTransform(b2Vec2(transform->translation().x, transform->translation().y), roll);
+      body->body_->SetTransform(b2Vec2(transform->position().x, transform->position().y), roll);
     }
   }
 
@@ -40,7 +40,7 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
 
     if (transform) {
       b2Vec2 position = body->body_->GetPosition();
-      transform->SetTranslation({position.x, position.y, transform->translation().z});
+      transform->SetPosition({position.x, position.y, transform->position().z});
 
       float yaw, pitch, roll;
       transform->GetYawPitchRoll(&yaw, &pitch, &roll);

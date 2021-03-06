@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ovis/math/basic_types.hpp>
+#include <ovis/math/vector.hpp>
 
 #include <ovis/core/log.hpp>
 #include <ovis/graphics/graphics_context.hpp>
@@ -147,12 +147,12 @@ struct Vertex<ATTRIBUTE, ATTRIBUTES...> : public Vertex<ATTRIBUTE>, public Verte
 
 template <>
 struct Vertex<VertexAttribute::POSITION2D> {
-  vector2 position;
+  Vector2 position;
 };
 
 template <>
 struct Vertex<VertexAttribute::POSITION3D> {
-  vector3 position;
+  Vector3 position;
 };
 
 inline std::vector<VertexAttributeDescription> GetVertexAttributesDescription(

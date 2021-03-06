@@ -17,8 +17,8 @@ void SpriteRenderer::CreateResources() {
   shader_program_ = LoadShaderProgram(GetEngineAssetLibrary(), "sprite", context());
 
   struct Vertex {
-    vector2 position;
-    vector2 texture_coordinates;
+    Vector2 position;
+    Vector2 texture_coordinates;
   };
 
   Vertex vertices[] = {{{-0.5f, 0.5f}, {0.0f, 0.0f}},
@@ -54,16 +54,16 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
   auto objects_with_sprites = render_context.scene->GetSceneObjectsWithComponent("Sprite");
 
   std::sort(objects_with_sprites.begin(), objects_with_sprites.end(), [](SceneObject* lhs, SceneObject* rhs) {
-    vector3 lhs_position;
+    Vector3 lhs_position;
     TransformComponent* lhs_transform = lhs->GetComponent<TransformComponent>("Transform");
     if (lhs_transform != nullptr) {
-      lhs_position = lhs_transform->translation();
+      lhs_position = lhs_transform->position();
     }
     
-    vector3 rhs_position;
+    Vector3 rhs_position;
     TransformComponent* rhs_transform = rhs->GetComponent<TransformComponent>("Transform");
     if (rhs_transform != nullptr) {
-      rhs_position = rhs_transform->translation();
+      rhs_position = rhs_transform->position();
     }
 
     // TODO: project into camera view axis instead of using the z coordinates
@@ -72,8 +72,8 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
 
   for (SceneObject* object : objects_with_sprites) {
     SpriteComponent* sprite = object->GetComponent<SpriteComponent>("Sprite");
-    const matrix4 size_matrix = glm::scale(vector3(sprite->size(), 1.0f));
-    const vector4 color = sprite->color();
+    const Matrix4 size_matrix = Matrix4::FromScaling(Vector3::FromVector2(sprite->size(), 1.0f));
+    const Color color = sprite->color();
     const std::string texture_asset = sprite->texture_asset();
 
     auto texture_iterator = textures_.find(texture_asset);
@@ -83,7 +83,7 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
     const std::unique_ptr<Texture2D>& texture = texture_iterator->second;
 
     TransformComponent* transform = object->GetComponent<TransformComponent>("Transform");
-    const matrix4 world_view_projection =
+    const Matrix4 world_view_projection =
         transform ? render_context.view_projection_matrix * transform->CalculateMatrix() * size_matrix
                   : render_context.view_projection_matrix * size_matrix;
 

@@ -1,6 +1,6 @@
 #include <memory>
 
-#include <ovis/math/basic_types.hpp>
+#include <ovis/math/vector.hpp>
 #include <imgui.h>
 
 #include <ovis/core/resource.hpp>

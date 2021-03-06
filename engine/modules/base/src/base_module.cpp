@@ -67,14 +67,14 @@ BaseModule::BaseModule() : Module("BaseModule") {
 
   sol::usertype<TransformComponent> transform_component_type = Lua::state.new_usertype<TransformComponent>("Transform");
   transform_component_type["position"] =
-      sol::property([](const TransformComponent* transform_component) { return transform_component->translation(); },
-                    [](TransformComponent* transform_component, vector3 position) {
-                      return transform_component->SetTranslation(position);
+      sol::property([](const TransformComponent* transform_component) { return transform_component->position(); },
+                    [](TransformComponent* transform_component, Vector3 position) {
+                      return transform_component->SetPosition(position);
                     });
   transform_component_type["transform_direction"] = &TransformComponent::TransformDirection;
   transform_component_type["rotate"] =
-      static_cast<void (TransformComponent::*)(vector3, float)>(&TransformComponent::Rotate);
-  transform_component_type["move"] = &TransformComponent::Translate;
+      static_cast<void (TransformComponent::*)(Vector3, float)>(&TransformComponent::Rotate);
+  transform_component_type["move"] = &TransformComponent::Move;
 }
 
 BaseModule::~BaseModule() {

@@ -10,7 +10,7 @@
 
 #include <ovis/core/log.hpp>
 #include <ovis/core/serialize.hpp>
-#include <ovis/math/basic_types.hpp>
+#include <ovis/math/vector.hpp>
 
 namespace ImGui {
 

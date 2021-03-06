@@ -9,9 +9,9 @@
 #include <ovis/graphics/gpu_time_profiler.hpp>
 #endif
 
-#include <ovis/engine/scene.hpp>
+#include <ovis/math/matrix.hpp>
 #include <ovis/engine/camera.hpp>
-#include <glm/mat4x4.hpp>
+#include <ovis/engine/scene.hpp>
 
 namespace ovis {
 
@@ -23,11 +23,11 @@ struct RenderContext {
   const Scene* scene;
 
   Camera camera;
-  matrix4 view_matrix;
-  matrix4 inverse_view_matrix;
-  matrix4 projection_matrix;
-  matrix4 inverse_projection_matrix;
-  matrix4 view_projection_matrix;
+  Matrix4 view_matrix; // TODO: Matrix3x4
+  Matrix4 inverse_view_matrix; // TODO: Matrix3x4
+  Matrix4 projection_matrix;
+  Matrix4 inverse_projection_matrix;
+  Matrix4 view_projection_matrix;
 };
 
 class RenderPass {

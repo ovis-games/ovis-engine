@@ -24,11 +24,11 @@ void SelectedObjectBoundingBox::Render(const RenderContext& render_context) {
 
     TransformComponent* transform = scene_object->GetComponent<TransformComponent>("Transform");
     if (transform != nullptr) {
-      const vector3 normalied_device_coordinates =
-          render_context.view_projection_matrix * vector4(transform->translation(), 1.0f);
-      const vector2 device_coordinates =
+      const Vector3 normalied_device_coordinates =
+          TransformPosition(render_context.view_projection_matrix, transform->position());
+      const Vector2 device_coordinates =
           viewport()->NormalizedDeviceCoordinatesToDeviceCoordinates(normalied_device_coordinates);
-      DrawDisc(vector3(device_coordinates, 0.0f), 20.0f, color(1.0f, 0.0f, 0.0f, 1.0f));
+      DrawDisc(Vector3{device_coordinates.x, device_coordinates.y, 0.0f}, 20.0f, Color::Red());
       LogV("Drawing disc at {}", device_coordinates);
     }
 

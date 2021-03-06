@@ -1,45 +1,45 @@
 #pragma once
 
-#include <ovis/math/basic_types.hpp>
+#include <ovis/math/quaternion.hpp>
+#include <ovis/math/vector.hpp>
+#include <ovis/math/matrix.hpp>
 
 namespace ovis {
 
 class Transform {
  public:
-  inline const vector3& translation() const { return translation_; }
-  inline void SetTranslation(const vector3& new_translation) { translation_ = new_translation; }
-  inline void Translate(const vector3& offset) { translation_ += offset; }
+  inline const Vector3& position() const { return position_; }
+  inline void SetPosition(const Vector3& new_position) { position_ = new_position; }
+  inline void Move(const Vector3& offset) { position_ += offset; }
 
-  inline vector3 scale() const { return scale_; }
-  inline void SetScale(vector3 new_scale) { scale_ = new_scale; }
+  inline Vector3 scale() const { return scale_; }
+  inline void SetScale(Vector3 new_scale) { scale_ = new_scale; }
   inline void SetScale(float new_uniform_scale) { scale_ = {new_uniform_scale, new_uniform_scale, new_uniform_scale}; }
-  inline void Scale(vector3 scale) { scale_ *= scale; }
+  inline void Scale(Vector3 scale) { scale_ *= scale; }
   inline void Scale(float uniform_scale) { scale_ *= uniform_scale; }
 
-  inline glm::quat rotaton() const { return rotation_; }
-  inline void SetRotation(glm::quat new_rotation) { rotation_ = new_rotation; }
-  inline void Rotate(glm::quat rotation_offset) { rotation_ = rotation_offset * rotation_; }
-  inline void Rotate(vector3 axis, float angle_in_radians) { Rotate(glm::angleAxis(angle_in_radians, axis)); }
+  inline Quaternion rotaton() const { return rotation_; }
+  inline void SetRotation(Quaternion new_rotation) { rotation_ = new_rotation; }
+  inline void Rotate(Quaternion rotation_offset) { rotation_ = rotation_offset * rotation_; }
+  inline void Rotate(Vector3 axis, float angle_in_radians) { Rotate(Quaternion::FromAxisAndAngle(axis, angle_in_radians)); }
   inline void SetYawPitchRoll(float yaw, float pitch, float roll) {
-    rotation_ = glm::angleAxis(yaw, vector3{0.0f, 1.0f, 0.0f}) * glm::angleAxis(pitch, vector3{-1.0f, 0.0f, 0.0f}) *
-                glm::angleAxis(roll, vector3{0.0f, 0.0f, 1.0f});
+    rotation_ = Quaternion::FromEulerAngles(yaw, pitch, roll);
   }
   inline void GetYawPitchRoll(float* yaw, float* pitch, float* roll) const {
-    const vector3 euler = glm::eulerAngles(rotation_);
-    if (yaw != nullptr) *yaw = euler.y;
-    if (pitch != nullptr) *pitch = euler.x;
-    if (roll != nullptr) *roll = euler.z;
+    if (yaw) *yaw = ExtractYaw(rotation_);
+    if (pitch) *pitch = ExtractPitch(rotation_);
+    if (roll) *roll = ExtractRoll(rotation_);
   }
 
-  vector3 TransformDirection(vector3 direction) const { return rotation_ * direction; }
+  Vector3 TransformDirection(Vector3 direction) const { return rotation_ * direction; }
 
-  matrix4 CalculateMatrix() const;
-  matrix4 CalculateInverseMatrix() const;
+  Matrix4 CalculateMatrix() const;
+  Matrix4 CalculateInverseMatrix() const;
 
  private:
-  vector3 translation_ = {0.0, 0.0, 0.0};
-  vector3 scale_ = {1.0, 1.0, 1.0};
-  glm::quat rotation_;
+  Vector3 position_ = Vector3::Zero();
+  Vector3 scale_ = Vector3::One();
+  Quaternion rotation_ = Quaternion::Identity();
 };
 
 void to_json(json& data, const Transform& transform);

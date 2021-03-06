@@ -77,12 +77,12 @@ void DebugRenderPass::BeginDraw(const RenderContext& render_context) {
   resources_->line_vertices.clear();
   resources_->triangle_vertices.clear();
 
-  matrix4 view_projection;
+  Matrix4 view_projection;
   if (draw_space_ == DrawSpace::WORLD) {
     view_projection = render_context.view_projection_matrix;
   } else {
-    const vector2 viewport_size = viewport()->GetSize();
-    view_projection = glm::orthoLH(0.0f, viewport_size.x, viewport_size.y, 0.0f, -1.0f, 1.0f);
+    const Vector2 viewport_size = viewport()->GetDimensionsAsVector2();
+    view_projection = Matrix4::FromOrthographicProjection(0.0f, viewport_size.x, viewport_size.y, 0.0f, -1.0f, 1.0f);
   }
 
   resources_->point_shader->SetUniform("ViewProjection", view_projection);
@@ -99,8 +99,8 @@ void DebugRenderPass::EndDraw() {
   is_drawing_ = false;
 }
 
-void DebugRenderPass::DrawPoint(const vector3& v0, float size, const color& color) {
-  PointVertex vertex{v0, size, color * 255.0f};
+void DebugRenderPass::DrawPoint(const Vector3& v0, float size, const Color& color) {
+  PointVertex vertex{{v0.x, v0.y, v0.z}, size, ConvertToRGBA8(color)};
   DrawPoints(&vertex, 1);
 }
 
@@ -119,13 +119,13 @@ void DebugRenderPass::DrawPoints(const PointVertex* vertices, size_t num_vertice
   }
 }
 
-void DebugRenderPass::DrawLine(const vector3& v0, const vector3& v1, const color& color) {
-  const glm::tvec4<std::uint8_t> converted_color = color * 255.0f;
-  Vertex vertices[2] = {{v0, converted_color}, {v1, converted_color}};
+void DebugRenderPass::DrawLine(const Vector3& v0, const Vector3& v1, const Color& color) {
+  uint32_t converted_color = ConvertToRGBA8(color);
+  Vertex vertices[2] = {{{v0.x, v0.y, v0.z}, converted_color}, {{v1.x, v1.y, v1.z}, converted_color}};
   DrawLines(vertices, 2);
 }
 
-void DebugRenderPass::DrawLoop(const vector3* positions, size_t num_positions, const color& color) {
+void DebugRenderPass::DrawLoop(const Vector3* positions, size_t num_positions, const Color& color) {
   SDL_assert(num_positions > 2);
 
   for (size_t i = 0; i < num_positions - 1; ++i) {
@@ -134,16 +134,16 @@ void DebugRenderPass::DrawLoop(const vector3* positions, size_t num_positions, c
   DrawLine(positions[num_positions - 1], positions[0], color);
 }
 
-void DebugRenderPass::DrawCircle(const vector3& center, float radius, const color& color, size_t num_segments,
-                                 const vector3& support_vector0, const vector3& support_vector1) {
+void DebugRenderPass::DrawCircle(const Vector3& center, float radius, const Color& color, size_t num_segments,
+                                 const Vector3& support_vector0, const Vector3& support_vector1) {
   SDL_assert(num_segments > 2);
 
-  const vector3 base_position = center + radius * support_vector1;
-  vector3 previous_position = base_position;
+  const Vector3 base_position = center + radius * support_vector1;
+  Vector3 previous_position = base_position;
   for (int i = 1; i < num_segments; ++i) {
     const float angle = i * 2.0f * glm::pi<float>() / num_segments;
 
-    const vector3 new_position =
+    const Vector3 new_position =
         center + radius * (std::sin(angle) * support_vector0 + std::cos(angle) * support_vector1);
     DrawLine(previous_position, new_position, color);
     previous_position = new_position;
@@ -167,22 +167,24 @@ void DebugRenderPass::DrawLines(const Vertex* vertices, size_t num_vertices) {
   }
 }
 
-void DebugRenderPass::DrawTriangle(const vector3& v0, const vector3& v1, const vector3& v2, const color& color) {
-  const glm::tvec4<std::uint8_t> converted_color = color * 255.0f;
-  Vertex vertices[3] = {{v0, converted_color}, {v1, converted_color}, {v2, converted_color}};
+void DebugRenderPass::DrawTriangle(const Vector3& v0, const Vector3& v1, const Vector3& v2, const Color& color) {
+  uint32_t converted_color = ConvertToRGBA8(color);
+  Vertex vertices[3] = {{{v0.x, v0.y, v0.z}, converted_color},
+                        {{v1.x, v1.y, v1.z}, converted_color},
+                        {{v2.x, v2.y, v2.z}, converted_color}};
   DrawTriangles(vertices, 3);
 }
 
-void DebugRenderPass::DrawDisc(const vector3& center, float radius, const color& color, size_t num_segments,
-                               const vector3& support_vector0, const vector3& support_vector1) {
+void DebugRenderPass::DrawDisc(const Vector3& center, float radius, const Color& color, size_t num_segments,
+                               const Vector3& support_vector0, const Vector3& support_vector1) {
   SDL_assert(num_segments > 2);
 
-  const vector3 base_position = center + radius * support_vector1;
-  vector3 previous_position = base_position;
+  const Vector3 base_position = center + radius * support_vector1;
+  Vector3 previous_position = base_position;
   for (int i = 1; i < num_segments; ++i) {
     const float angle = i * 2.0f * glm::pi<float>() / num_segments;
 
-    const vector3 new_position =
+    const Vector3 new_position =
         center + radius * (std::sin(angle) * support_vector0 + std::cos(angle) * support_vector1);
     DrawTriangle(previous_position, new_position, center, color);
     previous_position = new_position;
@@ -190,7 +192,7 @@ void DebugRenderPass::DrawDisc(const vector3& center, float radius, const color&
   DrawTriangle(previous_position, base_position, center, color);
 }
 
-void DebugRenderPass::DrawConvexPolygon(const vector3* positions, size_t num_positions, const color& color) {
+void DebugRenderPass::DrawConvexPolygon(const Vector3* positions, size_t num_positions, const Color& color) {
   SDL_assert(num_positions > 2);
 
   for (size_t i = 0; i < num_positions - 1; ++i) {

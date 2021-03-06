@@ -42,7 +42,7 @@ class SceneViewEditor : public AssetEditor {
   void CreateSceneViewport(ImVec2 size);
 
   SceneObject* CreateObject(const std::string& base_name, bool initiate_rename = false);
-  SceneObject* GetObjectAtPosition(vector2 world_position);
+  SceneObject* GetObjectAtPosition(Vector2 world_position);
   json::json_pointer GetComponentPath(const std::string& object_name, const std::string& component_id) {
     return json::json_pointer("/objects/" + object_name + "/components/" + component_id);
   }
@@ -50,8 +50,7 @@ class SceneViewEditor : public AssetEditor {
   std::unique_ptr<RenderTargetViewport> scene_viewport_;
   bool scene_window_focused_ = false;
 
-  vector2 latest_mouse_position_ =
-      vector2(std::numeric_limits<float>::quiet_NaN(), std::numeric_limits<float>::quiet_NaN());
+  Vector2 latest_mouse_position_ = Vector2::NotANumber();
 
   enum class RenamingState { IS_NOT_RENAMING, STARTED_RENAMING, IS_RENAMING };
   RenamingState renaming_state_ = RenamingState::IS_NOT_RENAMING;

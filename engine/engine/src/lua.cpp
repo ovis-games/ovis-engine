@@ -25,33 +25,33 @@ void Lua::SetupEnvironment() {
   state["OvisErrorHandler"] = [](const std::string& message) { on_error.Invoke(message); };
   sol::protected_function::set_default_handler(state["OvisErrorHandler"]);
 
-  sol::usertype<vector2> vector2_type =
-      state.new_usertype<vector2>("Vector2", sol::constructors<vector2(), vector2(float, float)>());
-  vector2_type["x"] = &vector2::x;
-  vector2_type["y"] = &vector2::y;
-  vector2_type["__tostring"] = [](const vector3& vector) { return fmt::format("{}", vector); };
+  // sol::usertype<Vector2> Vector2_type =
+  //     state.new_usertype<Vector2>("Vector2", sol::constructors<Vector2(), Vector2(float, float)>());
+  // Vector2_type["x"] = &Vector2::x;
+  // Vector2_type["y"] = &Vector2::y;
+  // Vector2_type["__tostring"] = [](const Vector3& vector) { return fmt::format("{}", vector); };
 
-  auto vector3_factories = sol::factories([](sol::table table) { return vector3(table[1], table[2], table[3]); });
-  sol::usertype<vector3> vector3_type = state.new_usertype<vector3>(
-      "Vector3", sol::constructors<vector3(), vector3(float, float, float)>(), sol::call_constructor,
-      sol::constructors<vector3(), vector3(float, float, float)>(), sol::meta_function::construct, vector3_factories);
-  vector3_type["x"] = &vector3::x;
-  vector3_type["y"] = &vector3::y;
-  vector3_type["z"] = &vector3::z;
-  vector3_type["__tostring"] = [](const vector3& vector) { return fmt::format("{}", vector); };
+  // auto Vector3_factories = sol::factories([](sol::table table) { return Vector3(table[1], table[2], table[3]); });
+  // sol::usertype<Vector3> Vector3_type = state.new_usertype<Vector3>(
+  //     "Vector3", sol::constructors<Vector3(), Vector3(float, float, float)>(), sol::call_constructor,
+  //     sol::constructors<Vector3(), Vector3(float, float, float)>(), sol::meta_function::construct, Vector3_factories);
+  // Vector3_type["x"] = &Vector3::x;
+  // Vector3_type["y"] = &Vector3::y;
+  // Vector3_type["z"] = &Vector3::z;
+  // Vector3_type["__tostring"] = [](const Vector3& vector) { return fmt::format("{}", vector); };
 
-  vector3_type[sol::meta_function::multiplication] = [](const vector3& vector, float scalar) {
-    return vector * scalar;
-  };
-  vector3_type[sol::meta_function::unary_minus] = [](const vector3& vector) { return -vector; };
+  // Vector3_type[sol::meta_function::multiplication] = [](const Vector3& vector, float scalar) {
+  //   return vector * scalar;
+  // };
+  // Vector3_type[sol::meta_function::unary_minus] = [](const Vector3& vector) { return -vector; };
 
-  sol::usertype<vector4> vector4_type =
-      state.new_usertype<vector4>("Vector4", sol::constructors<vector4(), vector4(float, float, float, float)>());
-  vector4_type["x"] = &vector4::x;
-  vector4_type["y"] = &vector4::y;
-  vector4_type["z"] = &vector4::z;
-  vector4_type["w"] = &vector4::w;
-  vector4_type["__tostring"] = [](const vector4& vector) { return fmt::format("{}", vector); };
+  // sol::usertype<vector4> vector4_type =
+  //     state.new_usertype<vector4>("Vector4", sol::constructors<vector4(), vector4(float, float, float, float)>());
+  // vector4_type["x"] = &vector4::x;
+  // vector4_type["y"] = &vector4::y;
+  // vector4_type["z"] = &vector4::z;
+  // vector4_type["w"] = &vector4::w;
+  // vector4_type["__tostring"] = [](const vector4& vector) { return fmt::format("{}", vector); };
 
   // sol::usertype<Scene> scene_type = state.new_usertype<Scene>("Scene");
   // scene_type["CreateObject"] = static_cast<SceneObject* (Scene::*)(const std::string&)>(&Scene::CreateObject);

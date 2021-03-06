@@ -1,5 +1,7 @@
 #include <ovis/math/marching_cubes.hpp>
 
+#if 0
+
 namespace ovis {
 namespace detail {
 const std::int16_t EDGE_TABLE[256] = {
@@ -276,9 +278,11 @@ const std::int8_t TRIANGLE_TABLE[256][16] = {{-1, -1, -1, -1, -1, -1, -1, -1, -1
                                              {0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
                                              {0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
                                              {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}};
-const vector3 CELL_POSITIONS[8] = {
+const Vector3 CELL_POSITIONS[8] = {
     {-0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, -0.5f},
     {-0.5f, 0.5f, 0.5f},  {0.5f, 0.5f, 0.5f},  {0.5f, 0.5f, -0.5f},  {-0.5f, 0.5f, -0.5f},
 };
 }  // namespace detail
 }  // namespace ovis
+
+#endif

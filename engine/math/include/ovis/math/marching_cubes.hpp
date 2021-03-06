@@ -1,14 +1,14 @@
 #pragma once
 
+#if 0
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
 
-#include <glm/common.hpp>
-#include <glm/vec3.hpp>
-
 #include <ovis/math/triangle.hpp>
+#include <ovis/math/vector.hpp>
 
 namespace ovis {
 
@@ -16,7 +16,7 @@ namespace detail {
 
 extern const std::int16_t EDGE_TABLE[256];
 extern const std::int8_t TRIANGLE_TABLE[256][16];
-extern const vector3 CELL_POSITIONS[8];
+extern const Vector3 CELL_POSITIONS[8];
 
 //    4-----5
 //  / |   / |
@@ -25,7 +25,7 @@ extern const vector3 CELL_POSITIONS[8];
 // | /   | /
 // 3-----2
 template <typename T>
-inline void PolygonizeCell(T c0, T c1, T c2, T c3, T c4, T c5, T c6, T c7, T isolevel, const vector3& offset,
+inline void PolygonizeCell(T c0, T c1, T c2, T c3, T c4, T c5, T c6, T c7, T isolevel, const Vector3& offset,
                            std::vector<Triangle>* positions) {
   assert(positions != nullptr);
 
@@ -43,12 +43,12 @@ inline void PolygonizeCell(T c0, T c1, T c2, T c3, T c4, T c5, T c6, T c7, T iso
     return;
   }
 
-  const auto interpolate = [isolevel](const vector3& p1, const vector3& p2, T v1, T v2) {
+  const auto interpolate = [isolevel](const Vector3& p1, const Vector3& p2, T v1, T v2) {
     const float t = static_cast<float>(isolevel - v1) / static_cast<float>(v2 - v1);
     return glm::mix(p1, p2, t);
   };
 
-  std::array<vector3, 12> vertices;
+  std::array<Vector3, 12> vertices;
   if (EDGE_TABLE[cube_index] & 1) vertices[0] = interpolate(CELL_POSITIONS[0], CELL_POSITIONS[1], c0, c1);
   if (EDGE_TABLE[cube_index] & 2) vertices[1] = interpolate(CELL_POSITIONS[1], CELL_POSITIONS[2], c1, c2);
   if (EDGE_TABLE[cube_index] & 4) vertices[2] = interpolate(CELL_POSITIONS[2], CELL_POSITIONS[3], c2, c3);
@@ -81,7 +81,7 @@ inline std::vector<Triangle> MarchingCubes(const std::vector<T>& grid, const std
   const std::size_t height_minus_one = height - 1;
   const std::size_t depth_minus_one = depth - 1;
   const std::size_t width_times_height = width * height;
-  const vector3 base_offset = -vector3{0.5f * width_minus_one, 0.5f * height_minus_one, 0.5f * depth_minus_one};
+  const Vector3 base_offset = -Vector3{0.5f * width_minus_one, 0.5f * height_minus_one, 0.5f * depth_minus_one};
 
   for (std::size_t z = 0; z < depth_minus_one; ++z) {
     for (std::size_t y = 0; y < height_minus_one; ++y) {
@@ -92,7 +92,7 @@ inline std::vector<Triangle> MarchingCubes(const std::vector<T>& grid, const std
         const std::size_t y1 = y + 1;
         const std::size_t z0 = z;
         const std::size_t z1 = z + 1;
-        const vector3 offset = {x, y, z};
+        const Vector3 offset = {x, y, z};
 
         //    4-----5
         //  / |   / |
@@ -113,3 +113,5 @@ inline std::vector<Triangle> MarchingCubes(const std::vector<T>& grid, const std
 }
 
 }  // namespace ovis
+
+#endif

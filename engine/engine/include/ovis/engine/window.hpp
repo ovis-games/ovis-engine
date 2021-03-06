@@ -53,7 +53,7 @@ class Window : public Viewport {
 
   RenderTargetConfiguration* GetDefaultRenderTargetConfiguration() override;
 
-  glm::ivec2 GetSize() override;
+  void GetDimensions(size_t* width, size_t* height) override;
   void Resize(int width, int height);
 
   virtual bool SendEvent(const SDL_Event& event);
