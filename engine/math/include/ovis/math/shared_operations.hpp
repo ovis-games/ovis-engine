@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <type_traits>
 
 #include <ovis/math/color_type.hpp>
@@ -31,6 +32,39 @@ inline bool operator!=(const T& lhs, const T& rhs) {
     }
   }
   return false;
+}
+
+template <typename T, std::enable_if_t<is_math_type<T>::value, bool> = true>
+inline T min(const T& value1, const T& value2) {
+  using namespace std;
+
+  T result;
+  for (int i = 0; i < T::ELEMENT_COUNT; ++i) {
+    result[i] = min(value1, value2);
+  }
+  return result;
+}
+
+template <typename T, std::enable_if_t<is_math_type<T>::value, bool> = true>
+inline T max(const T& value1, const T& value2) {
+  using namespace std;
+
+  T result;
+  for (int i = 0; i < T::ELEMENT_COUNT; ++i) {
+    result[i] = max(value1, value2);
+  }
+  return result;
+}
+
+template <typename T, std::enable_if_t<is_math_type<T>::value, bool> = true>
+inline T clamp(const T& value, const T& lo, const T& hi) {
+  using namespace std;
+
+  T result;
+  for (int i = 0; i < T::ELEMENT_COUNT; ++i) {
+    result[i] = clamp(value, lo, hi);
+  }
+  return result;
 }
 
 template <typename T, std::enable_if_t<is_math_type<T>::value, bool> = true>
