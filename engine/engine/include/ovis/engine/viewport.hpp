@@ -75,7 +75,7 @@ class Viewport {
 
   inline Vector2 DeviceCoordinatesToNormalizedDeviceCoordinates(Vector2 device_coordinates) {
     return (2.0f * device_coordinates / (GetDimensionsAsVector2() - Vector2::One()) -
-            Vector2::One() * Vector2{1.0f, -1.0f});
+            Vector2::One()) * Vector2{1.0f, -1.0f};
   }
 
   inline Vector2 NormalizedDeviceCoordinatesToDeviceCoordinates(Vector2 normalized_device_coordinates) {
