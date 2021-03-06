@@ -137,12 +137,14 @@ struct fmt::formatter<ovis::Matrix4> {
 
   template <typename FormatContext>
   auto format(const ovis::Matrix4& matrix, FormatContext& ctx) {
-    return format_to(ctx.out(),
-                     presentation == 'f' ? "\n({:.5f}, {:.5f}, {:.5f}, {:.5f})\n({:.5f}, {:.5f}, {:.5f}, {:.5f})\n({:.5f}, {:.5f}, {:.5f}, {:.5f})\n({:.5f}, {:.5f}, {:.5f}, {:.5f})" : "\n({:.1e}, {:.1e}, {:.1e}, {:.1e})\n({:.1e}, {:.1e}, {:.1e}, {:.1e})\n({:.1e}, {:.1e}, {:.1e}, {:.1e})\n({:.1e}, {:.1e}, {:.1e}, {:.1e})",
-                     matrix[0][0], matrix[0][1], matrix[0][2], matrix[0][3],
-                     matrix[1][0], matrix[1][1], matrix[1][2], matrix[1][3],
-                     matrix[2][0], matrix[2][1], matrix[2][2], matrix[2][3],
-                     matrix[3][0], matrix[3][1], matrix[3][2], matrix[3][3]);
+    return format_to(
+        ctx.out(),
+        presentation == 'f' ? "\n({:.5f}, {:.5f}, {:.5f}, {:.5f})\n({:.5f}, {:.5f}, {:.5f}, {:.5f})\n({:.5f}, {:.5f}, "
+                              "{:.5f}, {:.5f})\n({:.5f}, {:.5f}, {:.5f}, {:.5f})"
+                            : "\n({:.1e}, {:.1e}, {:.1e}, {:.1e})\n({:.1e}, {:.1e}, {:.1e}, {:.1e})\n({:.1e}, {:.1e}, "
+                              "{:.1e}, {:.1e})\n({:.1e}, {:.1e}, {:.1e}, {:.1e})",
+        matrix[0][0], matrix[0][1], matrix[0][2], matrix[0][3], matrix[1][0], matrix[1][1], matrix[1][2], matrix[1][3],
+        matrix[2][0], matrix[2][1], matrix[2][2], matrix[2][3], matrix[3][0], matrix[3][1], matrix[3][2], matrix[3][3]);
   }
 };
 

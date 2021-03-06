@@ -72,9 +72,7 @@ namespace nlohmann {
 
 template <>
 struct adl_serializer<ovis::Color> {
-  static void to_json(json& json, const ovis::Color& color) {
-    json = {color[0], color[1], color[2], color[3]};
-  }
+  static void to_json(json& json, const ovis::Color& color) { json = {color[0], color[1], color[2], color[3]}; }
 
   static void from_json(const json& json, ovis::Color& color) {
     for (int i = 0; i < 4; ++i) {

@@ -67,7 +67,9 @@ union alignas(sizeof(float) * 4) Vector3 {
   inline static constexpr Vector3 Infinity() {
     return {ovis::Infinity<float>(), ovis::Infinity<float>(), ovis::Infinity<float>()};
   }
-  inline static constexpr Vector3 NotANumber() { return {ovis::NotANumber<float>(), ovis::NotANumber<float>(), ovis::NotANumber<float>()}; }
+  inline static constexpr Vector3 NotANumber() {
+    return {ovis::NotANumber<float>(), ovis::NotANumber<float>(), ovis::NotANumber<float>()};
+  }
   inline static constexpr Vector3 PositiveX() { return {1.0f, 0.0f, 0.0f}; }
   inline static constexpr Vector3 NegativeX() { return {-1.0f, 0.0f, 0.0f}; }
   inline static constexpr Vector3 PositiveY() { return {0.0f, 1.0f, 0.0f}; }
@@ -109,7 +111,9 @@ union alignas(sizeof(float) * 4) Vector4 {
   inline static constexpr Vector4 Infinity() {
     return {ovis::Infinity<float>(), ovis::Infinity<float>(), ovis::Infinity<float>(), ovis::Infinity<float>()};
   }
-  inline static constexpr Vector4 NotANumber() { return {ovis::NotANumber<float>(), ovis::NotANumber<float>(), ovis::NotANumber<float>(), ovis::NotANumber<float>()}; }
+  inline static constexpr Vector4 NotANumber() {
+    return {ovis::NotANumber<float>(), ovis::NotANumber<float>(), ovis::NotANumber<float>(), ovis::NotANumber<float>()};
+  }
   inline static constexpr Vector4 PositiveX() { return {1.0f, 0.0f, 0.0f, 0.0f}; }
   inline static constexpr Vector4 NegativeX() { return {-1.0f, 0.0f, 0.0f, 0.0f}; }
   inline static constexpr Vector4 PositiveY() { return {0.0f, 1.0f, 0.0f, 0.0f}; }

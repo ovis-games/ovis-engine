@@ -67,7 +67,9 @@ namespace nlohmann {
 
 template <>
 struct adl_serializer<ovis::Quaternion> {
-  static void to_json(json& json, const ovis::Quaternion& quaternion) { json = {quaternion[0], quaternion[1], quaternion[2], quaternion[3]}; }
+  static void to_json(json& json, const ovis::Quaternion& quaternion) {
+    json = {quaternion[0], quaternion[1], quaternion[2], quaternion[3]};
+  }
 
   static void from_json(const json& json, ovis::Quaternion& quaternion) {
     for (int i = 0; i < 4; ++i) {

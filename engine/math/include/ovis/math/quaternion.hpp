@@ -8,14 +8,14 @@
 
 #include <ovis/core/json.hpp>
 #include <ovis/math/constants.hpp>
-#include <ovis/math/shared_operations.hpp>
 #include <ovis/math/quaternion_type.hpp>
+#include <ovis/math/shared_operations.hpp>
 #include <ovis/math/vector.hpp>
 
 namespace ovis {
 
 inline constexpr Quaternion Quaternion::Identity() {
-  return { 1.0f, 0.0f, 0.0f, 0.0f };
+  return {1.0f, 0.0f, 0.0f, 0.0f};
 }
 
 inline constexpr Quaternion Quaternion::FromAxisAndAngle(const Vector3& axis, float angle) {
@@ -24,10 +24,10 @@ inline constexpr Quaternion Quaternion::FromAxisAndAngle(const Vector3& axis, fl
   const float cos_half_angle = std::cos(half_angle);
 
   return {
-    cos_half_angle,
-    sin_half_angle * axis.x,
-    sin_half_angle * axis.y,
-    sin_half_angle * axis.z,
+      cos_half_angle,
+      sin_half_angle * axis.x,
+      sin_half_angle * axis.y,
+      sin_half_angle * axis.z,
   };
 }
 

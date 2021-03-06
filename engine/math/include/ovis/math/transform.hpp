@@ -1,8 +1,8 @@
 #pragma once
 
+#include <ovis/math/matrix.hpp>
 #include <ovis/math/quaternion.hpp>
 #include <ovis/math/vector.hpp>
-#include <ovis/math/matrix.hpp>
 
 namespace ovis {
 
@@ -21,7 +21,9 @@ class Transform {
   inline Quaternion rotaton() const { return rotation_; }
   inline void SetRotation(Quaternion new_rotation) { rotation_ = new_rotation; }
   inline void Rotate(Quaternion rotation_offset) { rotation_ = rotation_offset * rotation_; }
-  inline void Rotate(Vector3 axis, float angle_in_radians) { Rotate(Quaternion::FromAxisAndAngle(axis, angle_in_radians)); }
+  inline void Rotate(Vector3 axis, float angle_in_radians) {
+    Rotate(Quaternion::FromAxisAndAngle(axis, angle_in_radians));
+  }
   inline void SetYawPitchRoll(float yaw, float pitch, float roll) {
     rotation_ = Quaternion::FromEulerAngles(yaw, pitch, roll);
   }
