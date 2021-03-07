@@ -34,37 +34,50 @@ inline bool operator!=(const T& lhs, const T& rhs) {
   return false;
 }
 
+template <typename T, std::enable_if_t<!is_math_type<T>::value, bool> = true>
+inline T min(const T& value1, const T& value2) {
+  return std::min(value1, value2);
+}
+
 template <typename T, std::enable_if_t<is_math_type<T>::value, bool> = true>
 inline T min(const T& value1, const T& value2) {
-  using namespace std;
-
   T result;
   for (int i = 0; i < T::ELEMENT_COUNT; ++i) {
-    result[i] = min(value1, value2);
+    result[i] = min(value1[i], value2[i]);
   }
   return result;
 }
 
 template <typename T, std::enable_if_t<is_math_type<T>::value, bool> = true>
 inline T max(const T& value1, const T& value2) {
-  using namespace std;
+  using std::max;
 
   T result;
   for (int i = 0; i < T::ELEMENT_COUNT; ++i) {
-    result[i] = max(value1, value2);
+    result[i] = max(value1[i], value2[i]);
   }
   return result;
 }
 
+template <typename T, std::enable_if_t<!is_math_type<T>::value, bool> = true>
+inline T max(const T& value1, const T& value2) {
+  return std::max(value1, value2);
+}
+
 template <typename T, std::enable_if_t<is_math_type<T>::value, bool> = true>
 inline T clamp(const T& value, const T& lo, const T& hi) {
-  using namespace std;
+  using std::clamp;
 
   T result;
   for (int i = 0; i < T::ELEMENT_COUNT; ++i) {
-    result[i] = clamp(value, lo, hi);
+    result[i] = clamp(value[i], lo[i], hi[i]);
   }
   return result;
+}
+
+template <typename T, std::enable_if_t<!is_math_type<T>::value, bool> = true>
+inline T clamp(const T& value, const T& lo, const T& hi) {
+  return std::clamp(value, lo, hi);
 }
 
 template <typename T, std::enable_if_t<is_math_type<T>::value, bool> = true>
