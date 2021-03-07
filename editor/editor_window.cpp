@@ -1,5 +1,6 @@
 #include "editor_window.hpp"
 
+#include "clipboard.hpp"
 #include "windows/asset_importers/asset_importer.hpp"
 #include "windows/asset_viewer_window.hpp"
 #include "windows/dockspace_window.hpp"
@@ -17,9 +18,6 @@
 #include <ovis/engine/scene.hpp>
 #include <ovis/engine/window.hpp>
 
-static std::string data_to_copy;
-static std::unordered_map<std::string, std::string> pasted_data;
-
 extern "C" {
 
 void EMSCRIPTEN_KEEPALIVE DropFile(const char* filename) {
@@ -30,23 +28,6 @@ void EMSCRIPTEN_KEEPALIVE QuitEditor() {
   SDL_Event sdl_event;
   sdl_event.type = SDL_QUIT;
   SDL_PushEvent(&sdl_event);
-}
-
-const char* EMSCRIPTEN_KEEPALIVE Copy() {
-  auto& io = ImGui::GetIO();
-  io.KeysDown[ovis::Key::CONTROL_LEFT.code] = true;
-  io.KeysDown[ovis::Key::KEY_V.code] = true;
-  ovis::editor::EditorWindow::instance()->ComputeImGuiFrame();
-  ovis::LogI("Copied: {}", data_to_copy);
-  return data_to_copy.c_str();
-}
-
-void EMSCRIPTEN_KEEPALIVE BeginPaste() {
-  pasted_data.clear();
-}
-
-void EMSCRIPTEN_KEEPALIVE Paste(const char* type, const char* data) {
-  pasted_data.insert(std::make_pair(type, data));
 }
 }
 
@@ -73,13 +54,19 @@ WindowDescription CreateWindowDescription() {
   return window_description;
 }
 
-void ImGuiSetClipbardText(void* module, const char* text) {
-  data_to_copy = text;
+void ImGuiSetClipbardText(void* user_data, const char* text) {
+  SetClipboardData(text);
 }
 
-const char* ImGuiGetClipbardText(void* module) {
-  const auto data = pasted_data.find("text/plain");
-  return data != pasted_data.end() ? data->second.c_str() : nullptr;
+const char* ImGuiGetClipbardText(void* user_data) {
+  static std::string clipboard_data;
+  // Save the result in a static variable so we can return a raw C string
+  if (ClipboardContainsData()) {
+    clipboard_data = *GetClipboardData();
+    return clipboard_data.c_str();
+  } else {
+    return nullptr;
+  }
 }
 
 }  // namespace
@@ -101,8 +88,8 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   SetUIStyle();
 
   ImGuiIO& io = ImGui::GetIO();
-  io.SetClipboardTextFn = &EditorWindow::SetClipbardText;
-  io.GetClipboardTextFn = &EditorWindow::GetClipbardText;
+  io.SetClipboardTextFn = &ImGuiSetClipbardText;
+  io.GetClipboardTextFn = &ImGuiGetClipbardText;
   io.ClipboardUserData = this;
 }
 

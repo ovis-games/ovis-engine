@@ -30,6 +30,7 @@ add_executable(
   editor_module.hpp editor_module.cpp
   editor_window.hpp editor_window.cpp
   editor_asset_library.hpp editor_asset_library.cpp
+  clipboard.hpp clipboard.cpp
 
   imgui_extensions/input_json.hpp imgui_extensions/input_json.cpp
   imgui_extensions/input_math.hpp imgui_extensions/input_math.cpp

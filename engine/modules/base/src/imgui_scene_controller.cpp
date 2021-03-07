@@ -77,13 +77,12 @@ void ImGuiSceneController::ProcessEvent(Event* event) {
   } else if (event->type() == MouseButtonPressEvent::TYPE) {
     MouseButtonPressEvent* button_event = down_cast<MouseButtonPressEvent*>(event);
     const int button_index = GetImGuiButtonIndex(button_event->button());
-    mouse_button_pressed_[button_index] = mouse_button_down_[button_index] = true;
+    mouse_button_pressed_[button_index] = true;
     if (io.WantCaptureMouse) {
       event->StopPropagation();
     }
   } else if (event->type() == MouseButtonReleaseEvent::TYPE) {
     MouseButtonReleaseEvent* button_event = down_cast<MouseButtonReleaseEvent*>(event);
-    mouse_button_down_[GetImGuiButtonIndex(button_event->button())] = false;
     if (io.WantCaptureMouse) {
       event->StopPropagation();
     }
