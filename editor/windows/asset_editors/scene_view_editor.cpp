@@ -244,7 +244,7 @@ void SceneViewEditor::DrawViewport() {
   const auto& io = ImGui::GetIO();
   if (ImGui::IsItemHovered()) {
     if (io.MouseWheel != 0 || io.MouseWheelH != 0) {
-      MouseWheelEvent mouse_wheel_event(io.MouseWheelH, io.MouseWheel);
+      MouseWheelEvent mouse_wheel_event({io.MouseWheelH, io.MouseWheel});
       ProcessViewportInputEvent(&mouse_wheel_event);
     }
     const Vector2 mouse_position = Vector2(ImGui::GetMousePos()) - top_left;

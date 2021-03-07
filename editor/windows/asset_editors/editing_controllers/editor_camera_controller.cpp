@@ -42,7 +42,7 @@ void EditorCameraController::ProcessEvent(Event* event) {
     }
   } else if (event->type() == MouseWheelEvent::TYPE) {
     MouseWheelEvent* mouse_wheel_event = static_cast<MouseWheelEvent*>(event);
-    camera_.SetVerticalFieldOfView(camera_.vertical_field_of_view() * std::powf(2.0, -mouse_wheel_event->delta_y()));
+    camera_.SetVerticalFieldOfView(camera_.vertical_field_of_view() * std::powf(2.0, -mouse_wheel_event->delta().y));
     event->StopPropagation();
   }
 }

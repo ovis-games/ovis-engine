@@ -1,19 +1,54 @@
 #include "editor_window.hpp"
 
+#include "windows/asset_importers/asset_importer.hpp"
 #include "windows/asset_viewer_window.hpp"
 #include "windows/dockspace_window.hpp"
 #include "windows/inspector_window.hpp"
 #include "windows/log_window.hpp"
 #include "windows/toolbar.hpp"
-#include "windows/asset_importers/asset_importer.hpp"
 
+#include <emscripten.h>
 #include <emscripten/html5.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 
 #include <ovis/core/log.hpp>
+#include <ovis/engine/key.hpp>
 #include <ovis/engine/scene.hpp>
 #include <ovis/engine/window.hpp>
+
+static std::string data_to_copy;
+static std::unordered_map<std::string, std::string> pasted_data;
+
+extern "C" {
+
+void EMSCRIPTEN_KEEPALIVE DropFile(const char* filename) {
+  ovis::editor::ImportAsset(filename);
+}
+
+void EMSCRIPTEN_KEEPALIVE QuitEditor() {
+  SDL_Event sdl_event;
+  sdl_event.type = SDL_QUIT;
+  SDL_PushEvent(&sdl_event);
+}
+
+const char* EMSCRIPTEN_KEEPALIVE Copy() {
+  auto& io = ImGui::GetIO();
+  io.KeysDown[ovis::Key::CONTROL_LEFT.code] = true;
+  io.KeysDown[ovis::Key::KEY_V.code] = true;
+  ovis::editor::EditorWindow::instance()->ComputeImGuiFrame();
+  ovis::LogI("Copied: {}", data_to_copy);
+  return data_to_copy.c_str();
+}
+
+void EMSCRIPTEN_KEEPALIVE BeginPaste() {
+  pasted_data.clear();
+}
+
+void EMSCRIPTEN_KEEPALIVE Paste(const char* type, const char* data) {
+  pasted_data.insert(std::make_pair(type, data));
+}
+}
 
 namespace ovis {
 namespace editor {
@@ -38,6 +73,15 @@ WindowDescription CreateWindowDescription() {
   return window_description;
 }
 
+void ImGuiSetClipbardText(void* module, const char* text) {
+  data_to_copy = text;
+}
+
+const char* ImGuiGetClipbardText(void* module) {
+  const auto data = pasted_data.find("text/plain");
+  return data != pasted_data.end() ? data->second.c_str() : nullptr;
+}
+
 }  // namespace
 
 EditorWindow* EditorWindow::instance_ = nullptr;
@@ -55,16 +99,11 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   scene()->AddController(std::make_unique<InspectorWindow>());
 
   SetUIStyle();
-}
 
-bool EditorWindow::SendEvent(const SDL_Event& event) {
-  if (event.type == SDL_DROPFILE) {
-    ImportAsset(event.drop.file);
-    SDL_free(event.drop.file);
-    return true;
-  } else {
-    return Window::SendEvent(event);
-  }
+  ImGuiIO& io = ImGui::GetIO();
+  io.SetClipboardTextFn = &EditorWindow::SetClipbardText;
+  io.GetClipboardTextFn = &EditorWindow::GetClipbardText;
+  io.ClipboardUserData = this;
 }
 
 void EditorWindow::Update(std::chrono::microseconds delta_time) {

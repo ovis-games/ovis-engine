@@ -16,26 +16,6 @@
 #include <ovis/rendering2d/rendering2d_module.hpp>
 #include <ovis/physics2d/physics2d_module.hpp>
 
-extern "C" {
-
-void EMSCRIPTEN_KEEPALIVE DropFile(const char* filename) {
-  const size_t filename_length = std::strlen(filename);
-  char* filename_copy = static_cast<char*>(SDL_malloc(filename_length + 1));
-  std::strncpy(filename_copy, filename, filename_length + 1);
-
-  SDL_Event sdl_event;
-  sdl_event.type = SDL_DROPFILE;
-  sdl_event.drop.file = filename_copy;
-  SDL_PushEvent(&sdl_event);
-}
-
-void EMSCRIPTEN_KEEPALIVE QuitEditor() {
-  SDL_Event sdl_event;
-  sdl_event.type = SDL_QUIT;
-  SDL_PushEvent(&sdl_event);
-}
-}
-
 // Usage: ovis-editor backend_url project_id authentication_token
 int main(int argc, char* argv[]) {
   using namespace ovis;

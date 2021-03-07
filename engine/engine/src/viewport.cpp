@@ -15,19 +15,7 @@ void Viewport::Render(bool render_gui) {
   }
 
   if (render_gui) {
-    const Vector2 viewport_size = GetDimensionsAsVector2();
-    ImGui::GetIO().DisplaySize.x = viewport_size.x;
-    ImGui::GetIO().DisplaySize.y = viewport_size.y;
-
-    ImGui::NewFrame();
-    DrawImGui();
-    if (scene_ != nullptr) {
-      scene_->DrawImGui();
-    }
-    for (RenderPass* render_pass : render_pass_order_) {
-      render_pass->DrawImGui();
-    }
-    ImGui::EndFrame();
+    ComputeImGuiFrame();
   }
 
   render_context_.scene = scene_;
@@ -37,7 +25,7 @@ void Viewport::Render(bool render_gui) {
 }
 
 RenderPass* Viewport::AddRenderPass(std::unique_ptr<RenderPass> render_pass) {
-    if (!render_pass) {
+  if (!render_pass) {
     LogE("Scene controller is null!");
     return nullptr;
   }
@@ -101,8 +89,25 @@ void Viewport::SetGraphicsContext(GraphicsContext* graphics_context) {
     graphics_context_ = graphics_context;
   }
 }
+
 void Viewport::SetResourceManager(ResourceManager* resource_manager) {
   resource_manager_ = resource_manager;
+}
+
+void Viewport::ComputeImGuiFrame() {
+  const Vector2 viewport_size = GetDimensionsAsVector2();
+  ImGui::GetIO().DisplaySize.x = viewport_size.x;
+  ImGui::GetIO().DisplaySize.y = viewport_size.y;
+
+  ImGui::NewFrame();
+  DrawImGui();
+  if (scene_ != nullptr) {
+    scene_->DrawImGui();
+  }
+  for (RenderPass* render_pass : render_pass_order_) {
+    render_pass->DrawImGui();
+  }
+  ImGui::EndFrame();
 }
 
 RenderTargetTexture2D* Viewport::CreateRenderTarget2D(const std::string& id,

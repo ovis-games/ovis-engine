@@ -42,14 +42,7 @@ class Viewport {
     render_context_.projection_matrix = camera.CalculateProjectionMatrix();
     render_context_.inverse_projection_matrix = Invert(render_context_.projection_matrix);
     render_context_.view_projection_matrix = render_context_.projection_matrix * render_context_.view_matrix;
-    
-    LogV("inverse_view_matrix: {}", render_context_.inverse_view_matrix);
-    LogV("view_matrix: {}", render_context_.view_matrix);
-    LogV("projection_matrix: {}", render_context_.projection_matrix);
-    LogV("inverse_projection_matrix: {}", render_context_.inverse_projection_matrix);
-    LogV("view_projection_matrix: {}", render_context_.view_projection_matrix);
-    LogV("camera.CalculateProjectionMatrix(): {}", camera.CalculateProjectionMatrix());
-  }
+}
 
   RenderPass* AddRenderPass(std::unique_ptr<RenderPass> render_pass);
   RenderPass* AddRenderPass(const std::string& render_pass_id);
@@ -74,8 +67,8 @@ class Viewport {
   virtual void Render(bool render_gui = true);
 
   inline Vector2 DeviceCoordinatesToNormalizedDeviceCoordinates(Vector2 device_coordinates) {
-    return (2.0f * device_coordinates / (GetDimensionsAsVector2() - Vector2::One()) -
-            Vector2::One()) * Vector2{1.0f, -1.0f};
+    return (2.0f * device_coordinates / (GetDimensionsAsVector2() - Vector2::One()) - Vector2::One()) *
+           Vector2{1.0f, -1.0f};
   }
 
   inline Vector2 NormalizedDeviceCoordinatesToDeviceCoordinates(Vector2 normalized_device_coordinates) {
@@ -96,6 +89,9 @@ class Viewport {
     return TransformPosition(render_context_.inverse_view_matrix,
                              DeviceCoordinatesToViewSpace(device_coordinates, normalized_depth));
   }
+
+  // You should never call this manually. This function is only there to implement copying in the web browser
+  void ComputeImGuiFrame();
 
  protected:
   void SetGraphicsContext(GraphicsContext* graphics_context);

@@ -10,6 +10,8 @@ namespace ovis {
 
 namespace {
 
+// TODO: maybe make these public as they are partly used in scene_view_editor.cpp
+
 int GetImGuiButtonIndex(MouseButton button) {
   // clang-format off
   switch (button) {
@@ -22,6 +24,21 @@ int GetImGuiButtonIndex(MouseButton button) {
   }
   // clang-format off
 }
+
+
+MouseButton GetMouseButtonFromImGuiIndex(int button) {
+  // clang-format off
+  switch (button) {
+    case ImGuiMouseButton_Left: return MouseButton::LEFT;
+    case ImGuiMouseButton_Middle: return MouseButton::MIDDLE;
+    case ImGuiMouseButton_Right: return MouseButton::RIGHT;
+    case 3: return MouseButton::EXTRA1;
+    case 4: return MouseButton::EXTRA2;
+    default: SDL_assert(false); return MouseButton::LEFT; // Keep clang happy
+  }
+  // clang-format off
+}
+
 
 }  // namespace
 
@@ -41,7 +58,7 @@ void ImGuiSceneController::DrawImGui() {
   ImGuiIO& io = ImGui::GetIO();
   ImGui::SetCurrentContext(context_);
   for (int i = 0; i < 5; ++i) {
-    io.MouseDown[i] = mouse_button_pressed_[i] || mouse_button_down_[i];
+    io.MouseDown[i] = mouse_button_pressed_[i] || input()->GetMouseButtonState(GetMouseButtonFromImGuiIndex(i));
     mouse_button_pressed_[i] = false;
   }
 }
@@ -72,16 +89,16 @@ void ImGuiSceneController::ProcessEvent(Event* event) {
     }
   } else if (event->type() == MouseWheelEvent::TYPE) {
     MouseWheelEvent* mouse_event = down_cast<MouseWheelEvent*>(event);
-    if (mouse_event->delta_x() > 0) {
+    if (mouse_event->delta().x > 0) {
       io.MouseWheelH += 1;
     }
-    if (mouse_event->delta_x() < 0) {
+    if (mouse_event->delta().x < 0) {
       io.MouseWheelH -= 1;
     }
-    if (mouse_event->delta_y() > 0) {
+    if (mouse_event->delta().y > 0) {
       io.MouseWheel += 1;
     }
-    if (mouse_event->delta_y() < 0) {
+    if (mouse_event->delta().y < 0) {
       io.MouseWheel -= 1;
     }
     if (io.WantCaptureMouse) {
@@ -97,14 +114,10 @@ void ImGuiSceneController::ProcessEvent(Event* event) {
     KeyPressEvent* key_event = down_cast<KeyPressEvent*>(event);
     SDL_assert(key_event->key().code < IM_ARRAYSIZE(io.KeysDown));
     io.KeysDown[key_event->key().code] = true;
-    io.KeyShift = ((SDL_GetModState() & KMOD_SHIFT) != 0);
-    io.KeyCtrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
-    io.KeyAlt = ((SDL_GetModState() & KMOD_ALT) != 0);
-#ifdef _WIN32
-    io.KeySuper = false;
-#else
-    io.KeySuper = ((SDL_GetModState() & KMOD_GUI) != 0);
-#endif
+    io.KeyShift = input()->GetKeyState(Key::SHIFT_LEFT) || input()->GetKeyState(Key::SHIFT_RIGHT);
+    io.KeyCtrl = input()->GetKeyState(Key::CONTROL_LEFT) || input()->GetKeyState(Key::CONTROL_RIGHT);
+    io.KeyAlt = input()->GetKeyState(Key::ALT_LEFT) || input()->GetKeyState(Key::ALT_RIGHT);
+    io.KeySuper = input()->GetKeyState(Key::META_LEFT) || input()->GetKeyState(Key::META_RIGHT);
     if (io.WantCaptureKeyboard) {
       event->StopPropagation();
     }
@@ -112,14 +125,10 @@ void ImGuiSceneController::ProcessEvent(Event* event) {
     KeyReleaseEvent* key_event = down_cast<KeyReleaseEvent*>(event);
     SDL_assert(key_event->key().code < IM_ARRAYSIZE(io.KeysDown));
     io.KeysDown[key_event->key().code] = false;
-    io.KeyShift = ((SDL_GetModState() & KMOD_SHIFT) != 0);
-    io.KeyCtrl = ((SDL_GetModState() & KMOD_CTRL) != 0);
-    io.KeyAlt = ((SDL_GetModState() & KMOD_ALT) != 0);
-#ifdef _WIN32
-    io.KeySuper = false;
-#else
-    io.KeySuper = ((SDL_GetModState() & KMOD_GUI) != 0);
-#endif
+    io.KeyShift = input()->GetKeyState(Key::SHIFT_LEFT) || input()->GetKeyState(Key::SHIFT_RIGHT);
+    io.KeyCtrl = input()->GetKeyState(Key::CONTROL_LEFT) || input()->GetKeyState(Key::CONTROL_RIGHT);
+    io.KeyAlt = input()->GetKeyState(Key::ALT_LEFT) || input()->GetKeyState(Key::ALT_RIGHT);
+    io.KeySuper = input()->GetKeyState(Key::META_LEFT) || input()->GetKeyState(Key::META_RIGHT);
     if (io.WantCaptureKeyboard) {
       event->StopPropagation();
     }

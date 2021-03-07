@@ -18,6 +18,7 @@ struct Key {
   std::string_view name() const;
 
   static void RegisterToLua();
+  static Key FromName(const std::string& name);
 
   static const Key DIGIT_1;
   static const Key DIGIT_2;
@@ -132,6 +133,14 @@ struct Key {
   static const Key F24;
 };
 static_assert(sizeof(Key) == sizeof(KeyCode));
+
+inline bool operator==(Key lhs, Key rhs) {
+  return lhs.code == rhs.code;
+}
+
+inline bool operator!=(Key lhs, Key rhs) {
+  return lhs.code != rhs.code;
+}
 
 constexpr Key Key::DIGIT_1{SDL_SCANCODE_1};
 constexpr Key Key::DIGIT_2{SDL_SCANCODE_2};

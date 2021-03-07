@@ -12,11 +12,11 @@
 namespace ovis {
 
 enum class MouseButton : uint8_t {
-  LEFT = SDL_BUTTON_LEFT,
-  MIDDLE = SDL_BUTTON_MIDDLE,
-  RIGHT = SDL_BUTTON_RIGHT,
-  EXTRA1 = SDL_BUTTON_X1,
-  EXTRA2 = SDL_BUTTON_X2,
+  LEFT = 0,
+  MIDDLE = 1,
+  RIGHT = 2,
+  EXTRA1 = 3,
+  EXTRA2 = 4,
 };
 
 class Input {
@@ -30,9 +30,7 @@ class Input {
     mouse_button_states_[static_cast<uint8_t>(button) - 1] = pressed;
   }
 
-  inline bool GetMouseButtonState(MouseButton button) {
-    return mouse_button_states_[static_cast<uint8_t>(button) - 1];
-  }
+  inline bool GetMouseButtonState(MouseButton button) { return mouse_button_states_[static_cast<uint8_t>(button) - 1]; }
 
   static void RegisterToLua();
 
@@ -144,14 +142,12 @@ class MouseWheelEvent : public Event {
  public:
   inline static const std::string TYPE = "MouseWheelEvent";
 
-  inline MouseWheelEvent(int delta_x, int delta_y) : Event(TYPE), delta_x_(delta_x), delta_y_(delta_y) {}
+  inline MouseWheelEvent(Vector2 delta) : Event(TYPE), delta_(delta) {}
 
-  inline int delta_x() const { return delta_x_; }
-  inline int delta_y() const { return delta_y_; }
+  inline Vector2 delta() const { return delta_; }
 
  private:
-  int delta_x_;
-  int delta_y_;
+  Vector2 delta_;
 };
 
 }  // namespace ovis

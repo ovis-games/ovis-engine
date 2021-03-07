@@ -18,7 +18,6 @@ class ImGuiSceneController : public SceneController {
 
   // Indicates whether a mouse button was just pressed
   bool mouse_button_pressed_[5] = {false, false, false, false, false};
-  bool mouse_button_down_[5] = {false, false, false, false, false};
 };
 
 }  // namespace ovis

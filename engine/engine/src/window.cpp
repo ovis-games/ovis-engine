@@ -1,6 +1,10 @@
 #include <algorithm>
 #include <cassert>
 
+#if OVIS_EMSCRIPTEN
+#include <emscripten/html5.h>
+#endif
+
 #include <ovis/core/log.hpp>
 #include <ovis/core/profiling.hpp>
 #include <ovis/graphics/cubemap.hpp>
@@ -13,6 +17,103 @@
 
 namespace ovis {
 
+#if OVIS_EMSCRIPTEN
+
+static EM_BOOL HandleWheelEvent(int event_type, const EmscriptenWheelEvent* wheel_event, void* user_data) {
+  Window* window = static_cast<Window*>(user_data);
+  MouseWheelEvent mouse_wheel_event({static_cast<float>(-wheel_event->deltaX), static_cast<float>(-wheel_event->deltaY)});
+  window->scene()->ProcessEvent(&mouse_wheel_event);
+  return !mouse_wheel_event.is_propagating();
+}
+
+EM_BOOL HandleKeyDownEvent(int event_type, const EmscriptenKeyboardEvent* keyboard_event, void* user_data) {
+  const Key key = Key::FromName(keyboard_event->code);
+  input()->SetKeyState(static_cast<SDL_Scancode>(key.code), true);
+
+  Window* window = static_cast<Window*>(user_data);
+
+  bool key_press_event_is_propagating = false;
+  if (keyboard_event->repeat == false) {
+    KeyPressEvent key_press_event(key);
+    window->scene()->ProcessEvent(&key_press_event);
+    key_press_event_is_propagating = !key_press_event.is_propagating();
+  }
+
+  // Always prevent default action for the tab key
+  if (key == Key::TAB) {
+    return true;
+  }
+
+  // Never prevent default action for CTRL+V or Insert key (Paste)
+  if ((key == Key::KEY_V && keyboard_event->ctrlKey) || key == Key::INSERT) {
+    return false;
+  }
+
+  // Never prevent default action for CTRL+C (Copy)
+  if (key == Key::KEY_C && keyboard_event->ctrlKey) {
+    return false;
+  }
+
+  return !key_press_event_is_propagating;
+}
+
+// TODO: the keypress event is actually deprecated and should be replaced by the keydown event. But there is no easy way
+// to check whether
+EM_BOOL HandleKeyPressEvent(int event_type, const EmscriptenKeyboardEvent* keyboard_event, void* user_data) {
+  Window* window = static_cast<Window*>(user_data);
+
+  TextInputEvent text_input_event(keyboard_event->key);
+  window->scene()->ProcessEvent(&text_input_event);
+  return !text_input_event.is_propagating();
+}
+
+EM_BOOL HandleKeyUpEvent(int event_type, const EmscriptenKeyboardEvent* keyboard_event, void* user_data) {
+  const Key key = Key::FromName(keyboard_event->code);
+  input()->SetKeyState(static_cast<SDL_Scancode>(key.code), false);
+
+  Window* window = static_cast<Window*>(user_data);
+  KeyReleaseEvent key_release_event(key);
+  window->scene()->ProcessEvent(&key_release_event);
+  return !key_release_event.is_propagating();
+}
+
+EM_BOOL HandleMouseMoveEvent(int event_type, const EmscriptenMouseEvent* mouse_event, void* user_data) {
+  Window* window = static_cast<Window*>(user_data);
+  MouseMoveEvent mouse_move_event(
+      window, {static_cast<float>(mouse_event->targetX), static_cast<float>(mouse_event->targetY)},
+      {static_cast<float>(mouse_event->movementX), static_cast<float>(mouse_event->movementY)});
+  window->scene()->ProcessEvent(&mouse_move_event);
+  return !mouse_move_event.is_propagating();
+}
+
+EM_BOOL HandleMouseDownEvent(int event_type, const EmscriptenMouseEvent* mouse_event, void* user_data) {
+  input()->SetMouseButtonState(static_cast<MouseButton>(mouse_event->button), true);
+
+  Window* window = static_cast<Window*>(user_data);
+  MouseButtonPressEvent mouse_button_event(
+      window, {static_cast<float>(mouse_event->targetX), static_cast<float>(mouse_event->targetY)},
+      static_cast<MouseButton>(mouse_event->button));
+  window->scene()->ProcessEvent(&mouse_button_event);
+  return false;
+}
+
+EM_BOOL HandleMouseUpEvent(int event_type, const EmscriptenMouseEvent* mouse_event, void* user_data) {
+  input()->SetMouseButtonState(static_cast<MouseButton>(mouse_event->button), false);
+
+  Window* window = static_cast<Window*>(user_data);
+  MouseButtonReleaseEvent mouse_button_event(
+      window, {static_cast<float>(mouse_event->targetX), static_cast<float>(mouse_event->targetY)},
+      static_cast<MouseButton>(mouse_event->button));
+  window->scene()->ProcessEvent(&mouse_button_event);
+  return false;
+}
+
+EM_BOOL HandleMouseEvent(int event_type, const EmscriptenMouseEvent* mouse_event, void* user_data) {
+  return false;
+}
+
+#endif
+
 std::vector<Window*> Window::all_windows_;
 
 Window::Window(const WindowDescription& desc)
@@ -23,6 +124,30 @@ Window::Window(const WindowDescription& desc)
       scene_() {
   assert(sdl_window_ != nullptr);
   all_windows_.push_back(this);
+
+#if OVIS_EMSCRIPTEN
+  emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, 0, nullptr);
+  emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, 0, nullptr);
+  emscripten_set_keypress_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, 0, nullptr);
+
+  emscripten_set_mousemove_callback("canvas", nullptr, 0, nullptr);
+  emscripten_set_mousedown_callback("canvas", nullptr, 0, nullptr);
+  emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, nullptr, 0, nullptr);
+  emscripten_set_mouseenter_callback("canvas", nullptr, 0, nullptr);
+  emscripten_set_mouseleave_callback("canvas", nullptr, 0, nullptr);
+  emscripten_set_wheel_callback("canvas", nullptr, 0, nullptr);
+
+  emscripten_set_keydown_callback("canvas", this, 0, &HandleKeyDownEvent);
+  emscripten_set_keyup_callback("canvas", this, 0, &HandleKeyUpEvent);
+  emscripten_set_keypress_callback("canvas", this, 0, &HandleKeyPressEvent);
+
+  emscripten_set_mousemove_callback("canvas", this, 0, &HandleMouseMoveEvent);
+  emscripten_set_mousedown_callback("canvas", this, 0, &HandleMouseDownEvent);
+  emscripten_set_mouseup_callback("canvas", this, 0, &HandleMouseUpEvent);
+  // emscripten_set_mouseenter_callback("canvas", nullptr, 0, HandleMouseEvent);
+  // emscripten_set_mouseleave_callback("canvas", nullptr, 0, HandleMouseEvent);
+  emscripten_set_wheel_callback("canvas", this, 0, &HandleWheelEvent);
+#endif
 
   // resource_manager_.RegisterFileLoader(
   //     ".texture2d", std::bind(&LoadTexture2D, &graphics_context_, std::placeholders::_1, std::placeholders::_2,
@@ -89,6 +214,7 @@ bool Window::SendEvent(const SDL_Event& event) {
     }
   }
 
+#if !OVIS_EMSCRIPTEN
   switch (event.type) {
     case SDL_MOUSEWHEEL: {
       MouseWheelEvent mouse_wheel_event(event.wheel.x, event.wheel.y);
@@ -137,6 +263,7 @@ bool Window::SendEvent(const SDL_Event& event) {
       return !key_release_event.is_propagating();
     }
   }
+#endif
 
   return false;
 }
