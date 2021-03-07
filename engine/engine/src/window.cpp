@@ -21,7 +21,8 @@ namespace ovis {
 
 static EM_BOOL HandleWheelEvent(int event_type, const EmscriptenWheelEvent* wheel_event, void* user_data) {
   Window* window = static_cast<Window*>(user_data);
-  MouseWheelEvent mouse_wheel_event({static_cast<float>(-wheel_event->deltaX), static_cast<float>(-wheel_event->deltaY)});
+  MouseWheelEvent mouse_wheel_event(
+      {static_cast<float>(-wheel_event->deltaX), static_cast<float>(-wheel_event->deltaY)});
   window->scene()->ProcessEvent(&mouse_wheel_event);
   return !mouse_wheel_event.is_propagating();
 }
@@ -62,9 +63,14 @@ EM_BOOL HandleKeyDownEvent(int event_type, const EmscriptenKeyboardEvent* keyboa
 EM_BOOL HandleKeyPressEvent(int event_type, const EmscriptenKeyboardEvent* keyboard_event, void* user_data) {
   Window* window = static_cast<Window*>(user_data);
 
-  TextInputEvent text_input_event(keyboard_event->key);
-  window->scene()->ProcessEvent(&text_input_event);
-  return !text_input_event.is_propagating();
+  // For some reason keyboard_event->key contains "Enter" when pressing the enter button
+  if (std::strcmp("Enter", keyboard_event->key) != 0) {
+    TextInputEvent text_input_event(keyboard_event->key);
+    window->scene()->ProcessEvent(&text_input_event);
+    return !text_input_event.is_propagating();
+  } else {
+    return false;
+  }
 }
 
 EM_BOOL HandleKeyUpEvent(int event_type, const EmscriptenKeyboardEvent* keyboard_event, void* user_data) {
