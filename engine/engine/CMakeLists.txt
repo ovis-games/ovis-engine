@@ -59,3 +59,21 @@ target_add_assets(
   assets/debug_pass_point.shader.vert assets/debug_pass_point.shader.frag
   assets/debug_pass.shader.vert assets/debug_pass.shader.frag
 )
+
+add_executable(
+  ovis-engine-test
+
+  test/test.cpp
+)
+
+target_add_generated_test_source(
+  ovis-engine-test
+  src/lua.cpp
+)
+
+target_link_libraries(
+  ovis-engine-test
+  PRIVATE
+    catch2
+    ovis::engine
+)

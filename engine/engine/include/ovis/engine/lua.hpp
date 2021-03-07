@@ -16,6 +16,8 @@ class Lua {
 
   static void SetupEnvironment();
   static sol::protected_function_result Execute(const std::string& code, const std::string& chunk_name);
+  static sol::protected_function_result Execute(const std::string& code, const std::string& chunk_name,
+                                                std::function<void(const std::string&)> error_handler);
 
   static EventHandler<void(const std::string&)> on_error;
 };

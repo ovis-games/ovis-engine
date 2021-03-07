@@ -1,4 +1,5 @@
-build/*
+build
+doc
 *.xcuserstate
 .vscode/*
 .DS_Store

@@ -84,9 +84,21 @@ bool SceneObject::Deserialize(const json& serialized_object) {
 }
 
 void SceneObject::RegisterToLua() {
+  /// a test module
+  // @module engine
+
+
+  /// foo explodes text.
+  // @type SceneObject
   sol::usertype<SceneObject> scene_object_type =
       Lua::state.new_usertype<SceneObject>("SceneObject", "name", sol::property(&SceneObject::name), "components",
                                            sol::property(&Module::SceneObjectComponentsWrapper::FromObject));
+    
+  /// Adds a component to the object.
+  // It is a specialized splitting operation on a string.
+  // @function add_component
+  // @param name The id of the component (see component_ids)
+  // @return The newly added component
   scene_object_type["AddComponent"] = static_cast<SceneObjectComponent*(SceneObject::*)(const std::string&)>(&SceneObject::AddComponent);
   scene_object_type["HasComponent"] = &SceneObject::HasComponent;
 }
