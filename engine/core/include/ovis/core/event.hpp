@@ -8,6 +8,8 @@
 namespace ovis {
 
 class EventHandlerBase {
+  friend class EventHandlerSubscription;
+
  public:
   virtual ~EventHandlerBase() = default;
 
@@ -26,10 +28,12 @@ class EventHandlerSubscription {
   friend class EventHandler;
 
  public:
-  void Unsubscribe();
+  inline void Unsubscribe() {
+    event_->Unsubscribe(subscription_index_);
+  }
 
  private:
-  EventHandlerSubscription(EventHandlerBase* event, std::size_t subscription_index)
+  inline EventHandlerSubscription(EventHandlerBase* event, std::size_t subscription_index)
       : event_(event), subscription_index_(subscription_index) {}
 
   EventHandlerBase* event_;
