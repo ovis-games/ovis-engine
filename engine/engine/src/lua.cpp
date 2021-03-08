@@ -788,9 +788,9 @@ void RegisterColor(sol::state& state) {
   // @treturn bool
   // @usage local c1 = Color:new(1.0, 2.0, 3.0)
   // local c2 = Color:new(1.0, 2.0, 3.0)
-  // local v3 = Color:new(1.0, 0.0, 3.0)
+  // local c3 = Color:new(1.0, 0.0, 3.0)
   // assert(c1 == c2) -- c1 and c2 are equal
-  // assert(c1 ~= v3) -- c1 and v3 are not
+  // assert(c1 ~= c3) -- c1 and c3 are not
   color_type[sol::meta_function::equal_to] = static_cast<bool (*)(const Color&, const Color&)>(ovis::operator==);
 
   /// Adds two colors.
@@ -823,8 +823,8 @@ void RegisterColor(sol::state& state) {
   // @treturn Color
   // @usage local c1 = Color:new(1, 0.5, 1)
   // local c2 = Color:new(0.5, 0.5, 0.5, 0)
-  // local v3 = c1 - c2
-  // assert(v3 == Color:new(0.5, 0, 0.5))
+  // local c3 = c1 - c2
+  // assert(c3 == Color:new(0.5, 0, 0.5))
   color_type[sol::meta_function::subtraction] =
       static_cast<Color (*)(const Color&, const Color&)>(ovis::operator-);
 
@@ -835,8 +835,8 @@ void RegisterColor(sol::state& state) {
   // @treturn Color
   // @usage local c1 = Color:new(1, 0.5, 1)
   // local c2 = Color:new(0.5, 1, 0.5)
-  // local v3 = c1 * c2 -- multiply two colors component-wise
-  // assert(v3 == Color:new(0.5, 0.5, 0.5))
+  // local c3 = c1 * c2 -- multiply two colors component-wise
+  // assert(c3 == Color:new(0.5, 0.5, 0.5))
   // local v4 = c1 * 0.5 -- multiply a color and a scalar
   // assert(v4 == Color:new(0.5, 0.25, 0.5, 0.5))
   // local v5 = 0.5 * c1 -- you can also multiply from the other side
@@ -853,8 +853,8 @@ void RegisterColor(sol::state& state) {
   // @treturn Color
   // @usage local c1 = Color:new(1, 2, 4)
   // local c2 = Color:new(8, 4, 16)
-  // local v3 = c1 / c2 -- divides two colors component-wise
-  // assert(v3 == Color:new(0.125, 0.5, 0.25))
+  // local c3 = c1 / c2 -- divides two colors component-wise
+  // assert(c3 == Color:new(0.125, 0.5, 0.25))
   // local v4 = c1 / 2 -- divies a color by a scalar
   // assert(v4 == Color:new(0.5, 1, 2, 0.5))
   // -- if you divide a scalar by a color a new color is created
@@ -868,7 +868,6 @@ void RegisterColor(sol::state& state) {
 
   /// Provides the length operator.
   // This returns the number of components in the color.
-  // @see length
   // @function __len
   // @treturn number The number of compoenents in the color (4).
   // @usage local c = Color:new()
