@@ -31,14 +31,14 @@ void SetupEnvironment() {
 std::string FormatCode(const std::string& code, bool add_line_numbers = false) {
   size_t lines = 1;
   for (char c : code) {
-    if (c == ';') {
+    if (c == '\\n') {
       ++lines;
     }
   }
   const size_t line_number_width = std::to_string(lines).length();
 
   std::string result;
-  result.reserve(code.length() + lines * (line_number_width + 2) + 1);
+  result.reserve(code.length() + lines * (line_number_width + 3) + 1);
 
   auto add_line_number = [&result,line_number_width](int line_number) {
       result.push_back('[');
@@ -46,6 +46,7 @@ std::string FormatCode(const std::string& code, bool add_line_numbers = false) {
       result.insert(result.end(), line_number_width - line_number_string.size(), ' ');
       result += line_number_string;
       result.push_back(']');
+      result.push_back(' ');
   };
 
   size_t current_line = 1;
@@ -54,7 +55,7 @@ std::string FormatCode(const std::string& code, bool add_line_numbers = false) {
   }
   result.push_back(' ');
   for (char c : code) {
-    if (c == ';') {
+    if (c == '\\n') {
       result.push_back('\\n');
       current_line += 1;
       if (add_line_numbers) {
@@ -70,17 +71,16 @@ std::string FormatCode(const std::string& code, bool add_line_numbers = false) {
 
 }
 
-#define LUA_SECTION(name, lua_expression)                                                   \\
+#define LUA_SECTION_STRING(name, code)                                                      \\
   do {                                                                                      \\
     SECTION(name) {                                                                         \\
-    std::string code = FormatCode(#lua_expression);                                         \\
     last_error = "";                                                                        \\
     sol::protected_function_result result = ovis::Lua::state.do_string(code, "");           \\
     const bool valid_lua = result.valid();                                                  \\
     if (!result.valid() && last_error.length() == 0) {                                      \\
       last_error = result;                                                                  \\
     }                                                                                       \\
-    INFO(FormatCode(#lua_expression, true) + "\\n" + last_error);                           \\
+    INFO(FormatCode(code, true) + "\\n" + last_error);                                      \\
     CHECK(valid_lua);                                                                       \\
     }                                                                                       \\
   } while (false)
@@ -101,7 +101,7 @@ def end_test_case(output):
   output.write('}\n')
 
 def write_test(output, description, usage):
-  output.write(f'LUA_SECTION("{description}",\n{usage}\n);\n\n')
+  output.write(f'LUA_SECTION_STRING("{description}",\n{usage});\n\n')
 
 def main():
   with open(sys.argv[2], 'w') as output:
@@ -111,37 +111,48 @@ def main():
 
       modulename = ""
       typename = ""
+      function = ""
       description = ""
+      module_setup = ""
       usage = ""
 
       for line in input.readlines():
 
-        match = re.match(PATTERN_COMMENTED_LINE_START + "@module (.*)", line)
+        match = re.search(PATTERN_COMMENTED_LINE_START + "@module (.*)", line)
         if match:
           modulename = match[1]
+          start_test_case(output, modulename, "free functions")
 
-        match = re.match(PATTERN_COMMENTED_LINE_START + "@type (.*)", line)
+        match = re.search(PATTERN_COMMENTED_LINE_START + "@function (.*)", line)
         if match:
-          if len(typename) > 0:
-            end_test_case(output)
+          function = match[1]
+
+        match = re.search(PATTERN_COMMENTED_LINE_START + "@type (.*)", line)
+        if match:
+          #if len(typename) > 0 or len(function) > 0:
+          end_test_case(output)
           typename = match[1]
           start_test_case(output, modulename, typename)
         
-        match = re.match(PATTERN_SHORT_DESCRIPTION, line)
+        match = re.search(PATTERN_SHORT_DESCRIPTION, line)
         if match:
           description = match[1]
 
         if len(usage) > 0:
-          match = re.match(PATTERN_COMMENTED_LINE_WITHOUT_TAG, line)
+          usage = usage + '\\n"\n'
+          match = re.search(PATTERN_COMMENTED_LINE_WITHOUT_TAG, line)
           if match:
-            usage = usage + ';\n' + match[1]
+            usage = usage + '"' + match[1]
           else:
-            write_test(output, description, usage)
+            if typename != "" or function != "":
+              write_test(output, description, module_setup + usage)
+            else:
+              module_setup = usage
             usage = ""
 
-        match = re.match(PATTERN_USAGE, line)
+        match = re.search(PATTERN_USAGE, line)
         if match:
-          usage = match[1]
+          usage = '"' + match[1]
 
       if len(typename) > 0:
         end_test_case(output)
