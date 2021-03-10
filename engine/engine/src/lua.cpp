@@ -15,7 +15,7 @@ sol::state Lua::state;
 EventHandler<void(const std::string&)> Lua::on_error;
 
 void RegisterVector2(sol::state& state);
-void RegisterVector3(sol::state& state);
+// void RegisterVector3(sol::state& state);
 void RegisterColor(sol::state& state);
 
 int foo(lua_State* l) {
@@ -42,7 +42,7 @@ void Lua::SetupEnvironment() {
   sol::protected_function::set_default_handler(state["OvisErrorHandler"]);
 
   RegisterVector2(state);
-  RegisterVector3(state);
+  // RegisterVector3(state);
   RegisterColor(state);
 
   // auto Vector3_factories = sol::factories([](sol::table table) { return Vector3(table[1], table[2], table[3]); });

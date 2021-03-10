@@ -59,7 +59,3 @@ if (BOX2D_BUILD_TESTBED)
 	endif()
 endif()
 
-install(
-  DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/box2d"
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)

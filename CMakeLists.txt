@@ -65,7 +65,7 @@ function(target_add_assets target)
   target_link_options(
     ${target}
     PUBLIC
-      "SHELL:--embed-file ${CMAKE_CURRENT_BINARY_DIR}/assets/@/ovis_assets"
+      "SHELL:--preload-file ${CMAKE_CURRENT_BINARY_DIR}/assets/@/ovis_assets"
   )
 
 endfunction()
@@ -89,6 +89,23 @@ function(target_add_generated_test_source target input)
   )
 
 endfunction()
+
+find_program(
+  LDOC_EXECUTABLE
+  ldoc
+  DOC "LDoc executable for generating documentation"
+)
+if (LDOC_EXECUTABLE)
+  add_custom_target(
+    doc
+    COMMAND ${LDOC_EXECUTABLE} -d ${CMAKE_CURRENT_BINARY_DIR}/documenation .
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  )
+  install(
+    DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/documenation/
+    DESTINATION doc
+  )
+endif ()
 
 set(OVIS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory(extern)
