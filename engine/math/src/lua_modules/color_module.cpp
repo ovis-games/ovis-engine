@@ -11,11 +11,11 @@ int LoadColorModule(lua_State* l) {
   // clang-format off
 
   /// Represents a color usng red, green, blue and alpa.
-  // @classmod ovis.math.Color
   // The value for r, g, b and a range from 0 to 1. E.g., the RGB values
   // 0,0,0 respresent black and 1,1,1 respresent white. Similarly, an
   // alpha value of 0 represents full transparency whereas an alpha value
   // of 1 represents full opaqueness.
+  // @classmod ovis.math.Color
   sol::usertype<Color> color_type = state.new_usertype<Color>(
     "Color", sol::constructors<Color(float, float, float), Color(float, float, float, float)>(),
     "new", sol::factories(

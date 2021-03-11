@@ -97,9 +97,10 @@ find_program(
 )
 if (LDOC_EXECUTABLE)
   add_custom_target(
-    doc
+    doc ALL
     COMMAND ${LDOC_EXECUTABLE} -d ${CMAKE_CURRENT_BINARY_DIR}/documenation .
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DEPENDS config.ld
   )
   install(
     DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/documenation/

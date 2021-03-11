@@ -36,7 +36,6 @@ target_link_libraries(
     ovis::math
     ovis::graphics
     DearImGui
-    middleclass
 )
 
 target_compile_options(

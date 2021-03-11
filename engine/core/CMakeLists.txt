@@ -15,6 +15,8 @@ add_library(
   include/ovis/core/resource.hpp
   include/ovis/core/profiling.hpp src/profiling.cpp
   include/ovis/core/serialize.hpp src/serialize.cpp
+  include/ovis/core/lua_modules/register_modules.hpp src/lua_modules/register_modules.cpp
+  src/lua_modules/module_loader.hpp 
 )
 add_library(ovis::core ALIAS ovis-core)
 
@@ -31,6 +33,7 @@ target_link_libraries(
     fmt::fmt
     Lua
     sol2_single
+    middleclass
 )
 
 if (OVIS_EMSCRIPTEN)

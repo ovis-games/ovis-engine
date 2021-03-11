@@ -93,11 +93,9 @@ int LoadMathModule(lua_State* l) {
   // The function is overloaded for both, @{Vector2} and @{Vector3}. However, both
   // inputs need to be of the same type.
   // @function dot
-  // @see Vector2:__mul
-  // @see Vector3:__mul
   // @see cross
-  // @param[type=Vector2|Vector3] v1
-  // @param[type=Vector2|Vector3] v2
+  // @param[type=ovis.math.Vector2|ovis.math.Vector3] v1
+  // @param[type=ovis.math.Vector2|ovis.math.Vector3] v2
   // @treturn number
   // @usage local v1 = Vector3(1, 2, 3)
   // local v2 = Vector3(4, 5, 6)
@@ -109,10 +107,9 @@ int LoadMathModule(lua_State* l) {
 
   /// Calculates the dot product between two vectorss.
   // @function cross
-  // @see Vector3:__mul
   // @see dot
-  // @param[type=Vector3] v1
-  // @param[type=Vector3] v2
+  // @param[type=ovis.math.Vector3] v1
+  // @param[type=ovis.math.Vector3] v2
   // @treturn Vector3
   // @usage assert(cross(Vector3.POSITIVE_X, Vector3.POSITIVE_Y) == Vector3.POSITIVE_Z)
   math_module["cross"] = sol::overload(&Cross);

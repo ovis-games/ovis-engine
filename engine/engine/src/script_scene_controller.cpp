@@ -104,7 +104,9 @@ void ScriptSceneController::RegisterToLua() {
 
   auto get_controller = []() {};
 
-  auto scene_controller_type = lua["SceneController"] = lua["class"]("SceneController");
+  
+  sol::table core = lua["require"]("ovis.core");
+  auto scene_controller_type = lua["SceneController"] = core["class"]("SceneController");
   scene_controller_type["subscribe_to_event"] = sol::overload(
       [](sol::table scene_controller, std::string event_type) {
         GetSubscribedEventsTable(scene_controller)[event_type] = true;

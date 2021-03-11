@@ -186,7 +186,7 @@ int LoadVector2Module(lua_State* l) {
   /// Multiplies two vectors or a scalar and a vector.
   // Be careful, this is a component-wise multiplication. If you want to calculate the dot product use the dot()
   // function.
-  // @see dot
+  // @see ovis.math.dot
   // @function __mul
   // @param[type=Vector2|number] v1
   // @param[type=Vector2|number] v2
@@ -226,7 +226,7 @@ int LoadVector2Module(lua_State* l) {
 
   /// Provides the length operator.
   // This returns the number of components in the vector, not its magnitude. For that use the length() function.
-  // @see length
+  // @see ovis.math.length
   // @function __len
   // @treturn number The number of compoenents in the vector (2).
   // @usage local v = Vector2(1.0, 2.0)

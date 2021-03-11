@@ -196,7 +196,7 @@ int LoadVector3Module(lua_State* l) {
 
   /// Multiplies two vectors or a scalar and a vector.
   // Be careful, this is a component-wise multiplication. If you want to calculate the dot product use @{dot}.
-  // @see dot
+  // @see ovis.math.dot
   // @function __mul
   // @param[type=Vector3|number] v1
   // @param[type=Vector3|number] v2
@@ -236,7 +236,7 @@ int LoadVector3Module(lua_State* l) {
 
   /// Provides the length operator.
   // This returns the number of components in the vector, not its magnitude. For that use the length() function.
-  // @see length
+  // @see ovis.math.length
   // @function __len
   // @treturn number The number of compoenents in the vector (3).
   // @usage local v = Vector3:new()
