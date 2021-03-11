@@ -62,7 +62,7 @@ class SceneObject : public Serializable {
   json Serialize() const override;
   bool Deserialize(const json& serialized_object) override;
 
-  static void RegisterToLua();
+  static int LoadLuaModule(lua_State* l);
 
  private:
   Scene* scene_;
