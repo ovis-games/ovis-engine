@@ -1,6 +1,6 @@
 #pragma once
 
-#include <lua.h>
+#include <sol/sol.hpp>
 
 namespace ovis {
 

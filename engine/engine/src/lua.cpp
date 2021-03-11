@@ -2,6 +2,7 @@
 
 #include <ovis/math/vector.hpp>
 #include <ovis/math/color.hpp>
+#include <ovis/math/lua_modules/register_modules.hpp>
 #include <ovis/engine/input.hpp>
 #include <ovis/engine/lua.hpp>
 #include <ovis/engine/module.hpp>
@@ -30,7 +31,6 @@ int foo(lua_State* l) {
 void Lua::SetupEnvironment() {
   state.open_libraries(sol::lib::base, sol::lib::coroutine, sol::lib::string, sol::lib::math, sol::lib::table, sol::lib::package);
   state.require_script("class", middleclass::SOURCE);
-  state.require("ovis.math", foo);
 
   state["log_error"] = [](const std::string& message) { LogE("{}", message); };
   state["log_warning"] = [](const std::string& message) { LogW("{}", message); };
@@ -41,9 +41,11 @@ void Lua::SetupEnvironment() {
   state["OvisErrorHandler"] = [](const std::string& message) { on_error.Invoke(message); };
   sol::protected_function::set_default_handler(state["OvisErrorHandler"]);
 
-  RegisterVector2(state);
+  RegisterMathLuaModules(state.lua_state());
+
+  // RegisterVector2(state);
   // RegisterVector3(state);
-  RegisterColor(state);
+  // RegisterColor(state);
 
   // auto Vector3_factories = sol::factories([](sol::table table) { return Vector3(table[1], table[2], table[3]); });
   // sol::usertype<Vector3> Vector3_type = state.new_usertype<Vector3>(

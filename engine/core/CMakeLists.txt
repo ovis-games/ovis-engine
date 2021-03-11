@@ -29,6 +29,8 @@ target_link_libraries(
   PUBLIC
     nlohmann_json
     fmt::fmt
+    Lua
+    sol2_single
 )
 
 if (OVIS_EMSCRIPTEN)

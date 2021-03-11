@@ -36,8 +36,6 @@ target_link_libraries(
     ovis::math
     ovis::graphics
     DearImGui
-    Lua
-    sol2_single
     middleclass
 )
 

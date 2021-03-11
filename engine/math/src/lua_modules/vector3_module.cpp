@@ -1,5 +1,9 @@
 #include "module_loader.hpp"
 
+#include <sol/sol.hpp>
+
+#include <ovis/math/vector.hpp>
+
 namespace ovis {
 
 int LoadVector3Module(lua_State* l) {
@@ -248,7 +252,7 @@ int LoadVector3Module(lua_State* l) {
 
   // clang-format off
 
-  return 1;
+  return vector3_type.push();
 }
 
 }

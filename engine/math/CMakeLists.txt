@@ -13,6 +13,10 @@ add_library(
   include/ovis/math/marching_cubes.hpp src/marching_cubes.cpp
   include/ovis/math/rect.hpp
   include/ovis/math/transform.hpp src/transform.cpp
+  include/ovis/math/lua_modules/register_modules.hpp src/lua_modules/register_modules.cpp
+  src/lua_modules/module_loader.hpp src/lua_modules/vector3_module.cpp
+
+  include/ovis/math/transform.hpp src/transform.cpp
 )
 add_library(ovis::math ALIAS ovis-math)
 
