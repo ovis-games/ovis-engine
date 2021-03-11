@@ -14,7 +14,7 @@ add_library(
   include/ovis/math/rect.hpp
   include/ovis/math/transform.hpp src/transform.cpp
   include/ovis/math/lua_modules/register_modules.hpp src/lua_modules/register_modules.cpp
-  src/lua_modules/module_loader.hpp src/lua_modules/vector3_module.cpp
+  src/lua_modules/module_loader.hpp src/lua_modules/vector2_module.cpp src/lua_modules/vector3_module.cpp src/lua_modules/color_module.cpp
 
   include/ovis/math/transform.hpp src/transform.cpp
 )
