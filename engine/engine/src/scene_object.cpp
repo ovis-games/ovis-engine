@@ -87,7 +87,7 @@ int SceneObject::LoadLuaModule(lua_State* l) {
   sol::state_view lua(l);
 
   /// Represents an object in a scene
-  // @classmod SceneObject
+  // @classmod ovis.engine.SceneObject
 
   sol::usertype<SceneObject> scene_object_type =
       Lua::state.new_usertype<SceneObject>("SceneObject", "components",
@@ -99,13 +99,13 @@ int SceneObject::LoadLuaModule(lua_State* l) {
   scene_object_type["name"] = sol::property(&SceneObject::name);
 
   /// Adds a component to the object.
-  // It is a specialized splitting operation on a string.
   // @function add_component
-  // @param name The id of the component (see component_ids)
+  // @param name The id of the component.
   // @return The newly added component
-  scene_object_type["AddComponent"] =
+  scene_object_type["add_component"] =
       static_cast<SceneObjectComponent* (SceneObject::*)(const std::string&)>(&SceneObject::AddComponent);
-  scene_object_type["HasComponent"] = &SceneObject::HasComponent;
+
+  scene_object_type["has_component"] = &SceneObject::HasComponent;
 
   return scene_object_type.push();
 }

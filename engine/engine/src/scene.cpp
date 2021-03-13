@@ -337,15 +337,17 @@ SceneController* Scene::GetControllerInternal(const std::string& controller_name
 int Scene::LoadLuaModule(lua_State* l) {
   sol::state_view state(l);
 
+  // clang-format off
+
   /// This class represents a scene.
   // @classmod ovis.engine.Scene
   sol::usertype<Scene> scene_type = state.new_usertype<Scene>("Scene", sol::no_constructor);
 
   /// Creates a new object within the scene.
-  // @function add_object
+  // @function Scene:add_object
   // @string basename The name of the new object. If it does already exist an increasing number will be added to the
   // end.
-  // @treturn ovis.scene.SceneObject
+  // @treturn SceneObject
   // @usage local first_object = scene.add_object("object")
   // assert(first_object.name == "object")
   // local second_object = scene.add_object("object")
@@ -353,7 +355,7 @@ int Scene::LoadLuaModule(lua_State* l) {
   scene_type["add_object"] = sol::resolve<SceneObject*(const std::string&)>(&Scene::CreateObject);
 
   /// Removes an object from the scene.
-  // @function remove_object
+  // @function Scene:remove_object
   // @string name The name of the object
   // @usage scene.add_object("object")
   // assert(scene.contains_object("object"))
@@ -361,8 +363,8 @@ int Scene::LoadLuaModule(lua_State* l) {
   // assert(!scene.contains_object("object"))
 
   /// Removes an object from the scene.
-  // @function remove_object
-  // @tparam ovis.engine.SceneObject The object that should be removed from the scene
+  // @function Scene:remove_object
+  // @tparam SceneObject object The object that should be removed from the scene
   // @usage local obj = scene.add_object("object")
   // assert(scene.contains_object("object"))
   // scene.remove_object(obj)
@@ -372,12 +374,14 @@ int Scene::LoadLuaModule(lua_State* l) {
   sol::overload(
     &Scene::DeleteObject,
     [](Scene* scene, SceneObject* object){
-      scene->DeleteObject(object->name());
+      if (scene != nullptr && object != nullptr) {
+        scene->DeleteObject(object->name());
+      }
   });
 
   /// Checks whether an object exists.
-  // @function contains_object
-  // @string The name of the object
+  // @function Scene:contains_object
+  // @string name The name of the object to check
   // @treturn bool
   // @usage local obj = scene.add_object("object")
   // assert(scene.contains_object("object"))
@@ -387,10 +391,11 @@ int Scene::LoadLuaModule(lua_State* l) {
   scene_type["contains_object"] = &Scene::ContainsObject;
 
   /// Returns an iterator to all objects in the scene
+  // @field Scene.objects
   // @usage for obj in scene.objects do
   //   core.log(obj)
   // end
-  scene_type["objects"] = sol::property([](Scene& scene) {
+  scene_type["objects"] = [](Scene& scene) {
     return [&scene, object_index = std::make_shared<size_t>(0)]() -> SceneObject* {
       if (*object_index < scene.objects_.size()) {
         SceneObject* object = std::next(scene.objects_.begin(), *object_index)->second.get();
@@ -400,7 +405,27 @@ int Scene::LoadLuaModule(lua_State* l) {
         return nullptr;
       }
     };
-  });
+  };
+
+  /// Returns an iterator to all controllers in the scene
+  // The iterator returns the controllers in the @{02-scene-structure|update order}.
+  // @function Scene:controllers
+  // @usage for obj in scene:objects() do
+  //   core.log(obj)
+  // end
+  scene_type["controllers"] = [](Scene& scene) {
+    return [&scene, object_index = std::make_shared<size_t>(0)]() -> SceneObject* {
+      if (*object_index < scene.objects_.size()) {
+        SceneObject* object = std::next(scene.objects_.begin(), *object_index)->second.get();
+        (*object_index)++;
+        return object;
+      } else {
+        return nullptr;
+      }
+    };
+  };
+
+  // clang-format on
 
   return scene_type.push();
 }
