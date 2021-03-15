@@ -83,24 +83,25 @@ bool SceneObject::Deserialize(const json& serialized_object) {
   return true;
 }
 
-void SceneObject::RegisterToLua() {
-  /// a test module
-  // @module engine
+void SceneObject::RegisterType(sol::table* module) {
+  /// Represents an object in a scene
+  // @classmod ovis.engine.SceneObject
+  sol::usertype<SceneObject> scene_object_type = module->new_usertype<SceneObject>(
+      "SceneObject", "components", sol::property(&Module::SceneObjectComponentsWrapper::FromObject));
 
+  /// The name of the object.
+  // Names of objects with the same parent must be unique.
+  // @see 02-scene-structure.md
+  scene_object_type["name"] = sol::property(&SceneObject::name);
 
-  /// foo explodes text.
-  // @type SceneObject
-  sol::usertype<SceneObject> scene_object_type =
-      Lua::state.new_usertype<SceneObject>("SceneObject", "name", sol::property(&SceneObject::name), "components",
-                                           sol::property(&Module::SceneObjectComponentsWrapper::FromObject));
-    
   /// Adds a component to the object.
-  // It is a specialized splitting operation on a string.
   // @function add_component
-  // @param name The id of the component (see component_ids)
+  // @param name The id of the component.
   // @return The newly added component
-  scene_object_type["AddComponent"] = static_cast<SceneObjectComponent*(SceneObject::*)(const std::string&)>(&SceneObject::AddComponent);
-  scene_object_type["HasComponent"] = &SceneObject::HasComponent;
+  scene_object_type["add_component"] =
+      static_cast<SceneObjectComponent* (SceneObject::*)(const std::string&)>(&SceneObject::AddComponent);
+
+  scene_object_type["has_component"] = &SceneObject::HasComponent;
 }
 
 }  // namespace ovis

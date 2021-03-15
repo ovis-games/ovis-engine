@@ -20,6 +20,7 @@ add_library(
   include/ovis/engine/event.hpp src/event.cpp
   include/ovis/engine/input.hpp src/input.cpp
   include/ovis/engine/key.hpp src/key.cpp
+  include/ovis/engine/lua_module.hpp src/lua_module.cpp
 )
 add_library(ovis::engine ALIAS ovis-engine)
 
@@ -36,7 +37,6 @@ target_link_libraries(
     ovis::math
     ovis::graphics
     DearImGui
-    middleclass
 )
 
 target_compile_options(
@@ -58,20 +58,29 @@ target_add_assets(
   assets/debug_pass.shader.vert assets/debug_pass.shader.frag
 )
 
-add_executable(
-  ovis-engine-test
+if (OVIS_BUILD_TESTS)
+  add_executable(
+    ovis-engine-test
 
-  test/test.cpp
-)
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
+  )
 
-target_add_generated_test_source(
-  ovis-engine-test
-  src/lua.cpp
-)
+  target_add_ldoc_test(
+    TARGET ovis-engine-test
+    INPUT_FILES
+      src/scene.cpp
+      src/scene_object.cpp
+  )
 
-target_link_libraries(
-  ovis-engine-test
-  PRIVATE
-    catch2
-    ovis::engine
-)
+  target_link_libraries(
+    ovis-engine-test
+    PRIVATE
+      catch2
+      ovis::engine
+  )
+
+  add_test(
+    ovis-engine-test
+    ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-engine-test.js
+  )
+endif ()

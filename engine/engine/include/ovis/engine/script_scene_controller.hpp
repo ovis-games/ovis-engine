@@ -18,7 +18,7 @@ class ScriptSceneController : public SceneController {
   void Update(std::chrono::microseconds delta_time) override;
   void ProcessEvent(Event* event) override;
 
-  static void RegisterToLua();
+  static int LoadLuaModule(lua_State* l);
 
  private:
   sol::table instance_;

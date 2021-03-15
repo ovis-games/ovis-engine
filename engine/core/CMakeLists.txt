@@ -16,6 +16,7 @@ add_library(
   include/ovis/core/profiling.hpp src/profiling.cpp
   include/ovis/core/serialize.hpp src/serialize.cpp
   include/ovis/core/platform.hpp src/platform.cpp
+  include/ovis/core/lua_module.hpp src/lua_module.cpp
 )
 add_library(ovis::core ALIAS ovis-core)
 
@@ -32,6 +33,7 @@ target_link_libraries(
     fmt::fmt
     Lua
     sol2_single
+    middleclass
 )
 
 if (OVIS_EMSCRIPTEN)
@@ -65,3 +67,30 @@ target_compile_definitions(
   PUBLIC
     -DOVIS_ENABLE_BUILT_IN_PROFILING=0
 )
+
+if (OVIS_BUILD_TESTS)
+  add_executable(
+    ovis-core-test
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
+  )
+
+  target_add_ldoc_test(
+    TARGET ovis-core-test
+    INPUT_FILES
+      src/lua_module.cpp
+  )
+
+  target_link_libraries(
+    ovis-core-test
+    PRIVATE
+      catch2
+      ovis::core
+      ovis::engine
+  )
+
+  add_test(
+    ovis-core-test
+    ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-core-test.js
+  )
+endif ()

@@ -99,12 +99,14 @@ void ScriptSceneController::ProcessEvent(Event* event) {
   }
 }
 
-void ScriptSceneController::RegisterToLua() {
-  auto& lua = Lua::state;
+int ScriptSceneController::LoadLuaModule(lua_State* l) {
+  sol::state_view lua(l);
 
   auto get_controller = []() {};
 
-  auto scene_controller_type = lua["SceneController"] = lua["class"]("SceneController");
+  
+  sol::table core = lua["require"]("ovis.core");
+  sol::table scene_controller_type = core["class"]("SceneController");
   scene_controller_type["subscribe_to_event"] = sol::overload(
       [](sol::table scene_controller, std::string event_type) {
         GetSubscribedEventsTable(scene_controller)[event_type] = true;
@@ -141,6 +143,8 @@ void ScriptSceneController::RegisterToLua() {
   script_scene_controller_type["subscribe_to_event"] = &ScriptSceneController::SubscribeToEvent;
   script_scene_controller_type["unsubscribe_from_event"] = &ScriptSceneController::UnsubscribeFromEvent;
   script_scene_controller_type["is_subscribed_to_event"] = &ScriptSceneController::IsSubscribedToEvent;
+
+  return scene_controller_type.push();
 }
 
 std::unique_ptr<ScriptSceneController> LoadScriptSceneController(const std::string& asset_id, sol::state* lua_state) {

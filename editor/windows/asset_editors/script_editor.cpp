@@ -65,7 +65,9 @@ void ScriptEditor::SetErrors(const std::vector<LuaError>& errors) {
 
   for (const auto& error : errors) {
     SDL_assert(error.asset_id == asset_id());
-    error_markers.insert(std::make_pair(error.line, error.message));
+    if (error.asset_id == asset_id()) {
+      error_markers.insert(std::make_pair(error.line, error.message));
+    }
   }
 
   editor_.SetErrorMarkers(error_markers);

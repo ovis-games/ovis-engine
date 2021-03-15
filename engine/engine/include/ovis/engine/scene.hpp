@@ -2,19 +2,20 @@
 
 #include <chrono>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
-#include <type_traits>
 
 #include <SDL2/SDL_assert.h>
-#include <ovis/engine/event.hpp>
-#include <ovis/math/vector.hpp>
+#include <sol/sol.hpp>
 
 #include <ovis/core/down_cast.hpp>
 #include <ovis/core/json.hpp>
-#include <ovis/engine/camera.hpp>
-#include <ovis/engine/scene_object.hpp>
 #include <ovis/core/serialize.hpp>
+#include <ovis/math/vector.hpp>
+#include <ovis/engine/camera.hpp>
+#include <ovis/engine/event.hpp>
+#include <ovis/engine/scene_object.hpp>
 
 namespace ovis {
 
@@ -40,7 +41,8 @@ class Scene : public Serializable {
   template <typename ControllerType, typename... ArgumentTypes>
   ControllerType* AddController(ArgumentTypes&&... constructor_args) {
     static_assert(std::is_base_of<SceneController, ControllerType>());
-    return static_cast<ControllerType*>(AddController(std::make_unique<ControllerType>(std::forward<ArgumentTypes>(constructor_args)...)));
+    return static_cast<ControllerType*>(
+        AddController(std::make_unique<ControllerType>(std::forward<ArgumentTypes>(constructor_args)...)));
   }
   SceneController* AddController(std::unique_ptr<SceneController> scene_controller);
   SceneController* AddController(const std::string& id);
@@ -89,6 +91,8 @@ class Scene : public Serializable {
   json Serialize() const override;
   bool Deserialize(const json& serialized_object) override;
   const json* GetSchema() const override { return &schema_; }
+
+  static void RegisterType(sol::table* module);
 
  private:
   void InvalidateControllerOrder();

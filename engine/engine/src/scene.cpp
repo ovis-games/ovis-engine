@@ -1,7 +1,4 @@
-//
-// Created by Simon Oehrl on 05/05/16.
-//
-
+#include <iterator>
 #include <map>
 #include <string>
 
@@ -93,8 +90,15 @@ void Scene::ClearControllers() {
 }
 
 SceneObject* Scene::CreateObject(const std::string& object_name) {
-  auto result = objects_.insert(std::make_pair(object_name, std::make_unique<SceneObject>(this, object_name)));
-  return result.second ? result.first->second.get() : nullptr;
+  std::string candidate_name = object_name;
+  int number = 1;
+  while (ContainsObject(candidate_name)) {
+    ++number;
+    candidate_name = object_name + std::to_string(number);
+  }
+  auto result = objects_.insert(std::make_pair(candidate_name, std::make_unique<SceneObject>(this, candidate_name)));
+  SDL_assert(result.second);
+  return result.first->second.get();
 }
 
 SceneObject* Scene::CreateObject(const std::string& object_name, const json& serialized_object) {
@@ -331,6 +335,100 @@ SceneController* Scene::GetControllerInternal(const std::string& controller_name
   } else {
     return controller->second.get();
   }
+}
+
+void Scene::RegisterType(sol::table* module) {
+  // clang-format off
+
+  /// This class represents a scene.
+  // @classmod ovis.engine.Scene
+  // @cppsetup ovis::Scene scene;
+  // @cppsetup ovis::Lua::state["scene"] = &scene;
+  sol::usertype<Scene> scene_type = module->new_usertype<Scene>("Scene", sol::no_constructor);
+
+  /// Creates a new object within the scene.
+  // @function Scene:add_object
+  // @string basename The name of the new object. If it does already exist an increasing number will be added to the
+  // end.
+  // @treturn SceneObject
+  // @usage local first_object = scene:add_object("object")
+  // assert(first_object.name == "object")
+  // local second_object = scene:add_object("object")
+  // assert(second_object.name == "object2")
+  scene_type["add_object"] = sol::resolve<SceneObject*(const std::string&)>(&Scene::CreateObject);
+
+  /// Removes an object from the scene.
+  // @function Scene:remove_object
+  // @string name The name of the object
+  // @usage scene:add_object("object")
+  // assert(scene:contains_object("object"))
+  // scene:remove_object("object")
+  // assert(not scene:contains_object("object"))
+
+  /// Removes an object from the scene.
+  // @function Scene:remove_object
+  // @tparam SceneObject object The object that should be removed from the scene
+  // @usage local obj = scene:add_object("object")
+  // assert(scene:contains_object("object"))
+  // scene:remove_object(obj)
+  // assert(not scene:contains_object("object"))
+  // -- do not use obj anymore!
+  scene_type["remove_object"] =
+  sol::overload(
+    &Scene::DeleteObject,
+    [](Scene* scene, SceneObject* object){
+      if (scene != nullptr && object != nullptr) {
+        scene->DeleteObject(object->name());
+      }
+  });
+
+  /// Checks whether an object exists.
+  // @function Scene:contains_object
+  // @string name The name of the object to check
+  // @treturn bool
+  // @usage local obj = scene:add_object("object")
+  // assert(scene:contains_object("object"))
+  // scene:remove_object(obj)
+  // assert(not scene:contains_object("object"))
+  // -- do not use obj anymore!
+  scene_type["contains_object"] = &Scene::ContainsObject;
+
+  /// Returns an iterator to all objects in the scene
+  // @field Scene.objects
+  // @usage for obj in scene:objects() do
+  //   core.log(obj)
+  // end
+  scene_type["objects"] = [](Scene& scene) {
+    return [&scene, object_index = std::make_shared<size_t>(0)]() -> SceneObject* {
+      if (*object_index < scene.objects_.size()) {
+        SceneObject* object = std::next(scene.objects_.begin(), *object_index)->second.get();
+        (*object_index)++;
+        return object;
+      } else {
+        return nullptr;
+      }
+    };
+  };
+
+  /// Returns an iterator to all controllers in the scene
+  // The iterator returns the controllers in the @{02-scene-structure|update order}.
+  // @function Scene:controllers
+  // @usage for obj in scene:objects() do
+  //   core.log(obj)
+  // end
+  scene_type["controllers"] = [](Scene& scene) {
+    return [&scene, object_index = std::make_shared<size_t>(0)]() -> SceneObject* {
+      if (*object_index < scene.objects_.size()) {
+        SceneObject* object = std::next(scene.objects_.begin(), *object_index)->second.get();
+        (*object_index)++;
+        return object;
+      } else {
+        return nullptr;
+      }
+    };
+  };
+
+  // clang-format on
 }
 
 }  // namespace ovis

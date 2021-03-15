@@ -62,7 +62,7 @@ class SceneObject : public Serializable {
   json Serialize() const override;
   bool Deserialize(const json& serialized_object) override;
 
-  static void RegisterToLua();
+  static void RegisterType(sol::table* module);
 
  private:
   Scene* scene_;
