@@ -15,6 +15,7 @@ add_library(
   include/ovis/core/resource.hpp
   include/ovis/core/profiling.hpp src/profiling.cpp
   include/ovis/core/serialize.hpp src/serialize.cpp
+  include/ovis/core/platform.hpp src/platform.cpp
 )
 add_library(ovis::core ALIAS ovis-core)
 
@@ -42,6 +43,7 @@ if (OVIS_EMSCRIPTEN)
   target_link_options(
     ovis-core
     PUBLIC
+      "--bind"
       "SHELL:-s USE_SDL=2"
   )
 else ()
