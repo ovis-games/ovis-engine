@@ -20,10 +20,6 @@ class Lua {
                                                 std::function<void(const std::string&)> error_handler);
 
   static EventHandler<void(const std::string&)> on_error;
-
-  static int LoadCoreModule(lua_State* l);
-  static int LoadMathModule(lua_State* l);
-  static int LoadEngineModule(lua_State* l);
 };
 
 // sol::state& lua();

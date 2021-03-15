@@ -83,16 +83,12 @@ bool SceneObject::Deserialize(const json& serialized_object) {
   return true;
 }
 
-int SceneObject::LoadLuaModule(lua_State* l) {
-  sol::state_view lua(l);
-
+void SceneObject::RegisterType(sol::table* module) {
   /// Represents an object in a scene
   // @classmod ovis.engine.SceneObject
+  sol::usertype<SceneObject> scene_object_type = module->new_usertype<SceneObject>(
+      "SceneObject", "components", sol::property(&Module::SceneObjectComponentsWrapper::FromObject));
 
-  sol::usertype<SceneObject> scene_object_type =
-      Lua::state.new_usertype<SceneObject>("SceneObject", "components",
-                                           sol::property(&Module::SceneObjectComponentsWrapper::FromObject));
-  
   /// The name of the object.
   // Names of objects with the same parent must be unique.
   // @see 02-scene-structure.md
@@ -106,8 +102,6 @@ int SceneObject::LoadLuaModule(lua_State* l) {
       static_cast<SceneObjectComponent* (SceneObject::*)(const std::string&)>(&SceneObject::AddComponent);
 
   scene_object_type["has_component"] = &SceneObject::HasComponent;
-
-  return scene_object_type.push();
 }
 
 }  // namespace ovis

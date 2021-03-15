@@ -92,7 +92,7 @@ class Scene : public Serializable {
   bool Deserialize(const json& serialized_object) override;
   const json* GetSchema() const override { return &schema_; }
 
-  static int LoadLuaModule(lua_State* l);
+  static void RegisterType(sol::table* module);
 
  private:
   void InvalidateControllerOrder();

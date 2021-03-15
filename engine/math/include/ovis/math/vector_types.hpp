@@ -4,6 +4,7 @@
 #include <type_traits>
 
 #include <fmt/format.h>
+#include <sol/sol.hpp>
 
 #include <ovis/core/json.hpp>
 #include <ovis/math/constants.hpp>
@@ -35,6 +36,8 @@ union alignas(sizeof(float) * 2) Vector2 {
   inline static constexpr Vector2 NegativeX() { return {-1.0f, 0.0f}; }
   inline static constexpr Vector2 PositiveY() { return {0.0f, 1.0f}; }
   inline static constexpr Vector2 NegativeY() { return {0.0f, -1.0f}; }
+
+  static void RegisterType(sol::table* module);
 };
 static_assert(sizeof(Vector2) == 8);
 static_assert(std::is_trivially_copyable<Vector2>());
@@ -76,6 +79,8 @@ union alignas(sizeof(float) * 4) Vector3 {
   inline static constexpr Vector3 NegativeY() { return {0.0f, -1.0f, 0.0f}; }
   inline static constexpr Vector3 PositiveZ() { return {0.0f, 0.0f, 1.0f}; }
   inline static constexpr Vector3 NegativeZ() { return {0.0f, 0.0f, -1.0f}; }
+
+  static void RegisterType(sol::table* module);
 };
 static_assert(sizeof(Vector3) == 16);
 static_assert(std::is_trivially_copyable<Vector3>());

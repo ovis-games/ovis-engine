@@ -501,7 +501,9 @@ void SceneViewEditor::CreateSceneViewport(ImVec2 size) {
     scene_viewport_->AddRenderPassDependency("SpriteRenderer", "GizmoRenderer");
     scene_viewport_->SetScene(game_scene());
   } else {
-    scene_viewport_->Resize(size.x, size.y);
+    if (size.x > 0 && size.y > 0) {
+      scene_viewport_->Resize(size.x, size.y);
+    }
   }
 }
 

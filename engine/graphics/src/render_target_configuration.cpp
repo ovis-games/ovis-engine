@@ -1,5 +1,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
+#include <ovis/core/log.hpp>
 #include <ovis/core/range.hpp>
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/render_target.hpp>
@@ -19,6 +20,8 @@ RenderTargetConfiguration::RenderTargetConfiguration(GraphicsContext* context,
       color_attachment.value()->Attach(GL_COLOR_ATTACHMENT0 + color_attachment.index());
       width_ = color_attachment.value()->GetWidth();
       height_ = color_attachment.value()->GetHeight();
+      SDL_assert(width_ > 0);
+      SDL_assert(height_ > 0);
       draw_buffers_.push_back(GL_COLOR_ATTACHMENT0 + color_attachment.index());
     } else {
       draw_buffers_.push_back(GL_NONE);

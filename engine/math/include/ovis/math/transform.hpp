@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sol/sol.hpp>
+
 #include <ovis/math/matrix.hpp>
 #include <ovis/math/quaternion.hpp>
 #include <ovis/math/vector.hpp>

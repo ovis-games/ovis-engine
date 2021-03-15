@@ -3,6 +3,7 @@
 #include <type_traits>
 
 #include <fmt/format.h>
+#include <sol/sol.hpp>
 
 #include <ovis/core/json.hpp>
 
@@ -34,6 +35,8 @@ union alignas(sizeof(float) * 4) Color {
   inline static constexpr Color Yellow() { return {1.0f, 1.0f, 0.0f, 1.0f}; }
   inline static constexpr Color Fuchsia() { return {1.0f, 0.0f, 1.0f, 1.0f}; }
   inline static constexpr Color Aqua() { return {0.0f, 1.0f, 1.0f, 1.0f}; }
+
+  static void RegisterType(sol::table* module);
 };
 static_assert(sizeof(Color) == 16);
 static_assert(std::is_trivially_copyable<Color>());

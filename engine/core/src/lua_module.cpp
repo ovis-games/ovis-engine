@@ -1,16 +1,9 @@
-#include "module_loader.hpp"
-
 #include <middleclass.hpp>
 #include <sol/sol.hpp>
 
 #include <ovis/core/log.hpp>
 
 namespace ovis {
-
-void RegisterCoreLuaModules(lua_State* l) {
-  sol::state_view state(l);
-  state.require("ovis.core", LoadCoreModule);
-}
 
 int LoadCoreModule(lua_State* l) {
   sol::state_view state(l);
@@ -32,7 +25,7 @@ int LoadCoreModule(lua_State* l) {
   //   self.a = self.a + num
   //   return self.a
   // end
-  // local class_instance = SomeClass.new(10)
+  // local class_instance = SomeClass:new(10)
   // result = class_instance:add(20)
   // assert(result == 30)
   core_module["class"] = state.require_script("class", middleclass::SOURCE, false);

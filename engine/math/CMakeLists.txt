@@ -2,7 +2,7 @@ add_library(
   ovis-math
 
   include/ovis/math/constants.hpp src/constants.cpp
-  include/ovis/math/vector.hpp src/vector.cpp
+  include/ovis/math/vector.hpp src/vector2.cpp src/vector3.cpp
   include/ovis/math/vector_types.hpp src/vector_types.cpp
   include/ovis/math/color.hpp src/color.cpp
   include/ovis/math/quaternion.hpp src/quaternion.cpp
@@ -13,8 +13,7 @@ add_library(
   include/ovis/math/marching_cubes.hpp src/marching_cubes.cpp
   include/ovis/math/rect.hpp
   include/ovis/math/transform.hpp src/transform.cpp
-  include/ovis/math/lua_modules/register_modules.hpp src/lua_modules/register_modules.cpp
-  src/lua_modules/module_loader.hpp src/lua_modules/vector2_module.cpp src/lua_modules/vector3_module.cpp src/lua_modules/color_module.cpp
+  include/ovis/math/lua_module.hpp src/lua_module.cpp
 
   include/ovis/math/transform.hpp src/transform.cpp
 )
@@ -43,3 +42,33 @@ target_add_assets(
 
   assets/math.schema.json
 )
+
+if (OVIS_BUILD_TESTS)
+  add_executable(
+    ovis-math-test
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
+  )
+
+  target_add_ldoc_test(
+    TARGET ovis-math-test
+    INPUT_FILES
+      src/lua_module.cpp
+      src/color.cpp
+      src/vector2.cpp
+      src/vector3.cpp
+  )
+
+  target_link_libraries(
+    ovis-math-test
+    PRIVATE
+      catch2
+      ovis::math
+      ovis::engine
+  )
+
+  add_test(
+    ovis-math-test
+    ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-math-test.js
+  )
+endif ()

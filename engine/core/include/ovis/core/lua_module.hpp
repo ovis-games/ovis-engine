@@ -4,6 +4,6 @@
 
 namespace ovis {
 
-void RegisterMathLuaModules(lua_State* l);
+int LoadCoreModule(lua_State* l);
 
 }

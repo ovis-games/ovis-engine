@@ -6,6 +6,11 @@ use_markdown_titles = true
 kind_names = {topic='Manual'}
 template = true
 style = '!fixed'
+merge = true
+
+custom_tags = {
+  { 'cppsetup', hidden = true }
+}
 
 custom_display_name_handler = function(item, default_handler)
   if item.module then
