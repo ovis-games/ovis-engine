@@ -13,6 +13,8 @@ class Toolbar : public UiWindow {
  public:
   Toolbar();
 
+  void ProcessEvent(Event* event) override;
+
  protected:
   void BeforeBegin() override;
   void DrawContent() override;

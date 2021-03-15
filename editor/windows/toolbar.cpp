@@ -8,6 +8,9 @@
 
 #include <imgui_internal.h>
 
+#include <ovis/core/platform.hpp>
+#include <ovis/engine/input.hpp>
+
 namespace ovis {
 namespace editor {
 
@@ -24,6 +27,22 @@ Toolbar::Toolbar() : UiWindow("Toolbar", "") {
   icons_.redo = LoadTexture2D("icon-redo", EditorWindow::instance()->context());
   icons_.package = LoadTexture2D("icon-package", EditorWindow::instance()->context());
   icons_.windows = LoadTexture2D("icon-windows", EditorWindow::instance()->context());
+
+  SubscribeToEvent(KeyPressEvent::TYPE);
+}
+
+void Toolbar::ProcessEvent(Event* event) {
+  if (event->type() == KeyPressEvent::TYPE) {
+    auto* key_press_event = static_cast<KeyPressEvent*>(event);
+    const bool ctrl_command_pressed =
+        GetPlatform() == Platform::MACOS
+            ? input()->GetKeyState(Key::META_LEFT) || input()->GetKeyState(Key::META_RIGHT)
+            : input()->GetKeyState(Key::CONTROL_LEFT) || input()->GetKeyState(Key::CONTROL_RIGHT);
+    if (ctrl_command_pressed && key_press_event->key() == Key::KEY_S) {
+      Save();
+      event->StopPropagation();
+    }
+  }
 }
 
 void Toolbar::BeforeBegin() {
@@ -134,25 +153,6 @@ void Toolbar::Redo() {
     AssetEditor::last_focused_document_window->Redo();
   }
 }
-
-// if (event.type == SDL_KEYDOWN) {
-//   if (event.key.keysym.sym == SDLK_s && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
-//     Save();
-//     return true;
-//   } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0 &&
-//              (event.key.keysym.mod & (KMOD_LSHIFT | KMOD_RSHIFT)) != 0) {
-//     Redo();
-//     return true;
-//   } else if (event.key.keysym.sym == SDLK_z && (event.key.keysym.mod & (KMOD_LCTRL | KMOD_RCTRL)) != 0) {
-//     Undo();
-//     return true;
-//   }
-// } else if (event.type == SDL_DROPFILE) {
-//   const std::string filename = event.drop.file;
-//   SDL_free(event.drop.file);
-//   ImportAsset(filename);
-//   return true;
-// }
 
 }  // namespace editor
 }  // namespace ovis

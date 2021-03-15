@@ -5,6 +5,7 @@
 #include <ovis/base/imgui_scene_controller.hpp>
 #include <ovis/base/transform_component.hpp>
 
+#include <ovis/core/platform.hpp>
 #include <ovis/engine/lua.hpp>
 
 namespace ovis {
@@ -24,6 +25,7 @@ BaseModule::BaseModule() : Module("BaseModule") {
 
   // Setup back-end capabilities flags
   ImGuiIO& io = ImGui::GetIO();
+  io.ConfigMacOSXBehaviors = GetPlatform() == Platform::MACOS;
   //   io.BackendFlags |=
   //       ImGuiBackendFlags_HasMouseCursors;  // We can honor GetMouseCursor()
   //                                           // values (optional)

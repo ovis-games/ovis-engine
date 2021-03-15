@@ -6,9 +6,9 @@ namespace ovis {
 namespace editor {
 
 UiWindow::UiWindow(const std::string& id, const std::string& window_title)
-    : SceneController(id),
-      imgui_id_(window_title.length() > 0 ? window_title + "##" + id : id),
-      window_flags_(0) {}
+    : SceneController(id), imgui_id_(window_title.length() > 0 ? window_title + "##" + id : id), window_flags_(0) {
+  UpdateBefore("ImGui");
+}
 
 void UiWindow::DrawImGui() {
   if (dock_next_frame_) {

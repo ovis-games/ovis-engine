@@ -63,8 +63,10 @@ EM_BOOL HandleKeyDownEvent(int event_type, const EmscriptenKeyboardEvent* keyboa
 EM_BOOL HandleKeyPressEvent(int event_type, const EmscriptenKeyboardEvent* keyboard_event, void* user_data) {
   Window* window = static_cast<Window*>(user_data);
 
-  // For some reason keyboard_event->key contains "Enter" when pressing the enter button
-  if (std::strcmp("Enter", keyboard_event->key) != 0) {
+  // We do not want to send text input when a modifier key other than shift is pressed and
+  // for some reason keyboard_event->key contains "Enter" when pressing the enter button
+  if (keyboard_event->altKey == false && keyboard_event->ctrlKey == false && keyboard_event->metaKey == false &&
+      std::strcmp("Enter", keyboard_event->key) != 0) {
     TextInputEvent text_input_event(keyboard_event->key);
     window->scene()->ProcessEvent(&text_input_event);
     return !text_input_event.is_propagating();
