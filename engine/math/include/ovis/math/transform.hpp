@@ -40,6 +40,8 @@ class Transform {
   Matrix4 CalculateMatrix() const;
   Matrix4 CalculateInverseMatrix() const;
 
+  static void RegisterType(sol::table* module);
+
  private:
   Vector3 position_ = Vector3::Zero();
   Vector3 scale_ = Vector3::One();

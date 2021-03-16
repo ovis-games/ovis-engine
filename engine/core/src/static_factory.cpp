@@ -1,0 +1,1 @@
+#include <ovis/core/static_factory.hpp>

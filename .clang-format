@@ -17,23 +17,23 @@ IncludeCategories:
     Priority:        3
     SortPriority:    4
 
-  - Regex:           '^<ovis\/graphics'
+  - Regex:           '^<ovis\/scene'
     Priority:        3
     SortPriority:    5
 
-  - Regex:           '^<ovis\/audio'
+  - Regex:           '^<ovis\/graphics'
     Priority:        3
     SortPriority:    6
 
-  - Regex:           '^<ovis\/engine'
+  - Regex:           '^<ovis\/rendering'
     Priority:        3
     SortPriority:    7
 
-  - Regex:           '^<ovis\/rendering2d'
+  - Regex:           '^<ovis\/input'
     Priority:        3
     SortPriority:    8
 
-  - Regex:           '^<ovis\/physics2d'
+  - Regex:           '^<ovis\/audio'
     Priority:        3
     SortPriority:    9
 

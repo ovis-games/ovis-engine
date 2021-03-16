@@ -164,4 +164,57 @@ IndexedRange<T, I> IndexRange(C&& container) {
   return {container.begin(), container.end()};
 }
 
+template <typename IteratorType>
+class KeyRange {
+ public:
+  class IteratorAdapter {
+   public:
+    IteratorAdapter(const IteratorAdapter&) = default;
+    ~IteratorType() = default;
+
+    inline IteratorAdapter(IteratorType iterator) : iterator_(iterator) {}
+
+    IteratorAdapter& operator=(const IteratorAdapter&) = default;
+
+    inline bool operator==(const IteratorAdapter& rhs) { return iterator_ == rhs.iterator_; }
+
+    inline bool operator!=(const IteratorAdapter& rhs) { return iterator_ != rhs.iterator_; }
+
+    inline const auto& operator*() const { return iterator_->first; }
+
+    inline auto* operator->() const { return &iterator_->first; }
+
+    inline IteratorAdapter& operator++() {
+      ++iterator_;
+      return *this;
+    }
+
+    inline IteratorAdapter operator++(int) { return IteratorAdapter{iterator_++}; }
+
+   private:
+    IteratorType iterator_;
+  };
+
+ public:
+  inline KeyRange(const IteratorType& begin, const IteratorType& end) : begin_(begin), end_(end) {}
+
+  inline IteratorAdapter begin() { return {begin_}; }
+
+  inline IteratorAdapter end() { return {end_}; }
+
+ private:
+  IteratorType begin_;
+IteratorType end_;
+};
+
+template <typename Range>
+KeyRange<decltype(std::declval<Range>().begin())> Keys(Range& range) {
+  return {range.begin(), range.end()};
+}
+
+template <typename Range>
+KeyRange<decltype(std::declval<Range>().cbegin())> Keys(const Range& range) {
+  return {range.cbegin(), range.cend()};
+}
+
 }  // namespace ovis

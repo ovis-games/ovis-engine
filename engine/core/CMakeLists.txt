@@ -2,6 +2,7 @@
 add_library(
   ovis-core
   
+  include/ovis/core/core_module.hpp src/core_module.cpp
   include/ovis/core/json.hpp src/json.cpp
   include/ovis/core/asset_library.hpp src/asset_library.cpp
   include/ovis/core/array_view.hpp
@@ -16,7 +17,9 @@ add_library(
   include/ovis/core/profiling.hpp src/profiling.cpp
   include/ovis/core/serialize.hpp src/serialize.cpp
   include/ovis/core/platform.hpp src/platform.cpp
-  include/ovis/core/lua_module.hpp src/lua_module.cpp
+  include/ovis/core/event.hpp src/event.cpp
+  include/ovis/core/static_factory.hpp src/static_factory.cpp
+  include/ovis/core/lua.hpp src/lua.cpp
 )
 add_library(ovis::core ALIAS ovis-core)
 
@@ -77,8 +80,9 @@ if (OVIS_BUILD_TESTS)
 
   target_add_ldoc_test(
     TARGET ovis-core-test
+    MODULE core
     INPUT_FILES
-      src/lua_module.cpp
+      src/core_module.cpp
   )
 
   target_link_libraries(
@@ -86,7 +90,6 @@ if (OVIS_BUILD_TESTS)
     PRIVATE
       catch2
       ovis::core
-      ovis::engine
   )
 
   add_test(

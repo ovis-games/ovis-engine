@@ -1,6 +1,7 @@
 add_library(
   ovis-math
 
+  include/ovis/math/math_module.hpp src/math_module.cpp
   include/ovis/math/constants.hpp src/constants.cpp
   include/ovis/math/vector.hpp src/vector2.cpp src/vector3.cpp
   include/ovis/math/vector_types.hpp src/vector_types.cpp
@@ -13,7 +14,6 @@ add_library(
   include/ovis/math/marching_cubes.hpp src/marching_cubes.cpp
   include/ovis/math/rect.hpp
   include/ovis/math/transform.hpp src/transform.cpp
-  include/ovis/math/lua_module.hpp src/lua_module.cpp
 
   include/ovis/math/transform.hpp src/transform.cpp
 )
@@ -52,11 +52,13 @@ if (OVIS_BUILD_TESTS)
 
   target_add_ldoc_test(
     TARGET ovis-math-test
+    MODULE math
     INPUT_FILES
-      src/lua_module.cpp
+      src/math_module.cpp
       src/color.cpp
       src/vector2.cpp
       src/vector3.cpp
+      src/transform.cpp
   )
 
   target_link_libraries(
@@ -64,7 +66,6 @@ if (OVIS_BUILD_TESTS)
     PRIVATE
       catch2
       ovis::math
-      ovis::engine
   )
 
   add_test(

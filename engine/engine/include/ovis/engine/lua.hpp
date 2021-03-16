@@ -4,7 +4,7 @@
 
 #include <sol/sol.hpp>
 
-#include <ovis/core/event.hpp>
+#include <ovis/core/event_handler.hpp>
 #include <ovis/core/json.hpp>
 #include <ovis/core/resource_manager.hpp>
 

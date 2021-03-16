@@ -1,9 +1,12 @@
 #include <catch2/catch.hpp>
+#include <sol/sol.hpp>
+#include <ovis/core/lua.hpp>
+#include <ovis/@TARGET_ADD_LDOC_TEST_MODULE@/@TARGET_ADD_LDOC_TEST_MODULE@_module.hpp>
 
 @ if module then
-@   if module.tags.cppsetup then
+@   if module.tags.testinginclude then
 @     for i = 1, #module.tags.testinginclude do
-#include <ovis/$(module.name)/$(module.name)_module.hpp>
+#include $(module.tags.testinginclude[i])
 @     end
 @   end
 @ end
@@ -17,16 +20,17 @@ namespace {
 std::string last_error;
 
 void SetupEnvironment() {
-  static bool environment_setup = false;
-  if (!environment_setup) {
-    ovis::Lua::SetupEnvironment();
-    ovis::Lua::on_error.Subscribe([](const std::string& error_message) {
-      assert(error_message.length() > 0);
-      last_error = error_message;
-      INFO(error_message);
-    });
-    environment_setup = true;
-  }
+  // static bool environment_setup = false;
+  // if (!environment_setup) {
+  //   ovis::Lua::SetupEnvironment();
+  //   ovis::Lua::on_error.Subscribe([](const std::string& error_message) {
+  //     assert(error_message.length() > 0);
+  //     last_error = error_message;
+  //     INFO(error_message);
+  //   });
+  //   environment_setup = true;
+  // }
+  ovis::Load@MODULE_CAPITALIZED@Module();
 }
 
 std::string FormatCode(const std::string& code, bool add_line_numbers = false) {
@@ -75,12 +79,12 @@ std::string FormatCode(const std::string& code, bool add_line_numbers = false) {
 #define CHECK_LUA(code)                                                                     \
   do {                                                                                      \
     last_error = "";                                                                        \
-    sol::protected_function_result result = ovis::Lua::state.do_string(code, "");           \
+    sol::protected_function_result result = ovis::lua.do_string(code, "");                  \
     const bool valid_lua = result.valid();                                                  \
     if (!result.valid() && last_error.length() == 0) {                                      \
       last_error = result;                                                                  \
     }                                                                                       \
-    INFO(FormatCode(code, true) + "\n" + last_error);                                      \
+    INFO(FormatCode(code, true) + "\n" + last_error);                                       \
     CHECK(valid_lua);                                                                       \
   } while (false)
 
