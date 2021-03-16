@@ -375,337 +375,337 @@ void RegisterType(sol::table* module) {
   sol::usertype<Key> key_type = module->new_usertype<Key>("Key", sol::no_constructor);
 
   /// DIGIT_1.
-  // @field [type=Key] DIGIT_1
+  // @field[type=Key] DIGIT_1
   key_type["DIGIT_1"] = sol::property(&Key::DIGIT_1);
   /// DIGIT_2.
-  // @field [type=Key] DIGIT_2
+  // @field[type=Key] DIGIT_2
   key_type["DIGIT_2"] = sol::property(&Key::DIGIT_2);
   /// DIGIT_3.
-  // @field [type=Key] DIGIT_3
+  // @field[type=Key] DIGIT_3
   key_type["DIGIT_3"] = sol::property(&Key::DIGIT_3);
   /// DIGIT_4.
-  // @field [type=Key] DIGIT_4
+  // @field[type=Key] DIGIT_4
   key_type["DIGIT_4"] = sol::property(&Key::DIGIT_4);
   /// DIGIT_5.
-  // @field [type=Key] DIGIT_5
+  // @field[type=Key] DIGIT_5
   key_type["DIGIT_5"] = sol::property(&Key::DIGIT_5);
   /// DIGIT_6.
-  // @field [type=Key] DIGIT_6
+  // @field[type=Key] DIGIT_6
   key_type["DIGIT_6"] = sol::property(&Key::DIGIT_6);
   /// DIGIT_7.
-  // @field [type=Key] DIGIT_7
+  // @field[type=Key] DIGIT_7
   key_type["DIGIT_7"] = sol::property(&Key::DIGIT_7);
   /// DIGIT_8.
-  // @field [type=Key] DIGIT_8
+  // @field[type=Key] DIGIT_8
   key_type["DIGIT_8"] = sol::property(&Key::DIGIT_8);
   /// DIGIT_9.
-  // @field [type=Key] DIGIT_9
+  // @field[type=Key] DIGIT_9
   key_type["DIGIT_9"] = sol::property(&Key::DIGIT_9);
   /// DIGIT_0.
-  // @field [type=Key] DIGIT_0
+  // @field[type=Key] DIGIT_0
   key_type["DIGIT_0"] = sol::property(&Key::DIGIT_0);
   /// MINUS.
-  // @field [type=Key] MINUS
+  // @field[type=Key] MINUS
   key_type["MINUS"] = sol::property(&Key::MINUS);
   /// EQUAL.
-  // @field [type=Key] EQUAL
+  // @field[type=Key] EQUAL
   key_type["EQUAL"] = sol::property(&Key::EQUAL);
   /// NUMPAD_0.
-  // @field [type=Key] NUMPAD_0
+  // @field[type=Key] NUMPAD_0
   key_type["NUMPAD_0"] = sol::property(&Key::NUMPAD_0);
   /// NUMPAD_1.
-  // @field [type=Key] NUMPAD_1
+  // @field[type=Key] NUMPAD_1
   key_type["NUMPAD_1"] = sol::property(&Key::NUMPAD_1);
   /// NUMPAD_2.
-  // @field [type=Key] NUMPAD_2
+  // @field[type=Key] NUMPAD_2
   key_type["NUMPAD_2"] = sol::property(&Key::NUMPAD_2);
   /// NUMPAD_3.
-  // @field [type=Key] NUMPAD_3
+  // @field[type=Key] NUMPAD_3
   key_type["NUMPAD_3"] = sol::property(&Key::NUMPAD_3);
   /// NUMPAD_4.
-  // @field [type=Key] NUMPAD_4
+  // @field[type=Key] NUMPAD_4
   key_type["NUMPAD_4"] = sol::property(&Key::NUMPAD_4);
   /// NUMPAD_5.
-  // @field [type=Key] NUMPAD_5
+  // @field[type=Key] NUMPAD_5
   key_type["NUMPAD_5"] = sol::property(&Key::NUMPAD_5);
   /// NUMPAD_6.
-  // @field [type=Key] NUMPAD_6
+  // @field[type=Key] NUMPAD_6
   key_type["NUMPAD_6"] = sol::property(&Key::NUMPAD_6);
   /// NUMPAD_7.
-  // @field [type=Key] NUMPAD_7
+  // @field[type=Key] NUMPAD_7
   key_type["NUMPAD_7"] = sol::property(&Key::NUMPAD_7);
   /// NUMPAD_8.
-  // @field [type=Key] NUMPAD_8
+  // @field[type=Key] NUMPAD_8
   key_type["NUMPAD_8"] = sol::property(&Key::NUMPAD_8);
   /// NUMPAD_9.
-  // @field [type=Key] NUMPAD_9
+  // @field[type=Key] NUMPAD_9
   key_type["NUMPAD_9"] = sol::property(&Key::NUMPAD_9);
   /// NUMPAD_DECIMAL.
-  // @field [type=Key] NUMPAD_DECIMAL
+  // @field[type=Key] NUMPAD_DECIMAL
   key_type["NUMPAD_DECIMAL"] = sol::property(&Key::NUMPAD_DECIMAL);
   /// NUMPAD_ENTER.
-  // @field [type=Key] NUMPAD_ENTER
+  // @field[type=Key] NUMPAD_ENTER
   key_type["NUMPAD_ENTER"] = sol::property(&Key::NUMPAD_ENTER);
   /// NUMPAD_ADD.
-  // @field [type=Key] NUMPAD_ADD
+  // @field[type=Key] NUMPAD_ADD
   key_type["NUMPAD_ADD"] = sol::property(&Key::NUMPAD_ADD);
   /// NUMPAD_SUBTRACT.
-  // @field [type=Key] NUMPAD_SUBTRACT
+  // @field[type=Key] NUMPAD_SUBTRACT
   key_type["NUMPAD_SUBTRACT"] = sol::property(&Key::NUMPAD_SUBTRACT);
   /// NUMPAD_MULTIPLY.
-  // @field [type=Key] NUMPAD_MULTIPLY
+  // @field[type=Key] NUMPAD_MULTIPLY
   key_type["NUMPAD_MULTIPLY"] = sol::property(&Key::NUMPAD_MULTIPLY);
   /// NUMPAD_DIVIDE.
-  // @field [type=Key] NUMPAD_DIVIDE
+  // @field[type=Key] NUMPAD_DIVIDE
   key_type["NUMPAD_DIVIDE"] = sol::property(&Key::NUMPAD_DIVIDE);
   /// ESCAPE.
-  // @field [type=Key] ESCAPE
+  // @field[type=Key] ESCAPE
   key_type["ESCAPE"] = sol::property(&Key::ESCAPE);
   /// INSERT.
-  // @field [type=Key] INSERT
+  // @field[type=Key] INSERT
   key_type["INSERT"] = sol::property(&Key::INSERT);
   /// DELETE.
-  // @field [type=Key] DELETE
+  // @field[type=Key] DELETE
   key_type["DELETE"] = sol::property(&Key::DELETE);
   /// HOME.
-  // @field [type=Key] HOME
+  // @field[type=Key] HOME
   key_type["HOME"] = sol::property(&Key::HOME);
   /// END.
-  // @field [type=Key] END
+  // @field[type=Key] END
   key_type["END"] = sol::property(&Key::END);
   /// PAGE_UP.
-  // @field [type=Key] PAGE_UP
+  // @field[type=Key] PAGE_UP
   key_type["PAGE_UP"] = sol::property(&Key::PAGE_UP);
   /// PAGE_DOWN.
-  // @field [type=Key] PAGE_DOWN
+  // @field[type=Key] PAGE_DOWN
   key_type["PAGE_DOWN"] = sol::property(&Key::PAGE_DOWN);
   /// TAB.
-  // @field [type=Key] TAB
+  // @field[type=Key] TAB
   key_type["TAB"] = sol::property(&Key::TAB);
   /// ENTER.
-  // @field [type=Key] ENTER
+  // @field[type=Key] ENTER
   key_type["ENTER"] = sol::property(&Key::ENTER);
   /// BACKSPACE.
-  // @field [type=Key] BACKSPACE
+  // @field[type=Key] BACKSPACE
   key_type["BACKSPACE"] = sol::property(&Key::BACKSPACE);
   /// CONTROL_LEFT.
-  // @field [type=Key] CONTROL_LEFT
+  // @field[type=Key] CONTROL_LEFT
   key_type["CONTROL_LEFT"] = sol::property(&Key::CONTROL_LEFT);
   /// CONTROL_RIGHT.
-  // @field [type=Key] CONTROL_RIGHT
+  // @field[type=Key] CONTROL_RIGHT
   key_type["CONTROL_RIGHT"] = sol::property(&Key::CONTROL_RIGHT);
   /// ALT_LEFT.
-  // @field [type=Key] ALT_LEFT
+  // @field[type=Key] ALT_LEFT
   key_type["ALT_LEFT"] = sol::property(&Key::ALT_LEFT);
   /// ALT_RIGHT.
-  // @field [type=Key] ALT_RIGHT
+  // @field[type=Key] ALT_RIGHT
   key_type["ALT_RIGHT"] = sol::property(&Key::ALT_RIGHT);
   /// META_LEFT.
-  // @field [type=Key] META_LEFT
+  // @field[type=Key] META_LEFT
   key_type["META_LEFT"] = sol::property(&Key::META_LEFT);
   /// META_RIGHT.
-  // @field [type=Key] META_RIGHT
+  // @field[type=Key] META_RIGHT
   key_type["META_RIGHT"] = sol::property(&Key::META_RIGHT);
   /// SHIFT_LEFT.
-  // @field [type=Key] SHIFT_LEFT
+  // @field[type=Key] SHIFT_LEFT
   key_type["SHIFT_LEFT"] = sol::property(&Key::SHIFT_LEFT);
   /// SHIFT_RIGHT.
-  // @field [type=Key] SHIFT_RIGHT
+  // @field[type=Key] SHIFT_RIGHT
   key_type["SHIFT_RIGHT"] = sol::property(&Key::SHIFT_RIGHT);
   /// ARROW_UP.
-  // @field [type=Key] ARROW_UP
+  // @field[type=Key] ARROW_UP
   key_type["ARROW_UP"] = sol::property(&Key::ARROW_UP);
   /// ARROW_DOWN.
-  // @field [type=Key] ARROW_DOWN
+  // @field[type=Key] ARROW_DOWN
   key_type["ARROW_DOWN"] = sol::property(&Key::ARROW_DOWN);
   /// ARROW_LEFT.
-  // @field [type=Key] ARROW_LEFT
+  // @field[type=Key] ARROW_LEFT
   key_type["ARROW_LEFT"] = sol::property(&Key::ARROW_LEFT);
   /// ARROW_RIGHT.
-  // @field [type=Key] ARROW_RIGHT
+  // @field[type=Key] ARROW_RIGHT
   key_type["ARROW_RIGHT"] = sol::property(&Key::ARROW_RIGHT);
   /// BACKQUOTE.
-  // @field [type=Key] BACKQUOTE
+  // @field[type=Key] BACKQUOTE
   key_type["BACKQUOTE"] = sol::property(&Key::BACKQUOTE);
   /// BRACKET_LEFT.
-  // @field [type=Key] BRACKET_LEFT
+  // @field[type=Key] BRACKET_LEFT
   key_type["BRACKET_LEFT"] = sol::property(&Key::BRACKET_LEFT);
   /// BRACKET_RIGHT.
-  // @field [type=Key] BRACKET_RIGHT
+  // @field[type=Key] BRACKET_RIGHT
   key_type["BRACKET_RIGHT"] = sol::property(&Key::BRACKET_RIGHT);
   /// SEMICOLON.
-  // @field [type=Key] SEMICOLON
+  // @field[type=Key] SEMICOLON
   key_type["SEMICOLON"] = sol::property(&Key::SEMICOLON);
   /// QUOTE.
-  // @field [type=Key] QUOTE
+  // @field[type=Key] QUOTE
   key_type["QUOTE"] = sol::property(&Key::QUOTE);
   /// BACKSLASH.
-  // @field [type=Key] BACKSLASH
+  // @field[type=Key] BACKSLASH
   key_type["BACKSLASH"] = sol::property(&Key::BACKSLASH);
   /// COMMA.
-  // @field [type=Key] COMMA
+  // @field[type=Key] COMMA
   key_type["COMMA"] = sol::property(&Key::COMMA);
   /// PERIOD.
-  // @field [type=Key] PERIOD
+  // @field[type=Key] PERIOD
   key_type["PERIOD"] = sol::property(&Key::PERIOD);
   /// SLASH.
-  // @field [type=Key] SLASH
+  // @field[type=Key] SLASH
   key_type["SLASH"] = sol::property(&Key::SLASH);
   /// INTL_BACKSLASH.
-  // @field [type=Key] INTL_BACKSLASH
+  // @field[type=Key] INTL_BACKSLASH
   key_type["INTL_BACKSLASH"] = sol::property(&Key::INTL_BACKSLASH);
   /// SPACE.
-  // @field [type=Key] SPACE
+  // @field[type=Key] SPACE
   key_type["SPACE"] = sol::property(&Key::SPACE);
   /// KEY_A.
-  // @field [type=Key] KEY_A
+  // @field[type=Key] KEY_A
   key_type["KEY_A"] = sol::property(&Key::KEY_A);
   /// KEY_B.
-  // @field [type=Key] KEY_B
+  // @field[type=Key] KEY_B
   key_type["KEY_B"] = sol::property(&Key::KEY_B);
   /// KEY_C.
-  // @field [type=Key] KEY_C
+  // @field[type=Key] KEY_C
   key_type["KEY_C"] = sol::property(&Key::KEY_C);
   /// KEY_D.
-  // @field [type=Key] KEY_D
+  // @field[type=Key] KEY_D
   key_type["KEY_D"] = sol::property(&Key::KEY_D);
   /// KEY_E.
-  // @field [type=Key] KEY_E
+  // @field[type=Key] KEY_E
   key_type["KEY_E"] = sol::property(&Key::KEY_E);
   /// KEY_F.
-  // @field [type=Key] KEY_F
+  // @field[type=Key] KEY_F
   key_type["KEY_F"] = sol::property(&Key::KEY_F);
   /// KEY_G.
-  // @field [type=Key] KEY_G
+  // @field[type=Key] KEY_G
   key_type["KEY_G"] = sol::property(&Key::KEY_G);
   /// KEY_H.
-  // @field [type=Key] KEY_H
+  // @field[type=Key] KEY_H
   key_type["KEY_H"] = sol::property(&Key::KEY_H);
   /// KEY_I.
-  // @field [type=Key] KEY_I
+  // @field[type=Key] KEY_I
   key_type["KEY_I"] = sol::property(&Key::KEY_I);
   /// KEY_J.
-  // @field [type=Key] KEY_J
+  // @field[type=Key] KEY_J
   key_type["KEY_J"] = sol::property(&Key::KEY_J);
   /// KEY_K.
-  // @field [type=Key] KEY_K
+  // @field[type=Key] KEY_K
   key_type["KEY_K"] = sol::property(&Key::KEY_K);
   /// KEY_L.
-  // @field [type=Key] KEY_L
+  // @field[type=Key] KEY_L
   key_type["KEY_L"] = sol::property(&Key::KEY_L);
   /// KEY_M.
-  // @field [type=Key] KEY_M
+  // @field[type=Key] KEY_M
   key_type["KEY_M"] = sol::property(&Key::KEY_M);
   /// KEY_N.
-  // @field [type=Key] KEY_N
+  // @field[type=Key] KEY_N
   key_type["KEY_N"] = sol::property(&Key::KEY_N);
   /// KEY_O.
-  // @field [type=Key] KEY_O
+  // @field[type=Key] KEY_O
   key_type["KEY_O"] = sol::property(&Key::KEY_O);
   /// KEY_P.
-  // @field [type=Key] KEY_P
+  // @field[type=Key] KEY_P
   key_type["KEY_P"] = sol::property(&Key::KEY_P);
   /// KEY_Q.
-  // @field [type=Key] KEY_Q
+  // @field[type=Key] KEY_Q
   key_type["KEY_Q"] = sol::property(&Key::KEY_Q);
   /// KEY_R.
-  // @field [type=Key] KEY_R
+  // @field[type=Key] KEY_R
   key_type["KEY_R"] = sol::property(&Key::KEY_R);
   /// KEY_S.
-  // @field [type=Key] KEY_S
+  // @field[type=Key] KEY_S
   key_type["KEY_S"] = sol::property(&Key::KEY_S);
   /// KEY_T.
-  // @field [type=Key] KEY_T
+  // @field[type=Key] KEY_T
   key_type["KEY_T"] = sol::property(&Key::KEY_T);
   /// KEY_U.
-  // @field [type=Key] KEY_U
+  // @field[type=Key] KEY_U
   key_type["KEY_U"] = sol::property(&Key::KEY_U);
   /// KEY_V.
-  // @field [type=Key] KEY_V
+  // @field[type=Key] KEY_V
   key_type["KEY_V"] = sol::property(&Key::KEY_V);
   /// KEY_W.
-  // @field [type=Key] KEY_W
+  // @field[type=Key] KEY_W
   key_type["KEY_W"] = sol::property(&Key::KEY_W);
   /// KEY_X.
-  // @field [type=Key] KEY_X
+  // @field[type=Key] KEY_X
   key_type["KEY_X"] = sol::property(&Key::KEY_X);
   /// KEY_Y.
-  // @field [type=Key] KEY_Y
+  // @field[type=Key] KEY_Y
   key_type["KEY_Y"] = sol::property(&Key::KEY_Y);
   /// KEY_Z.
-  // @field [type=Key] KEY_Z
+  // @field[type=Key] KEY_Z
   key_type["KEY_Z"] = sol::property(&Key::KEY_Z);
   /// F1.
-  // @field [type=Key] F1
+  // @field[type=Key] F1
   key_type["F1"] = sol::property(&Key::F1);
   /// F2.
-  // @field [type=Key] F2
+  // @field[type=Key] F2
   key_type["F2"] = sol::property(&Key::F2);
   /// F3.
-  // @field [type=Key] F3
+  // @field[type=Key] F3
   key_type["F3"] = sol::property(&Key::F3);
   /// F4.
-  // @field [type=Key] F4
+  // @field[type=Key] F4
   key_type["F4"] = sol::property(&Key::F4);
   /// F5.
-  // @field [type=Key] F5
+  // @field[type=Key] F5
   key_type["F5"] = sol::property(&Key::F5);
   /// F6.
-  // @field [type=Key] F6
+  // @field[type=Key] F6
   key_type["F6"] = sol::property(&Key::F6);
   /// F7.
-  // @field [type=Key] F7
+  // @field[type=Key] F7
   key_type["F7"] = sol::property(&Key::F7);
   /// F8.
-  // @field [type=Key] F8
+  // @field[type=Key] F8
   key_type["F8"] = sol::property(&Key::F8);
   /// F9.
-  // @field [type=Key] F9
+  // @field[type=Key] F9
   key_type["F9"] = sol::property(&Key::F9);
   /// F10.
-  // @field [type=Key] F10
+  // @field[type=Key] F10
   key_type["F10"] = sol::property(&Key::F10);
   /// F11.
-  // @field [type=Key] F11
+  // @field[type=Key] F11
   key_type["F11"] = sol::property(&Key::F11);
   /// F12.
-  // @field [type=Key] F12
+  // @field[type=Key] F12
   key_type["F12"] = sol::property(&Key::F12);
   /// F13.
-  // @field [type=Key] F13
+  // @field[type=Key] F13
   key_type["F13"] = sol::property(&Key::F13);
   /// F14.
-  // @field [type=Key] F14
+  // @field[type=Key] F14
   key_type["F14"] = sol::property(&Key::F14);
   /// F15.
-  // @field [type=Key] F15
+  // @field[type=Key] F15
   key_type["F15"] = sol::property(&Key::F15);
   /// F16.
-  // @field [type=Key] F16
+  // @field[type=Key] F16
   key_type["F16"] = sol::property(&Key::F16);
   /// F17.
-  // @field [type=Key] F17
+  // @field[type=Key] F17
   key_type["F17"] = sol::property(&Key::F17);
   /// F18.
-  // @field [type=Key] F18
+  // @field[type=Key] F18
   key_type["F18"] = sol::property(&Key::F18);
   /// F19.
-  // @field [type=Key] F19
+  // @field[type=Key] F19
   key_type["F19"] = sol::property(&Key::F19);
   /// F20.
-  // @field [type=Key] F20
+  // @field[type=Key] F20
   key_type["F20"] = sol::property(&Key::F20);
   /// F21.
-  // @field [type=Key] F21
+  // @field[type=Key] F21
   key_type["F21"] = sol::property(&Key::F21);
   /// F22.
-  // @field [type=Key] F22
+  // @field[type=Key] F22
   key_type["F22"] = sol::property(&Key::F22);
   /// F23.
-  // @field [type=Key] F23
+  // @field[type=Key] F23
   key_type["F23"] = sol::property(&Key::F23);
   /// F24.
-  // @field [type=Key] F24
+  // @field[type=Key] F24
   key_type["F24"] = sol::property(&Key::F24);
 }
 

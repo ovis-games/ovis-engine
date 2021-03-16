@@ -31,20 +31,20 @@ void Transform::RegisterType(sol::table* module) {
       module->new_usertype<Transform>("Transform", sol::constructors<Transform()>());
 
   /// The position of the transformation.
-  // @field [type=Vector3] position
+  // @field[type=Vector3] position
   transform_type["position"] = sol::property(&Transform::position, &Transform::SetPosition);
 
   /// The scale of the transformation.
-  // @field [type=Vector3] scale
+  // @field[type=Vector3] scale
   transform_type["scale"] = sol::property(&Transform::scale, sol::resolve<void(Vector3)>(&Transform::SetScale));
 
   /// The rotation of the transformation.
-  // @field [type=Quaternion] rotation
+  // @field[type=Quaternion] rotation
   transform_type["rotation"] = sol::property(&Transform::rotaton, &Transform::SetRotation);
 
   /// Moves the transformation.
   // @function move
-  // @param [type=Vector3] offset
+  // @param[type=Vector3] offset
   // @usage local transform = Transform.new()
   // assert(transform.position == math.Vector3.ZERO)
   // transform:move(math.Vector3.POSITIVE_X)
@@ -59,13 +59,13 @@ void Transform::RegisterType(sol::table* module) {
 
   /// Rotates the object by multiplying its rotation by another quaternion.
   // @function rotate
-  // @param [type=Quaternion] rotation_offset
+  // @param[type=Quaternion] rotation_offset
 
   /// Rotates the object by rotating it around an axis.
   // The angle is given in degrees.
   // @function rotate
-  // @param [type=Vector3] axis
-  // @param [type=number] angle
+  // @param[type=Vector3] axis
+  // @param[type=number] angle
   transform_type["rotate"] = sol::overload(sol::resolve<void(Quaternion)>(&Transform::Rotate),
                                            sol::resolve<void(Vector3, float)>(&Transform::Rotate));
 
