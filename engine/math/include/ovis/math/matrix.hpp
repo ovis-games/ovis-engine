@@ -14,6 +14,79 @@ inline constexpr float Determinant(const Matrix2& matrix) {
   return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
 }
 
+inline constexpr Matrix3x4 Matrix3x4::FromTransformation(const Vector3& translation, const Vector3& scaling, const Quaternion& rotation) {
+  Matrix3x4 transformation_matrix = Matrix3x4::FromRotation(rotation);
+  for (int row = 0; row < 3; ++row) {
+    for (int column = 0; column < 3; ++column) {
+      transformation_matrix[row][column] *= scaling[column];
+    }
+    transformation_matrix[row][3] = translation[row];
+  }
+  return transformation_matrix;
+}
+
+inline constexpr Matrix3x4 Matrix3x4::FromTranslation(const Vector3& translation) {
+  return {{
+      // clang-format off
+      {1.0f, 0.0f, 0.0f, translation.x},
+      {0.0f, 1.0f, 0.0f, translation.y},
+      {0.0f, 0.0f, 1.0f, translation.z},
+      // clang-format on
+  }};
+}
+
+inline constexpr Matrix3x4 Matrix3x4::FromScaling(const Vector3& scaling) {
+  return {{
+      // clang-format off
+      {scaling.x, 0.0f, 0.0f, 0.0f},
+      {0.0f, scaling.y, 0.0f, 0.0f},
+      {0.0f, 0.0f, scaling.z, 0.0f},
+      // clang-format on
+  }};
+}
+
+inline constexpr Matrix3x4 Matrix3x4::FromScaling(float scaling) {
+  return {{
+      // clang-format off
+      {scaling, 0.0f, 0.0f, 0.0f},
+      {0.0f, scaling, 0.0f, 0.0f},
+      {0.0f, 0.0f, scaling, 0.0f},
+      // clang-format on
+  }};
+}
+
+inline constexpr Matrix3x4 Matrix3x4::FromRotation(const Quaternion& q) {
+  const float qxx = q.x * q.x;
+  const float qyy = q.y * q.y;
+  const float qzz = q.z * q.z;
+  const float qxz = q.x * q.z;
+  const float qxy = q.x * q.y;
+  const float qyz = q.y * q.z;
+  const float qwx = q.w * q.x;
+  const float qwy = q.w * q.y;
+  const float qwz = q.w * q.z;
+
+  const float m00 = 1.0f - 2.0f * (qyy + qzz);
+  const float m10 = 2.0f * (qxy + qwz);
+  const float m20 = 2.0f * (qxz - qwy);
+
+  const float m01 = 2.0f * (qxy - qwz);
+  const float m11 = 1.0f - 2.0f * (qxx + qzz);
+  const float m21 = 2.0f * (qyz + qwx);
+
+  const float m02 = 2.0f * (qxz + qwy);
+  const float m12 = 2.0f * (qyz - qwx);
+  const float m22 = 1.0f - 2.0f * (qxx + qyy);
+
+  return {{
+      // clang-format off
+      {m00, m01, m02, 0.f},
+      {m10, m11, m12, 0.f},
+      {m20, m21, m22, 0.f},
+      // clang-format on
+  }};
+}
+
 inline constexpr Matrix4 Matrix4::FromTranslation(const Vector3& translation) {
   return {{
       // clang-format off

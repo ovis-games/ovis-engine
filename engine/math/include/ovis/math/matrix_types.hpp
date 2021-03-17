@@ -64,6 +64,12 @@ union Matrix3x4 {
   static constexpr int ELEMENT_COUNT = 3;
   static constexpr int ROW_COUNT = 3;
   static constexpr int COLUMN_COUNT = 4;
+
+  inline static constexpr Matrix3x4 FromTransformation(const Vector3& translation, const Vector3& scaling, const Quaternion& rotation);
+  inline static constexpr Matrix3x4 FromTranslation(const Vector3& translation);
+  inline static constexpr Matrix3x4 FromScaling(const Vector3& scaling);
+  inline static constexpr Matrix3x4 FromScaling(float scaling);
+  inline static constexpr Matrix3x4 FromRotation(const Quaternion& rotation);
 };
 static_assert(sizeof(Matrix3) == 48);
 static_assert(std::is_trivially_copyable<Matrix3>());
