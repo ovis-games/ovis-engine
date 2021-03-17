@@ -1,5 +1,3 @@
-#include <glm/gtc/type_ptr.hpp>
-
 #include <ovis/core/log.hpp>
 #include <ovis/core/range.hpp>
 #include <ovis/graphics/graphics_context.hpp>
