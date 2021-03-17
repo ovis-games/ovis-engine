@@ -4,6 +4,8 @@
 #include <variant>
 #include <vector>
 
+#include <sol/sol.hpp>
+
 #include <ovis/core/class.hpp>
 #include <ovis/core/json.hpp>
 #include <ovis/core/lua_reference.hpp>
@@ -26,6 +28,8 @@ class SceneObjectComponent : public Serializable,
   virtual ~SceneObjectComponent() = default;
 
   inline SceneObject* scene_object() const { return scene_object_; }
+
+  static void RegisterType(sol::table* module);
 
  private:
   SceneObject* scene_object_;

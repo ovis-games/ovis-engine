@@ -7,7 +7,7 @@ add_library(
   include/ovis/scene/script_scene_controller.hpp src/script_scene_controller.cpp
   include/ovis/scene/scene_object.hpp src/scene_object.cpp
   include/ovis/scene/scene_object_component.hpp src/scene_object_component.cpp
-  include/ovis/scene/transform_component.hpp src/transform_component.cpp
+  include/ovis/scene/transform.hpp src/transform.cpp
 )
 add_library(ovis::scene ALIAS ovis-scene)
 
@@ -37,7 +37,7 @@ if (OVIS_BUILD_TESTS)
     INPUT_FILES
       src/scene.cpp
       src/scene_object.cpp
-      src/transform_component.cpp
+      src/transform.cpp
   )
 
   target_link_libraries(

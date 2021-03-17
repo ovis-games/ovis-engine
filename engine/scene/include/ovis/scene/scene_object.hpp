@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include <ovis/core/class.hpp>
+#include <ovis/core/down_cast.hpp>
 #include <ovis/core/json.hpp>
 #include <ovis/core/serialize.hpp>
 #include <ovis/scene/scene_object_component.hpp>

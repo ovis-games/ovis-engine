@@ -1,12 +1,13 @@
 #include <tuple>
 
-#include <glm/gtx/euler_angles.hpp>
-#include <glm/gtx/transform.hpp>
-
 #include <ovis/core/log.hpp>
-#include <ovis/math/transform.hpp>
+#include <ovis/scene/transform.hpp>
 
 namespace ovis {
+
+namespace {
+static const json SCHEMA = {{"$ref", "base#/$defs/transform"}};
+}
 
 Matrix4 Transform::CalculateMatrix() const {
   const auto translation_matrix = Matrix4::FromTranslation(position_);
@@ -22,11 +23,40 @@ Matrix4 Transform::CalculateInverseMatrix() const {
   return scale_matrix * rotation_matrix * translation_matrix;
 }
 
+json Transform::Serialize() const {
+  return {{"position", position()},
+          {"rotation", ExtractEulerAngles(rotaton()) * RadiansToDegreesFactor<float>()},
+          {"scale", scale()}};
+}
+
+bool Transform::Deserialize(const json& data) {
+  if (data.contains("Position")) {
+    const Vector3 position = data.at("Position");
+    SetPosition(position);
+  }
+  if (data.contains("Rotation")) {
+    const Vector3 euler_angles = Vector3(data.at("Rotation")) * DegreesToRadiansFactor<float>();
+    SetRotation(Quaternion::FromEulerAngles(euler_angles.x, euler_angles.y, euler_angles.z));
+  }
+  if (data.contains("Scale")) {
+    const Vector3 scale = data.at("Scale");
+    SetScale(scale);
+  }
+  // TODO: calculate matrices
+  return true;
+}
+
+const json* Transform::GetSchema() const {
+  return &SCHEMA;
+}
+
 void Transform::RegisterType(sol::table* module) {
   /// A class that respresents a 3D transformation of an object.
-  // @classmod ovis.math.Transform
-  // @usage local math = require "ovis.math"
-  // local Transform = math.Transform
+  // @classmod ovis.scene.Transform
+  // @base SceneObjectComponent
+  // @usage local scene = require "ovis.scene"
+  // local Transform = scene.Transform
+  // local math = require "ovis.math" -- for the examples
   sol::usertype<Transform> transform_type =
       module->new_usertype<Transform>("Transform", sol::constructors<Transform()>());
 
@@ -52,10 +82,6 @@ void Transform::RegisterType(sol::table* module) {
   // transform:move(math.Vector3.POSITIVE_X)
   // assert(transform.position == 2 * math.Vector3.POSITIVE_X)
   transform_type["move"] = &Transform::Move;
-
-  // inline void SetScale(float new_uniform_scale) { scale_ = {new_uniform_scale, new_uniform_scale, new_uniform_scale};
-  // } inline void Scale(Vector3 scale) { scale_ *= scale; } inline void Scale(float uniform_scale) { scale_ *=
-  // uniform_scale; }
 
   /// Rotates the object by multiplying its rotation by another quaternion.
   // @function rotate
@@ -96,32 +122,6 @@ void Transform::RegisterType(sol::table* module) {
                                &std::get<2>(yaw_pitch_roll));
     return yaw_pitch_roll;
   };
-
-  // Vector3 TransformDirection(Vector3 direction) const { return rotation_ * direction; }
-
-  // Matrix4 CalculateMatrix() const;
-  // Matrix4 CalculateInverseMatrix() const;
-}
-
-void to_json(json& data, const Transform& transform) {
-  data["Position"] = transform.position();
-  data["Rotation"] = ExtractEulerAngles(transform.rotaton()) * RadiansToDegreesFactor<float>();
-  data["Scale"] = transform.scale();
-}
-
-void from_json(const json& data, Transform& transform) {
-  if (data.contains("Position")) {
-    const Vector3 position = data.at("Position");
-    transform.SetPosition(position);
-  }
-  if (data.contains("Rotation")) {
-    const Vector3 euler_angles = Vector3(data.at("Rotation")) * DegreesToRadiansFactor<float>();
-    transform.SetRotation(Quaternion::FromEulerAngles(euler_angles.x, euler_angles.y, euler_angles.z));
-  }
-  if (data.contains("Scale")) {
-    const Vector3 scale = data.at("Scale");
-    transform.SetScale(scale);
-  }
 }
 
 }  // namespace ovis

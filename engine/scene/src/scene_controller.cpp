@@ -43,9 +43,18 @@ void SceneController::ProcessEvent(Event* event) {
   (void)event;
 }
 
-void SceneController::RegisterToLua() {
-  // auto& lua = Lua::state;
-  // sol::usertype<SceneController> scene_controller_type = lua.new_usertype<SceneController>("SceneController");
+void SceneController::RegisterType(sol::table* module) {
+  /// The base class for all scene controllers.
+  // @classmod ovis.scene.SceneController
+  sol::usertype<SceneController> scene_controller_type = module->new_usertype<SceneController>("SceneController");
+
+  /// The scene, the controller is attached to.
+  // @field[type=Scene] scene
+  scene_controller_type["scene"] = sol::property(&SceneController::scene);
+  
+  /// The name of the controller.
+  // @field[type=string] name
+  scene_controller_type["name"] = sol::property(&SceneController::name);
 }
 
 void SceneController::UpdateBefore(const std::string& controller_name) {

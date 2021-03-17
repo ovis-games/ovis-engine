@@ -5,6 +5,8 @@
 #include <string>
 #include <unordered_map>
 
+#include <sol/sol.hpp>
+
 #include <ovis/core/class.hpp>
 #include <ovis/core/event.hpp>
 #include <ovis/core/static_factory.hpp>
@@ -43,7 +45,7 @@ class SceneController : public StaticFactory<SceneController, std::unique_ptr<Sc
   virtual void ProcessEvent(Event* event);
   virtual void DrawImGui() {}
 
-  static void RegisterToLua();
+  static void RegisterType(sol::table* module);
 
  protected:
   void UpdateBefore(const std::string& controller_name);

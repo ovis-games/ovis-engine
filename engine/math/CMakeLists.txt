@@ -13,9 +13,6 @@ add_library(
   include/ovis/math/heightmap.hpp
   include/ovis/math/marching_cubes.hpp src/marching_cubes.cpp
   include/ovis/math/rect.hpp
-  include/ovis/math/transform.hpp src/transform.cpp
-
-  include/ovis/math/transform.hpp src/transform.cpp
 )
 add_library(ovis::math ALIAS ovis-math)
 
@@ -58,7 +55,6 @@ if (OVIS_BUILD_TESTS)
       src/color.cpp
       src/vector2.cpp
       src/vector3.cpp
-      src/transform.cpp
   )
 
   target_link_libraries(

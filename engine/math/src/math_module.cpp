@@ -3,7 +3,6 @@
 #include <ovis/core/core_module.hpp>
 #include <ovis/core/lua.hpp>
 #include <ovis/math/math_module.hpp>
-#include <ovis/math/transform.hpp>
 #include <ovis/math/vector.hpp>
 
 namespace ovis {
@@ -28,7 +27,6 @@ int LoadMathModule(lua_State* l) {
   Vector2::RegisterType(&math_module);
   Vector3::RegisterType(&math_module);
   Color::RegisterType(&math_module);
-  Transform::RegisterType(&math_module);
 
   math_module["abs"] = state["math"]["abs"];
   math_module["acos"] = state["math"]["abs"];

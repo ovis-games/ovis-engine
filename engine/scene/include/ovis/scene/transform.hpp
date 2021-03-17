@@ -5,10 +5,13 @@
 #include <ovis/math/matrix.hpp>
 #include <ovis/math/quaternion.hpp>
 #include <ovis/math/vector.hpp>
+#include <ovis/scene/scene_object_component.hpp>
 
 namespace ovis {
 
-class Transform {
+class Transform : public SceneObjectComponent {
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE(Transform);
+
  public:
   inline const Vector3& position() const { return position_; }
   inline void SetPosition(const Vector3& new_position) { position_ = new_position; }
@@ -40,12 +43,19 @@ class Transform {
   Matrix4 CalculateMatrix() const;
   Matrix4 CalculateInverseMatrix() const;
 
+  json Serialize() const override;
+  bool Deserialize(const json& data) override;
+  const json* GetSchema() const override;
+
   static void RegisterType(sol::table* module);
 
  private:
   Vector3 position_ = Vector3::Zero();
   Vector3 scale_ = Vector3::One();
   Quaternion rotation_ = Quaternion::Identity();
+
+  Matrix3x4 local_to_world_;
+  Matrix3x4 world_to_local_;
 };
 
 void to_json(json& data, const Transform& transform);
