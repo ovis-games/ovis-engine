@@ -11,6 +11,7 @@ namespace ovis {
 
 class Transform : public SceneObjectComponent {
   OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE(Transform);
+  friend class TransformController;
 
  public:
   inline const Vector3& position() const { return position_; }
@@ -23,7 +24,7 @@ class Transform : public SceneObjectComponent {
   inline void Scale(Vector3 scale) { scale_ *= scale; }
   inline void Scale(float uniform_scale) { scale_ *= uniform_scale; }
 
-  inline Quaternion rotaton() const { return rotation_; }
+  inline Quaternion rotation() const { return rotation_; }
   inline void SetRotation(Quaternion new_rotation) { rotation_ = new_rotation; }
   inline void Rotate(Quaternion rotation_offset) { rotation_ = rotation_offset * rotation_; }
   inline void Rotate(Vector3 axis, float angle_in_radians) {

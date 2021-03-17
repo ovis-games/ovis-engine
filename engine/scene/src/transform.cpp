@@ -25,7 +25,7 @@ Matrix4 Transform::CalculateInverseMatrix() const {
 
 json Transform::Serialize() const {
   return {{"position", position()},
-          {"rotation", ExtractEulerAngles(rotaton()) * RadiansToDegreesFactor<float>()},
+          {"rotation", ExtractEulerAngles(rotation()) * RadiansToDegreesFactor<float>()},
           {"scale", scale()}};
 }
 
@@ -70,7 +70,7 @@ void Transform::RegisterType(sol::table* module) {
 
   /// The rotation of the transformation.
   // @field[type=Quaternion] rotation
-  transform_type["rotation"] = sol::property(&Transform::rotaton, &Transform::SetRotation);
+  transform_type["rotation"] = sol::property(&Transform::rotation, &Transform::SetRotation);
 
   /// Moves the transformation.
   // @function move

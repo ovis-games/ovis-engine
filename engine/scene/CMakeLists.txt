@@ -8,6 +8,7 @@ add_library(
   include/ovis/scene/scene_object.hpp src/scene_object.cpp
   include/ovis/scene/scene_object_component.hpp src/scene_object_component.cpp
   include/ovis/scene/transform.hpp src/transform.cpp
+  include/ovis/scene/transform_controller.hpp src/transform_controller.cpp
 )
 add_library(ovis::scene ALIAS ovis-scene)
 

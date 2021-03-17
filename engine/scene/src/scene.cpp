@@ -393,7 +393,7 @@ void Scene::RegisterType(sol::table* module) {
   scene_type["contains_object"] = &Scene::ContainsObject;
 
   /// Returns an iterator to all objects in the scene
-  // @field Scene.objects
+  // @function objects
   // @usage for obj in scene:objects() do
   //   core.log(obj)
   // end

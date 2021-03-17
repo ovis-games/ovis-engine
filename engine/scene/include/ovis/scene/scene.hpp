@@ -10,10 +10,10 @@
 #include <sol/sol.hpp>
 
 #include <ovis/core/down_cast.hpp>
+#include <ovis/core/event.hpp>
 #include <ovis/core/json.hpp>
 #include <ovis/core/serialize.hpp>
 #include <ovis/math/vector.hpp>
-#include <ovis/core/event.hpp>
 #include <ovis/scene/scene_object.hpp>
 
 namespace ovis {
@@ -68,6 +68,7 @@ class Scene : public Serializable {
     return objects;
   }
 
+  // TODO: create proper iterator here
   void GetSceneObjectsWithComponent(const std::string& component_id, std::vector<SceneObject*>* scene_objects) const;
 
   inline std::vector<SceneObject*> GetSceneObjectsWithComponent(const std::string& component_id) const {

@@ -8,6 +8,7 @@
 #include <ovis/scene/scene_object.hpp>
 #include <ovis/scene/scene_object_component.hpp>
 #include <ovis/scene/transform.hpp>
+#include <ovis/scene/transform_controller.hpp>
 
 namespace ovis {
 
@@ -25,6 +26,7 @@ int LoadSceneModule(lua_State* l) {
   SceneObjectComponent::RegisterType(&scene_module);
   Transform::RegisterType(&scene_module);
   SceneController::RegisterType(&scene_module);
+  TransformController::RegisterType(&scene_module);
 
   return scene_module.push();
 }
