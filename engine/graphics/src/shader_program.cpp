@@ -2,11 +2,9 @@
 #include <iostream>
 #include <vector>
 
-#include <ovis/core/asset_library.hpp>
-#include <ovis/core/file.hpp>
-#include <ovis/core/log.hpp>
-#include <ovis/core/range.hpp>
-#include <ovis/core/resource_manager.hpp>
+#include <ovis/utils/file.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/utils/range.hpp>
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/shader_program.hpp>
 
@@ -129,69 +127,38 @@ void ShaderProgram::Bind() {
   m_uniform_buffer->Bind();
 }
 
-bool LoadShaderProgram(GraphicsContext* graphics_context, ResourceManager* resource_manager, const json& parameters,
-                       const std::string& id, const std::string& directory) {
-  ShaderProgramDescription sp_desc;
+// std::unique_ptr<ShaderProgram> LoadShaderProgram(const std::string& asset_id, GraphicsContext* graphics_context) {
+//   return LoadShaderProgram(
+//       GetApplicationAssetLibrary()->Contains(asset_id) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary(),
+//       asset_id, graphics_context);
+// }
 
-  const auto vertex_shader_source =
-      LoadTextFile(directory + "/" + parameters["vertex_shader_source"].get<std::string>());
+// std::unique_ptr<ShaderProgram> LoadShaderProgram(AssetLibrary* asset_library, const std::string& asset_id,
+//                                                  GraphicsContext* graphics_context) {
+//   ShaderProgramDescription description;
 
-  if (vertex_shader_source.has_value()) {
-    sp_desc.vertex_shader_source = *vertex_shader_source;
-  } else {
-    LogE("Cannot open: {}/{}", directory, parameters["vertex_shader_source"]);
-  }
+//   if (!asset_library->Contains(asset_id)) {
+//     LogE("Cannot find asset '{}'", asset_id);
+//     return {};
+//   }
 
-  const auto fragment_shader_source =
-      LoadTextFile(directory + "/" + parameters["fragment_shader_source"].get<std::string>());
-  if (fragment_shader_source.has_value()) {
-    sp_desc.fragment_shader_source = *fragment_shader_source;
-  } else {
-    LogE("Cannot open: {}/{}", directory, parameters["fragment_shader_source"]);
-  }
+//   std::optional<std::string> vertex_shader_source = asset_library->LoadAssetTextFile(asset_id, "vert");
+//   if (!vertex_shader_source) {
+//     LogE("Shader program '{}' does not have a corresponding vertex shader", asset_id);
+//     return {};
+//   } else {
+//     description.vertex_shader_source = *vertex_shader_source;
+//   }
 
-  if (vertex_shader_source.has_value() && fragment_shader_source.has_value()) {
-    resource_manager->RegisterResource<ShaderProgram>(id, graphics_context, sp_desc);
-    LogI("Sucessfully loaded shader program: {}", id);
-    return true;
-  } else {
-    LogE("Failed to load shader program: {}", id);
-    return false;
-  }
-}
+//   std::optional<std::string> fragment_shader_source = asset_library->LoadAssetTextFile(asset_id, "frag");
+//   if (!fragment_shader_source) {
+//     LogE("Shader program '{}' does not have a corresponding fragment shader", asset_id);
+//     return {};
+//   } else {
+//     description.fragment_shader_source = *fragment_shader_source;
+//   }
 
-std::unique_ptr<ShaderProgram> LoadShaderProgram(const std::string& asset_id, GraphicsContext* graphics_context) {
-  return LoadShaderProgram(
-      GetApplicationAssetLibrary()->Contains(asset_id) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary(),
-      asset_id, graphics_context);
-}
-
-std::unique_ptr<ShaderProgram> LoadShaderProgram(AssetLibrary* asset_library, const std::string& asset_id,
-                                                 GraphicsContext* graphics_context) {
-  ShaderProgramDescription description;
-
-  if (!asset_library->Contains(asset_id)) {
-    LogE("Cannot find asset '{}'", asset_id);
-    return {};
-  }
-
-  std::optional<std::string> vertex_shader_source = asset_library->LoadAssetTextFile(asset_id, "vert");
-  if (!vertex_shader_source) {
-    LogE("Shader program '{}' does not have a corresponding vertex shader", asset_id);
-    return {};
-  } else {
-    description.vertex_shader_source = *vertex_shader_source;
-  }
-
-  std::optional<std::string> fragment_shader_source = asset_library->LoadAssetTextFile(asset_id, "frag");
-  if (!fragment_shader_source) {
-    LogE("Shader program '{}' does not have a corresponding fragment shader", asset_id);
-    return {};
-  } else {
-    description.fragment_shader_source = *fragment_shader_source;
-  }
-
-  return std::make_unique<ShaderProgram>(graphics_context, description);
-}
+//   return std::make_unique<ShaderProgram>(graphics_context, description);
+// }
 
 }  // namespace ovis

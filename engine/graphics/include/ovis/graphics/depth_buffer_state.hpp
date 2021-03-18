@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-#include <ovis/core/flags.hpp>
+#include <ovis/utils/flags.hpp>
 #include <ovis/graphics/gl.hpp>
 
 namespace ovis {

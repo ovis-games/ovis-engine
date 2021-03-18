@@ -1,4 +1,5 @@
-#include <ovis/core/log.hpp>
+#include <ovis/utils/log.hpp>
+
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/index_buffer.hpp>
 #include <ovis/graphics/render_target_configuration.hpp>
@@ -52,7 +53,8 @@ GraphicsContext::GraphicsContext(SDL_Window* window)
   int drawable_height;
   SDL_GL_GetDrawableSize(window, &drawable_width, &drawable_height);
   LogD("SDL_GL_GetDrawableSize {}x{}", drawable_width, drawable_height);
-  current_viewport_ = {0, 0, drawable_width, drawable_height};
+  viewport_width_ = drawable_width;
+  viewport_height_ = drawable_height;
 
   m_default_render_target_configuration.reset(new RenderTargetConfiguration(this, drawable_width, drawable_height));
 
@@ -85,10 +87,10 @@ void GraphicsContext::Draw(const DrawItem& draw_item) {
   auto targets = draw_item.render_target_configuration != nullptr ? draw_item.render_target_configuration
                                                                   : default_render_target_configuration();
   targets->Bind();
-  if (targets->width() != current_viewport_.width || targets->height() != current_viewport_.height) {
+  if (targets->width() != viewport_width_ || targets->height() != viewport_height_) {
     glViewport(0, 0, targets->width(), targets->height());
-    current_viewport_.width = targets->width();
-    current_viewport_.height = targets->height();
+    viewport_width_ = targets->width();
+    viewport_height_ = targets->height();
   }
 
   if (draw_item.scissor_rect.has_value() != scissoring_enabled_) {
@@ -101,9 +103,8 @@ void GraphicsContext::Draw(const DrawItem& draw_item) {
     }
   }
   if (draw_item.scissor_rect.has_value() && *draw_item.scissor_rect != current_scissor_rect_) {
-    const int bottom = targets->height() - draw_item.scissor_rect->top - draw_item.scissor_rect->height;
-    glScissor(draw_item.scissor_rect->left, bottom, draw_item.scissor_rect->width,
-              draw_item.scissor_rect->height);
+    const int bottom = targets->height() - (*draw_item.scissor_rect)[1] - (*draw_item.scissor_rect)[3];
+    glScissor((*draw_item.scissor_rect)[0], bottom, (*draw_item.scissor_rect)[2], (*draw_item.scissor_rect)[3]);
     current_scissor_rect_ = *draw_item.scissor_rect;
   }
 

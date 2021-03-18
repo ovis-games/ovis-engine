@@ -1,7 +1,6 @@
 add_library(
   ovis-rendering
   
-  include/ovis/rendering/rendering_module.hpp src/rendering_module.cpp
 )
 add_library(ovis::rendering ALIAS ovis-rendering)
 

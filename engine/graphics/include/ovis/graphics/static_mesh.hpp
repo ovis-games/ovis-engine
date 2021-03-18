@@ -2,7 +2,7 @@
 
 #include <ovis/math/vector.hpp>
 
-#include <ovis/core/log.hpp>
+#include <ovis/utils/log.hpp>
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/index_buffer.hpp>
 #include <ovis/graphics/vertex_buffer.hpp>

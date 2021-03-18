@@ -5,8 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <ovis/core/asset_library.hpp>
-#include <ovis/core/json.hpp>
+#include <ovis/utils/json.hpp>
 #include <ovis/graphics/gl.hpp>
 #include <ovis/graphics/graphics_resource.hpp>
 #include <ovis/graphics/uniform_buffer.hpp>
@@ -61,11 +60,8 @@ class ShaderProgram : public GraphicsResource {
   void Bind();
 };
 
-bool LoadShaderProgram(GraphicsContext* graphics_context, ResourceManager* resource_manager, const json& parameters,
-                       const std::string& id, const std::string& directory);
-
-std::unique_ptr<ShaderProgram> LoadShaderProgram(const std::string& asset_id, GraphicsContext* graphics_context);
-std::unique_ptr<ShaderProgram> LoadShaderProgram(AssetLibrary* asset_library, const std::string& asset_id,
-                                                 GraphicsContext* graphics_context);
+// std::unique_ptr<ShaderProgram> LoadShaderProgram(const std::string& asset_id, GraphicsContext* graphics_context);
+// std::unique_ptr<ShaderProgram> LoadShaderProgram(AssetLibrary* asset_library, const std::string& asset_id,
+//                                                  GraphicsContext* graphics_context);
 
 }  // namespace ovis

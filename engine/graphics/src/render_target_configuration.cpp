@@ -1,5 +1,5 @@
-#include <ovis/core/log.hpp>
-#include <ovis/core/range.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/utils/range.hpp>
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/render_target.hpp>
 #include <ovis/graphics/render_target_configuration.hpp>
@@ -46,7 +46,7 @@ RenderTargetConfiguration::~RenderTargetConfiguration() {
   }
 }
 
-void RenderTargetConfiguration::ClearColor(size_t color_attachment_index, const Color& clear_color) {
+void RenderTargetConfiguration::ClearColor(size_t color_attachment_index, float clear_color[4]) {
   if (context()->scissoring_enabled_) {
     glDisable(GL_SCISSOR_TEST);
     context()->scissoring_enabled_ = false;
@@ -54,7 +54,7 @@ void RenderTargetConfiguration::ClearColor(size_t color_attachment_index, const 
   Bind();
 #if OVIS_EMSCRIPTEN
   SDL_assert(color_attachment_index == 0);
-  glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
+  glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
   glClear(GL_COLOR_BUFFER_BIT);
 #else
   glClearBufferfv(GL_COLOR, color_attachment_index, glm::value_ptr(clear_color));

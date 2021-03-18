@@ -1,15 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft/2019-09/schema#",
 
-  "$defs": {
-    "scene": {
-      "title": "Scene",
-      "type": "object",
-      "description": "A scene describes a collection of scene objects and controllers.",
-      "properties": {
-      }
-    },
-    
+  "$defs": {    
     "camera": {
       "title": "Camera",
       "type": "object",

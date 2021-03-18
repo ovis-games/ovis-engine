@@ -1,4 +1,4 @@
-#include <ovis/core/range.hpp>
+#include <ovis/utils/range.hpp>
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/shader_program.hpp>
 #include <ovis/graphics/vertex_buffer.hpp>

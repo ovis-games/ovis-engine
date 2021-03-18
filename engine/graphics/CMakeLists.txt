@@ -47,8 +47,7 @@ target_include_directories(
 target_link_libraries(
   ovis-graphics
   PUBLIC
-    ovis::core
-    ovis::math
+    ovis::utils
 )
 
 if (NOT OVIS_EMSCRIPTEN)

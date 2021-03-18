@@ -2,8 +2,6 @@
 
 #include <vector>
 
-#include <ovis/math/color.hpp>
-
 #include <ovis/graphics/gl.hpp>
 #include <ovis/graphics/graphics_resource.hpp>
 
@@ -24,7 +22,7 @@ class RenderTargetConfiguration : public GraphicsResource {
   RenderTargetConfiguration(GraphicsContext* context, const RenderTargetConfigurationDescription& description);
   virtual ~RenderTargetConfiguration() override;
 
-  void ClearColor(size_t color_attachment_index, const Color& color = Color::Black());
+  void ClearColor(size_t color_attachment_index, float color[4]);
   void ClearDepth(float depth = 1.0f);
 
   inline std::size_t width() const { return width_; }
@@ -38,7 +36,7 @@ class RenderTargetConfiguration : public GraphicsResource {
   std::size_t height_;
 
   // This constructor creates the default render target configuration. Which is
-  // created byt the graphics context.
+  // created by the graphics context.
   RenderTargetConfiguration(GraphicsContext* context, std::size_t width, std::size_t height_);
 
   void Bind();

@@ -4,8 +4,7 @@
 #include <SDL2/SDL_assert.h>
 #include <SDL2/SDL_surface.h>
 
-#include <ovis/core/log.hpp>
-#include <ovis/core/resource_manager.hpp>
+#include <ovis/utils/log.hpp>
 #include <ovis/graphics/cubemap.hpp>
 #include <ovis/graphics/graphics_context.hpp>
 
@@ -107,45 +106,45 @@ void Cubemap::Bind(int texture_unit) {
   context()->BindTexture(GL_TEXTURE_CUBE_MAP, name(), texture_unit);
 }
 
-bool LoadCubemap(GraphicsContext* graphics_context, ResourceManager* resource_manager, const json& parameters,
-                 const std::string& id, const std::string& directory) {
-  CubemapDescription cubemap_desc;
-  cubemap_desc.width = parameters["width"];
-  cubemap_desc.height = parameters["height"];
-  cubemap_desc.mip_map_count = 1;
+// bool LoadCubemap(GraphicsContext* graphics_context, ResourceManager* resource_manager, const json& parameters,
+//                  const std::string& id, const std::string& directory) {
+//   CubemapDescription cubemap_desc;
+//   cubemap_desc.width = parameters["width"];
+//   cubemap_desc.height = parameters["height"];
+//   cubemap_desc.mip_map_count = 1;
 
-  std::string filter = parameters["filter"];
-  if (filter == "point") {
-    cubemap_desc.filter = TextureFilter::POINT;
-  } else if (filter == "bilinear") {
-    cubemap_desc.filter = TextureFilter::BILINEAR;
-  } else if (filter == "trilinear") {
-    cubemap_desc.filter = TextureFilter::TRILINEAR;
-  } else {
-    LogE("Failed to load texture '{}': invalid filter ()", id, filter);
-    return false;
-  }
+//   std::string filter = parameters["filter"];
+//   if (filter == "point") {
+//     cubemap_desc.filter = TextureFilter::POINT;
+//   } else if (filter == "bilinear") {
+//     cubemap_desc.filter = TextureFilter::BILINEAR;
+//   } else if (filter == "trilinear") {
+//     cubemap_desc.filter = TextureFilter::TRILINEAR;
+//   } else {
+//     LogE("Failed to load texture '{}': invalid filter ()", id, filter);
+//     return false;
+//   }
 
-  std::string format = parameters["format"];
-  if (format == "RGB_UINT8") {
-    cubemap_desc.format = TextureFormat::RGB_UINT8;
-  } else if (format == "RGBA_UINT8") {
-    cubemap_desc.format = TextureFormat::RGBA_UINT8;
-  } else {
-    LogE("Failed to load texture '{}': invalid format ()", id, format);
-    return false;
-  }
+//   std::string format = parameters["format"];
+//   if (format == "RGB_UINT8") {
+//     cubemap_desc.format = TextureFormat::RGB_UINT8;
+//   } else if (format == "RGBA_UINT8") {
+//     cubemap_desc.format = TextureFormat::RGBA_UINT8;
+//   } else {
+//     LogE("Failed to load texture '{}': invalid format ()", id, format);
+//     return false;
+//   }
 
-  auto file_content = LoadBinaryFile(directory + "/" + parameters["data_file"].get<std::string>());
+//   auto file_content = LoadBinaryFile(directory + "/" + parameters["data_file"].get<std::string>());
 
-  if (file_content.has_value()) {
-    resource_manager->RegisterResource<Cubemap>(id, graphics_context, cubemap_desc, file_content->data());
-    LogI("Sucessfully loaded texture: {}", id);
-    return true;
-  } else {
-    LogE("Cannot open {}", parameters["data_file"]);
-    return false;
-  }
-}
+//   if (file_content.has_value()) {
+//     resource_manager->RegisterResource<Cubemap>(id, graphics_context, cubemap_desc, file_content->data());
+//     LogI("Sucessfully loaded texture: {}", id);
+//     return true;
+//   } else {
+//     LogE("Cannot open {}", parameters["data_file"]);
+//     return false;
+//   }
+// }
 
 }  // namespace ovis

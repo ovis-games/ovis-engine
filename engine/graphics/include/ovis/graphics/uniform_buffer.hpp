@@ -6,11 +6,8 @@
 #include <vector>
 
 #include <SDL2/SDL.h>
-#include <ovis/math/vector.hpp>
-#include <ovis/math/matrix.hpp>
-#include <ovis/math/color.hpp>
 
-#include <ovis/core/log.hpp>
+#include <ovis/utils/log.hpp>
 #include <ovis/graphics/cubemap.hpp>
 #include <ovis/graphics/graphics_resource.hpp>
 #include <ovis/graphics/texture2d.hpp>
@@ -22,6 +19,53 @@ class ShaderProgram;
 struct UniformBufferDescription {
   ShaderProgram* shader_program;
 };
+
+template <typename T>
+struct OpenGLTypeHelper;
+
+#define OVIS_UNFORM_OPENGL_TYPE(cpp_type, opengl_type) \
+  template <>                                          \
+  struct OpenGLTypeHelper<cpp_type> {                  \
+    static constexpr GLenum value = opengl_type;       \
+  }
+
+using Vec2 = std::array<float, 2>;
+using Vec3 = std::array<float, 3>;
+using Vec4 = std::array<float, 4>;
+
+using IntVec2 = std::array<int, 2>;
+using IntVec3 = std::array<int, 3>;
+using IntVec4 = std::array<int, 4>;
+
+using BoolVec2 = std::array<bool, 2>;
+using BoolVec3 = std::array<bool, 3>;
+using BoolVec4 = std::array<bool, 4>;
+
+using Mat2x2 = std::array<std::array<float, 2>, 2>;
+using Mat3x3 = std::array<std::array<float, 3>, 3>;
+using Mat4x4 = std::array<std::array<float, 4>, 4>;
+
+OVIS_UNFORM_OPENGL_TYPE(float, GL_FLOAT);
+OVIS_UNFORM_OPENGL_TYPE(Vec2, GL_FLOAT_VEC2);
+OVIS_UNFORM_OPENGL_TYPE(Vec3, GL_FLOAT_VEC3);
+OVIS_UNFORM_OPENGL_TYPE(Vec4, GL_FLOAT_VEC4);
+
+OVIS_UNFORM_OPENGL_TYPE(int, GL_INT);
+OVIS_UNFORM_OPENGL_TYPE(IntVec2, GL_INT_VEC2);
+OVIS_UNFORM_OPENGL_TYPE(IntVec3, GL_INT_VEC3);
+OVIS_UNFORM_OPENGL_TYPE(IntVec4, GL_INT_VEC4);
+
+OVIS_UNFORM_OPENGL_TYPE(bool, GL_BOOL);
+OVIS_UNFORM_OPENGL_TYPE(BoolVec2, GL_BOOL_VEC2);
+OVIS_UNFORM_OPENGL_TYPE(BoolVec3, GL_BOOL_VEC3);
+OVIS_UNFORM_OPENGL_TYPE(BoolVec4, GL_BOOL_VEC4);
+
+OVIS_UNFORM_OPENGL_TYPE(Mat2x2, GL_FLOAT_MAT2);
+OVIS_UNFORM_OPENGL_TYPE(Mat3x3, GL_FLOAT_MAT3);
+OVIS_UNFORM_OPENGL_TYPE(Mat4x4, GL_FLOAT_MAT4);
+
+template <typename T>
+inline constexpr GLenum OpenGLType = OpenGLTypeHelper<T>::value;
 
 class UniformBuffer : public GraphicsResource {
   friend class GraphicsDevice;
@@ -40,114 +84,16 @@ class UniformBuffer : public GraphicsResource {
   UniformBuffer(GraphicsContext* context, const UniformBufferDescription& description);
   virtual ~UniformBuffer() override;
 
-  template <typename... T>
-  inline void SetUniform(const std::string& name, T&&... value) {
-    if (m_uniform_indices.find(name) == m_uniform_indices.end()) {
+  template <typename T>
+  inline void SetUniform(const std::string& name, T&& value) {
+    const auto it_uniform = m_uniform_indices.find(name);
+    if (it_uniform == m_uniform_indices.end()) {
       LogW("Trying to set unknown uniform: '{}'", name);
       return;
     }
-    SetUniform(m_uniform_indices[name], value...);
+    SDL_assert(m_uniform_descriptions[it_uniform->second] == OpenGLType<T>);
+    memcpy(GetUniformBufferPointer(it_uniform->second), &value, sizeof(value));
   }
-
-  inline void SetUniform(std::size_t uniform_index, float value) {
-    SDL_assert(uniform_index < m_uniform_descriptions.size());
-    SDL_assert(m_uniform_descriptions[uniform_index].type == GL_FLOAT);
-    memcpy(GetUniformPointer(uniform_index), &value, sizeof(value));
-  }
-
-  inline void SetUniform(std::size_t uniform_index, const Vector2& value) {
-    SDL_assert(uniform_index < m_uniform_descriptions.size());
-    SDL_assert(m_uniform_descriptions[uniform_index].type == GL_FLOAT_VEC2);
-    memcpy(GetUniformPointer(uniform_index), value.data, sizeof(value));
-  }
-
-  inline void SetUniform(std::size_t uniform_index, const Vector3& value) {
-    SDL_assert(uniform_index < m_uniform_descriptions.size());
-    SDL_assert(m_uniform_descriptions[uniform_index].type == GL_FLOAT_VEC3);
-    memcpy(GetUniformPointer(uniform_index), value.data, sizeof(value));
-  }
-
-  inline void SetUniform(std::size_t uniform_index, const Vector4& value) {
-    SDL_assert(uniform_index < m_uniform_descriptions.size());
-    SDL_assert(m_uniform_descriptions[uniform_index].type == GL_FLOAT_VEC4);
-    memcpy(GetUniformPointer(uniform_index), value.data, sizeof(value));
-  }
-
-  inline void SetUniform(std::size_t uniform_index, const Color& value) {
-    SDL_assert(uniform_index < m_uniform_descriptions.size());
-    SDL_assert(m_uniform_descriptions[uniform_index].type == GL_FLOAT_VEC4);
-    memcpy(GetUniformPointer(uniform_index), value.data, sizeof(value));
-  }
-
-  inline void SetUniform(std::size_t uniform_index, const Matrix2& value) {
-    SDL_assert(uniform_index < m_uniform_descriptions.size());
-    SDL_assert(m_uniform_descriptions[uniform_index].type == GL_FLOAT_MAT2);
-    memcpy(GetUniformPointer(uniform_index), value.rows, sizeof(value));
-  }
-
-  inline void SetUniform(std::size_t uniform_index, const Matrix3& value) {
-    SDL_assert(uniform_index < m_uniform_descriptions.size());
-    SDL_assert(m_uniform_descriptions[uniform_index].type == GL_FLOAT_MAT3);
-    memcpy(GetUniformPointer(uniform_index), value.rows, sizeof(value));
-  }
-
-  inline void SetUniform(std::size_t uniform_index, const Matrix4& value) {
-    SDL_assert(uniform_index < m_uniform_descriptions.size());
-    SDL_assert(m_uniform_descriptions[uniform_index].type == GL_FLOAT_MAT4);
-    memcpy(GetUniformPointer(uniform_index), value.rows, sizeof(value));
-  }
-
-  inline void SetUniform(std::size_t uniform_index, Sint32 value) {
-    SDL_assert(uniform_index < m_uniform_descriptions.size());
-    SDL_assert(m_uniform_descriptions[uniform_index].type == GL_INT);
-    memcpy(GetUniformPointer(uniform_index), &value, sizeof(value));
-  }
-
-  // inline void SetUniform(std::size_t uniform_index, const glm::ivec2& value) {
-  //   SDL_assert(uniform_index < m_uniform_descriptions.size());
-  //   SDL_assert(m_uniform_descriptions[uniform_index].type == GL_INT_VEC2);
-  //   memcpy(GetUniformPointer(uniform_index), glm::value_ptr(value), sizeof(value));
-  // }
-
-  // inline void SetUniform(std::size_t uniform_index, const glm::ivec3& value) {
-  //   SDL_assert(uniform_index < m_uniform_descriptions.size());
-  //   SDL_assert(m_uniform_descriptions[uniform_index].type == GL_INT_VEC3);
-  //   memcpy(GetUniformPointer(uniform_index), glm::value_ptr(value), sizeof(value));
-  // }
-
-  // inline void SetUniform(std::size_t uniform_index, const glm::ivec4& value) {
-  //   SDL_assert(uniform_index < m_uniform_descriptions.size());
-  //   SDL_assert(m_uniform_descriptions[uniform_index].type == GL_INT_VEC4);
-  //   memcpy(GetUniformPointer(uniform_index), glm::value_ptr(value), sizeof(value));
-  // }
-
-  inline void SetUniform(std::size_t uniform_index, bool value) {
-    SDL_assert(uniform_index < m_uniform_descriptions.size());
-    SDL_assert(m_uniform_descriptions[uniform_index].type == GL_BOOL);
-    GLint val = value;
-    memcpy(GetUniformPointer(uniform_index), &val, sizeof(val));
-  }
-
-  // inline void SetUniform(std::size_t uniform_index, const glm::bvec2& value) {
-  //   SDL_assert(uniform_index < m_uniform_descriptions.size());
-  //   SDL_assert(m_uniform_descriptions[uniform_index].type == GL_BOOL_VEC2);
-  //   glm::ivec2 val = value;
-  //   memcpy(GetUniformPointer(uniform_index), glm::value_ptr(val), sizeof(val));
-  // }
-
-  // inline void SetUniform(std::size_t uniform_index, const glm::bvec3& value) {
-  //   SDL_assert(uniform_index < m_uniform_descriptions.size());
-  //   SDL_assert(m_uniform_descriptions[uniform_index].type == GL_BOOL_VEC3);
-  //   glm::ivec3 val = value;
-  //   memcpy(GetUniformPointer(uniform_index), glm::value_ptr(val), sizeof(val));
-  // }
-
-  // inline void SetUniform(std::size_t uniform_index, const glm::bvec4& value) {
-  //   SDL_assert(uniform_index < m_uniform_descriptions.size());
-  //   SDL_assert(m_uniform_descriptions[uniform_index].type == GL_BOOL_VEC4);
-  //   glm::ivec4 val = value;
-  //   memcpy(GetUniformPointer(uniform_index), glm::value_ptr(val), sizeof(val));
-  // }
 
   inline void SetTexture(const std::string& sampler_name, Texture2D* texture) {
     SDL_assert(m_uniform_indices.find(sampler_name) != m_uniform_indices.end());
