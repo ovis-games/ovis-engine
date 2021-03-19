@@ -24,10 +24,6 @@ int LoadMathModule(lua_State* l) {
   sol::table math_module = state.create_table();
 
   // Register types
-  Vector2::RegisterType(&math_module);
-  Vector3::RegisterType(&math_module);
-  Color::RegisterType(&math_module);
-
   math_module["abs"] = state["math"]["abs"];
   math_module["acos"] = state["math"]["abs"];
   math_module["asin"] = state["math"]["asin"];

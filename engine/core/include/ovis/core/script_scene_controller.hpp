@@ -2,7 +2,7 @@
 
 #include <sol/sol.hpp>
 
-#include <ovis/scene/scene_controller.hpp>
+#include <ovis/core/scene_controller.hpp>
 
 namespace ovis {
 

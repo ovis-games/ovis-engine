@@ -3,17 +3,23 @@ add_library(
   
   include/ovis/core/core_module.hpp src/core_module.cpp
   include/ovis/core/scene.hpp src/scene.cpp
+  include/ovis/core/scene_viewport.hpp src/scene_viewport.cpp
   include/ovis/core/scene_controller.hpp src/scene_controller.cpp
   include/ovis/core/script_scene_controller.hpp src/script_scene_controller.cpp
   include/ovis/core/scene_object.hpp src/scene_object.cpp
   include/ovis/core/scene_object_component.hpp src/scene_object_component.cpp
+  include/ovis/core/camera.hpp src/camera.cpp
   include/ovis/core/transform.hpp src/transform.cpp
   include/ovis/core/transform_controller.hpp src/transform_controller.cpp
-  include/ovis/core/viewport.hpp src/viewport.cpp
-  include/ovis/core/render_target_viewport.hpp src/render_target_viewport.cpp
-  include/ovis/core/render_pass.hpp src/render_pass.cpp
-  include/ovis/core/debug_render_pass.hpp src/debug_render_pass.cpp
-  include/ovis/core/camera.hpp src/camera.cpp
+  include/ovis/core/asset_library.hpp src/asset_library.cpp
+  include/ovis/core/lua.hpp src/lua.cpp
+  include/ovis/core/vector_types.hpp src/vector_types.cpp
+  include/ovis/core/vector.hpp src/vector2.cpp src/vector3.cpp
+  include/ovis/core/color_type.hpp src/color_type.cpp
+  include/ovis/core/color.hpp src/color.cpp
+  include/ovis/core/matrix_types.hpp src/matrix_types.cpp
+  include/ovis/core/matrix.hpp src/matrix.cpp
+  include/ovis/core/math_operations.hpp src/math_operations.cpp
 )
 add_library(ovis::core ALIAS ovis-core)
 
@@ -26,8 +32,8 @@ target_include_directories(
 target_link_libraries(
   ovis-core
   PUBLIC
-    ovis::core
-    ovis::graphics
+    ovis::utils
+    middleclass
 )
 
 if (OVIS_BUILD_TESTS)
@@ -41,9 +47,17 @@ if (OVIS_BUILD_TESTS)
     TARGET ovis-core-test
     MODULE core
     INPUT_FILES
+      src/core_module.cpp
       src/scene.cpp
       src/scene_object.cpp
+      src/scene_controller.cpp
+      src/scene_object_component.cpp
       src/transform.cpp
+      src/camera.cpp
+      src/vector2.cpp
+      src/vector3.cpp
+      src/matrix.cpp
+      src/color.cpp
   )
 
   target_link_libraries(

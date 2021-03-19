@@ -1,4 +1,4 @@
-#include <ovis/math/vector.hpp>
+#include <ovis/core/vector.hpp>
 
 namespace ovis {
 
@@ -6,9 +6,9 @@ void Vector3::RegisterType(sol::table* module) {
   // clang-format off
 
   /// A three-dimensional vector.
-  // @classmod ovis.math.Vector3
-  // @usage local math = require "ovis.math"
-  // local Vector3 = math.Vector3
+  // @classmod ovis.core.Vector3
+  // @usage local core = require "ovis.core"
+  // local Vector3 = core.Vector3
   // @usage -- Here is a small example that shows how the Vector3 can be used
   // -- in practice by creating a function that computes the
   // -- intersection points of a ray and a plane.
@@ -19,11 +19,11 @@ void Vector3::RegisterType(sol::table* module) {
   // -- @tparam Vector3 p Point on the plane
   // -- @tparam Vector3 n Normal of the plane
   // function intersect_ray_plane(o, d, p, n)
-  //   local denominator = math.dot(d, n)
+  //   local denominator = Vector3.dot(d, n)
   //   if math.abs(denominator) < 0.000001 then -- use your favourite epsilon here
   //     return nil, 'No intersection found'
   //   end
-  //   local t = math.dot(p - o, n) / denominator
+  //   local t = Vector3.dot(p - o, n) / denominator
   //   if t >= 0 then
   //     return o + t * d
   //   else
@@ -188,7 +188,7 @@ void Vector3::RegisterType(sol::table* module) {
 
   /// Multiplies two vectors or a scalar and a vector.
   // Be careful, this is a component-wise multiplication. If you want to calculate the dot product use @{dot}.
-  // @see ovis.math.dot
+  // @see Vector3.dot
   // @function __mul
   // @param[type=Vector3|number] v1
   // @param[type=Vector3|number] v2
@@ -228,7 +228,7 @@ void Vector3::RegisterType(sol::table* module) {
 
   /// Provides the length operator.
   // This returns the number of components in the vector, not its magnitude. For that use the length() function.
-  // @see ovis.math.length
+  // @see Vector3.length
   // @function __len
   // @treturn number The number of compoenents in the vector (3).
   // @usage local v = Vector3.new()
@@ -241,6 +241,76 @@ void Vector3::RegisterType(sol::table* module) {
   // @usage local v = Vector3.new(1, 2, 3)
   // assert(tostring(v) == '(1.0, 2.0, 3.0)')
   vector3_type[sol::meta_function::to_string] = [](const Vector3& vector) { return fmt::format("{}", vector); };
+
+  /// Returns a vector with the minimum component-wise values of the inputs.
+  // @function min
+  // @param[type=Vector3] v1
+  // @param[type=Vector3] v2
+  // @treturn Vector3
+  // @usage assert(Vector3.min(Vector3.new(0, 3, 2), Vector3.new(1, 2, 1)) == Vector3.new(0, 2, 1))
+  vector3_type["min"] = &ovis::min<Vector3>;
+
+  /// Returns a vector with the maximum component-wise values of the inputs.
+  // @function max
+  // @param[type=Vector3] v1
+  // @param[type=Vector3] v2
+  // @treturn Vector3
+  // @usage assert(Vector3.max(Vector3.new(0, 3, 2), Vector3.new(1, 2, 1)) == Vector3.new(1, 3, 2))
+  vector3_type["max"] = &ovis::max<Vector3>;
+
+  /// Clamps the components of the vector to the specified range.
+  // @function clamp
+  // @param[type=Vector3] v
+  // @param[type=Vector3] min
+  // @param[type=Vector3] max
+  // @treturn Vector3 The vector with the components clamped to the range [min, max]
+  // @usage assert(Vector3.clamp(Vector3.new(-1, 2, 0.5), Vector3.ZERO, Vector3.ONE) == Vector3.new(0, 1, 0.5))
+  vector3_type["clamp"] = &ovis::clamp<Vector3>;
+
+  /// Calculates the squared length of a vector.
+  // This is faster than computing the actual length of the vector.
+  // @function length_squared
+  // @param[type=Vector3] v
+  // @treturn number The squared length of the vector
+  // @usage assert(Vector3.length_squared(Vector3.new(5, 5, 5)) == 75)
+  vector3_type["length_squared"] = &ovis::SquaredLength<Vector3>;
+
+  /// Calculates the length of a vector.
+  // @function length
+  // @param[type=Vector3] v
+  // @treturn number The length of the vector
+  // @usage assert(Vector3.length(Vector3.new(5, 5, 5)) > 8.6602)
+  // assert(Vector3.length(Vector3.new(5, 5, 5)) < 8.6603)
+  vector3_type["length"] = &Length<Vector3>;
+
+  /// Returns the normalized vector.
+  // @function normalize
+  // @param[type=Vector3] v
+  // @treturn Vector3 Returns a vector with the same direction but with a length of 1
+  // @usage assert(Vector3.normalize(Vector3.new(5, 0, 0)) == Vector3.new(1, 0, 0))
+  vector3_type["normalize"] = &Normalize<Vector3>;
+
+  /// Calculates the dot product between two vectors.
+  // The function is overloaded for both, @{Vector2} and @{Vector3}. However, both
+  // inputs need to be of the same type.
+  // @function dot
+  // @see Vector3.cross
+  // @param[type=Vector3] v1
+  // @param[type=Vector3] v2
+  // @treturn number
+  // @usage local v1 = Vector3.new(1, 2, 3)
+  // local v2 = Vector3.new(4, 5, 6)
+  // assert(Vector3.dot(v1, v2) == 32)
+  vector3_type["dot"] = &Dot<Vector3>;
+
+  /// Calculates the dot product between two vectorss.
+  // @function cross
+  // @see dot
+  // @param[type=Vector3] v1
+  // @param[type=Vector3] v2
+  // @treturn Vector3
+  // @usage assert(Vector3.cross(Vector3.POSITIVE_X, Vector3.POSITIVE_Y) == Vector3.POSITIVE_Z)
+  vector3_type["cross"] = &Cross;
 
   // clang-format off
 }

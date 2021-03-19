@@ -1,6 +1,6 @@
 add_subdirectory(utils)
 add_subdirectory(graphics)
-# add_subdirectory(core)
+add_subdirectory(core)
 # add_subdirectory(math)
 # add_subdirectory(scene)
 # add_subdirectory(rendering)

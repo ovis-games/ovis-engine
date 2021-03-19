@@ -1,12 +1,12 @@
-#include <ovis/core/log.hpp>
-#include <ovis/scene/scene_object.hpp>
-#include <ovis/scene/scene_object_component.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/core/scene_object.hpp>
+#include <ovis/core/scene_object_component.hpp>
 
 namespace ovis {
 
 void SceneObjectComponent::RegisterType(sol::table* module) {
-  /// The base class of all components in the scene.
-  // @classmod ovis.scene.SceneObjectComponent
+  /// The base class of all components in the scene object.
+  // @classmod ovis.core.SceneObjectComponent
   sol::usertype<SceneObjectComponent> scene_obect_component_type =
       module->new_usertype<SceneObjectComponent>("SceneObjectComponent", sol::no_constructor);
 

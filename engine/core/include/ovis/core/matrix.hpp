@@ -5,8 +5,8 @@
 
 #include <fmt/format.h>
 
-#include <ovis/math/matrix_types.hpp>
-#include <ovis/math/vector.hpp>
+#include <ovis/core/matrix_types.hpp>
+#include <ovis/core/vector.hpp>
 
 namespace ovis {
 
@@ -225,10 +225,10 @@ inline T operator*=(T& lhs, const T& rhs) {
 
 template <typename MatrixType, typename VectorType,
           std::enable_if_t<is_matrix<MatrixType>::value && is_vector<VectorType>::value &&
-                               MatrixType::ROW_COUNT == VectorType::ELEMENT_COUNT,
+                               MatrixType::COLUMN_COUNT == VectorType::ELEMENT_COUNT,
                            bool> = true>
-inline VectorType operator*(const MatrixType& matrix, const VectorType& vector) {
-  VectorType result;
+inline Vector<MatrixType::ROW_COUNT> operator*(const MatrixType& matrix, const VectorType& vector) {
+  Vector<MatrixType::ROW_COUNT> result;
   for (int i = 0; i < MatrixType::ROW_COUNT; ++i) {
     result[i] = Dot(matrix[i], vector);
   }
@@ -237,14 +237,24 @@ inline VectorType operator*(const MatrixType& matrix, const VectorType& vector) 
 
 template <typename MatrixType, typename VectorType,
           std::enable_if_t<is_matrix<MatrixType>::value && is_vector<VectorType>::value &&
-                               MatrixType::COLUMN_COUNT == VectorType::ELEMENT_COUNT,
+                               MatrixType::ROW_COUNT == VectorType::ELEMENT_COUNT,
                            bool> = true>
-inline VectorType operator*(const VectorType& vector, const MatrixType& matrix) {
-  VectorType result;
+inline Vector<MatrixType::COLUMN_COUNT> operator*(const VectorType& vector, const MatrixType& matrix) {
+  Vector<MatrixType::COLUMN_COUNT> result;
   for (int i = 0; i < MatrixType::COLUMN_COUNT; ++i) {
     result[i] = Dot(vector, ExtractColumn(matrix, i));
   }
   return result;
+}
+
+inline constexpr Vector3 TransformDirection(const Matrix3x4& transform_matrix, const Vector3& vector) {
+  const Vector4 direction_vector = {vector.x, vector.y, vector.z, 0.0f};
+  return transform_matrix * direction_vector;
+}
+
+inline constexpr Vector3 TransformPosition(const Matrix3x4& transform_matrix, const Vector3& vector) {
+  const Vector4 position_vector = {vector.x, vector.y, vector.z, 1.0f};
+  return transform_matrix * position_vector;
 }
 
 inline constexpr Vector3 TransformDirection(const Matrix4& transform_matrix, const Vector3& vector) {

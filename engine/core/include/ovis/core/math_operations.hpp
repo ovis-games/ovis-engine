@@ -3,10 +3,10 @@
 #include <algorithm>
 #include <type_traits>
 
-#include <ovis/math/color_type.hpp>
-#include <ovis/math/matrix_types.hpp>
-#include <ovis/math/quaternion_type.hpp>
-#include <ovis/math/vector_types.hpp>
+#include <ovis/core/color_type.hpp>
+#include <ovis/core/matrix_types.hpp>
+#include <ovis/core/quaternion_type.hpp>
+#include <ovis/core/vector_types.hpp>
 
 namespace ovis {
 

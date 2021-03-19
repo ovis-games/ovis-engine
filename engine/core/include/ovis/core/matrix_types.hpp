@@ -5,10 +5,10 @@
 
 #include <fmt/format.h>
 
-#include <ovis/core/json.hpp>
-#include <ovis/math/constants.hpp>
-#include <ovis/math/quaternion_type.hpp>
-#include <ovis/math/vector_types.hpp>
+#include <ovis/utils/json.hpp>
+#include <ovis/core/math_constants.hpp>
+#include <ovis/core/quaternion_type.hpp>
+#include <ovis/core/vector_types.hpp>
 
 namespace ovis {
 
@@ -65,7 +65,8 @@ union Matrix3x4 {
   static constexpr int ROW_COUNT = 3;
   static constexpr int COLUMN_COUNT = 4;
 
-  inline static constexpr Matrix3x4 FromTransformation(const Vector3& translation, const Vector3& scaling, const Quaternion& rotation);
+  inline static constexpr Matrix3x4 FromTransformation(const Vector3& translation, const Vector3& scaling,
+                                                       const Quaternion& rotation);
   inline static constexpr Matrix3x4 FromTranslation(const Vector3& translation);
   inline static constexpr Matrix3x4 FromScaling(const Vector3& scaling);
   inline static constexpr Matrix3x4 FromScaling(float scaling);
@@ -123,7 +124,8 @@ using Matrix = typename MatrixTypes<ROW_COUNT, COLUMN_COUNT>::Type;
 
 template <typename T>
 struct is_matrix : public std::integral_constant<bool, std::is_same<T, Matrix2>() || std::is_same<T, Matrix3>() ||
-                                                           std::is_same<T, Matrix4>()> {};
+                                                           std::is_same<T, Matrix3x4>() || std::is_same<T, Matrix4>()> {
+};
 
 }  // namespace ovis
 

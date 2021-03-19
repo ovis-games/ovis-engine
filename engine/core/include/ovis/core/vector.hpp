@@ -5,9 +5,9 @@
 
 #include <fmt/format.h>
 
-#include <ovis/core/json.hpp>
-#include <ovis/math/shared_operations.hpp>
-#include <ovis/math/vector_types.hpp>
+#include <ovis/utils/json.hpp>
+#include <ovis/core/math_operations.hpp>
+#include <ovis/core/vector_types.hpp>
 
 namespace ovis {
 

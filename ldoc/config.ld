@@ -5,7 +5,7 @@ topics = 'doc_topics'
 use_markdown_titles = true
 kind_names = {topic='Manual'}
 template = true
-style = '!fixed'
+style = true
 merge = true
 
 custom_tags = {

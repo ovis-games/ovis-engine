@@ -10,14 +10,14 @@ ColumnLimit: 120
 IncludeBlocks: Regroup
 IncludeCategories:
 
-  - Regex:           '^<ovis\/core'
+  - Regex:           '^<ovis\/utils'
     Priority:        3
 
-  - Regex:           '^<ovis\/math'
+  - Regex:           '^<ovis\/graphics'
     Priority:        3
     SortPriority:    4
 
-  - Regex:           '^<ovis\/scene'
+  - Regex:           '^<ovis\/core'
     Priority:        3
     SortPriority:    5
 

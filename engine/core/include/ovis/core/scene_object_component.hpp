@@ -6,12 +6,12 @@
 
 #include <sol/sol.hpp>
 
-#include <ovis/core/class.hpp>
-#include <ovis/core/json.hpp>
-#include <ovis/core/lua_reference.hpp>
-#include <ovis/core/serialize.hpp>
-#include <ovis/core/static_factory.hpp>
-#include <ovis/math/vector.hpp>
+#include <ovis/utils/class.hpp>
+#include <ovis/utils/json.hpp>
+#include <ovis/utils/lua_reference.hpp>
+#include <ovis/utils/serialize.hpp>
+#include <ovis/utils/static_factory.hpp>
+#include <ovis/core/vector.hpp>
 
 namespace ovis {
 

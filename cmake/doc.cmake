@@ -14,4 +14,8 @@ if (LDOC_EXECUTABLE)
     DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/documenation/
     DESTINATION doc
   )
+  install(
+    FILES ${CMAKE_SOURCE_DIR}/ldoc/jquery-3.6.0.min.js
+    DESTINATION doc
+  )
 endif ()

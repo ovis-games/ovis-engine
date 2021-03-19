@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <variant>
 
-#include <ovis/core/file.hpp>
-#include <ovis/core/json.hpp>
+#include <ovis/utils/file.hpp>
+#include <ovis/utils/json.hpp>
 
 namespace ovis {
 

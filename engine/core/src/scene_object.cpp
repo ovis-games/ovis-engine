@@ -1,8 +1,8 @@
 #include <SDL2/SDL_assert.h>
 
-#include <ovis/core/log.hpp>
-#include <ovis/scene/scene.hpp>
-#include <ovis/scene/scene_object.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/core/scene.hpp>
+#include <ovis/core/scene_object.hpp>
 
 namespace ovis {
 
@@ -80,11 +80,11 @@ bool SceneObject::Deserialize(const json& serialized_object) {
 
 void SceneObject::RegisterType(sol::table* module) {
   /// Represents an object in a scene
-  // @classmod ovis.engine.SceneObject
-  // @testinginclude <ovis/scene/scene.hpp>
+  // @classmod ovis.core.SceneObject
+  // @testinginclude <ovis/core/scene.hpp>
   // @cppsetup ovis::Scene scene;
   // @cppsetup ovis::lua["some_scene"] = &scene;
-  // @usage local scene = require "ovis.scene"
+  // @usage local core = require "ovis.core"
   // local some_object = some_scene:add_object("Some Object")
   sol::usertype<SceneObject> scene_object_type = module->new_usertype<SceneObject>("SceneObject", sol::no_constructor);
 

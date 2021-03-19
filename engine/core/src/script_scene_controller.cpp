@@ -1,7 +1,7 @@
 #include <ovis/core/asset_library.hpp>
-#include <ovis/core/log.hpp>
-#include <ovis/scene/scene.hpp>
-#include <ovis/scene/script_scene_controller.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/core/scene.hpp>
+#include <ovis/core/script_scene_controller.hpp>
 
 namespace ovis {
 

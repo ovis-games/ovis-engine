@@ -4,11 +4,11 @@
 #include <typeindex>
 #include <unordered_map>
 
-#include <ovis/core/class.hpp>
-#include <ovis/core/down_cast.hpp>
-#include <ovis/core/json.hpp>
-#include <ovis/core/serialize.hpp>
-#include <ovis/scene/scene_object_component.hpp>
+#include <ovis/utils/class.hpp>
+#include <ovis/utils/down_cast.hpp>
+#include <ovis/utils/json.hpp>
+#include <ovis/utils/serialize.hpp>
+#include <ovis/core/scene_object_component.hpp>
 
 namespace ovis {
 

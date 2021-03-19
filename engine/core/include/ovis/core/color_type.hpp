@@ -5,7 +5,7 @@
 #include <fmt/format.h>
 #include <sol/sol.hpp>
 
-#include <ovis/core/json.hpp>
+#include <ovis/utils/json.hpp>
 
 namespace ovis {
 

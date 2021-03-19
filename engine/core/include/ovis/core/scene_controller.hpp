@@ -7,12 +7,12 @@
 
 #include <sol/sol.hpp>
 
-#include <ovis/core/class.hpp>
+#include <ovis/utils/class.hpp>
 #include <ovis/core/event.hpp>
-#include <ovis/core/static_factory.hpp>
+#include <ovis/utils/static_factory.hpp>
 
 #if OVIS_ENABLE_BUILT_IN_PROFILING == 1
-#include <ovis/core/profiling.hpp>
+#include <ovis/utils/profiling.hpp>
 #endif
 
 namespace ovis {

@@ -5,12 +5,12 @@
 #include <SDL2/SDL_assert.h>
 
 #include <ovis/core/asset_library.hpp>
-#include <ovis/core/log.hpp>
-#include <ovis/core/utf8.hpp>
-#include <ovis/scene/scene.hpp>
-#include <ovis/scene/scene_controller.hpp>
-#include <ovis/scene/scene_object.hpp>
-#include <ovis/scene/script_scene_controller.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/utils/utf8.hpp>
+#include <ovis/core/scene.hpp>
+#include <ovis/core/scene_controller.hpp>
+#include <ovis/core/scene_object.hpp>
+#include <ovis/core/script_scene_controller.hpp>
 #include <ovis/core/lua.hpp>
 
 namespace ovis {
@@ -339,8 +339,8 @@ void Scene::RegisterType(sol::table* module) {
   // clang-format off
 
   /// This class represents a scene.
-  // @classmod ovis.engine.Scene
-  // @testinginclude <ovis/scene/scene.hpp>
+  // @classmod ovis.core.Scene
+  // @testinginclude <ovis/core/scene.hpp>
   // @cppsetup ovis::Scene scene;
   // @cppsetup ovis::lua["scene"] = &scene;
   sol::usertype<Scene> scene_type = module->new_usertype<Scene>("Scene", sol::no_constructor);

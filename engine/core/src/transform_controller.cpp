@@ -1,6 +1,6 @@
-#include <ovis/scene/scene.hpp>
-#include <ovis/scene/transform.hpp>
-#include <ovis/scene/transform_controller.hpp>
+#include <ovis/core/scene.hpp>
+#include <ovis/core/transform.hpp>
+#include <ovis/core/transform_controller.hpp>
 
 namespace ovis {
 
@@ -22,7 +22,7 @@ void TransformController::RegisterType(sol::table* module) {
   // All controllers that change the transformation of an object should run before
   // this controllers because this controller updates the transformation matrices
   // which are used to calculate the global transformation of the object.
-  // @classmod ovis.scene.TransformController
+  // @classmod ovis.core.TransformController
   // @base SceneController
   sol::usertype<TransformController> transform_controller_type = module->new_usertype<TransformController>("TransformController");
 

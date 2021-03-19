@@ -1,1 +1,1 @@
-#include <ovis/math/quaternion.hpp>
+#include <ovis/core/quaternion.hpp>

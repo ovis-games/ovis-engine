@@ -8,6 +8,11 @@
 # if ldoc.custom_css then -- add custom CSS file if configured.
     <link rel="stylesheet" href="$(ldoc.custom_css)" type="text/css" />
 # end
+    <script src="jquery-3.6.0.min.js"></script>
+    <script src="../jquery-3.6.0.min.js"></script>
+    <script>
+      jQuery.noConflict();
+    </script>
 </head>
 <body>
 
@@ -104,11 +109,12 @@
     </ul>
 #   end -- if see
 #   if module.usage then
-#     local li,il = use_li(module.usage)
+#     --local li,il = use_li(module.usage)
+#     local li,il = "", ""
     <h3>Usage:</h3>
     <ul>
 #     for usage in iter(module.usage) do
-        $(li)<pre class="example">$(ldoc.escape(usage))</pre>$(il)
+        $(li)<pre class="example">$(ldoc.prettify(usage))</pre>$(il)
 #     end -- for
     </ul>
 #   end -- if usage
@@ -121,26 +127,6 @@
     </ul>
 #   end -- if module.info
 
-
-# if not ldoc.no_summary then
-# -- bang out the tables of item types for this module (e.g Functions, Tables, etc)
-# for kind,items in module.kinds() do
-<h2><a href="#$(no_spaces(kind))">$(kind)</a></h2>
-<table class="function_list">
-#  for item in items() do
-	<tr>
-	<td class="name" $(nowrap)><a href="#$(item.name)">$(display_name(item))</a></td>
-	<td class="summary">$(M(item.summary,item))</td>
-	</tr>
-#  end -- for items
-</table>
-#end -- for kinds
-
-<br/>
-<br/>
-
-#end -- if not no_summary
-
 # --- currently works for both Functions and Tables. The params field either contains
 # --- function parameters or table fields.
 # local show_return = not ldoc.no_return_or_parms
@@ -148,8 +134,8 @@
 # for kind, items in module.kinds() do
 #   local kitem = module.kinds:get_item(kind)
 #   local has_description = kitem and ldoc.descript(kitem) ~= ""
-    <h2 class="section-header $(has_description and 'has-description')"><a name="$(no_spaces(kind))"></a>$(kind)</h2>
-    $(M(module.kinds:get_section_description(kind),nil))
+  <h2 class="section-header $(has_description and 'has-description')"><a name="$(no_spaces(kind))"></a>$(kind)</h2>
+  $(M(module.kinds:get_section_description(kind),nil))
 #   if kitem then
 #       if has_description then
           <div class="section-description">
@@ -161,17 +147,30 @@
             <pre class="example">$(ldoc.prettify(kitem.usage[1]))</pre>
 #        end
 #   end
-    <dl class="function">
+    <table class="function_list">
 #  for item in items() do
-    <dt>
-    <a name = "$(item.name)"></a>
-    <strong>$(display_name(item))</strong>
+#    local element_link = item.name
+#    if item.type == "function" then
+#      for param in iter(item.params) do
+#        element_link = element_link .. "_" .. param
+#      end
+#    end
+#    local element_id = (element_link .. ".description"):gsub("%.", "_"):gsub(":", "_")
+    <tr>
+      <td class="name" $(nowrap)>
+        <a name = "$(element_link)"></a>
+        <a href="#$(element_link)" onclick="jQuery('#$(element_id)').toggle(); return false;">$(display_name(item))</a>
+      </td>
+      <td class="summary">$(M(item.summary,item))</td>
 #   if ldoc.prettify_files and ldoc.is_file_prettified[item.module.file.filename] then
     <a style="float:right;" href="$(ldoc.source_ref(item))">line $(item.lineno)</a>
 #  end
-    </dt>
-    <dd>
-    $(M(ldoc.descript(item),item))
+    </tr>
+    <tr id="$(element_id)" style="display:none;">
+      <td colspan="2">
+        <p>
+        $(M(ldoc.descript(item),item))
+    
 
 #   if ldoc.custom_tags then
 #    for custom in iter(ldoc.custom_tags) do
@@ -184,7 +183,6 @@
          $(li)$(custom.format and custom.format(value) or M(value))$(il)
 #      end -- for
 #     end -- if tag
-    </ul>
 #    end -- iter tags
 #   end
 
@@ -267,7 +265,8 @@
 #   end -- if see
 
 #   if item.usage then
-#     local li,il = use_li(item.usage)
+#     --local li,il = use_li(item.usage)
+#     local li,il = "", ""
     <h3>Usage:</h3>
     <ul>
 #     for usage in iter(item.usage) do
@@ -275,10 +274,11 @@
 #     end -- for
     </ul>
 #   end -- if usage
-
-</dd>
+        </p>
+      </td>
+    </tr>
 # end -- for items
-</dl>
+</table>
 # end -- for kinds
 
 # else -- if module; project-level contents

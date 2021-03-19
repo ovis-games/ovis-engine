@@ -9,12 +9,12 @@
 #include <SDL2/SDL_assert.h>
 #include <sol/sol.hpp>
 
-#include <ovis/core/down_cast.hpp>
+#include <ovis/utils/down_cast.hpp>
 #include <ovis/core/event.hpp>
-#include <ovis/core/json.hpp>
-#include <ovis/core/serialize.hpp>
-#include <ovis/math/vector.hpp>
-#include <ovis/scene/scene_object.hpp>
+#include <ovis/utils/json.hpp>
+#include <ovis/utils/serialize.hpp>
+#include <ovis/core/vector.hpp>
+#include <ovis/core/scene_object.hpp>
 
 namespace ovis {
 

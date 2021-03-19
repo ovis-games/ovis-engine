@@ -1,12 +1,12 @@
-#include <ovis/math/vector.hpp>
+#include <ovis/core/vector.hpp>
 
 namespace ovis {
 
 void Vector2::RegisterType(sol::table* module) {
   /// A two-dimensional vector.
-  // @classmod ovis.math.Vector2
-  // @usage local math = require "ovis.math"
-  // local Vector2 = math.Vector2
+  // @classmod ovis.core.Vector2
+  // @usage local core = require "ovis.core"
+  // local Vector2 = core.Vector2
   // @usage -- Here is a small example that shows how the Vector2 can be used
   // -- in practice by creating a function that computes the
   // -- intersection points of a sphere and a line
@@ -17,9 +17,9 @@ void Vector2::RegisterType(sol::table* module) {
   // -- @tparam number r radius of the circle
   // function intersect_line_circle(p, d, c, r)
   //   local o = p - c
-  //   local d_dot_o = math.dot(d, o)
-  //   local mag_d = math.length(d)
-  //   local delta = d_dot_o^2 - mag_d^2 * (math.length(o)^2 - r^2)
+  //   local d_dot_o = Vector2.dot(d, o)
+  //   local mag_d = Vector2.length(d)
+  //   local delta = d_dot_o^2 - mag_d^2 * (Vector2.length(o)^2 - r^2)
   //   if delta < 0 then
   //     return nil, 'No intersection found'
   //   elseif delta < 0.00001 then -- use your favourite epsilon here
@@ -33,9 +33,9 @@ void Vector2::RegisterType(sol::table* module) {
   //   end
   // end
   // local p1, p2 = intersect_line_circle(Vector2.new(1, 1),  -- position on line
-  //                                     Vector2.new(1, 0),  -- line direction
-  //                                     Vector2.new(10, 1), -- circle center
-  //                                     2)              -- circle radius
+  //                                     Vector2.new(1, 0),   -- line direction
+  //                                     Vector2.new(10, 1),  -- circle center
+  //                                     2)                   -- circle radius
   // assert(p1 == Vector2.new(8,1))
   // assert(p2 == Vector2.new(12,1))
   sol::usertype<Vector2> vector2_type = module->new_usertype<Vector2>(
@@ -226,6 +226,65 @@ void Vector2::RegisterType(sol::table* module) {
   // @usage local v = Vector2.new(1.0, 2.0)
   // assert(tostring(v) == '(1.0, 2.0)')
   vector2_type[sol::meta_function::to_string] = [](const Vector2& vector) { return fmt::format("{}", vector); };
+
+  /// Returns a vector with the minimum component-wise values of the inputs.
+  // @function min
+  // @param[type=Vector2] v1
+  // @param[type=Vector2] v2
+  // @treturn Vector2
+  // @usage assert(Vector2.min(Vector2.new(0, 3), Vector2.new(1, 2)) == Vector2.new(0, 2))
+  vector2_type["min"] = &ovis::min<Vector2>;
+
+  /// Returns a vector with the maximum component-wise values of the inputs.
+  // @function max
+  // @param[type=Vector2] v1
+  // @param[type=Vector2] v2
+  // @treturn Vector2
+  // @usage assert(Vector2.max(Vector2.new(0, 3), Vector2.new(1, 2)) == Vector2.new(1, 3))
+  vector2_type["max"] = &ovis::max<Vector2>;
+
+  /// Clamps the components of the vector to the specified range.
+  // @function clamp
+  // @param[type=Vector2] v
+  // @param[type=Vector2] min
+  // @param[type=Vector2] max
+  // @treturn Vector2 The vector with the components clamped to the range [min, max]
+  // @usage assert(Vector2.clamp(Vector2.new(-1, 2), Vector2.ZERO, Vector2.ONE) == Vector2.new(0, 1))
+  vector2_type["clamp"] = &ovis::clamp<Vector2>;
+
+  /// Calculates the squared length of a vector.
+  // This is faster than computing the actual length of the vector.
+  // @function length_squared
+  // @param[type=Vector2] v
+  // @treturn number The squared length of the vector
+  // @usage assert(Vector2.length_squared(Vector2.new(5, 5)) == 50)
+  vector2_type["length_squared"] = &ovis::SquaredLength<Vector2>;
+
+  /// Calculates the length of a vector.
+  // @function length
+  // @param[type=Vector2] v
+  // @treturn number The length of the vector
+  // @usage assert(Vector2.length(Vector2.new(5, 5)) > 7.0710)
+  // assert(Vector2.length(Vector2.new(5, 5)) < 7.0711)
+  vector2_type["length"] = &Length<Vector2>;
+
+  /// Returns the normalized vector.
+  // @function normalize
+  // @param[type=Vector2] v
+  // @treturn Vector2 Returns a vector with the same direction but with a length of 1
+  // @usage assert(Vector2.normalize(Vector2.new(5, 0)) == Vector2.new(1, 0))
+  vector2_type["normalize"] = &Normalize<Vector2>;
+
+  /// Calculates the dot product between two vectors.
+  // @function dot
+  // @see Vector2.cross
+  // @param[type=Vector2] v1
+  // @param[type=Vector2] v2
+  // @treturn number
+  // @usage local v1 = Vector2.new(1, 2)
+  // local v2 = Vector2.new(4, 5)
+  // assert(Vector2.dot(v1, v2) == 14)
+  vector2_type["dot"] = &Dot<Vector2>;
   
   // clang-format on
 }

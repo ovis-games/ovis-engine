@@ -6,11 +6,11 @@
 
 #include <fmt/format.h>
 
-#include <ovis/core/json.hpp>
-#include <ovis/math/constants.hpp>
-#include <ovis/math/quaternion_type.hpp>
-#include <ovis/math/shared_operations.hpp>
-#include <ovis/math/vector.hpp>
+#include <ovis/utils/json.hpp>
+#include <ovis/core/math_constants.hpp>
+#include <ovis/core/quaternion_type.hpp>
+#include <ovis/core/math_operations.hpp>
+#include <ovis/core/vector.hpp>
 
 namespace ovis {
 

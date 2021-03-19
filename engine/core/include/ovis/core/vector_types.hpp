@@ -6,8 +6,8 @@
 #include <fmt/format.h>
 #include <sol/sol.hpp>
 
-#include <ovis/core/json.hpp>
-#include <ovis/math/constants.hpp>
+#include <ovis/utils/json.hpp>
+#include <ovis/core/math_constants.hpp>
 
 namespace ovis {
 

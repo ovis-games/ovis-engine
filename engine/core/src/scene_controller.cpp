@@ -2,9 +2,9 @@
 
 #include <SDL2/SDL_assert.h>
 
-#include <ovis/core/log.hpp>
-#include <ovis/scene/scene.hpp>
-#include <ovis/scene/scene_controller.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/core/scene.hpp>
+#include <ovis/core/scene_controller.hpp>
 
 namespace ovis {
 
@@ -45,7 +45,7 @@ void SceneController::ProcessEvent(Event* event) {
 
 void SceneController::RegisterType(sol::table* module) {
   /// The base class for all scene controllers.
-  // @classmod ovis.scene.SceneController
+  // @classmod ovis.core.SceneController
   sol::usertype<SceneController> scene_controller_type = module->new_usertype<SceneController>("SceneController");
 
   /// The scene, the controller is attached to.

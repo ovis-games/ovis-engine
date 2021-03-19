@@ -2,6 +2,6 @@
 
 namespace ovis {
 
-bool LoadSceneModule();
+bool LoadCoreModule();
 
 }

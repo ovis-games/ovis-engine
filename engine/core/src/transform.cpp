@@ -1,26 +1,12 @@
 #include <tuple>
 
-#include <ovis/core/log.hpp>
-#include <ovis/scene/transform.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/core/transform.hpp>
 
 namespace ovis {
 
 namespace {
 static const json SCHEMA = {{"$ref", "base#/$defs/transform"}};
-}
-
-Matrix4 Transform::CalculateMatrix() const {
-  const auto translation_matrix = Matrix4::FromTranslation(position_);
-  const auto rotation_matrix = Matrix4::FromRotation(rotation_);
-  const auto scale_matrix = Matrix4::FromScaling(scale_);
-  return translation_matrix * rotation_matrix * scale_matrix;
-}
-
-Matrix4 Transform::CalculateInverseMatrix() const {
-  const auto translation_matrix = Matrix4::FromTranslation(-position_);
-  const auto rotation_matrix = Transpose(Matrix4::FromRotation(rotation_));
-  const auto scale_matrix = Matrix4::FromScaling(1.0f / scale_);
-  return scale_matrix * rotation_matrix * translation_matrix;
 }
 
 json Transform::Serialize() const {
@@ -52,11 +38,10 @@ const json* Transform::GetSchema() const {
 
 void Transform::RegisterType(sol::table* module) {
   /// A class that respresents a 3D transformation of an object.
-  // @classmod ovis.scene.Transform
+  // @classmod ovis.core.Transform
   // @base SceneObjectComponent
-  // @usage local scene = require "ovis.scene"
-  // local Transform = scene.Transform
-  // local math = require "ovis.math" -- for the examples
+  // @usage local core = require "ovis.core"
+  // local Transform = core.Transform
   sol::usertype<Transform> transform_type =
       module->new_usertype<Transform>("Transform", sol::constructors<Transform()>());
 
@@ -76,11 +61,11 @@ void Transform::RegisterType(sol::table* module) {
   // @function move
   // @param[type=Vector3] offset
   // @usage local transform = Transform.new()
-  // assert(transform.position == math.Vector3.ZERO)
-  // transform:move(math.Vector3.POSITIVE_X)
-  // assert(transform.position == math.Vector3.POSITIVE_X)
-  // transform:move(math.Vector3.POSITIVE_X)
-  // assert(transform.position == 2 * math.Vector3.POSITIVE_X)
+  // assert(transform.position == core.Vector3.ZERO)
+  // transform:move(core.Vector3.POSITIVE_X)
+  // assert(transform.position == core.Vector3.POSITIVE_X)
+  // transform:move(core.Vector3.POSITIVE_X)
+  // assert(transform.position == 2 * core.Vector3.POSITIVE_X)
   transform_type["move"] = &Transform::Move;
 
   /// Rotates the object by multiplying its rotation by another quaternion.
@@ -122,6 +107,66 @@ void Transform::RegisterType(sol::table* module) {
                                &std::get<2>(yaw_pitch_roll));
     return yaw_pitch_roll;
   };
+
+  /// Transforms a direcion from local to world space.
+  // If the transform contains any scaling the magnitude of the vector will likely change.
+  // @function local_direction_to_world_space
+  // @param[type=Vector3] direction
+  // @treturn Vector3
+  // @see 03-spaces.md
+  // @see world_direction_to_local_space
+  // @usage Vector3 = core.Vector3
+  // local transform = Transform.new()
+  // transform:rotate(Vector3.POSITIVE_Y, 90)
+  // local transformed_direction = transform:local_direction_to_world_space(Vector3.POSITIVE_X)
+  // assert(Vector3.length(transformed_direction - Vector3.POSITIVE_Z) < 0.1)
+  transform_type["local_direction_to_world_space"] = &Transform::LocalDirectionToWorldSpace;
+
+  /// Transforms a direcion from world to local space.
+  // If the transform contains any scaling the magnitude of the vector will likely change.
+  // @function world_direction_to_local_space
+  // @param[type=Vector3] direction
+  // @treturn Vector3
+  // @see 03-spaces.md
+  // @see local_direction_to_world_space
+  // @usage Vector3 = core.Vector3
+  // local transform = Transform.new()
+  // transform:rotate(Vector3.POSITIVE_Y, 90)
+  // local transformed_direction = transform:world_direction_to_local_space(Vector3.POSITIVE_Z)
+  // assert(Vector3.length(transformed_direction - Vector3.POSITIVE_X) < 0.1)
+  transform_type["world_direction_to_local_space"] = &Transform::WorldDirectionToLocalSpace;
+
+  /// Transforms a position in local space to world space.
+  // @function local_position_to_world_space
+  // @param[type=Vector3] position
+  // @treturn Vector3
+  // @see 03-spaces.md
+  // @see world_position_to_local_space
+  // @usage Vector3 = core.Vector3
+  // local transform = Transform.new()
+  // transform:move(Vector3.new(0, 1, 0))
+  // local transformed_position = transform:local_position_to_world_space(Vector3.new(1, 0, 0))
+  // assert(transformed_position == Vector3.new(1, 1, 0))
+  transform_type["local_position_to_world_space"] = &Transform::LocalPositionToWorldSpace;
+
+  /// Transforms a position in  world space to local space.
+  // @function world_position_to_local_space
+  // @param[type=Vector3] position
+  // @treturn Vector3
+  // @see 03-spaces.md
+  // @see local_position_to_world_space
+  // @usage Vector3 = core.Vector3
+  // local transform = Transform.new()
+  // transform:move(Vector3.new(0, 1, 0))
+  // local transformed_position = transform:world_position_to_local_space(Vector3.new(1, 1, 0))
+  // assert(transformed_position == Vector3.new(1, 0, 0))
+  transform_type["world_position_to_local_space"] = &Transform::WorldPositionToLocalSpace;
+}
+
+void Transform::CalculateMatrices() const {
+  local_to_world_ = Matrix3x4::FromTransformation(position_, scale_, rotation_);
+  world_to_local_ = Matrix3x4::FromTransformation(-position_, 1.f / scale_, Invert(rotation_));
+  dirty = false;
 }
 
 }  // namespace ovis

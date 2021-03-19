@@ -2,8 +2,8 @@
 
 #include <cstdint>
 
-#include <ovis/math/color_type.hpp>
-#include <ovis/math/shared_operations.hpp>
+#include <ovis/core/color_type.hpp>
+#include <ovis/core/math_operations.hpp>
 
 namespace ovis {
 

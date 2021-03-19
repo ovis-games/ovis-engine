@@ -1,4 +1,4 @@
-#include <ovis/math/color.hpp>
+#include <ovis/core/color.hpp>
 
 namespace ovis {
 
@@ -10,9 +10,9 @@ void Color::RegisterType(sol::table* module) {
   // 0,0,0 respresent black and 1,1,1 respresent white. Similarly, an
   // alpha value of 0 represents full transparency whereas an alpha value
   // of 1 represents full opaqueness.
-  // @classmod ovis.math.Color
-  // @usage local math = require "ovis.math"
-  // local Color = math.Color
+  // @classmod ovis.core.Color
+  // @usage local core = require "ovis.core"
+  // local Color = core.Color
   sol::usertype<Color> color_type = module->new_usertype<Color>(
     "Color", sol::factories(
       []() { return Color(0, 0, 0, 1.0f); },

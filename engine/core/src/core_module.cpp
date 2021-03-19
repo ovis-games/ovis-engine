@@ -1,18 +1,20 @@
+#include <middleclass.hpp>
 #include <sol/sol.hpp>
 
+#include <ovis/utils/log.hpp>
+#include <ovis/core/camera.hpp>
 #include <ovis/core/core_module.hpp>
 #include <ovis/core/lua.hpp>
-#include <ovis/math/math_module.hpp>
-#include <ovis/scene/scene.hpp>
-#include <ovis/scene/scene_controller.hpp>
-#include <ovis/scene/scene_object.hpp>
-#include <ovis/scene/scene_object_component.hpp>
-#include <ovis/scene/transform.hpp>
-#include <ovis/scene/transform_controller.hpp>
+#include <ovis/core/scene.hpp>
+#include <ovis/core/scene_controller.hpp>
+#include <ovis/core/scene_object.hpp>
+#include <ovis/core/scene_object_component.hpp>
+#include <ovis/core/transform.hpp>
+#include <ovis/core/transform_controller.hpp>
 
 namespace ovis {
 
-int LuaCoreModule(lua_State* l) {
+int LoadCoreModule(lua_State* l) {
   sol::state_view state(l);
 
   /// This module provides core components of the engine.
@@ -66,34 +68,30 @@ int LuaCoreModule(lua_State* l) {
     ovis::LogI("{}", message_string);
   };
 
+  Scene::RegisterType(&core_module);
+  SceneObject::RegisterType(&core_module);
+  SceneObjectComponent::RegisterType(&core_module);
+  Transform::RegisterType(&core_module);
+  Camera::RegisterType(&core_module);
+  SceneController::RegisterType(&core_module);
+  TransformController::RegisterType(&core_module);
+  Transform::RegisterType(&core_module);
+  Vector2::RegisterType(&core_module);
+  Vector3::RegisterType(&core_module);
+  Color::RegisterType(&core_module);
+
   return core_module.push();
 }
 
-int LoadSceneModule(lua_State* l) {
-  sol::state_view state(l);
-
-  /// Engine module
-  // @usage local engine = require('ovis.engine')
-  sol::table scene_module = state.create_table();
-
-  Scene::RegisterType(&scene_module);
-  SceneObject::RegisterType(&scene_module);
-  SceneObjectComponent::RegisterType(&scene_module);
-  Transform::RegisterType(&scene_module);
-  SceneController::RegisterType(&scene_module);
-  TransformController::RegisterType(&scene_module);
-
-  return scene_module.push();
-}
-
-bool LoadSceneModule() {
+bool LoadCoreModule() {
   static bool module_loaded = false;
   if (!module_loaded) {
+    lua.open_libraries(sol::lib::base, sol::lib::coroutine, sol::lib::string, sol::lib::math, sol::lib::table,
+                       sol::lib::package);
     SceneObjectComponent::Register("Transform", []() { return std::make_unique<Transform>(); });
+    SceneObjectComponent::Register("Camera", []() { return std::make_unique<Camera>(); });
 
-    LoadCoreModule();
-    LoadMathModule();
-    lua.require("ovis.scene", &LoadSceneModule);
+    lua.require("ovis.core", &LoadCoreModule);
     module_loaded = true;
   }
 

@@ -1,1 +1,1 @@
-#include <ovis/math/matrix.hpp>
+#include <ovis/core/matrix.hpp>
