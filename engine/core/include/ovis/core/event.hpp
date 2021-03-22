@@ -2,6 +2,7 @@
 
 #include <string>
 #include <string_view>
+#include <sol/sol.hpp>
 
 namespace ovis {
 
@@ -14,6 +15,8 @@ class Event {
 
   inline bool is_propagating() const { return is_propagating_; }
   inline void StopPropagation() { is_propagating_ = false; }
+
+  static void RegisterType(sol::table* module);
 
  private:
   std::string type_;

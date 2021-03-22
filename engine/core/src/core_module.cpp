@@ -4,6 +4,7 @@
 #include <ovis/utils/log.hpp>
 #include <ovis/core/camera.hpp>
 #include <ovis/core/core_module.hpp>
+#include <ovis/core/event.hpp>
 #include <ovis/core/lua.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_controller.hpp>
@@ -68,6 +69,7 @@ int LoadCoreModule(lua_State* l) {
     ovis::LogI("{}", message_string);
   };
 
+  Event::RegisterType(&core_module);
   Scene::RegisterType(&core_module);
   SceneObject::RegisterType(&core_module);
   SceneObjectComponent::RegisterType(&core_module);

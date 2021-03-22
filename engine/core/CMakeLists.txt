@@ -2,6 +2,7 @@ add_library(
   ovis-core
   
   include/ovis/core/core_module.hpp src/core_module.cpp
+  include/ovis/core/event.hpp src/event.cpp
   include/ovis/core/scene.hpp src/scene.cpp
   include/ovis/core/scene_viewport.hpp src/scene_viewport.cpp
   include/ovis/core/scene_controller.hpp src/scene_controller.cpp
