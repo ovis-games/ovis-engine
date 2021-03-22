@@ -19,7 +19,7 @@ SceneObjectComponent* SceneObject::AddComponent(const std::string& component_id)
   } else {
     std::optional<std::unique_ptr<SceneObjectComponent>> component = SceneObjectComponent::Create(component_id);
     if (!component.has_value()) {
-      LogE("Component not registered: '{}'", component_id);
+      LogE("Component '{}' not registered or failed to create", component_id);
       return nullptr;
     } else {
       SDL_assert(*component != nullptr);

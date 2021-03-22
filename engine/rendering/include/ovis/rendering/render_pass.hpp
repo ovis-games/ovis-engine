@@ -5,42 +5,38 @@
 #include <unordered_map>
 
 #if OVIS_ENABLE_BUILT_IN_PROFILING
-#include <ovis/core/profiling.hpp>
+#include <ovis/utils/profiling.hpp>
 #include <ovis/graphics/gpu_time_profiler.hpp>
 #endif
 
-#include <ovis/math/matrix.hpp>
-#include <ovis/scene/scene.hpp>
-#include <ovis/rendering/camera.hpp>
+#include <ovis/utils/static_factory.hpp>
+#include <ovis/core/camera.hpp>
+#include <ovis/core/matrix.hpp>
+#include <ovis/core/scene.hpp>
 
 namespace ovis {
 
-class Viewport;
+class RenderingViewport;
 class GraphicsContext;
-class ResourceManager;
 
 struct RenderContext {
-  const Scene* scene;
-
-  Camera camera;
-  Matrix4 view_matrix;          // TODO: Matrix3x4
-  Matrix4 inverse_view_matrix;  // TODO: Matrix3x4
-  Matrix4 projection_matrix;
-  Matrix4 inverse_projection_matrix;
-  Matrix4 view_projection_matrix;
+  Matrix3x4 world_to_view_space;
+  Matrix3x4 view_to_world_space;
+  Matrix4 view_to_clip_space;
+  Matrix4 clip_to_view_space;
+  Matrix4 world_to_clip_space;
 };
 
-class RenderPass {
-  friend class Viewport;
+class RenderPass : public StaticFactory<RenderPass, std::unique_ptr<RenderPass>()> {
+  friend class RenderingViewport;
 
  public:
   RenderPass(const std::string& name);
   virtual ~RenderPass() = default;
 
-  inline Viewport* viewport() const { return viewport_; }
+  inline RenderingViewport* viewport() const { return viewport_; }
   inline std::string name() const { return name_; }
   inline GraphicsContext* context() const { return graphics_context_; }
-  inline ResourceManager* resource_manager() const { return resource_manager_; }
 
   virtual void CreateResources() {}
   virtual void ReleaseResources() {}
@@ -48,14 +44,12 @@ class RenderPass {
 
   virtual void DrawImGui() {}
 
-  static std::vector<std::string> GetRegisteredRenderPasses();
-
  protected:
   void RenderBefore(const std::string& renderer_name);
   void RenderAfter(const std::string& renderer_name);
 
  private:
-  Viewport* viewport_ = nullptr;
+  RenderingViewport* viewport_ = nullptr;
   GraphicsContext* graphics_context_ = nullptr;
   ResourceManager* resource_manager_ = nullptr;
   std::string name_;

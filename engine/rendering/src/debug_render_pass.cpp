@@ -1,5 +1,6 @@
+#include <ovis/core/math_constants.hpp>
 #include <ovis/rendering/debug_render_pass.hpp>
-#include <ovis/rendering/viewport.hpp>
+#include <ovis/rendering/rendering_viewport.hpp>
 
 namespace ovis {
 
@@ -75,16 +76,23 @@ void DebugRenderPass::BeginDraw(const RenderContext& render_context) {
   resources_->line_vertices.clear();
   resources_->triangle_vertices.clear();
 
-  Matrix4 view_projection;
+  Matrix4 world_to_clip_space;
   if (draw_space_ == DrawSpace::WORLD) {
-    view_projection = render_context.view_projection_matrix;
+    world_to_clip_space = render_context.world_to_clip_space;
   } else {
-    const Vector2 viewport_size = viewport()->GetDimensionsAsVector2();
-    view_projection = Matrix4::FromOrthographicProjection(0.0f, viewport_size.x, viewport_size.y, 0.0f, -1.0f, 1.0f);
+    const Vector2 viewport_size = viewport()->GetDimensions();
+    world_to_clip_space = Matrix4::FromOrthographicProjection(0.0f, viewport_size.x, viewport_size.y, 0.0f, -1.0f, 1.0f);
   }
 
-  resources_->point_shader->SetUniform("ViewProjection", view_projection);
-  resources_->shader->SetUniform("ViewProjection", view_projection);
+  Mat4x4 world_to_clip_space_matrix;
+  for (int i = 0; i < 4; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      world_to_clip_space_matrix[i][j] = world_to_clip_space[i][j];
+    }
+  }
+
+  resources_->point_shader->SetUniform("ViewProjection", world_to_clip_space_matrix);
+  resources_->shader->SetUniform("ViewProjection", world_to_clip_space_matrix);
 }
 
 void DebugRenderPass::EndDraw() {
@@ -139,7 +147,7 @@ void DebugRenderPass::DrawCircle(const Vector3& center, float radius, const Colo
   const Vector3 base_position = center + radius * support_vector1;
   Vector3 previous_position = base_position;
   for (int i = 1; i < num_segments; ++i) {
-    const float angle = i * 2.0f * glm::pi<float>() / num_segments;
+    const float angle = i * 2.0f * Pi<float>() / num_segments;
 
     const Vector3 new_position =
         center + radius * (std::sin(angle) * support_vector0 + std::cos(angle) * support_vector1);
@@ -180,7 +188,7 @@ void DebugRenderPass::DrawDisc(const Vector3& center, float radius, const Color&
   const Vector3 base_position = center + radius * support_vector1;
   Vector3 previous_position = base_position;
   for (int i = 1; i < num_segments; ++i) {
-    const float angle = i * 2.0f * glm::pi<float>() / num_segments;
+    const float angle = i * 2.0f * Pi<float>() / num_segments;
 
     const Vector3 new_position =
         center + radius * (std::sin(angle) * support_vector0 + std::cos(angle) * support_vector1);

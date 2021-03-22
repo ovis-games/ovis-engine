@@ -1,9 +1,9 @@
 add_library(
   ovis-input
   
-  include/ovis/input/input.hpp src/input.cpp
-  include/ovis/input/keyboard.hpp src/keyboard.cpp
-  include/ovis/input/lua_module.hpp src/lua_module.cpp
+  include/ovis/input/input_module.hpp src/input_module.cpp
+  include/ovis/input/key.hpp src/key.cpp
+  include/ovis/input/key_event.hpp src/key_event.cpp
 )
 add_library(ovis::input ALIAS ovis-input)
 
@@ -17,7 +17,6 @@ target_link_libraries(
   ovis-input
   PUBLIC
     ovis::core
-    ovis::math
 )
 
 if (OVIS_BUILD_TESTS)
@@ -29,16 +28,16 @@ if (OVIS_BUILD_TESTS)
 
   target_add_ldoc_test(
     TARGET ovis-input-test
+    MODULE input
     INPUT_FILES
-      src/keyboard.cpp
-      src/input.cpp
+      src/input_module.cpp
+      src/key.cpp
   )
 
   target_link_libraries(
     ovis-input-test
     PRIVATE
       catch2
-      ovis::engine
       ovis::input
   )
 

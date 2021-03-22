@@ -13,19 +13,19 @@ IncludeCategories:
   - Regex:           '^<ovis\/utils'
     Priority:        3
 
-  - Regex:           '^<ovis\/graphics'
+  - Regex:           '^<ovis\/core'
     Priority:        3
     SortPriority:    4
 
-  - Regex:           '^<ovis\/core'
+  - Regex:           '^<ovis\/graphics'
     Priority:        3
     SortPriority:    5
 
-  - Regex:           '^<ovis\/graphics'
+  - Regex:           '^<ovis\/rendering'
     Priority:        3
     SortPriority:    6
 
-  - Regex:           '^<ovis\/rendering'
+  - Regex:           '^<ovis\/input'
     Priority:        3
     SortPriority:    7
 

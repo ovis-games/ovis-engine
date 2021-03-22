@@ -1,30 +1,20 @@
-#include <imgui.h>
-
-#include <ovis/rendering/module.hpp>
-#include <ovis/rendering/viewport.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/rendering/rendering_viewport.hpp>
 
 namespace ovis {
 
-// void Viewport::InitializeViewport(GraphicsContext* context, ResourceManager* resource_manager) {
-//   render_pipeline_ = std::make_unique<Viewport>(context, resource_manager);
-// }
-
-void Viewport::Render(bool render_gui) {
+void RenderingViewport::Render() {
   if (!render_passes_sorted_) {
     SortRenderPasses();
   }
 
-  if (render_gui) {
-    ComputeImGuiFrame();
-  }
-
-  render_context_.scene = scene_;
+  RenderContext render_context;
   for (RenderPass* render_pass : render_pass_order_) {
-    render_pass->Render(render_context_);
+    render_pass->Render(render_context);
   }
 }
 
-RenderPass* Viewport::AddRenderPass(std::unique_ptr<RenderPass> render_pass) {
+RenderPass* RenderingViewport::AddRenderPass(std::unique_ptr<RenderPass> render_pass) {
   if (!render_pass) {
     LogE("Scene controller is null!");
     return nullptr;
@@ -39,38 +29,30 @@ RenderPass* Viewport::AddRenderPass(std::unique_ptr<RenderPass> render_pass) {
   auto insert_return_value = render_passes_.insert(std::make_pair(render_pass_id, std::move(render_pass)));
   SDL_assert(insert_return_value.second);
   insert_return_value.first->second->viewport_ = this;
-  insert_return_value.first->second->resource_manager_ = resource_manager_;
   if (graphics_context_ != nullptr) {
     insert_return_value.first->second->graphics_context_ = graphics_context_;
-    insert_return_value.first->second->CreateResourcesWrapper();
   }
   render_passes_sorted_ = false;
 
   return insert_return_value.first->second.get();
 }
 
-RenderPass* Viewport::AddRenderPass(const std::string& render_pass_id) {
-  const auto render_pass_factory = Module::render_pass_factory_functions()->find(render_pass_id);
-  if (render_pass_factory == Module::render_pass_factory_functions()->end()) {
-    LogE("Cannot find render pass '{}'", render_pass_id);
-    return nullptr;
-  }
-
+RenderPass* RenderingViewport::AddRenderPass(const std::string& render_pass_id) {
   if (render_passes_.count(render_pass_id) != 0) {
     LogE("Render pass '{}' already added", render_pass_id);
     return nullptr;
   }
 
-  auto render_pass = render_pass_factory->second(this);
-  if (render_pass == nullptr) {
-    LogE("Failed to create render pass '{}'", render_pass_id);
+  std::optional<std::unique_ptr<RenderPass>> render_pass = RenderPass::Create(render_pass_id);
+  if (!render_pass.has_value()) {
+    LogE("Render pass '{}' not registered or failed to create", render_pass_id);
     return nullptr;
   }
 
-  return AddRenderPass(std::move(render_pass));
+  return AddRenderPass(std::move(*render_pass));
 }
 
-void Viewport::SetGraphicsContext(GraphicsContext* graphics_context) {
+void RenderingViewport::SetGraphicsContext(GraphicsContext* graphics_context) {
   if (graphics_context != graphics_context_) {
     if (graphics_context_ != nullptr) {
       for (const auto& render_pass : render_passes_) {
@@ -90,28 +72,8 @@ void Viewport::SetGraphicsContext(GraphicsContext* graphics_context) {
   }
 }
 
-void Viewport::SetResourceManager(ResourceManager* resource_manager) {
-  resource_manager_ = resource_manager;
-}
-
-void Viewport::ComputeImGuiFrame() {
-  const Vector2 viewport_size = GetDimensionsAsVector2();
-  ImGui::GetIO().DisplaySize.x = viewport_size.x;
-  ImGui::GetIO().DisplaySize.y = viewport_size.y;
-
-  ImGui::NewFrame();
-  DrawImGui();
-  if (scene_ != nullptr) {
-    scene_->DrawImGui();
-  }
-  for (RenderPass* render_pass : render_pass_order_) {
-    render_pass->DrawImGui();
-  }
-  ImGui::EndFrame();
-}
-
-RenderTargetTexture2D* Viewport::CreateRenderTarget2D(const std::string& id,
-                                                      const RenderTargetTexture2DDescription& description) {
+RenderTargetTexture2D* RenderingViewport::CreateRenderTarget2D(const std::string& id,
+                                                               const RenderTargetTexture2DDescription& description) {
   if (render_targets_.count(id) == 0) {
     return static_cast<RenderTargetTexture2D*>(
         render_targets_
@@ -123,7 +85,7 @@ RenderTargetTexture2D* Viewport::CreateRenderTarget2D(const std::string& id,
   }
 }
 
-RenderTarget* Viewport::GetRenderTarget(const std::string& id) {
+RenderTarget* RenderingViewport::GetRenderTarget(const std::string& id) {
   const auto render_target = render_targets_.find(id);
   if (render_target == render_targets_.end()) {
     return nullptr;
@@ -132,7 +94,7 @@ RenderTarget* Viewport::GetRenderTarget(const std::string& id) {
   }
 }
 
-std::unique_ptr<RenderTargetConfiguration> Viewport::CreateRenderTargetConfiguration(
+std::unique_ptr<RenderTargetConfiguration> RenderingViewport::CreateRenderTargetConfiguration(
     std::vector<std::string> color_render_target_ids, std::string depth_render_target_id) {
   RenderTargetConfigurationDescription render_target_config_desc;
   render_target_config_desc.color_attachments.reserve(color_render_target_ids.size());
@@ -146,7 +108,7 @@ std::unique_ptr<RenderTargetConfiguration> Viewport::CreateRenderTargetConfigura
   return std::make_unique<RenderTargetConfiguration>(graphics_context_, render_target_config_desc);
 }
 
-void Viewport::SortRenderPasses() {
+void RenderingViewport::SortRenderPasses() {
   // First depends on second beeing already rendered
   std::multimap<std::string, std::string> dependencies = render_pass_dependencies_;
   std::set<std::string> render_passes_left_;
@@ -197,7 +159,7 @@ void Viewport::SortRenderPasses() {
   render_passes_sorted_ = true;
 }
 
-RenderPass* Viewport::GetRenderPassInternal(const std::string& render_pass_name) const {
+RenderPass* RenderingViewport::GetRenderPassInternal(const std::string& render_pass_name) const {
   auto render_pass = render_passes_.find(render_pass_name);
   if (render_pass == render_passes_.end()) {
     return nullptr;

@@ -11,15 +11,6 @@
 #include <ovis/engine/viewport.hpp>
 
 namespace ovis {
-
-enum class MouseButton : uint8_t {
-  LEFT = 0,
-  MIDDLE = 1,
-  RIGHT = 2,
-  EXTRA1 = 3,
-  EXTRA2 = 4,
-};
-
 class Input {
  public:
   Input();
@@ -41,6 +32,16 @@ class Input {
 };
 
 Input* input();
+
+class KeyboardEvent : public Event {
+ public:
+  inline KeyboardEvent(std::string type, Key key) : Event(std::move(type)), key_(key) {}
+
+  inline Key key() const { return key_; }
+
+ private:
+  Key key_;
+};
 
 class KeyPressEvent : public KeyboardEvent {
  public:

@@ -1,98 +1,99 @@
 #include <unordered_map>
 
-#include <ovis/input/keyboard.hpp>
+#include <ovis/input/key.hpp>
+#include <SDL2/SDL_assert.h>
 
 namespace ovis {
 
 namespace {
-static const std::unordered_map<std::string, KeyCode> KEY_NAME_TO_KEY = {
-    {"Digit1", SDL_SCANCODE_1},
-    {"Digit2", SDL_SCANCODE_2},
-    {"Digit3", SDL_SCANCODE_3},
-    {"Digit4", SDL_SCANCODE_4},
-    {"Digit5", SDL_SCANCODE_5},
-    {"Digit6", SDL_SCANCODE_6},
-    {"Digit7", SDL_SCANCODE_7},
-    {"Digit8", SDL_SCANCODE_8},
-    {"Digit9", SDL_SCANCODE_9},
-    {"Digit0", SDL_SCANCODE_0},
-    {"Minus", SDL_SCANCODE_MINUS},
-    {"Equal", SDL_SCANCODE_EQUALS},
-    {"Numpad0", SDL_SCANCODE_KP_0},
-    {"Numpad1", SDL_SCANCODE_KP_1},
-    {"Numpad2", SDL_SCANCODE_KP_2},
-    {"Numpad3", SDL_SCANCODE_KP_3},
-    {"Numpad4", SDL_SCANCODE_KP_4},
-    {"Numpad5", SDL_SCANCODE_KP_5},
-    {"Numpad6", SDL_SCANCODE_KP_6},
-    {"Numpad7", SDL_SCANCODE_KP_7},
-    {"Numpad8", SDL_SCANCODE_KP_8},
-    {"Numpad9", SDL_SCANCODE_KP_9},
-    {"NumpadDecimal", SDL_SCANCODE_KP_PERIOD},
-    {"NumpadEnter", SDL_SCANCODE_KP_ENTER},
-    {"NumpadAdd", SDL_SCANCODE_KP_PLUS},
-    {"NumpadSubtract", SDL_SCANCODE_KP_MINUS},
-    {"NumpadMultiply", SDL_SCANCODE_KP_MULTIPLY},
-    {"NumpadDivide", SDL_SCANCODE_KP_DIVIDE},
+static const std::unordered_map<std::string_view, Key::KeyCode> KEY_NAME_TO_KEY = {
+    {"1", SDL_SCANCODE_1},
+    {"2", SDL_SCANCODE_2},
+    {"3", SDL_SCANCODE_3},
+    {"4", SDL_SCANCODE_4},
+    {"5", SDL_SCANCODE_5},
+    {"6", SDL_SCANCODE_6},
+    {"7", SDL_SCANCODE_7},
+    {"8", SDL_SCANCODE_8},
+    {"9", SDL_SCANCODE_9},
+    {"0", SDL_SCANCODE_0},
+    {"-", SDL_SCANCODE_MINUS},
+    {"=", SDL_SCANCODE_EQUALS},
+    {"Numpad 0", SDL_SCANCODE_KP_0},
+    {"Numpad 1", SDL_SCANCODE_KP_1},
+    {"Numpad 2", SDL_SCANCODE_KP_2},
+    {"Numpad 3", SDL_SCANCODE_KP_3},
+    {"Numpad 4", SDL_SCANCODE_KP_4},
+    {"Numpad 5", SDL_SCANCODE_KP_5},
+    {"Numpad 6", SDL_SCANCODE_KP_6},
+    {"Numpad 7", SDL_SCANCODE_KP_7},
+    {"Numpad 8", SDL_SCANCODE_KP_8},
+    {"Numpad 9", SDL_SCANCODE_KP_9},
+    {"Numpad .", SDL_SCANCODE_KP_PERIOD},
+    {"Numpad Enter", SDL_SCANCODE_KP_ENTER},
+    {"Numpad +", SDL_SCANCODE_KP_PLUS},
+    {"Numpad -", SDL_SCANCODE_KP_MINUS},
+    {"Numpad *", SDL_SCANCODE_KP_MULTIPLY},
+    {"Numpad /", SDL_SCANCODE_KP_DIVIDE},
     {"Escape", SDL_SCANCODE_ESCAPE},
     {"Insert", SDL_SCANCODE_INSERT},
     {"Delete", SDL_SCANCODE_DELETE},
     {"Home", SDL_SCANCODE_HOME},
     {"End", SDL_SCANCODE_END},
-    {"PageUp", SDL_SCANCODE_PAGEUP},
-    {"PageDown", SDL_SCANCODE_PAGEDOWN},
+    {"Page Up", SDL_SCANCODE_PAGEUP},
+    {"Page Down", SDL_SCANCODE_PAGEDOWN},
     {"Tab", SDL_SCANCODE_TAB},
     {"Enter", SDL_SCANCODE_RETURN},
     {"Backspace", SDL_SCANCODE_BACKSPACE},
-    {"ControlLeft", SDL_SCANCODE_LCTRL},
-    {"ControlRight", SDL_SCANCODE_RCTRL},
-    {"AltLeft", SDL_SCANCODE_LALT},
-    {"AltRight", SDL_SCANCODE_RALT},
-    {"MetaLeft", SDL_SCANCODE_LGUI},
-    {"MetaRight", SDL_SCANCODE_RGUI},
-    {"ShiftLeft", SDL_SCANCODE_LSHIFT},
-    {"ShiftRight", SDL_SCANCODE_RSHIFT},
-    {"ArrowUp", SDL_SCANCODE_UP},
-    {"ArrowDown", SDL_SCANCODE_DOWN},
-    {"ArrowLeft", SDL_SCANCODE_LEFT},
-    {"ArrowRight", SDL_SCANCODE_RIGHT},
-    {"Backquote", SDL_SCANCODE_GRAVE},
-    {"BracketLeft", SDL_SCANCODE_LEFTBRACKET},
-    {"BracketRight", SDL_SCANCODE_RIGHTBRACKET},
-    {"Semicolon", SDL_SCANCODE_SEMICOLON},
-    {"Quote", SDL_SCANCODE_APOSTROPHE},
-    {"Backslash", SDL_SCANCODE_BACKSLASH},
-    {"Comma", SDL_SCANCODE_COMMA},
-    {"Period", SDL_SCANCODE_PERIOD},
-    {"Slash", SDL_SCANCODE_SLASH},
+    {"Left Control", SDL_SCANCODE_LCTRL},
+    {"Right Control", SDL_SCANCODE_RCTRL},
+    {"Left Alt", SDL_SCANCODE_LALT},
+    {"Right Alt", SDL_SCANCODE_RALT},
+    {"Left Meta", SDL_SCANCODE_LGUI},
+    {"Right Meta", SDL_SCANCODE_RGUI},
+    {"Left Shift", SDL_SCANCODE_LSHIFT},
+    {"Right Shift", SDL_SCANCODE_RSHIFT},
+    {"Arrow Up", SDL_SCANCODE_UP},
+    {"Arrow Down", SDL_SCANCODE_DOWN},
+    {"Arrow Left", SDL_SCANCODE_LEFT},
+    {"Arrow Right", SDL_SCANCODE_RIGHT},
+    {"`", SDL_SCANCODE_GRAVE},
+    {"[", SDL_SCANCODE_LEFTBRACKET},
+    {"]", SDL_SCANCODE_RIGHTBRACKET},
+    {";", SDL_SCANCODE_SEMICOLON},
+    {"\"", SDL_SCANCODE_APOSTROPHE},
+    {"\\", SDL_SCANCODE_BACKSLASH},
+    {",", SDL_SCANCODE_COMMA},
+    {".", SDL_SCANCODE_PERIOD},
+    {"/", SDL_SCANCODE_SLASH},
     {"IntlBackslash", SDL_SCANCODE_NONUSBACKSLASH},
     {"Space", SDL_SCANCODE_SPACE},
-    {"KeyA", SDL_SCANCODE_A},
-    {"KeyB", SDL_SCANCODE_B},
-    {"KeyC", SDL_SCANCODE_C},
-    {"KeyD", SDL_SCANCODE_D},
-    {"KeyE", SDL_SCANCODE_E},
-    {"KeyF", SDL_SCANCODE_F},
-    {"KeyG", SDL_SCANCODE_G},
-    {"KeyH", SDL_SCANCODE_H},
-    {"KeyI", SDL_SCANCODE_I},
-    {"KeyJ", SDL_SCANCODE_J},
-    {"KeyK", SDL_SCANCODE_K},
-    {"KeyL", SDL_SCANCODE_L},
-    {"KeyM", SDL_SCANCODE_M},
-    {"KeyN", SDL_SCANCODE_N},
-    {"KeyO", SDL_SCANCODE_O},
-    {"KeyP", SDL_SCANCODE_P},
-    {"KeyQ", SDL_SCANCODE_Q},
-    {"KeyR", SDL_SCANCODE_R},
-    {"KeyS", SDL_SCANCODE_S},
-    {"KeyT", SDL_SCANCODE_T},
-    {"KeyU", SDL_SCANCODE_U},
-    {"KeyV", SDL_SCANCODE_V},
-    {"KeyW", SDL_SCANCODE_W},
-    {"KeyX", SDL_SCANCODE_X},
-    {"KeyY", SDL_SCANCODE_Y},
-    {"KeyZ", SDL_SCANCODE_Z},
+    {"A", SDL_SCANCODE_A},
+    {"B", SDL_SCANCODE_B},
+    {"C", SDL_SCANCODE_C},
+    {"D", SDL_SCANCODE_D},
+    {"E", SDL_SCANCODE_E},
+    {"F", SDL_SCANCODE_F},
+    {"G", SDL_SCANCODE_G},
+    {"H", SDL_SCANCODE_H},
+    {"I", SDL_SCANCODE_I},
+    {"J", SDL_SCANCODE_J},
+    {"K", SDL_SCANCODE_K},
+    {"L", SDL_SCANCODE_L},
+    {"M", SDL_SCANCODE_M},
+    {"N", SDL_SCANCODE_N},
+    {"O", SDL_SCANCODE_O},
+    {"P", SDL_SCANCODE_P},
+    {"Q", SDL_SCANCODE_Q},
+    {"R", SDL_SCANCODE_R},
+    {"S", SDL_SCANCODE_S},
+    {"T", SDL_SCANCODE_T},
+    {"U", SDL_SCANCODE_U},
+    {"V", SDL_SCANCODE_V},
+    {"W", SDL_SCANCODE_W},
+    {"X", SDL_SCANCODE_X},
+    {"Y", SDL_SCANCODE_Y},
+    {"Z", SDL_SCANCODE_Z},
     {"F1", SDL_SCANCODE_F1},
     {"F2", SDL_SCANCODE_F2},
     {"F3", SDL_SCANCODE_F3},
@@ -242,99 +243,99 @@ std::string_view Key::id() const {
 std::string_view Key::name() const {
   // clang-format off
   switch (code) {
-    case SDL_SCANCODE_1: return "Digit1";
-    case SDL_SCANCODE_2: return "Digit2";
-    case SDL_SCANCODE_3: return "Digit3";
-    case SDL_SCANCODE_4: return "Digit4";
-    case SDL_SCANCODE_5: return "Digit5";
-    case SDL_SCANCODE_6: return "Digit6";
-    case SDL_SCANCODE_7: return "Digit7";
-    case SDL_SCANCODE_8: return "Digit8";
-    case SDL_SCANCODE_9: return "Digit9";
-    case SDL_SCANCODE_0: return "Digit0";
-    case SDL_SCANCODE_MINUS: return "Minus";
-    case SDL_SCANCODE_EQUALS: return "Equal";
+    case SDL_SCANCODE_1: return "1";
+    case SDL_SCANCODE_2: return "2";
+    case SDL_SCANCODE_3: return "3";
+    case SDL_SCANCODE_4: return "4";
+    case SDL_SCANCODE_5: return "5";
+    case SDL_SCANCODE_6: return "6";
+    case SDL_SCANCODE_7: return "7";
+    case SDL_SCANCODE_8: return "8";
+    case SDL_SCANCODE_9: return "9";
+    case SDL_SCANCODE_0: return "0";
+    case SDL_SCANCODE_MINUS: return "-";
+    case SDL_SCANCODE_EQUALS: return "=";
 
-    case SDL_SCANCODE_KP_0: return "Numpad0";
-    case SDL_SCANCODE_KP_1: return "Numpad1";
-    case SDL_SCANCODE_KP_2: return "Numpad2";
-    case SDL_SCANCODE_KP_3: return "Numpad3";
-    case SDL_SCANCODE_KP_4: return "Numpad4";
-    case SDL_SCANCODE_KP_5: return "Numpad5";
-    case SDL_SCANCODE_KP_6: return "Numpad6";
-    case SDL_SCANCODE_KP_7: return "Numpad7";
-    case SDL_SCANCODE_KP_8: return "Numpad8";
-    case SDL_SCANCODE_KP_9: return "Numpad9";
-    case SDL_SCANCODE_KP_PERIOD: return "NumpadDecimal";
-    case SDL_SCANCODE_KP_ENTER: return "NumpadEnter";
-    case SDL_SCANCODE_KP_PLUS: return "NumpadAdd";
-    case SDL_SCANCODE_KP_MINUS: return "NumpadSubtract";
-    case SDL_SCANCODE_KP_MULTIPLY: return "NumpadMultiply";
-    case SDL_SCANCODE_KP_DIVIDE: return "NumpadDivide";
+    case SDL_SCANCODE_KP_0: return "Numpad 0";
+    case SDL_SCANCODE_KP_1: return "Numpad 1";
+    case SDL_SCANCODE_KP_2: return "Numpad 2";
+    case SDL_SCANCODE_KP_3: return "Numpad 3";
+    case SDL_SCANCODE_KP_4: return "Numpad 4";
+    case SDL_SCANCODE_KP_5: return "Numpad 5";
+    case SDL_SCANCODE_KP_6: return "Numpad 6";
+    case SDL_SCANCODE_KP_7: return "Numpad 7";
+    case SDL_SCANCODE_KP_8: return "Numpad 8";
+    case SDL_SCANCODE_KP_9: return "Numpad 9";
+    case SDL_SCANCODE_KP_PERIOD: return "Numpad Decimal";
+    case SDL_SCANCODE_KP_ENTER: return "Numpad Enter";
+    case SDL_SCANCODE_KP_PLUS: return "Numpad Add";
+    case SDL_SCANCODE_KP_MINUS: return "Numpad Subtract";
+    case SDL_SCANCODE_KP_MULTIPLY: return "Numpad Multiply";
+    case SDL_SCANCODE_KP_DIVIDE: return "Numpad Divide";
 
     case SDL_SCANCODE_ESCAPE: return "Escape";
     case SDL_SCANCODE_INSERT: return "Insert";
     case SDL_SCANCODE_DELETE: return "Delete";
     case SDL_SCANCODE_HOME: return "Home";
     case SDL_SCANCODE_END: return "End";
-    case SDL_SCANCODE_PAGEUP: return "PageUp";
-    case SDL_SCANCODE_PAGEDOWN: return "PageDown";
+    case SDL_SCANCODE_PAGEUP: return "Page Up";
+    case SDL_SCANCODE_PAGEDOWN: return "Page Down";
     case SDL_SCANCODE_TAB: return "Tab";
     case SDL_SCANCODE_RETURN: return "Enter";
     case SDL_SCANCODE_BACKSPACE: return "Backspace";
   
-    case SDL_SCANCODE_LCTRL: return "ControlLeft";
-    case SDL_SCANCODE_RCTRL: return "ControlRight";
-    case SDL_SCANCODE_LALT: return "AltLeft";
-    case SDL_SCANCODE_RALT: return "AltRight";
-    case SDL_SCANCODE_LGUI: return "MetaLeft";
-    case SDL_SCANCODE_RGUI: return "MetaRight";
-    case SDL_SCANCODE_LSHIFT: return "ShiftLeft";
-    case SDL_SCANCODE_RSHIFT: return "ShiftRight";
+    case SDL_SCANCODE_LCTRL: return "Left Control";
+    case SDL_SCANCODE_RCTRL: return "Right Control";
+    case SDL_SCANCODE_LALT: return "Left Alt";
+    case SDL_SCANCODE_RALT: return "Right Alt";
+    case SDL_SCANCODE_LGUI: return "Left Meta";
+    case SDL_SCANCODE_RGUI: return "Right Meta";
+    case SDL_SCANCODE_LSHIFT: return "Left Shift";
+    case SDL_SCANCODE_RSHIFT: return "Right Shift";
   
-    case SDL_SCANCODE_UP: return "ArrowUp";
-    case SDL_SCANCODE_DOWN: return "ArrowDown";
-    case SDL_SCANCODE_LEFT: return "ArrowLeft";
-    case SDL_SCANCODE_RIGHT: return "ArrowRight";
+    case SDL_SCANCODE_UP: return "Arrow Up";
+    case SDL_SCANCODE_DOWN: return "Arrow Down";
+    case SDL_SCANCODE_LEFT: return "Arrow Left";
+    case SDL_SCANCODE_RIGHT: return "Arrow Right";
 
-    case SDL_SCANCODE_GRAVE: return "Backquote";
-    case SDL_SCANCODE_LEFTBRACKET: return "BracketLeft";
-    case SDL_SCANCODE_RIGHTBRACKET: return "BracketRight";
-    case SDL_SCANCODE_SEMICOLON: return "Semicolon";
-    case SDL_SCANCODE_APOSTROPHE: return "Quote";
-    case SDL_SCANCODE_BACKSLASH: return "Backslash";
-    case SDL_SCANCODE_COMMA: return "Comma";
-    case SDL_SCANCODE_PERIOD: return "Period";
-    case SDL_SCANCODE_SLASH: return "Slash";
+    case SDL_SCANCODE_GRAVE: return "`";
+    case SDL_SCANCODE_LEFTBRACKET: return "[";
+    case SDL_SCANCODE_RIGHTBRACKET: return "]";
+    case SDL_SCANCODE_SEMICOLON: return ";";
+    case SDL_SCANCODE_APOSTROPHE: return "\"";
+    case SDL_SCANCODE_BACKSLASH: return "\\";
+    case SDL_SCANCODE_COMMA: return ",";
+    case SDL_SCANCODE_PERIOD: return ".";
+    case SDL_SCANCODE_SLASH: return "/";
     case SDL_SCANCODE_NONUSBACKSLASH: return "IntlBackslash";
     case SDL_SCANCODE_SPACE: return "Space";
 
-    case SDL_SCANCODE_A: return "KeyA";
-    case SDL_SCANCODE_B: return "KeyB";
-    case SDL_SCANCODE_C: return "KeyC";
-    case SDL_SCANCODE_D: return "KeyD";
-    case SDL_SCANCODE_E: return "KeyE";
-    case SDL_SCANCODE_F: return "KeyF";
-    case SDL_SCANCODE_G: return "KeyG";
-    case SDL_SCANCODE_H: return "KeyH";
-    case SDL_SCANCODE_I: return "KeyI";
-    case SDL_SCANCODE_J: return "KeyJ";
-    case SDL_SCANCODE_K: return "KeyK";
-    case SDL_SCANCODE_L: return "KeyL";
-    case SDL_SCANCODE_M: return "KeyM";
-    case SDL_SCANCODE_N: return "KeyN";
-    case SDL_SCANCODE_O: return "KeyO";
-    case SDL_SCANCODE_P: return "KeyP";
-    case SDL_SCANCODE_Q: return "KeyQ";
-    case SDL_SCANCODE_R: return "KeyR";
-    case SDL_SCANCODE_S: return "KeyS";
-    case SDL_SCANCODE_T: return "KeyT";
-    case SDL_SCANCODE_U: return "KeyU";
-    case SDL_SCANCODE_V: return "KeyV";
-    case SDL_SCANCODE_W: return "KeyW";
-    case SDL_SCANCODE_X: return "KeyX";
-    case SDL_SCANCODE_Y: return "KeyY";
-    case SDL_SCANCODE_Z: return "KeyZ";
+    case SDL_SCANCODE_A: return "A";
+    case SDL_SCANCODE_B: return "B";
+    case SDL_SCANCODE_C: return "C";
+    case SDL_SCANCODE_D: return "D";
+    case SDL_SCANCODE_E: return "E";
+    case SDL_SCANCODE_F: return "F";
+    case SDL_SCANCODE_G: return "G";
+    case SDL_SCANCODE_H: return "H";
+    case SDL_SCANCODE_I: return "I";
+    case SDL_SCANCODE_J: return "J";
+    case SDL_SCANCODE_K: return "K";
+    case SDL_SCANCODE_L: return "L";
+    case SDL_SCANCODE_M: return "M";
+    case SDL_SCANCODE_N: return "N";
+    case SDL_SCANCODE_O: return "O";
+    case SDL_SCANCODE_P: return "P";
+    case SDL_SCANCODE_Q: return "Q";
+    case SDL_SCANCODE_R: return "R";
+    case SDL_SCANCODE_S: return "S";
+    case SDL_SCANCODE_T: return "T";
+    case SDL_SCANCODE_U: return "U";
+    case SDL_SCANCODE_V: return "V";
+    case SDL_SCANCODE_W: return "W";
+    case SDL_SCANCODE_X: return "X";
+    case SDL_SCANCODE_Y: return "Y";
+    case SDL_SCANCODE_Z: return "Z";
 
     case SDL_SCANCODE_F1: return "F1";
     case SDL_SCANCODE_F2: return "F2";
@@ -360,281 +361,311 @@ std::string_view Key::name() const {
     case SDL_SCANCODE_F22: return "F22";
     case SDL_SCANCODE_F23: return "F23";
     case SDL_SCANCODE_F24: return "F24";
-    default: return "";
+    default: SDL_assert(false); return "";
   }
   // clang-format on
 }
 
-Key Key::FromName(const std::string& name) {
+Key Key::FromName(const std::string_view& name) {
   return {KEY_NAME_TO_KEY.at(name)};
 }
 
-void RegisterType(sol::table* module) {
+void Key::RegisterType(sol::table* module) {
   /// Represents a key on a keyboard.
   // @classmod ovis.input.Key
+  // @usage local input = require "ovis.input"
+  // local Key = input.Key
   sol::usertype<Key> key_type = module->new_usertype<Key>("Key", sol::no_constructor);
+
+  /// Returns a unique, human readable name for a key.
+  // @field[type=string] name
+  // @usage assert(Key.NUMPAD_0.name == "Numpad 0")
+  key_type["name"] = sol::property(&Key::name);
+
+  /// Creates a key from its human readable name.
+  // @function from_name
+  // @param[type=string] name
+  // @usage assert(Key.from_name("Numpad 0") == Key.NUMPAD_0)
+  key_type["from_name"] = &Key::FromName;
+
+  /// Compares two keys
+  // @function __eq
+  // @param[type=Key] k1
+  // @param[type=Key] k2
+  // @treturn bool
+  // @usage local numpad_zero = Key.NUMPAD_0
+  // assert(numpad_zero == Key.NUMPAD_0)
+  // assert(numpad_zero ~= Key.NUMPAD_1)
+  key_type[sol::meta_function::equal_to] = static_cast<bool (*)(Key, Key)>(ovis::operator==);
+
+  /// Returns a unique, human readable name for a key.
+  // @see name
+  // @function __tostring
+  // @treturn string
+  // @usage assert(tostring(Key.NUMPAD_0) == Key.NUMPAD_0.name)
+  key_type[sol::meta_function::to_string] = &Key::name;
 
   /// DIGIT_1.
   // @field[type=Key] DIGIT_1
-  key_type["DIGIT_1"] = sol::property(&Key::DIGIT_1);
+  key_type["DIGIT_1"] = sol::property(&Key::Digit1);
   /// DIGIT_2.
   // @field[type=Key] DIGIT_2
-  key_type["DIGIT_2"] = sol::property(&Key::DIGIT_2);
+  key_type["DIGIT_2"] = sol::property(&Key::Digit2);
   /// DIGIT_3.
   // @field[type=Key] DIGIT_3
-  key_type["DIGIT_3"] = sol::property(&Key::DIGIT_3);
+  key_type["DIGIT_3"] = sol::property(&Key::Digit3);
   /// DIGIT_4.
   // @field[type=Key] DIGIT_4
-  key_type["DIGIT_4"] = sol::property(&Key::DIGIT_4);
+  key_type["DIGIT_4"] = sol::property(&Key::Digit4);
   /// DIGIT_5.
   // @field[type=Key] DIGIT_5
-  key_type["DIGIT_5"] = sol::property(&Key::DIGIT_5);
+  key_type["DIGIT_5"] = sol::property(&Key::Digit5);
   /// DIGIT_6.
   // @field[type=Key] DIGIT_6
-  key_type["DIGIT_6"] = sol::property(&Key::DIGIT_6);
+  key_type["DIGIT_6"] = sol::property(&Key::Digit6);
   /// DIGIT_7.
   // @field[type=Key] DIGIT_7
-  key_type["DIGIT_7"] = sol::property(&Key::DIGIT_7);
+  key_type["DIGIT_7"] = sol::property(&Key::Digit7);
   /// DIGIT_8.
   // @field[type=Key] DIGIT_8
-  key_type["DIGIT_8"] = sol::property(&Key::DIGIT_8);
+  key_type["DIGIT_8"] = sol::property(&Key::Digit8);
   /// DIGIT_9.
   // @field[type=Key] DIGIT_9
-  key_type["DIGIT_9"] = sol::property(&Key::DIGIT_9);
+  key_type["DIGIT_9"] = sol::property(&Key::Digit9);
   /// DIGIT_0.
   // @field[type=Key] DIGIT_0
-  key_type["DIGIT_0"] = sol::property(&Key::DIGIT_0);
+  key_type["DIGIT_0"] = sol::property(&Key::Digit0);
   /// MINUS.
   // @field[type=Key] MINUS
-  key_type["MINUS"] = sol::property(&Key::MINUS);
+  key_type["MINUS"] = sol::property(&Key::Minus);
   /// EQUAL.
   // @field[type=Key] EQUAL
-  key_type["EQUAL"] = sol::property(&Key::EQUAL);
+  key_type["EQUAL"] = sol::property(&Key::Equal);
   /// NUMPAD_0.
   // @field[type=Key] NUMPAD_0
-  key_type["NUMPAD_0"] = sol::property(&Key::NUMPAD_0);
+  key_type["NUMPAD_0"] = sol::property(&Key::Numpad0);
   /// NUMPAD_1.
   // @field[type=Key] NUMPAD_1
-  key_type["NUMPAD_1"] = sol::property(&Key::NUMPAD_1);
+  key_type["NUMPAD_1"] = sol::property(&Key::Numpad1);
   /// NUMPAD_2.
   // @field[type=Key] NUMPAD_2
-  key_type["NUMPAD_2"] = sol::property(&Key::NUMPAD_2);
+  key_type["NUMPAD_2"] = sol::property(&Key::Numpad2);
   /// NUMPAD_3.
   // @field[type=Key] NUMPAD_3
-  key_type["NUMPAD_3"] = sol::property(&Key::NUMPAD_3);
+  key_type["NUMPAD_3"] = sol::property(&Key::Numpad3);
   /// NUMPAD_4.
   // @field[type=Key] NUMPAD_4
-  key_type["NUMPAD_4"] = sol::property(&Key::NUMPAD_4);
+  key_type["NUMPAD_4"] = sol::property(&Key::Numpad4);
   /// NUMPAD_5.
   // @field[type=Key] NUMPAD_5
-  key_type["NUMPAD_5"] = sol::property(&Key::NUMPAD_5);
+  key_type["NUMPAD_5"] = sol::property(&Key::Numpad5);
   /// NUMPAD_6.
   // @field[type=Key] NUMPAD_6
-  key_type["NUMPAD_6"] = sol::property(&Key::NUMPAD_6);
+  key_type["NUMPAD_6"] = sol::property(&Key::Numpad6);
   /// NUMPAD_7.
   // @field[type=Key] NUMPAD_7
-  key_type["NUMPAD_7"] = sol::property(&Key::NUMPAD_7);
+  key_type["NUMPAD_7"] = sol::property(&Key::Numpad7);
   /// NUMPAD_8.
   // @field[type=Key] NUMPAD_8
-  key_type["NUMPAD_8"] = sol::property(&Key::NUMPAD_8);
+  key_type["NUMPAD_8"] = sol::property(&Key::Numpad8);
   /// NUMPAD_9.
   // @field[type=Key] NUMPAD_9
-  key_type["NUMPAD_9"] = sol::property(&Key::NUMPAD_9);
+  key_type["NUMPAD_9"] = sol::property(&Key::Numpad9);
   /// NUMPAD_DECIMAL.
   // @field[type=Key] NUMPAD_DECIMAL
-  key_type["NUMPAD_DECIMAL"] = sol::property(&Key::NUMPAD_DECIMAL);
+  key_type["NUMPAD_DECIMAL"] = sol::property(&Key::NumpadDecimal);
   /// NUMPAD_ENTER.
   // @field[type=Key] NUMPAD_ENTER
-  key_type["NUMPAD_ENTER"] = sol::property(&Key::NUMPAD_ENTER);
+  key_type["NUMPAD_ENTER"] = sol::property(&Key::NumpadEnter);
   /// NUMPAD_ADD.
   // @field[type=Key] NUMPAD_ADD
-  key_type["NUMPAD_ADD"] = sol::property(&Key::NUMPAD_ADD);
+  key_type["NUMPAD_ADD"] = sol::property(&Key::NumpadAdd);
   /// NUMPAD_SUBTRACT.
   // @field[type=Key] NUMPAD_SUBTRACT
-  key_type["NUMPAD_SUBTRACT"] = sol::property(&Key::NUMPAD_SUBTRACT);
+  key_type["NUMPAD_SUBTRACT"] = sol::property(&Key::NumpadSubtract);
   /// NUMPAD_MULTIPLY.
   // @field[type=Key] NUMPAD_MULTIPLY
-  key_type["NUMPAD_MULTIPLY"] = sol::property(&Key::NUMPAD_MULTIPLY);
+  key_type["NUMPAD_MULTIPLY"] = sol::property(&Key::NumpadMultiply);
   /// NUMPAD_DIVIDE.
   // @field[type=Key] NUMPAD_DIVIDE
-  key_type["NUMPAD_DIVIDE"] = sol::property(&Key::NUMPAD_DIVIDE);
+  key_type["NUMPAD_DIVIDE"] = sol::property(&Key::NumpadDivide);
   /// ESCAPE.
   // @field[type=Key] ESCAPE
-  key_type["ESCAPE"] = sol::property(&Key::ESCAPE);
+  key_type["ESCAPE"] = sol::property(&Key::Escape);
   /// INSERT.
   // @field[type=Key] INSERT
-  key_type["INSERT"] = sol::property(&Key::INSERT);
+  key_type["INSERT"] = sol::property(&Key::Insert);
   /// DELETE.
   // @field[type=Key] DELETE
-  key_type["DELETE"] = sol::property(&Key::DELETE);
+  key_type["DELETE"] = sol::property(&Key::Delete);
   /// HOME.
   // @field[type=Key] HOME
-  key_type["HOME"] = sol::property(&Key::HOME);
+  key_type["HOME"] = sol::property(&Key::Home);
   /// END.
   // @field[type=Key] END
-  key_type["END"] = sol::property(&Key::END);
+  key_type["END"] = sol::property(&Key::End);
   /// PAGE_UP.
   // @field[type=Key] PAGE_UP
-  key_type["PAGE_UP"] = sol::property(&Key::PAGE_UP);
+  key_type["PAGE_UP"] = sol::property(&Key::PageUp);
   /// PAGE_DOWN.
   // @field[type=Key] PAGE_DOWN
-  key_type["PAGE_DOWN"] = sol::property(&Key::PAGE_DOWN);
+  key_type["PAGE_DOWN"] = sol::property(&Key::PageDown);
   /// TAB.
   // @field[type=Key] TAB
-  key_type["TAB"] = sol::property(&Key::TAB);
+  key_type["TAB"] = sol::property(&Key::Tab);
   /// ENTER.
   // @field[type=Key] ENTER
-  key_type["ENTER"] = sol::property(&Key::ENTER);
+  key_type["ENTER"] = sol::property(&Key::Enter);
   /// BACKSPACE.
   // @field[type=Key] BACKSPACE
-  key_type["BACKSPACE"] = sol::property(&Key::BACKSPACE);
+  key_type["BACKSPACE"] = sol::property(&Key::Backspace);
   /// CONTROL_LEFT.
   // @field[type=Key] CONTROL_LEFT
-  key_type["CONTROL_LEFT"] = sol::property(&Key::CONTROL_LEFT);
+  key_type["CONTROL_LEFT"] = sol::property(&Key::ControlLeft);
   /// CONTROL_RIGHT.
   // @field[type=Key] CONTROL_RIGHT
-  key_type["CONTROL_RIGHT"] = sol::property(&Key::CONTROL_RIGHT);
+  key_type["CONTROL_RIGHT"] = sol::property(&Key::ControlRight);
   /// ALT_LEFT.
   // @field[type=Key] ALT_LEFT
-  key_type["ALT_LEFT"] = sol::property(&Key::ALT_LEFT);
+  key_type["ALT_LEFT"] = sol::property(&Key::AltLeft);
   /// ALT_RIGHT.
   // @field[type=Key] ALT_RIGHT
-  key_type["ALT_RIGHT"] = sol::property(&Key::ALT_RIGHT);
+  key_type["ALT_RIGHT"] = sol::property(&Key::AltRight);
   /// META_LEFT.
   // @field[type=Key] META_LEFT
-  key_type["META_LEFT"] = sol::property(&Key::META_LEFT);
+  key_type["META_LEFT"] = sol::property(&Key::MetaLeft);
   /// META_RIGHT.
   // @field[type=Key] META_RIGHT
-  key_type["META_RIGHT"] = sol::property(&Key::META_RIGHT);
+  key_type["META_RIGHT"] = sol::property(&Key::MetaRight);
   /// SHIFT_LEFT.
   // @field[type=Key] SHIFT_LEFT
-  key_type["SHIFT_LEFT"] = sol::property(&Key::SHIFT_LEFT);
+  key_type["SHIFT_LEFT"] = sol::property(&Key::ShiftLeft);
   /// SHIFT_RIGHT.
   // @field[type=Key] SHIFT_RIGHT
-  key_type["SHIFT_RIGHT"] = sol::property(&Key::SHIFT_RIGHT);
+  key_type["SHIFT_RIGHT"] = sol::property(&Key::ShiftRight);
   /// ARROW_UP.
   // @field[type=Key] ARROW_UP
-  key_type["ARROW_UP"] = sol::property(&Key::ARROW_UP);
+  key_type["ARROW_UP"] = sol::property(&Key::ArrowUp);
   /// ARROW_DOWN.
   // @field[type=Key] ARROW_DOWN
-  key_type["ARROW_DOWN"] = sol::property(&Key::ARROW_DOWN);
+  key_type["ARROW_DOWN"] = sol::property(&Key::ArrowDown);
   /// ARROW_LEFT.
   // @field[type=Key] ARROW_LEFT
-  key_type["ARROW_LEFT"] = sol::property(&Key::ARROW_LEFT);
+  key_type["ARROW_LEFT"] = sol::property(&Key::ArrowLeft);
   /// ARROW_RIGHT.
   // @field[type=Key] ARROW_RIGHT
-  key_type["ARROW_RIGHT"] = sol::property(&Key::ARROW_RIGHT);
+  key_type["ARROW_RIGHT"] = sol::property(&Key::ArrowRight);
   /// BACKQUOTE.
   // @field[type=Key] BACKQUOTE
-  key_type["BACKQUOTE"] = sol::property(&Key::BACKQUOTE);
+  key_type["BACKQUOTE"] = sol::property(&Key::Backquote);
   /// BRACKET_LEFT.
   // @field[type=Key] BRACKET_LEFT
-  key_type["BRACKET_LEFT"] = sol::property(&Key::BRACKET_LEFT);
+  key_type["BRACKET_LEFT"] = sol::property(&Key::BracketLeft);
   /// BRACKET_RIGHT.
   // @field[type=Key] BRACKET_RIGHT
-  key_type["BRACKET_RIGHT"] = sol::property(&Key::BRACKET_RIGHT);
+  key_type["BRACKET_RIGHT"] = sol::property(&Key::BracketRight);
   /// SEMICOLON.
   // @field[type=Key] SEMICOLON
-  key_type["SEMICOLON"] = sol::property(&Key::SEMICOLON);
+  key_type["SEMICOLON"] = sol::property(&Key::Semicolon);
   /// QUOTE.
   // @field[type=Key] QUOTE
-  key_type["QUOTE"] = sol::property(&Key::QUOTE);
+  key_type["QUOTE"] = sol::property(&Key::Quote);
   /// BACKSLASH.
   // @field[type=Key] BACKSLASH
-  key_type["BACKSLASH"] = sol::property(&Key::BACKSLASH);
+  key_type["BACKSLASH"] = sol::property(&Key::Backslash);
   /// COMMA.
   // @field[type=Key] COMMA
-  key_type["COMMA"] = sol::property(&Key::COMMA);
+  key_type["COMMA"] = sol::property(&Key::Comma);
   /// PERIOD.
   // @field[type=Key] PERIOD
-  key_type["PERIOD"] = sol::property(&Key::PERIOD);
+  key_type["PERIOD"] = sol::property(&Key::Period);
   /// SLASH.
   // @field[type=Key] SLASH
-  key_type["SLASH"] = sol::property(&Key::SLASH);
+  key_type["SLASH"] = sol::property(&Key::Slash);
   /// INTL_BACKSLASH.
   // @field[type=Key] INTL_BACKSLASH
-  key_type["INTL_BACKSLASH"] = sol::property(&Key::INTL_BACKSLASH);
+  key_type["INTL_BACKSLASH"] = sol::property(&Key::IntlBackslash);
   /// SPACE.
   // @field[type=Key] SPACE
-  key_type["SPACE"] = sol::property(&Key::SPACE);
-  /// KEY_A.
-  // @field[type=Key] KEY_A
-  key_type["KEY_A"] = sol::property(&Key::KEY_A);
-  /// KEY_B.
-  // @field[type=Key] KEY_B
-  key_type["KEY_B"] = sol::property(&Key::KEY_B);
-  /// KEY_C.
-  // @field[type=Key] KEY_C
-  key_type["KEY_C"] = sol::property(&Key::KEY_C);
-  /// KEY_D.
-  // @field[type=Key] KEY_D
-  key_type["KEY_D"] = sol::property(&Key::KEY_D);
-  /// KEY_E.
-  // @field[type=Key] KEY_E
-  key_type["KEY_E"] = sol::property(&Key::KEY_E);
-  /// KEY_F.
-  // @field[type=Key] KEY_F
-  key_type["KEY_F"] = sol::property(&Key::KEY_F);
-  /// KEY_G.
-  // @field[type=Key] KEY_G
-  key_type["KEY_G"] = sol::property(&Key::KEY_G);
-  /// KEY_H.
-  // @field[type=Key] KEY_H
-  key_type["KEY_H"] = sol::property(&Key::KEY_H);
-  /// KEY_I.
-  // @field[type=Key] KEY_I
-  key_type["KEY_I"] = sol::property(&Key::KEY_I);
-  /// KEY_J.
-  // @field[type=Key] KEY_J
-  key_type["KEY_J"] = sol::property(&Key::KEY_J);
-  /// KEY_K.
-  // @field[type=Key] KEY_K
-  key_type["KEY_K"] = sol::property(&Key::KEY_K);
-  /// KEY_L.
-  // @field[type=Key] KEY_L
-  key_type["KEY_L"] = sol::property(&Key::KEY_L);
-  /// KEY_M.
-  // @field[type=Key] KEY_M
-  key_type["KEY_M"] = sol::property(&Key::KEY_M);
-  /// KEY_N.
-  // @field[type=Key] KEY_N
-  key_type["KEY_N"] = sol::property(&Key::KEY_N);
-  /// KEY_O.
-  // @field[type=Key] KEY_O
-  key_type["KEY_O"] = sol::property(&Key::KEY_O);
-  /// KEY_P.
-  // @field[type=Key] KEY_P
-  key_type["KEY_P"] = sol::property(&Key::KEY_P);
-  /// KEY_Q.
-  // @field[type=Key] KEY_Q
-  key_type["KEY_Q"] = sol::property(&Key::KEY_Q);
-  /// KEY_R.
-  // @field[type=Key] KEY_R
-  key_type["KEY_R"] = sol::property(&Key::KEY_R);
-  /// KEY_S.
-  // @field[type=Key] KEY_S
-  key_type["KEY_S"] = sol::property(&Key::KEY_S);
-  /// KEY_T.
-  // @field[type=Key] KEY_T
-  key_type["KEY_T"] = sol::property(&Key::KEY_T);
-  /// KEY_U.
-  // @field[type=Key] KEY_U
-  key_type["KEY_U"] = sol::property(&Key::KEY_U);
-  /// KEY_V.
-  // @field[type=Key] KEY_V
-  key_type["KEY_V"] = sol::property(&Key::KEY_V);
-  /// KEY_W.
-  // @field[type=Key] KEY_W
-  key_type["KEY_W"] = sol::property(&Key::KEY_W);
-  /// KEY_X.
-  // @field[type=Key] KEY_X
-  key_type["KEY_X"] = sol::property(&Key::KEY_X);
-  /// KEY_Y.
-  // @field[type=Key] KEY_Y
-  key_type["KEY_Y"] = sol::property(&Key::KEY_Y);
-  /// KEY_Z.
-  // @field[type=Key] KEY_Z
-  key_type["KEY_Z"] = sol::property(&Key::KEY_Z);
+  key_type["SPACE"] = sol::property(&Key::Space);
+  /// A.
+  // @field[type=Key] A
+  key_type["A"] = sol::property(&Key::A);
+  /// B.
+  // @field[type=Key] B
+  key_type["B"] = sol::property(&Key::B);
+  /// C.
+  // @field[type=Key] C
+  key_type["C"] = sol::property(&Key::C);
+  /// D.
+  // @field[type=Key] D
+  key_type["D"] = sol::property(&Key::D);
+  /// E.
+  // @field[type=Key] E
+  key_type["E"] = sol::property(&Key::E);
+  /// F.
+  // @field[type=Key] F
+  key_type["F"] = sol::property(&Key::F);
+  /// G.
+  // @field[type=Key] G
+  key_type["G"] = sol::property(&Key::G);
+  /// H.
+  // @field[type=Key] H
+  key_type["H"] = sol::property(&Key::H);
+  /// I.
+  // @field[type=Key] I
+  key_type["I"] = sol::property(&Key::I);
+  /// J.
+  // @field[type=Key] J
+  key_type["J"] = sol::property(&Key::J);
+  /// K.
+  // @field[type=Key] K
+  key_type["K"] = sol::property(&Key::K);
+  /// L.
+  // @field[type=Key] L
+  key_type["L"] = sol::property(&Key::L);
+  /// M.
+  // @field[type=Key] M
+  key_type["M"] = sol::property(&Key::M);
+  /// N.
+  // @field[type=Key] N
+  key_type["N"] = sol::property(&Key::N);
+  /// O.
+  // @field[type=Key] O
+  key_type["O"] = sol::property(&Key::O);
+  /// P.
+  // @field[type=Key] P
+  key_type["P"] = sol::property(&Key::P);
+  /// Q.
+  // @field[type=Key] Q
+  key_type["Q"] = sol::property(&Key::Q);
+  /// R.
+  // @field[type=Key] R
+  key_type["R"] = sol::property(&Key::R);
+  /// S.
+  // @field[type=Key] S
+  key_type["S"] = sol::property(&Key::S);
+  /// T.
+  // @field[type=Key] T
+  key_type["T"] = sol::property(&Key::T);
+  /// U.
+  // @field[type=Key] U
+  key_type["U"] = sol::property(&Key::U);
+  /// V.
+  // @field[type=Key] V
+  key_type["V"] = sol::property(&Key::V);
+  /// W.
+  // @field[type=Key] W
+  key_type["W"] = sol::property(&Key::W);
+  /// X.
+  // @field[type=Key] X
+  key_type["X"] = sol::property(&Key::X);
+  /// Y.
+  // @field[type=Key] Y
+  key_type["Y"] = sol::property(&Key::Y);
+  /// Z.
+  // @field[type=Key] Z
+  key_type["Z"] = sol::property(&Key::Z);
   /// F1.
   // @field[type=Key] F1
   key_type["F1"] = sol::property(&Key::F1);

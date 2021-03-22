@@ -2,10 +2,9 @@
 
 namespace ovis {
 
-RenderTargetViewport::RenderTargetViewport(GraphicsContext* graphics_context, ResourceManager* resource_manager,
+RenderTargetViewport::RenderTargetViewport(GraphicsContext* graphics_context,
                                            const RenderTargetViewportDescription& description)
     : description_(description) {
-  SetResourceManager(resource_manager);
   SetGraphicsContext(graphics_context);
   CreateRenderTargets();
 }
@@ -18,11 +17,6 @@ void RenderTargetViewport::Resize(std::size_t width, std::size_t height) {
     description_.color_description.texture_description.height = height;
   }
   CreateRenderTargets();
-}
-
-void RenderTargetViewport::GetDimensions(size_t* width, size_t* height) {
-  *width = description_.color_description.texture_description.width;
-  *height = description_.color_description.texture_description.height;
 }
 
 RenderTargetConfiguration* RenderTargetViewport::GetDefaultRenderTargetConfiguration() {

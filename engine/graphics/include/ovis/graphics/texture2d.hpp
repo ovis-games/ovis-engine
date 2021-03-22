@@ -35,11 +35,4 @@ class Texture2D : public Texture {
   virtual void Bind(int texture_unit) override;
 };
 
-// std::optional<Texture2DDescription> LoadTexture2DDescription(const std::string& asset_id);
-// std::optional<Texture2DDescription> LoadTexture2DDescription(AssetLibrary* asset_library, const std::string& asset_id);
-
-// std::unique_ptr<Texture2D> LoadTexture2D(const std::string& asset_id, GraphicsContext* graphics_context);
-// std::unique_ptr<Texture2D> LoadTexture2D(AssetLibrary* asset_library, const std::string& asset_id,
-//                                          GraphicsContext* graphics_context);
-
 }  // namespace ovis

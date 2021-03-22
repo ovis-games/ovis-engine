@@ -5,12 +5,13 @@
 #include <map>
 #include <memory>
 
-#include <ovis/math/color.hpp>
-#include <ovis/math/vector.hpp>
+#include <ovis/core/color.hpp>
+#include <ovis/core/vector.hpp>
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/shader_program.hpp>
 #include <ovis/graphics/vertex_buffer.hpp>
 #include <ovis/graphics/vertex_input.hpp>
+#include <ovis/rendering/graphics_loader.hpp>
 #include <ovis/rendering/render_pass.hpp>
 
 namespace ovis {

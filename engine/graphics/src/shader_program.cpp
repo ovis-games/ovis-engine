@@ -127,38 +127,4 @@ void ShaderProgram::Bind() {
   m_uniform_buffer->Bind();
 }
 
-// std::unique_ptr<ShaderProgram> LoadShaderProgram(const std::string& asset_id, GraphicsContext* graphics_context) {
-//   return LoadShaderProgram(
-//       GetApplicationAssetLibrary()->Contains(asset_id) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary(),
-//       asset_id, graphics_context);
-// }
-
-// std::unique_ptr<ShaderProgram> LoadShaderProgram(AssetLibrary* asset_library, const std::string& asset_id,
-//                                                  GraphicsContext* graphics_context) {
-//   ShaderProgramDescription description;
-
-//   if (!asset_library->Contains(asset_id)) {
-//     LogE("Cannot find asset '{}'", asset_id);
-//     return {};
-//   }
-
-//   std::optional<std::string> vertex_shader_source = asset_library->LoadAssetTextFile(asset_id, "vert");
-//   if (!vertex_shader_source) {
-//     LogE("Shader program '{}' does not have a corresponding vertex shader", asset_id);
-//     return {};
-//   } else {
-//     description.vertex_shader_source = *vertex_shader_source;
-//   }
-
-//   std::optional<std::string> fragment_shader_source = asset_library->LoadAssetTextFile(asset_id, "frag");
-//   if (!fragment_shader_source) {
-//     LogE("Shader program '{}' does not have a corresponding fragment shader", asset_id);
-//     return {};
-//   } else {
-//     description.fragment_shader_source = *fragment_shader_source;
-//   }
-
-//   return std::make_unique<ShaderProgram>(graphics_context, description);
-// }
-
 }  // namespace ovis

@@ -91,7 +91,7 @@ class UniformBuffer : public GraphicsResource {
       LogW("Trying to set unknown uniform: '{}'", name);
       return;
     }
-    SDL_assert(m_uniform_descriptions[it_uniform->second] == OpenGLType<T>);
+    SDL_assert(m_uniform_descriptions[it_uniform->second].type == OpenGLType<std::remove_reference_t<T>>);
     memcpy(GetUniformBufferPointer(it_uniform->second), &value, sizeof(value));
   }
 
