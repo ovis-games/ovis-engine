@@ -25,7 +25,7 @@ class Sprite : public SceneObjectComponent {
   bool Deserialize(const json& data) override;
   const json* GetSchema() const override { return &schema; }
 
-  void RegisterType(sol::table* module);
+  static void RegisterType(sol::table* module);
 
  private:
   std::string texture_asset_;

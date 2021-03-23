@@ -7,6 +7,19 @@
 
 namespace ovis {
 
+int LoadInputModule(lua_State* l) {
+  sol::state_view state(l);
+
+  /// This module provides 2D rendering components.
+  // @module ovis.rendering2d
+  // @usage local rendering2d = require('ovis.rendering2d')
+  sol::table rendering2d_module = state.create_table();
+
+  Sprite::RegisterType(&rendering2d_module);
+  
+  return rendering2d_module.push();
+}
+
 bool LoadRendering2DModule() {
   static bool module_loaded = false;
   if (!module_loaded) {
