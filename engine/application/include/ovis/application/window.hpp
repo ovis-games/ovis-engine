@@ -5,15 +5,13 @@
 #include <string>
 #include <vector>
 
+#include <SDL2/SDL_events.h>
 #include <SDL2/SDL_video.h>
 
-#include <ovis/core/class.hpp>
-#include <ovis/core/resource_manager.hpp>
+#include <ovis/utils/class.hpp>
+#include <ovis/core/scene.hpp>
 #include <ovis/graphics/graphics_context.hpp>
-#include <ovis/engine/render_pass.hpp>
-#include <ovis/engine/scene.hpp>
-#include <ovis/engine/scene_controller.hpp>
-#include <ovis/engine/viewport.hpp>
+#include <ovis/rendering/rendering_viewport.hpp>
 
 namespace ovis {
 
@@ -24,12 +22,9 @@ struct WindowDescription {
   std::string title;
   int width = 1280;
   int height = 720;
-  std::vector<std::string> resource_search_paths;
-  std::vector<std::string> render_passes = RenderPass::GetRegisteredRenderPasses();
-  std::vector<std::string> scene_controllers = SceneController::GetRegisteredControllers();
 };
 
-class Window : public Viewport {
+class Window : public RenderingViewport {
   MAKE_NON_COPY_OR_MOVABLE(Window);
 
  public:
@@ -48,17 +43,15 @@ class Window : public Viewport {
   inline SDL_Window* sdl_window() const { return sdl_window_; }
   inline Uint32 id() const { return id_; }
   inline bool is_open() const { return is_open_; }
-  inline GraphicsContext* context() { return &graphics_context_; }
-  inline ResourceManager* resource_manager() { return &resource_manager_; }
 
   RenderTargetConfiguration* GetDefaultRenderTargetConfiguration() override;
 
-  void GetDimensions(size_t* width, size_t* height) override;
+  Vector2 GetDimensions() override;
   void Resize(int width, int height);
 
   virtual bool SendEvent(const SDL_Event& event);
   virtual void Update(std::chrono::microseconds delta_time);
-  void Render(bool render_gui = true) override;
+  void Render() override;
 
  private:
   static std::vector<Window*> all_windows_;
@@ -67,7 +60,6 @@ class Window : public Viewport {
   bool is_open_ = true;
 
   GraphicsContext graphics_context_;
-  ResourceManager resource_manager_;
   Scene scene_;
 };
 

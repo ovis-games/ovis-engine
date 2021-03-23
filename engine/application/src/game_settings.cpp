@@ -1,6 +1,6 @@
-#include <ovis/engine/game_settings.hpp>
+#include <ovis/utils/log.hpp>
 #include <ovis/core/asset_library.hpp>
-#include <ovis/core/log.hpp>
+#include <ovis/application/game_settings.hpp>
 
 namespace ovis {
 
@@ -19,9 +19,7 @@ const json GameSettings::SCHEMA = {
 // clang-format on
 
 void to_json(json& data, const GameSettings& settings) {
-  data = json{{
-    "Startup Scene", settings.startup_scene
-  }};
+  data = json{{"Startup Scene", settings.startup_scene}};
 }
 
 void from_json(const json& data, GameSettings& settings) {
