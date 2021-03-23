@@ -2,7 +2,7 @@
 
 #include <box2d/b2_world.h>
 
-#include <ovis/engine/scene_controller.hpp>
+#include <ovis/core/scene_controller.hpp>
 
 namespace ovis {
 

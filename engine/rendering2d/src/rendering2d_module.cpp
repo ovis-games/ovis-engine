@@ -1,5 +1,6 @@
 
 #include <ovis/core/core_module.hpp>
+#include <ovis/core/lua.hpp>
 #include <ovis/rendering/rendering_module.hpp>
 #include <ovis/rendering2d/rendering2d_module.hpp>
 #include <ovis/rendering2d/sprite.hpp>
@@ -7,7 +8,7 @@
 
 namespace ovis {
 
-int LoadInputModule(lua_State* l) {
+int LoadRendering2DModule(lua_State* l) {
   sol::state_view state(l);
 
   /// This module provides 2D rendering components.
@@ -16,7 +17,7 @@ int LoadInputModule(lua_State* l) {
   sol::table rendering2d_module = state.create_table();
 
   Sprite::RegisterType(&rendering2d_module);
-  
+
   return rendering2d_module.push();
 }
 
@@ -27,6 +28,7 @@ bool LoadRendering2DModule() {
     LoadRenderingModule();
 
     SceneObjectComponent::Register("Sprite", []() { return std::make_unique<Sprite>(); });
+    lua.require("ovis.rendering2d", &LoadRendering2DModule);
     module_loaded = true;
   }
 

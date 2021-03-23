@@ -25,21 +25,25 @@ IncludeCategories:
     Priority:        3
     SortPriority:    6
 
-  - Regex:           '^<ovis\/input'
+  - Regex:           '^<ovis\/physics2d'
     Priority:        3
     SortPriority:    7
 
-  - Regex:           '^<ovis\/networking'
+  - Regex:           '^<ovis\/input'
     Priority:        3
     SortPriority:    8
 
-  - Regex:           '^<ovis\/audio'
+  - Regex:           '^<ovis\/networking'
     Priority:        3
     SortPriority:    9
 
-  - Regex:           '^<ovis\/application'
+  - Regex:           '^<ovis\/audio'
     Priority:        3
     SortPriority:    10
+
+  - Regex:           '^<ovis\/application'
+    Priority:        3
+    SortPriority:    11
 
   - Regex:           '\.(hpp|hh|h)>$'
     Priority:        2

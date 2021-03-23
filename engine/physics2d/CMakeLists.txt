@@ -17,8 +17,7 @@ target_include_directories(
 target_link_libraries(
   ovis-physics2d
   PUBLIC
-    ovis::engine
-    ovis::base
+    ovis::core
     box2d
 )
 

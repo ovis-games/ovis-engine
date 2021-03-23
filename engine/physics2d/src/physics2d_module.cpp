@@ -1,5 +1,7 @@
 
-#include <ovis/core/log.hpp>
+#include <ovis/core/core_module.hpp>
+#include <ovis/core/lua.hpp>
+#include <ovis/core/scene_controller.hpp>
 #include <ovis/physics2d/physics2d_debug_layer.hpp>
 #include <ovis/physics2d/physics2d_module.hpp>
 #include <ovis/physics2d/physics_world2d.hpp>
@@ -7,13 +9,31 @@
 
 namespace ovis {
 
-Physics2DModule::Physics2DModule() : Module("Physics2D") {
-  RegisterSceneController("PhysicsWorld2D", [](Scene*) { return std::make_unique<PhysicsWorld2D>(); });
-  RegisterRenderPass("Physics2DDebugLayer", [](Viewport*) { return std::make_unique<Physics2DDebugLayer>(); });
-  RegisterSceneObjectComponent<RigidBody2D>("RigidBody2D",
-                                            [](SceneObject*) { return std::make_unique<RigidBody2D>(); });
+int LoadPhysics2DModule(lua_State* l) {
+  sol::state_view state(l);
+
+  /// This module provides 2D rendering components.
+  // @module ovis.rendering2d
+  // @usage local rendering2d = require('ovis.rendering2d')
+  sol::table physics2d_module = state.create_table();
+
+  RigidBody2D::RegisterType(&physics2d_module);
+
+  return physics2d_module.push();
 }
 
-Physics2DModule::~Physics2DModule() {}
+bool LoadPhysics2DModule() {
+  static bool module_loaded = false;
+  if (!module_loaded) {
+    LoadCoreModule();
+
+    SceneObjectComponent::Register("RigidBody2D", []() { return std::make_unique<RigidBody2D>(); });
+    SceneController::Register("PhysicsWorld2D", []() { return std::make_unique<PhysicsWorld2D>(); });
+    lua.require("ovis.physics2d", &LoadPhysics2DModule);
+    module_loaded = true;
+  }
+
+  return true;
+}
 
 }  // namespace ovis

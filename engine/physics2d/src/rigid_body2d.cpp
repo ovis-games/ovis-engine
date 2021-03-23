@@ -1,7 +1,7 @@
 #include <box2d/b2_circle_shape.h>
 #include <box2d/b2_polygon_shape.h>
 
-#include <ovis/math/constants.hpp>
+#include <ovis/core/math_constants.hpp>
 #include <ovis/physics2d/rigid_body2d.hpp>
 
 namespace ovis {
@@ -65,7 +65,8 @@ bool RigidBody2D::Deserialize(const json& data) {
     body_definition_.linearVelocity.y = linear_velocity.y;
   }
   if (data.contains("angular_velocity")) {
-    body_definition_.angularVelocity = static_cast<float>(data.at("angular_velocity")) * DegreesToRadiansFactor<float>();
+    body_definition_.angularVelocity =
+        static_cast<float>(data.at("angular_velocity")) * DegreesToRadiansFactor<float>();
   }
   if (data.contains("linear_damping")) {
     body_definition_.linearDamping = data.at("linear_damping");

@@ -1,8 +1,6 @@
-#include <imgui.h>
-#include <ovis/base/transform_component.hpp>
-
-#include <ovis/engine/scene.hpp>
-#include <ovis/engine/scene_object.hpp>
+#include <ovis/core/scene.hpp>
+#include <ovis/core/scene_object.hpp>
+#include <ovis/core/transform.hpp>
 #include <ovis/physics2d/physics_world2d.hpp>
 #include <ovis/physics2d/rigid_body2d.hpp>
 
@@ -14,7 +12,7 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
   std::vector<SceneObject*> scene_objects = scene()->GetSceneObjectsWithComponent("RigidBody2D");
 
   for (SceneObject* object : scene_objects) {
-    TransformComponent* transform = object->GetComponent<TransformComponent>("Transform");
+    Transform* transform = object->GetComponent<Transform>("Transform");
     RigidBody2D* body = object->GetComponent<RigidBody2D>("RigidBody2D");
     SDL_assert(body != nullptr);
 
@@ -34,7 +32,7 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
   world_.Step(1.0f / 60, 6, 6);
 
   for (SceneObject* object : scene_objects) {
-    TransformComponent* transform = object->GetComponent<TransformComponent>("Transform");
+    Transform* transform = object->GetComponent<Transform>("Transform");
     RigidBody2D* body = object->GetComponent<RigidBody2D>("RigidBody2D");
     SDL_assert(body != nullptr);
 
@@ -45,7 +43,6 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
       float yaw, pitch, roll;
       transform->GetYawPitchRoll(&yaw, &pitch, &roll);
       transform->SetYawPitchRoll(yaw, pitch, body->body_->GetAngle());
-
     }
   }
 }

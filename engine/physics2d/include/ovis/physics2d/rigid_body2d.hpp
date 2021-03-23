@@ -4,11 +4,12 @@
 #include <box2d/b2_fixture.h>
 #include <box2d/b2_shape.h>
 
-#include <ovis/engine/scene_object_component.hpp>
+#include <ovis/core/scene_object_component.hpp>
 
 namespace ovis {
 
 class RigidBody2D : public SceneObjectComponent {
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE(RigidBody2D);
   friend class PhysicsWorld2D;
 
  public:
