@@ -1,15 +1,17 @@
 #pragma once
 
-#include <ovis/math/vector.hpp>
-#include <ovis/math/color.hpp>
+#include <sol/sol.hpp>
 
-#include <ovis/core/resource.hpp>
+#include <ovis/core/color.hpp>
+#include <ovis/core/scene_object_component.hpp>
+#include <ovis/core/vector.hpp>
 #include <ovis/graphics/texture2d.hpp>
-#include <ovis/engine/scene_object_component.hpp>
 
 namespace ovis {
 
-class SpriteComponent : public SceneObjectComponent {
+class Sprite : public SceneObjectComponent {
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE(Sprite);
+
  public:
   inline Color color() const { return color_; }
   inline Vector2 size() const { return size_; }
@@ -22,6 +24,8 @@ class SpriteComponent : public SceneObjectComponent {
   json Serialize() const override;
   bool Deserialize(const json& data) override;
   const json* GetSchema() const override { return &schema; }
+
+  void RegisterType(sol::table* module);
 
  private:
   std::string texture_asset_;

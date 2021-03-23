@@ -1,3 +1,0 @@
-add_subdirectory(base)
-add_subdirectory(rendering2d)
-add_subdirectory(physics2d)

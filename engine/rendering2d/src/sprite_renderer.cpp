@@ -1,12 +1,10 @@
-#include <glm/gtx/string_cast.hpp>
-#include <glm/gtx/transform.hpp>
-
 #include <ovis/core/asset_library.hpp>
+#include <ovis/core/transform.hpp>
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/render_target_configuration.hpp>
-#include <ovis/base/transform_component.hpp>
-#include <ovis/engine/viewport.hpp>
-#include <ovis/rendering2d/sprite_component.hpp>
+#include <ovis/rendering/graphics_loader.hpp>
+#include <ovis/rendering/rendering_viewport.hpp>
+#include <ovis/rendering2d/sprite.hpp>
 #include <ovis/rendering2d/sprite_renderer.hpp>
 
 namespace ovis {
@@ -51,17 +49,17 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
   draw_item.blend_state.destination_color_factor = DestinationBlendFactor::ONE_MINUS_SOURCE_ALPHA;
 
   // TODO: "cache" vector (to avoid reallocation)
-  auto objects_with_sprites = render_context.scene->GetSceneObjectsWithComponent("Sprite");
+  auto objects_with_sprites = viewport()->scene()->GetSceneObjectsWithComponent("Sprite");
 
   std::sort(objects_with_sprites.begin(), objects_with_sprites.end(), [](SceneObject* lhs, SceneObject* rhs) {
     Vector3 lhs_position;
-    TransformComponent* lhs_transform = lhs->GetComponent<TransformComponent>("Transform");
+    Transform* lhs_transform = lhs->GetComponent<Transform>("Transform");
     if (lhs_transform != nullptr) {
       lhs_position = lhs_transform->position();
     }
-    
+
     Vector3 rhs_position;
-    TransformComponent* rhs_transform = rhs->GetComponent<TransformComponent>("Transform");
+    Transform* rhs_transform = rhs->GetComponent<Transform>("Transform");
     if (rhs_transform != nullptr) {
       rhs_position = rhs_transform->position();
     }
@@ -71,8 +69,8 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
   });
 
   for (SceneObject* object : objects_with_sprites) {
-    SpriteComponent* sprite = object->GetComponent<SpriteComponent>("Sprite");
-    const Matrix4 size_matrix = Matrix4::FromScaling(Vector3::FromVector2(sprite->size(), 1.0f));
+    Sprite* sprite = object->GetComponent<Sprite>("Sprite");
+    const Matrix3x4 size_matrix = Matrix3x4::FromScaling(Vector3::FromVector2(sprite->size(), 1.0f));
     const Color color = sprite->color();
     const std::string texture_asset = sprite->texture_asset();
 
@@ -82,13 +80,21 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
     }
     const std::unique_ptr<Texture2D>& texture = texture_iterator->second;
 
-    TransformComponent* transform = object->GetComponent<TransformComponent>("Transform");
+    Transform* transform = object->GetComponent<Transform>("Transform");
     const Matrix4 world_view_projection =
-        transform ? render_context.view_projection_matrix * transform->CalculateMatrix() * size_matrix
-                  : render_context.view_projection_matrix * size_matrix;
+        transform ? AffineCombine(render_context.world_to_clip_space,
+                                  AffineCombine(transform->local_to_world_matrix(), size_matrix))
+                  : AffineCombine(render_context.world_to_clip_space, size_matrix);
 
-    shader_program_->SetUniform("WorldViewProjection", world_view_projection);
-    shader_program_->SetUniform("Color", color);
+    Mat4x4 local_to_clip_space_matrix;
+    for (int i = 0; i < 4; ++i) {
+      for (int j = 0; j < 4; ++j) {
+        local_to_clip_space_matrix[i][j] = world_view_projection[i][j];
+      }
+    }
+    Vec4 color2 = {color[0], color[1], color[2], color[3]};
+    shader_program_->SetUniform("WorldViewProjection", local_to_clip_space_matrix);
+    shader_program_->SetUniform("Color", color2);
     shader_program_->SetTexture("Texture", texture.get());
     context()->Draw(draw_item);
   }

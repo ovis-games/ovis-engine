@@ -16,8 +16,8 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/misc/cpp
 )
 
-# target_link_libraries(
-#   DearImGui
-#   PUBLIC
-#     ovis::math
-# )
+target_link_libraries(
+  DearImGui
+  PUBLIC
+    ovis::core
+)

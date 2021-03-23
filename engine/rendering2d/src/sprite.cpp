@@ -1,18 +1,18 @@
 #include <SDL_assert.h>
 
-#include <ovis/rendering2d/sprite_component.hpp>
+#include <ovis/rendering2d/sprite.hpp>
 
 namespace ovis {
 
-const json SpriteComponent::schema = {{"$ref", "rendering2d#/$defs/sprite"}};
+const json Sprite::schema = {{"$ref", "rendering2d#/$defs/sprite"}};
 
-json SpriteComponent::Serialize() const {
+json Sprite::Serialize() const {
   return {{"Size", size_},
           {"Color", color_},
           {"Texture", texture_asset_}};
 }
 
-bool SpriteComponent::Deserialize(const json& data) {
+bool Sprite::Deserialize(const json& data) {
   try {
     if (data.contains("Size")) {
       size_ = data.at("Size");

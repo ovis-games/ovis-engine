@@ -3,7 +3,7 @@ add_library(
   
   include/ovis/rendering2d/rendering2d_module.hpp src/rendering2d_module.cpp
   include/ovis/rendering2d/sprite_renderer.hpp src/sprite_renderer.cpp
-  include/ovis/rendering2d/sprite_component.hpp src/sprite_component.cpp
+  include/ovis/rendering2d/sprite.hpp src/sprite.cpp
 )
 add_library(ovis::rendering2d ALIAS ovis-rendering2d)
 
@@ -16,8 +16,7 @@ target_include_directories(
 target_link_libraries(
   ovis-rendering2d
   PUBLIC
-    ovis::engine
-    ovis::base
+    ovis::rendering
 )
 
 target_add_assets(
