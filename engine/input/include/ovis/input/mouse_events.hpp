@@ -26,8 +26,9 @@ class MouseMoveEvent : public MouseEvent {
  public:
   inline static const std::string TYPE = "MouseMove";
 
-  inline MouseMoveEvent(SceneViewport* viewport, Vector2 screen_space_position)
-      : MouseEvent(TYPE, viewport, screen_space_position) {}
+  inline MouseMoveEvent(SceneViewport* viewport, Vector2 screen_space_position, Vector2 relative_screen_space_position)
+      : MouseEvent(TYPE, viewport, screen_space_position),
+        relative_screen_space_position_(relative_screen_space_position) {}
 
   inline Vector2 relative_screen_space_position() const { return relative_screen_space_position_; }
 

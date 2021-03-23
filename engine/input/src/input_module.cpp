@@ -13,7 +13,7 @@ namespace ovis {
 int LoadInputModule(lua_State* l) {
   sol::state_view state(l);
 
-  /// This module provides core components of the engine.
+  /// This module provides functionality for receiving user input.
   // @module ovis.input
   // @usage local input = require('ovis.input')
   sol::table input_module = state.create_table();
