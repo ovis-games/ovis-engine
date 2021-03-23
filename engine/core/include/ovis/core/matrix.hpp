@@ -14,7 +14,8 @@ inline constexpr float Determinant(const Matrix2& matrix) {
   return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
 }
 
-inline constexpr Matrix3x4 Matrix3x4::FromTransformation(const Vector3& translation, const Vector3& scaling, const Quaternion& rotation) {
+inline constexpr Matrix3x4 Matrix3x4::FromTransformation(const Vector3& translation, const Vector3& scaling,
+                                                         const Quaternion& rotation) {
   Matrix3x4 transformation_matrix = Matrix3x4::FromRotation(rotation);
   for (int row = 0; row < 3; ++row) {
     for (int column = 0; column < 3; ++column) {
@@ -214,6 +215,21 @@ inline Matrix<U::ROW_COUNT, T::COLUMN_COUNT> operator*(const T& lhs, const U& rh
     for (int j = 0; j < T::COLUMN_COUNT; ++j) {
       result[i][j] = Dot(lhs[i], ExtractColumn(rhs, j));
     }
+  }
+  return result;
+}
+
+// Special "multiplication" for affine 3x4 matrices. Multiplies a 3x4 or a 4x4 and a 3x4 matrix but assumes
+// that the 3x4 matrix on the right is actually a 4x4 matrix with the last row set to (0, 0, 0, 1). This allows
+// combining several transformations stored in 3x4 matrices.
+template <typename T, std::enable_if_t<is_matrix<T>::value && T::COLUMN_COUNT == 4, bool> = true>
+inline constexpr auto AffineCombine(const T& lhs, const Matrix3x4& rhs) {
+  Matrix<T::ROW_COUNT, 4> result;
+  for (int i = 0; i < T::ROW_COUNT; ++i) {
+    for (int j = 0; j < 3; ++j) {
+      result[i][j] = Dot(lhs[i], Vector4::FromVector3(ExtractColumn(rhs, j), 0.0f));
+    }
+    result[i][3] = Dot(lhs[i], Vector4::FromVector3(ExtractColumn(rhs, 3), 1.0f));
   }
   return result;
 }
