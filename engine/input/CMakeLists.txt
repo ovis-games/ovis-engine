@@ -3,7 +3,10 @@ add_library(
   
   include/ovis/input/input_module.hpp src/input_module.cpp
   include/ovis/input/key.hpp src/key.cpp
-  include/ovis/input/key_event.hpp src/key_event.cpp
+  include/ovis/input/key_events.hpp src/key_press_event.cpp src/key_release_event.cpp
+  include/ovis/input/text_input_event.hpp src/text_input_event.cpp
+  include/ovis/input/mouse_button.hpp src/mouse_button.cpp
+  include/ovis/input/mouse_events.hpp src/mouse_button_press_event.cpp src/mouse_button_release_event.cpp src/mouse_move_event.cpp src/mouse_wheel_event.cpp
 )
 add_library(ovis::input ALIAS ovis-input)
 
@@ -32,6 +35,9 @@ if (OVIS_BUILD_TESTS)
     INPUT_FILES
       src/input_module.cpp
       src/key.cpp
+      src/key_press_event.cpp
+      src/key_release_event.cpp
+      src/mouse_button.cpp
   )
 
   target_link_libraries(

@@ -740,4 +740,18 @@ void Key::RegisterType(sol::table* module) {
   key_type["F24"] = sol::property(&Key::F24);
 }
 
+namespace {
+bool key_states[SDL_NUM_SCANCODES] = {false};
+}
+
+bool GetKeyState(Key key) {
+  SDL_assert(key.code < SDL_NUM_SCANCODES);
+  return key_states[key.code];
+}
+
+void SetKeyState(Key key, bool pressed) {
+  SDL_assert(key.code < SDL_NUM_SCANCODES);
+  key_states[key.code] = pressed;
+}
+
 }  // namespace ovis

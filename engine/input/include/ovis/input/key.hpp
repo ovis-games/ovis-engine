@@ -143,4 +143,7 @@ inline bool operator!=(Key lhs, Key rhs) {
   return lhs.code != rhs.code;
 }
 
+bool GetKeyState(Key key);
+void SetKeyState(Key key, bool pressed);
+
 }  // namespace ovis
