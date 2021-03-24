@@ -4,8 +4,8 @@
 #include "scene_view_editor.hpp"
 #include <variant>
 
-#include <ovis/engine/render_target_viewport.hpp>
-#include <ovis/engine/scene.hpp>
+#include <ovis/rendering/render_target_viewport.hpp>
+#include <ovis/core/scene.hpp>
 
 namespace ovis {
 namespace editor {

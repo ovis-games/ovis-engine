@@ -1,11 +1,12 @@
 #include "editor_camera_controller.hpp"
 
-#include <ovis/engine/input.hpp>
+#include <ovis/input/mouse_button.hpp>
+#include <ovis/input/mouse_events.hpp>
 
 namespace ovis {
 namespace editor {
 
-EditorCameraController::EditorCameraController(Viewport* viewport)
+EditorCameraController::EditorCameraController(RenderingViewport* viewport)
     : SceneController("EditorCameraController"), viewport_(viewport) {
   SubscribeToEvent(MouseMoveEvent::TYPE);
   SubscribeToEvent(MouseButtonPressEvent::TYPE);
@@ -18,17 +19,17 @@ EditorCameraController::EditorCameraController(Viewport* viewport)
 
 void EditorCameraController::Update(std::chrono::microseconds delta_time) {
   camera_.SetAspectRatio(viewport_->GetAspectRatio());
-  viewport_->SetCamera(camera_, transform_.CalculateMatrix());
+  // viewport_->SetCamera()
 }
 
 void EditorCameraController::ProcessEvent(Event* event) {
   if (event->type() == MouseButtonPressEvent::TYPE) {
-    if (static_cast<MouseButtonPressEvent*>(event)->button() == MouseButton::RIGHT) {
+    if (static_cast<MouseButtonPressEvent*>(event)->button() == MouseButton::Right()) {
       right_button_down_ = true;
       event->StopPropagation();
     }
   } else if (event->type() == MouseMoveEvent::TYPE) {
-    if (!input()->GetMouseButtonState(MouseButton::RIGHT)) {
+    if (!GetMouseButtonState(MouseButton::Right())) {
       right_button_down_ = false;
     }
     if (right_button_down_) {
@@ -36,7 +37,8 @@ void EditorCameraController::ProcessEvent(Event* event) {
 
       SDL_assert(viewport_ == mouse_move_event->viewport());
       const Vector3 world0 = viewport_->DeviceCoordinatesToWorldSpace(Vector3::Zero());
-      const Vector3 world1 = viewport_->DeviceCoordinatesToWorldSpace(mouse_move_event->relative_device_coordinates());
+      const Vector3 world1 =
+          viewport_->DeviceCoordinatesToWorldSpace(mouse_move_event->relative_screen_space_position());
       transform_.Move(world0 - world1);
       event->StopPropagation();
     }

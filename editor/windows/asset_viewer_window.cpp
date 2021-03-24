@@ -12,24 +12,24 @@
 #include <imgui.h>
 
 #include <ovis/core/asset_library.hpp>
-#include <ovis/core/log.hpp>
-#include <ovis/engine/lua.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/core/lua.hpp>
 
 namespace ovis {
 namespace editor {
 
-AssetViewerWindow::AssetViewerWindow() : UiWindow("Assets"), current_path_("/") {
+AssetViewerWindow::AssetViewerWindow() : ImGuiWindow("Assets"), current_path_("/") {
   UpdateAfter("Dockspace Window");
 
-  Lua::on_error.Subscribe([this](const std::string& error_message) {
-    LogE("Lua error: {}", error_message);
+  // Lua::on_error.Subscribe([this](const std::string& error_message) {
+  //   LogE("Lua error: {}", error_message);
 
-    std::vector<LuaError> errors = ParseLuaErrorMessage(error_message);
-    if (errors.size() > 0) {
-      ScriptEditor* script_editor = down_cast<ScriptEditor*>(OpenAssetEditor(errors[0].asset_id));
-      script_editor->SetErrors(errors);
-    }
-  });
+  //   std::vector<LuaError> errors = ParseLuaErrorMessage(error_message);
+  //   if (errors.size() > 0) {
+  //     ScriptEditor* script_editor = down_cast<ScriptEditor*>(OpenAssetEditor(errors[0].asset_id));
+  //     script_editor->SetErrors(errors);
+  //   }
+  // });
 }
 
 void AssetViewerWindow::DrawContent() {

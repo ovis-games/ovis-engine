@@ -1,7 +1,7 @@
 #pragma once
 
-#include <ovis/math/vector.hpp>
-#include <ovis/core/json.hpp>
+#include <ovis/core/vector.hpp>
+#include <ovis/utils/json.hpp>
 
 namespace ImGui
 {

@@ -4,11 +4,12 @@
 #include <fstream>
 #include <regex>
 
+#include <ovis/utils/file.hpp>
+#include <ovis/utils/range.hpp>
 #include <ovis/core/asset_library.hpp>
-#include <ovis/core/file.hpp>
-#include <ovis/core/range.hpp>
-#include <ovis/engine/engine.hpp>
-#include <ovis/engine/lua.hpp>
+#include <ovis/core/lua.hpp>
+#include <ovis/rendering/graphics_loader.hpp>
+#include <ovis/application/application.hpp>
 
 namespace ovis {
 namespace editor {

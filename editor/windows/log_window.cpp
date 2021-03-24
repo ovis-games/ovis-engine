@@ -1,16 +1,16 @@
 #include "log_window.hpp"
 
-#include "../editor_module.hpp"
-
 #include <imgui.h>
 
-#include <ovis/core/log.hpp>
-#include <ovis/engine/engine.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/application/application.hpp>
 
 namespace ovis {
 namespace editor {
 
-LogWindow::LogWindow() : UiWindow("Log"), log_history_(GetModule<EditorModule>()->log_history()) {
+std::vector<std::string> LogWindow::log_history;
+
+LogWindow::LogWindow() : ImGuiWindow("Log") {
   UpdateAfter("Dockspace Window");
 }
 
@@ -32,7 +32,7 @@ void LogWindow::DrawContent() {
   ImGui::BeginChild("LogText", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()), false);
 
   size_t filtered_entries_count = 0;
-  for (const auto& text : *log_history_) {
+  for (const auto& text : log_history) {
     const char category = text[0];
 
     switch (category) {

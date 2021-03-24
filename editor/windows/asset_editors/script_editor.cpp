@@ -3,12 +3,12 @@
 #include <fstream>
 #include <regex>
 
+#include <ovis/utils/file.hpp>
+#include <ovis/utils/range.hpp>
 #include <ovis/core/asset_library.hpp>
-#include <ovis/core/file.hpp>
-#include <ovis/core/range.hpp>
-#include <ovis/engine/engine.hpp>
-#include <ovis/engine/lua.hpp>
-#include <ovis/engine/script_scene_controller.hpp>
+#include <ovis/core/lua.hpp>
+#include <ovis/core/script_scene_controller.hpp>
+#include <ovis/application/application.hpp>
 
 namespace ovis {
 namespace editor {
@@ -45,7 +45,7 @@ void ScriptEditor::Save() {
   const std::string code = editor_.GetText();
   SaveFile("lua", code);
 
-  sol::protected_function_result result = Lua::state.do_string(code, "=" + asset_id());
+  sol::protected_function_result result = lua.do_string(code, "=" + asset_id());
 
   std::vector<LuaError> errors;
   if (!result.valid()) {

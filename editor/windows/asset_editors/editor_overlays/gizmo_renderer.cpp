@@ -2,9 +2,9 @@
 
 #include "../editing_controllers/object_selection_controller.hpp"
 
-#include <ovis/base/transform_component.hpp>
+#include <ovis/core/transform.hpp>
 
-#include <ovis/engine/viewport.hpp>
+#include <ovis/rendering/rendering_viewport.hpp>
 
 namespace ovis {
 namespace editor {
@@ -19,9 +19,9 @@ void GizmoRenderer::Render(const RenderContext& render_context) {
   if (scene_object != nullptr) {
     BeginDraw(render_context);
 
-    TransformComponent* transform = scene_object->GetComponent<TransformComponent>("Transform");
+    Transform* transform = scene_object->GetComponent<Transform>("Transform");
     if (transform != nullptr) {
-      Vector3 x_direction = transform->TransformDirection(Vector3::PositiveX());
+      Vector3 x_direction = transform->LocalDirectionToWorldSpace(Vector3::PositiveX());
       DrawLine(transform->position(), transform->position() + gizmo_radius_ * x_direction, Color::Red());
     }
 

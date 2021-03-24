@@ -1,14 +1,14 @@
 #pragma once
 
 #include "asset_editors/asset_editor.hpp"
-#include "ui_window.hpp"
+#include <ovis/imgui/imgui_window.hpp>
 
-#include <ovis/core/json.hpp>
+#include <ovis/utils/json.hpp>
 
 namespace ovis {
 namespace editor {
 
-class AssetViewerWindow : public UiWindow {
+class AssetViewerWindow : public ImGuiWindow {
  public:
   AssetViewerWindow();
 

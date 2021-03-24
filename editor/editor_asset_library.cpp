@@ -7,11 +7,11 @@
 #include <fmt/format.h>
 #include <microtar.h>
 
-#include <ovis/core/file.hpp>
-#include <ovis/core/log.hpp>
-#include <ovis/engine/engine.hpp>
-#include <ovis/engine/fetch.hpp>
-#include <ovis/engine/lua.hpp>
+#include <ovis/utils/file.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/application/application.hpp>
+#include <ovis/networking/fetch.hpp>
+#include <ovis/core/lua.hpp>
 
 namespace ovis {
 namespace editor {

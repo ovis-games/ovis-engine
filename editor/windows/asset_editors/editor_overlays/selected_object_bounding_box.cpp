@@ -2,9 +2,9 @@
 
 #include "../editing_controllers/object_selection_controller.hpp"
 
-#include <ovis/base/transform_component.hpp>
+#include <ovis/core/transform.hpp>
 
-#include <ovis/engine/viewport.hpp>
+#include <ovis/rendering/rendering_viewport.hpp>
 
 namespace ovis {
 namespace editor {
@@ -22,10 +22,10 @@ void SelectedObjectBoundingBox::Render(const RenderContext& render_context) {
   if (scene_object != nullptr) {
     BeginDraw(render_context);
 
-    TransformComponent* transform = scene_object->GetComponent<TransformComponent>("Transform");
+    Transform* transform = scene_object->GetComponent<Transform>("Transform");
     if (transform != nullptr) {
       const Vector3 normalied_device_coordinates =
-          TransformPosition(render_context.view_projection_matrix, transform->position());
+          TransformPosition(render_context.world_to_view_space, transform->position());
       const Vector2 device_coordinates =
           viewport()->NormalizedDeviceCoordinatesToDeviceCoordinates(normalied_device_coordinates);
       DrawDisc(Vector3{device_coordinates.x, device_coordinates.y, 0.0f}, 20.0f, Color::Red());

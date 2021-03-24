@@ -6,8 +6,8 @@
 #include <emscripten/fetch.h>
 
 #include <ovis/core/asset_library.hpp>
-#include <ovis/core/file.hpp>
-#include <ovis/core/json.hpp>
+#include <ovis/utils/file.hpp>
+#include <ovis/utils/json.hpp>
 
 namespace ovis {
 namespace editor {

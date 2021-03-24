@@ -4,11 +4,11 @@
 
 // #include <box2d/b2_draw.h>
 
-// #include <ovis/math/vector.hpp>
+// #include <ovis/core/vector.hpp>
 // #include <ovis/graphics/shader_program.hpp>
 // #include <ovis/graphics/vertex_buffer.hpp>
 // #include <ovis/graphics/vertex_input.hpp>
-// #include <ovis/engine/render_pass.hpp>
+// #include <ovis/core/render_pass.hpp>
 
 // namespace ovis {
 // namespace editor {

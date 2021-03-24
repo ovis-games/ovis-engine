@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../ui_window.hpp"
+#include <ovis/imgui/imgui_window.hpp>
 
 namespace ovis {
 namespace editor {
 
-class ModalWindow : public UiWindow {
+class ModalWindow : public ImGuiWindow {
  public:
   ModalWindow(const std::string& id, const std::string& window_title = "");
 

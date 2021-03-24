@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <ovis/engine/debug_render_pass.hpp>
+#include <ovis/rendering/debug_render_pass.hpp>
 
 namespace ovis {
 namespace editor {

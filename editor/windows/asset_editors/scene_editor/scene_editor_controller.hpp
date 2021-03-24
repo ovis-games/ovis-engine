@@ -1,4 +1,4 @@
-#include <ovis/engine/scene_controller.hpp>
+#include <ovis/core/scene_controller.hpp>
 
 namespace ovis {
 namespace editor {

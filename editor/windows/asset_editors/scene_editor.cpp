@@ -6,16 +6,8 @@
 #include "../../imgui_extensions/texture_button.hpp"
 
 #include <imgui_stdlib.h>
-#include <ovis/base/transform_component.hpp>
 
 #include <ovis/core/asset_library.hpp>
-#include <ovis/core/utils.hpp>
-#include <ovis/engine/input.hpp>
-#include <ovis/engine/lua.hpp>
-#include <ovis/engine/scene_controller.hpp>
-#include <ovis/engine/scene_object.hpp>
-#include <ovis/rendering2d/sprite_component.hpp>
-#include <ovis/physics2d/physics2d_debug_layer.hpp>
 
 namespace ovis {
 namespace editor {

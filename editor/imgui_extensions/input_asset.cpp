@@ -5,7 +5,7 @@
 #include <imgui_stdlib.h>
 
 #include <ovis/core/asset_library.hpp>
-#include <ovis/core/log.hpp>
+#include <ovis/utils/log.hpp>
 
 namespace ImGui {
 

@@ -5,7 +5,7 @@
 namespace ovis {
 namespace editor {
 
-InspectorWindow::InspectorWindow() : UiWindow("Inspector") {
+InspectorWindow::InspectorWindow() : ImGuiWindow("Inspector") {
   UpdateAfter("Dockspace Window");
 }
 

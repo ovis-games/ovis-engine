@@ -5,7 +5,7 @@
 namespace ovis {
 namespace editor {
 
-DockspaceWindow::DockspaceWindow() : UiWindow("Dockspace Window", "") {
+DockspaceWindow::DockspaceWindow() : ImGuiWindow("Dockspace Window", "") {
   SetStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   SetStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
   SetStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));

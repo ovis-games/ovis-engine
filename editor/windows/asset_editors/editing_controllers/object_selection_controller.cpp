@@ -1,16 +1,12 @@
 #include "object_selection_controller.hpp"
 
-#include <ovis/engine/input.hpp>
+#include <ovis/utils/log.hpp>
 
 namespace ovis {
 namespace editor {
 
 ObjectSelectionController::ObjectSelectionController(Scene* game_scene)
-    : SceneController("ObjectSelectionController"), game_scene_(game_scene) {
-  SubscribeToEvent(MouseMoveEvent::TYPE);
-  SubscribeToEvent(MouseButtonPressEvent::TYPE);
-  SubscribeToEvent(MouseWheelEvent::TYPE);
-}
+    : SceneController("ObjectSelectionController"), game_scene_(game_scene) {}
 
 void ObjectSelectionController::ProcessEvent(Event* event) {}
 

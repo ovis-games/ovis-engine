@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui_window.hpp"
+#include <ovis/imgui/imgui_window.hpp>
 
 #include <imgui.h>
 
@@ -9,7 +9,7 @@
 namespace ovis {
 namespace editor {
 
-class Toolbar : public UiWindow {
+class Toolbar : public ImGuiWindow {
  public:
   Toolbar();
 

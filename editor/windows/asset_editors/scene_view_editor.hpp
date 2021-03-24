@@ -3,8 +3,8 @@
 #include "../../action_history.hpp"
 #include "asset_editor.hpp"
 
-#include <ovis/engine/render_target_viewport.hpp>
-#include <ovis/engine/scene.hpp>
+#include <ovis/rendering/render_target_viewport.hpp>
+#include <ovis/core/scene.hpp>
 
 namespace ovis {
 namespace editor {

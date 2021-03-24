@@ -6,20 +6,19 @@
 #include "../../imgui_extensions/texture_button.hpp"
 #include "editing_controllers/editor_camera_controller.hpp"
 #include "editing_controllers/object_selection_controller.hpp"
-#include "editor_overlays/selected_object_bounding_box.hpp"
 #include "editor_overlays/gizmo_renderer.hpp"
+#include "editor_overlays/selected_object_bounding_box.hpp"
 
 #include <imgui_stdlib.h>
-#include <ovis/base/transform_component.hpp>
 
+#include <ovis/utils/utils.hpp>
 #include <ovis/core/asset_library.hpp>
-#include <ovis/core/utils.hpp>
-#include <ovis/engine/input.hpp>
-#include <ovis/engine/lua.hpp>
-#include <ovis/engine/scene_controller.hpp>
-#include <ovis/engine/scene_object.hpp>
-#include <ovis/rendering2d/sprite_component.hpp>
-#include <ovis/physics2d/physics2d_debug_layer.hpp>
+#include <ovis/core/lua.hpp>
+#include <ovis/core/scene_controller.hpp>
+#include <ovis/core/scene_object.hpp>
+#include <ovis/core/transform.hpp>
+#include <ovis/input/mouse_button.hpp>
+#include <ovis/input/mouse_events.hpp>
 
 namespace ovis {
 namespace editor {
@@ -29,12 +28,12 @@ namespace {
 MouseButton GetMouseButtonFromImGuiIndex(int button) {
   // clang-format off
   switch (button) {
-    case ImGuiMouseButton_Left: return MouseButton::LEFT;
-    case ImGuiMouseButton_Middle: return MouseButton::MIDDLE;
-    case ImGuiMouseButton_Right: return MouseButton::RIGHT;
-    case 3: return MouseButton::EXTRA1;
-    case 4: return MouseButton::EXTRA2;
-    default: SDL_assert(false); return MouseButton::LEFT; // Keep clang happy
+    case ImGuiMouseButton_Left: return MouseButton::Left();
+    case ImGuiMouseButton_Middle: return MouseButton::Middle();
+    case ImGuiMouseButton_Right: return MouseButton::Right();
+    case 3: return MouseButton::Four();
+    case 4: return MouseButton::Five();
+    default: SDL_assert(false); return MouseButton::Left(); // Keep clang happy
   }
   // clang-format off
 }
@@ -42,12 +41,6 @@ MouseButton GetMouseButtonFromImGuiIndex(int button) {
 }  // namespace
 
 SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(scene_asset) {
-  Lua::on_error.Subscribe([this](const std::string&) {
-    if (run_state() == RunState::RUNNING) {
-      ChangeRunState(RunState::PAUSED);
-    }
-  });
-
   icons_.play = LoadTexture2D("icon-play", EditorWindow::instance()->context());
   icons_.pause = LoadTexture2D("icon-pause", EditorWindow::instance()->context());
   icons_.stop = LoadTexture2D("icon-stop", EditorWindow::instance()->context());
@@ -57,10 +50,11 @@ SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(s
   icons_.eye = LoadTexture2D("icon-eye", EditorWindow::instance()->context());
 
   editing_scene()->Play();
-  editing_scene()->AddController<ObjectSelectionController>(game_scene());
+  // editing_scene()->AddController<ObjectSelectionController>(game_scene());
 }
 
 void SceneViewEditor::Update(std::chrono::microseconds delta_time) {
+  AssetEditor::Update(delta_time);
   if (run_state() == RunState::RUNNING) {
     game_scene_.Update(delta_time);
     serialized_scene_editing_copy_ = game_scene_.Serialize();
@@ -186,31 +180,31 @@ void SceneViewEditor::DrawToolbar() {
   ImVec2 next_line_pos = ImGui::GetCursorScreenPos();
   ImGui::SetNextWindowPos({eyebutton_pos.x, next_line_pos.y});
   if (ImGui::BeginPopup("Overlay Settings")) {
-    Physics2DDebugLayer* overlay = scene_viewport_->GetRenderPass<Physics2DDebugLayer>("Physics2DDebugLayer");
-    if (ImGui::BeginMenu("Physics World 2D Debug Layer")) {
-      auto draw_setting = [overlay](const char* label, uint32 flag) {
-        bool display = (overlay->GetFlags() & flag) != 0;
-        if (ImGui::Checkbox(label, &display)) {
-          if (display) {
-            overlay->AppendFlags(flag);
-          } else {
-            overlay->ClearFlags(flag);
-          }
-        }
-      };
-      draw_setting("Display Shapes", b2Draw::e_shapeBit);
-      draw_setting("Display Joints", b2Draw::e_jointBit);
-      draw_setting("Display Bounding Boxes", b2Draw::e_aabbBit);
-      draw_setting("Display Broad Phase Pairs", b2Draw::e_pairBit);
-      draw_setting("Display Center of Mass", b2Draw::e_centerOfMassBit);
-      float transform_size = overlay->GetTransformLineLength();
-      if (ImGui::DragFloat("Transform Size", &transform_size, 1.0f, 0.0f, std::numeric_limits<float>::infinity(),
-                           "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
-        overlay->SetTransformLineLength(transform_size);
-      }
+  //   Physics2DDebugLayer* overlay = scene_viewport_->GetRenderPass<Physics2DDebugLayer>("Physics2DDebugLayer");
+  //   if (ImGui::BeginMenu("Physics World 2D Debug Layer")) {
+  //     auto draw_setting = [overlay](const char* label, uint32 flag) {
+  //       bool display = (overlay->GetFlags() & flag) != 0;
+  //       if (ImGui::Checkbox(label, &display)) {
+  //         if (display) {
+  //           overlay->AppendFlags(flag);
+  //         } else {
+  //           overlay->ClearFlags(flag);
+  //         }
+  //       }
+  //     };
+  //     draw_setting("Display Shapes", b2Draw::e_shapeBit);
+  //     draw_setting("Display Joints", b2Draw::e_jointBit);
+  //     draw_setting("Display Bounding Boxes", b2Draw::e_aabbBit);
+  //     draw_setting("Display Broad Phase Pairs", b2Draw::e_pairBit);
+  //     draw_setting("Display Center of Mass", b2Draw::e_centerOfMassBit);
+  //     float transform_size = overlay->GetTransformLineLength();
+  //     if (ImGui::DragFloat("Transform Size", &transform_size, 1.0f, 0.0f, std::numeric_limits<float>::infinity(),
+  //                          "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+  //       overlay->SetTransformLineLength(transform_size);
+  //     }
 
-      ImGui::EndMenu();
-    }
+  //     ImGui::EndMenu();
+  //   }
     ImGui::EndPopup();
   }
 
@@ -228,13 +222,13 @@ void SceneViewEditor::DrawViewport() {
   available_space.y -= 2;
 
   if (!scene_viewport_ ||
-      (Vector2{available_space.x, available_space.y}) != scene_viewport_->GetDimensionsAsVector2() &&
+      (Vector2{available_space.x, available_space.y}) != scene_viewport_->GetDimensions() &&
        !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {  // TODO: this check should be optimizied. Dragging can mean a
                                                        // lot of things not necessarily resizing the window
     LogI("Creating viewport");
     CreateSceneViewport(available_space);
   }
-  scene_viewport_->Render(false);
+  scene_viewport_->Render();
 
   const Vector2 top_left = static_cast<Vector2>(ImGui::GetWindowPos()) + static_cast<Vector2>(ImGui::GetCursorPos());
   ImGui::Image(scene_viewport_->color_texture()->texture(), available_space, ImVec2(0, 1), ImVec2(1, 0),
@@ -269,25 +263,25 @@ void SceneViewEditor::DrawViewport() {
     latest_mouse_position_ = Vector2::NotANumber();
   }
 
-  if (ImGui::BeginDragDropTarget()) {
-    std::string dropped_asset_id;
+  // if (ImGui::BeginDragDropTarget()) {
+  //   std::string dropped_asset_id;
 
-    if (run_state() != RunState::RUNNING && ImGui::AcceptDragDropAsset("texture2d", &dropped_asset_id)) {
-        SceneObject* object = CreateObject(dropped_asset_id, false);
-        auto texture_description = LoadTexture2DDescription(GetApplicationAssetLibrary(), dropped_asset_id);
+  //   if (run_state() != RunState::RUNNING && ImGui::AcceptDragDropAsset("texture2d", &dropped_asset_id)) {
+  //       SceneObject* object = CreateObject(dropped_asset_id, false);
+  //       auto texture_description = LoadTexture2DDescription(GetApplicationAssetLibrary(), dropped_asset_id);
 
-        auto* transform = object->AddComponent<TransformComponent>("Transform");
-        const Vector2 mouse_position = ImGui::GetMousePos();
-        transform->SetPosition(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
+  //       auto* transform = object->AddComponent<TransformComponent>("Transform");
+  //       const Vector2 mouse_position = ImGui::GetMousePos();
+  //       transform->SetPosition(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
 
-        auto* sprite = object->AddComponent<SpriteComponent>("Sprite");
-        sprite->SetTexture(dropped_asset_id);
-        sprite->SetSize({static_cast<float>(texture_description->width), static_cast<float>(texture_description->height)});
+  //       auto* sprite = object->AddComponent<SpriteComponent>("Sprite");
+  //       sprite->SetTexture(dropped_asset_id);
+  //       sprite->SetSize({static_cast<float>(texture_description->width), static_cast<float>(texture_description->height)});
 
-        SubmitChangesToScene();
-    }
-    ImGui::EndDragDropTarget();
-  }
+  //       SubmitChangesToScene();
+  //   }
+  //   ImGui::EndDragDropTarget();
+  // }
 }
 
 void SceneViewEditor::DrawInspectorContent() {
@@ -438,7 +432,7 @@ void SceneViewEditor::DrawSceneObjectProperties() {
 }
 
 void SceneViewEditor::DrawSceneProperties() {
-  for (const std::string& controller : SceneController::GetRegisteredControllers()) {
+  for (const std::string& controller : SceneController::registered_ids()) {
     bool controller_enabled = game_scene()->GetController(controller) != nullptr;
     if (ImGui::Checkbox(controller.c_str(), &controller_enabled)) {
       if (controller_enabled) {
@@ -485,21 +479,22 @@ void SceneViewEditor::CreateSceneViewport(ImVec2 size) {
     scene_viewport_description.color_description.texture_description.filter = TextureFilter::POINT;
     scene_viewport_description.color_description.texture_description.mip_map_count = 0;
     scene_viewport_ = std::make_unique<RenderTargetViewport>(
-        EditorWindow::instance()->context(), EditorWindow::instance()->resource_manager(), scene_viewport_description);
+        EditorWindow::instance()->context(), scene_viewport_description);
 
     
     editing_scene()->AddController<EditorCameraController>(scene_viewport_.get());
 
-    scene_viewport_->AddRenderPass("Clear");
-    scene_viewport_->AddRenderPass("SpriteRenderer");
-    scene_viewport_->AddRenderPass("Physics2DDebugLayer");
-    scene_viewport_->AddRenderPass(std::make_unique<SelectedObjectBoundingBox>(editing_scene()));
-    scene_viewport_->AddRenderPass(std::make_unique<GizmoRenderer>(editing_scene()));
-    scene_viewport_->AddRenderPassDependency("SpriteRenderer", "Physics2DDebugLayer");
-    scene_viewport_->AddRenderPassDependency("SpriteRenderer", "SelectedObjectBoundingBox");
-    scene_viewport_->AddRenderPassDependency("SelectedObjectBoundingBox", "GizmoRenderer");
-    scene_viewport_->AddRenderPassDependency("SpriteRenderer", "GizmoRenderer");
+    // scene_viewport_->AddRenderPass("Clear");
+    // scene_viewport_->AddRenderPass("SpriteRenderer");
+    // scene_viewport_->AddRenderPass("Physics2DDebugLayer");
+    // scene_viewport_->AddRenderPass(std::make_unique<SelectedObjectBoundingBox>(editing_scene()));
+    // scene_viewport_->AddRenderPass(std::make_unique<GizmoRenderer>(editing_scene()));
+    // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "Physics2DDebugLayer");
+    // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "SelectedObjectBoundingBox");
+    // scene_viewport_->AddRenderPassDependency("SelectedObjectBoundingBox", "GizmoRenderer");
+    // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "GizmoRenderer");
     scene_viewport_->SetScene(game_scene());
+    game_scene()->SetMainViewport(scene_viewport_.get());
   } else {
     if (size.x > 0 && size.y > 0) {
       scene_viewport_->Resize(size.x, size.y);
@@ -525,33 +520,33 @@ SceneObject* SceneViewEditor::GetObjectAtPosition(Vector2 world_position) {
   SceneObject* object_at_position = nullptr;
   float z = std::numeric_limits<float>::infinity();
 
-  for (SceneObject* object : game_scene()->GetObjects()) {
-    Vector2 size;
-    if (object->HasComponent("Sprite")) {
-      size = object->GetComponent<SpriteComponent>("Sprite")->size();
-    }
+  // for (SceneObject* object : game_scene()->GetObjects()) {
+  //   Vector2 size;
+  //   if (object->HasComponent("Sprite")) {
+  //     size = object->GetComponent<SpriteComponent>("Sprite")->size();
+  //   }
 
-    Vector3 position = Vector3::Zero();
-    if (object->HasComponent("Transform")) {
-      Transform* transform = object->GetComponent<TransformComponent>("Transform");
-      position = transform->position();
-      size *= Vector2(transform->scale());
-    }
+  //   Vector3 position = Vector3::Zero();
+  //   if (object->HasComponent("Transform")) {
+  //     Transform* transform = object->GetComponent<TransformComponent>("Transform");
+  //     position = transform->position();
+  //     size *= Vector2(transform->scale());
+  //   }
 
-    const Vector2 half_size = size * 0.5f;
+  //   const Vector2 half_size = size * 0.5f;
 
-    LogI("Candidate: {}", object->name());
-    LogI("World position: {}", world_position);
-    LogI("Object position: {}", position);
-    LogI("Object Size: {}", size);
+  //   LogI("Candidate: {}", object->name());
+  //   LogI("World position: {}", world_position);
+  //   LogI("Object position: {}", position);
+  //   LogI("Object Size: {}", size);
 
-    if (position.x - half_size.x <= world_position.x && world_position.x <= position.x + half_size.x &&
-        position.y - half_size.y <= world_position.y && world_position.y <= position.y + half_size.y &&
-        position.z < z) {
-      object_at_position = object;
-      z = position.z;
-    }
-  }
+  //   if (position.x - half_size.x <= world_position.x && world_position.x <= position.x + half_size.x &&
+  //       position.y - half_size.y <= world_position.y && world_position.y <= position.y + half_size.y &&
+  //       position.z < z) {
+  //     object_at_position = object;
+  //     z = position.z;
+  //   }
+  // }
 
   return object_at_position;
 }

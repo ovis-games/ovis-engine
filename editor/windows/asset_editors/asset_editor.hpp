@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../action_history.hpp"
-#include "../ui_window.hpp"
+#include <ovis/imgui/imgui_window.hpp>
 #include <memory>
 #include <string>
 #include <variant>
@@ -10,13 +10,13 @@
 #include <SDL2/SDL.h>
 #include <imgui.h>
 
-#include <ovis/core/file.hpp>
-#include <ovis/core/log.hpp>
+#include <ovis/utils/file.hpp>
+#include <ovis/utils/log.hpp>
 
 namespace ovis {
 namespace editor {
 
-class AssetEditor : public UiWindow {
+class AssetEditor : public ImGuiWindow {
  public:
   AssetEditor(const std::string& asset_id);
   virtual ~AssetEditor();
@@ -38,7 +38,7 @@ class AssetEditor : public UiWindow {
   }
   virtual void Redo();
 
-  void DrawImGui() override;
+  void Update(std::chrono::microseconds) override;
   static AssetEditor* last_focused_document_window;
 
   static const std::string GetAssetEditorId(const std::string& asset_id);

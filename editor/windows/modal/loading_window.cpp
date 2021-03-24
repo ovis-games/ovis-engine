@@ -7,9 +7,9 @@
 
 #include <imgui.h>
 
-#include <ovis/core/json.hpp>
-#include <ovis/core/log.hpp>
-#include <ovis/engine/scene.hpp>
+#include <ovis/utils/json.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/core/scene.hpp>
 
 namespace ovis {
 namespace editor {

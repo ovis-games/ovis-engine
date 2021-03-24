@@ -6,8 +6,8 @@
 
 #include <fmt/core.h>
 
-#include <ovis/core/json.hpp>
-#include <ovis/core/log.hpp>
+#include <ovis/utils/json.hpp>
+#include <ovis/utils/log.hpp>
 
 namespace ovis {
 namespace editor {

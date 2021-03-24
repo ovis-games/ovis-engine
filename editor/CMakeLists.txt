@@ -27,7 +27,6 @@ endif ()
 add_executable(
   ovis-editor
   main.cpp
-  editor_module.hpp editor_module.cpp
   editor_window.hpp editor_window.cpp
   editor_asset_library.hpp editor_asset_library.cpp
   clipboard.hpp clipboard.cpp
@@ -35,8 +34,7 @@ add_executable(
   imgui_extensions/input_json.hpp imgui_extensions/input_json.cpp
   imgui_extensions/input_math.hpp imgui_extensions/input_math.cpp
   imgui_extensions/input_asset.hpp imgui_extensions/input_asset.cpp
-  
-  windows/ui_window.hpp windows/ui_window.cpp
+
   windows/log_window.hpp windows/log_window.cpp
   windows/asset_viewer_window.hpp windows/asset_viewer_window.cpp
   windows/inspector_window.hpp windows/inspector_window.cpp
@@ -122,10 +120,7 @@ add_custom_target(
 target_link_libraries(
   ovis-editor
   PUBLIC
-    ovis::engine
-    ovis::base
-    ovis::rendering2d
-    ovis::physics2d
+    ovis::application
     nlohmann_json
     ImGuiColorTextEdit
     stb

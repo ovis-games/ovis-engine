@@ -1,7 +1,6 @@
 #include "input_math.hpp"
 
 #include <SDL2/SDL_assert.h>
-#include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 
 namespace ImGui {

@@ -7,16 +7,20 @@
 #include "windows/inspector_window.hpp"
 #include "windows/log_window.hpp"
 #include "windows/toolbar.hpp"
+#include "windows/modal/loading_window.hpp"
 
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include <ovis/core/log.hpp>
-#include <ovis/engine/key.hpp>
-#include <ovis/engine/scene.hpp>
-#include <ovis/engine/window.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/core/scene.hpp>
+#include <ovis/input/key.hpp>
+#include <ovis/imgui/imgui_end_frame_controller.hpp>
+#include <ovis/imgui/imgui_render_pass.hpp>
+#include <ovis/imgui/imgui_start_frame_controller.hpp>
+#include <ovis/application/window.hpp>
 
 extern "C" {
 
@@ -40,9 +44,6 @@ WindowDescription CreateWindowDescription() {
   WindowDescription window_description;
 
   window_description.title = "Ovis Editor";
-  window_description.resource_search_paths = {"/resources/", "/assets/"};
-  window_description.scene_controllers = {"ImGui"};
-  window_description.render_passes = {"ImGui"};
 
   double canvas_css_width;
   double canvas_css_height;
@@ -78,12 +79,16 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   instance_ = this;
 
   // Add them here, so the instance variable is set
-  scene()->AddController("LoadingWindow");
+  scene()->AddController(std::make_unique<LoadingWindow>());
+  scene()->AddController(std::make_unique<ImGuiStartFrameController>());
+  scene()->AddController(std::make_unique<ImGuiEndFrameController>());
   scene()->AddController(std::make_unique<Toolbar>());
   scene()->AddController(std::make_unique<DockspaceWindow>());
   scene()->AddController(std::make_unique<LogWindow>());
   scene()->AddController(std::make_unique<AssetViewerWindow>());
   scene()->AddController(std::make_unique<InspectorWindow>());
+
+  AddRenderPass(std::make_unique<ImGuiRenderPass>());
 
   SetUIStyle();
 

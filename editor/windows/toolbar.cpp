@@ -8,13 +8,15 @@
 
 #include <imgui_internal.h>
 
-#include <ovis/core/platform.hpp>
-#include <ovis/engine/input.hpp>
+#include <ovis/utils/platform.hpp>
+#include <ovis/rendering/graphics_loader.hpp>
+#include <ovis/input/key.hpp>
+#include <ovis/input/key_events.hpp>
 
 namespace ovis {
 namespace editor {
 
-Toolbar::Toolbar() : UiWindow("Toolbar", "") {
+Toolbar::Toolbar() : ImGuiWindow("Toolbar", "") {
   SetStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
   SetStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
   SetStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
@@ -34,11 +36,10 @@ Toolbar::Toolbar() : UiWindow("Toolbar", "") {
 void Toolbar::ProcessEvent(Event* event) {
   if (event->type() == KeyPressEvent::TYPE) {
     auto* key_press_event = static_cast<KeyPressEvent*>(event);
-    const bool ctrl_command_pressed =
-        GetPlatform() == Platform::MACOS
-            ? input()->GetKeyState(Key::META_LEFT) || input()->GetKeyState(Key::META_RIGHT)
-            : input()->GetKeyState(Key::CONTROL_LEFT) || input()->GetKeyState(Key::CONTROL_RIGHT);
-    if (ctrl_command_pressed && key_press_event->key() == Key::KEY_S) {
+    const bool ctrl_command_pressed = GetPlatform() == Platform::MACOS
+                                          ? GetKeyState(Key::MetaLeft()) || GetKeyState(Key::MetaRight())
+                                          : GetKeyState(Key::ControlLeft()) || GetKeyState(Key::ControlRight());
+    if (ctrl_command_pressed && key_press_event->key() == Key::S()) {
       Save();
       event->StopPropagation();
     }

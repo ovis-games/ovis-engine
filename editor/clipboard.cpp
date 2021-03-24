@@ -16,7 +16,7 @@ extern "C" {
 
 int EMSCRIPTEN_KEEPALIVE OvisClipboard_Copy() {
   clipboard_data.clear();
-  ovis::editor::EditorWindow::instance()->ComputeImGuiFrame();
+  // ovis::editor::EditorWindow::instance()->ComputeImGuiFrame(); // TODO: this needs to change
   return clipboard_data.size();
 }
 

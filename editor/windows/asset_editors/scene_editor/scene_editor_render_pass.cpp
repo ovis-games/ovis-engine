@@ -6,9 +6,9 @@
 // #include <ovis/base/camera_component.hpp>
 
 // #include <ovis/graphics/graphics_context.hpp>
-// #include <ovis/engine/viewport.hpp>
+// #include <ovis/rendering/rendering_viewport.hpp>
 // #include <ovis/physics2d/physics_world2d.hpp>
-// #include <ovis/core/log.hpp>
+// #include <ovis/utils/log.hpp>
 
 // namespace ovis {
 // namespace editor {

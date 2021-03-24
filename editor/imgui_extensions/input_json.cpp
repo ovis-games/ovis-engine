@@ -4,13 +4,13 @@
 #include <string>
 
 #include <SDL2/SDL_assert.h>
-#include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 #include <imgui_stdlib.h>
 
-#include <ovis/core/log.hpp>
-#include <ovis/core/serialize.hpp>
-#include <ovis/math/vector.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/utils/serialize.hpp>
+#include <ovis/core/json_schema.hpp>
+#include <ovis/core/vector.hpp>
 
 namespace ImGui {
 
@@ -99,7 +99,7 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
             }
           }
         }
-        
+
         ImGui::EndGroup();
       } else {
         DisplayTooltip(schema);

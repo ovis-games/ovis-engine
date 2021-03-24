@@ -1,7 +1,7 @@
 #pragma once
 
 #include <type_traits>
-#include <ovis/core/serialize.hpp>
+#include <ovis/utils/serialize.hpp>
 #include "input_json.hpp"
 
 namespace ImGui

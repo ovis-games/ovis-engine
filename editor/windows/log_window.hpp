@@ -1,12 +1,14 @@
 #pragma once
 
-#include "ui_window.hpp"
+#include <ovis/imgui/imgui_window.hpp>
 
 namespace ovis {
 namespace editor {
 
-class LogWindow : public UiWindow {
+class LogWindow : public ImGuiWindow {
  public:
+  static std::vector<std::string> log_history;
+
   LogWindow();
 
  protected:
@@ -19,7 +21,6 @@ class LogWindow : public UiWindow {
   bool show_warning_ = true;
   bool show_error_ = true;
   bool auto_scrolling_ = true;
-  const std::vector<std::string>* log_history_;
   std::size_t filtered_entries_count_ = 0;
   bool scroll_next_frame_ = false;
 };

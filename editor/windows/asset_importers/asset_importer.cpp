@@ -5,8 +5,8 @@
 #include <stb_image.h>
 
 #include <ovis/core/asset_library.hpp>
-#include <ovis/core/json.hpp>
-#include <ovis/core/utf8.hpp>
+#include <ovis/utils/json.hpp>
+#include <ovis/utils/utf8.hpp>
 
 namespace ovis {
 namespace editor {

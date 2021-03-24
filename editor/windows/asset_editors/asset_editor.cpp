@@ -8,7 +8,7 @@ namespace editor {
 AssetEditor* AssetEditor::last_focused_document_window = nullptr;
 
 AssetEditor::AssetEditor(const std::string& asset_id)
-    : UiWindow(GetAssetEditorId(asset_id), asset_id),
+    : ImGuiWindow(GetAssetEditorId(asset_id), asset_id),
       asset_id_(asset_id),
       current_undo_redo_position_(changes_.begin()) {
   UpdateAfter("Dockspace Window");
@@ -56,15 +56,15 @@ void AssetEditor::Redo() {
   }
 }
 
-void AssetEditor::DrawImGui() {
-  UiWindow::DrawImGui();
+void AssetEditor::Update(std::chrono::microseconds delta_time) {
+  ImGuiWindow::Update(delta_time);
   if (has_focus()) {
     last_focused_document_window = this;
   }
 }
 
 const std::string AssetEditor::GetAssetEditorId(const std::string& asset_id) {
-  return "AssetEditor - " + asset_id;
+  return "AssetEditor - " + asset_id;\
 }
 
 void AssetEditor::SetupJsonFile(const json& default_data, const std::string& file_type) {

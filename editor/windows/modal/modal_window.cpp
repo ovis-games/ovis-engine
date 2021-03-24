@@ -2,12 +2,12 @@
 
 #include <imgui.h>
 
-#include <ovis/core/log.hpp>
+#include <ovis/utils/log.hpp>
 
 namespace ovis {
 namespace editor {
 
-ModalWindow::ModalWindow(const std::string& id, const std::string& window_title) : UiWindow(id, window_title) {}
+ModalWindow::ModalWindow(const std::string& id, const std::string& window_title) : ImGuiWindow(id, window_title) {}
 
 void ModalWindow::DrawImGui() {
   ImGui::OpenPopup(imgui_id_.c_str());

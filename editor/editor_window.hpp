@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ovis/engine/window.hpp>
+#include <ovis/application/window.hpp>
 
 namespace ovis {
 namespace editor {

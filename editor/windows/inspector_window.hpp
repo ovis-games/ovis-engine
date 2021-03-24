@@ -1,11 +1,11 @@
 #pragma once
 
-#include "ui_window.hpp"
+#include <ovis/imgui/imgui_window.hpp>
 
 namespace ovis {
 namespace editor {
 
-class InspectorWindow : public UiWindow {
+class InspectorWindow : public ImGuiWindow {
  public:
   InspectorWindow();
 
