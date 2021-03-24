@@ -3,6 +3,7 @@
 #include <chrono>
 #include <set>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 #include <sol/sol.hpp>
@@ -24,7 +25,7 @@ class SceneController : public StaticFactory<SceneController, std::unique_ptr<Sc
   friend class Scene;
 
  public:
-  SceneController(const std::string& name);
+  explicit SceneController(std::string_view name);
   virtual ~SceneController();
 
   inline Scene* scene() const { return scene_; }

@@ -50,8 +50,14 @@ class Scene : public Serializable {
 
   template <typename ControllerType = SceneController>
   inline ControllerType* GetController(const std::string& controller_name) const {
-    static_assert(std::is_base_of<SceneController, ControllerType>::value, "");
+    static_assert(std::is_base_of<SceneController, ControllerType>::value);
     return down_cast<ControllerType*>(GetControllerInternal(controller_name));
+  }
+
+  template <typename ControllerType>
+  inline ControllerType* GetController() const {
+    static_assert(std::is_base_of<SceneController, ControllerType>::value);
+    return down_cast<ControllerType*>(GetControllerInternal(ControllerType::Id()));
   }
 
   SceneObject* CreateObject(const std::string& object_name);
@@ -98,9 +104,9 @@ class Scene : public Serializable {
   void InvalidateControllerOrder();
   void DeleteRemovedControllers();
   void SortControllers();
-  SceneController* GetControllerInternal(const std::string& controller_name) const;
+  SceneController* GetControllerInternal(std::string_view controller_name) const;
 
-  std::unordered_map<std::string, std::unique_ptr<SceneController>> controllers_;
+  std::map<std::string, std::unique_ptr<SceneController>, std::less<>> controllers_;
   std::vector<SceneController*> controller_order_;
   std::vector<std::unique_ptr<SceneController>> removed_controllers_;
   bool controllers_sorted_ = false;

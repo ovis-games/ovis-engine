@@ -326,7 +326,7 @@ void Scene::SortControllers() {
   controllers_sorted_ = true;
 }
 
-SceneController* Scene::GetControllerInternal(const std::string& controller_name) const {
+SceneController* Scene::GetControllerInternal(std::string_view controller_name) const {
   auto controller = controllers_.find(controller_name);
   if (controller == controllers_.end()) {
     return nullptr;

@@ -8,7 +8,7 @@
 
 namespace ovis {
 
-SceneController::SceneController(const std::string& name)
+SceneController::SceneController(std::string_view name)
     : name_(name)
 #if OVIS_ENABLE_BUILT_IN_PROFILING
       ,
