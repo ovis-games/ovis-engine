@@ -5,6 +5,7 @@ add_library(
   include/ovis/imgui/imgui_render_pass.hpp src/imgui_render_pass.cpp
   include/ovis/imgui/imgui_start_frame_controller.hpp src/imgui_start_frame_controller.cpp
   include/ovis/imgui/imgui_end_frame_controller.hpp src/imgui_end_frame_controller.cpp
+  include/ovis/imgui/imgui_window.hpp src/imgui_window.cpp
 )
 add_library(ovis::imgui ALIAS ovis-imgui)
 
