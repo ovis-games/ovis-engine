@@ -41,6 +41,10 @@ IncludeCategories:
     Priority:        3
     SortPriority:    10
 
+  - Regex:           '^<ovis\/imgui'
+    Priority:        3
+    SortPriority:    10
+
   - Regex:           '^<ovis\/application'
     Priority:        3
     SortPriority:    11

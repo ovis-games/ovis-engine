@@ -1,21 +1,22 @@
 #include <memory>
 
-#include <ovis/math/vector.hpp>
 #include <imgui.h>
 
-#include <ovis/core/resource.hpp>
+#include <ovis/core/vector.hpp>
 #include <ovis/graphics/index_buffer.hpp>
 #include <ovis/graphics/shader_program.hpp>
 #include <ovis/graphics/texture2d.hpp>
 #include <ovis/graphics/vertex_buffer.hpp>
 #include <ovis/graphics/vertex_input.hpp>
-#include <ovis/engine/render_pass.hpp>
+#include <ovis/rendering/render_pass.hpp>
 
 namespace ovis {
 
 class ImGuiRenderPass : public RenderPass {
  public:
-  ImGuiRenderPass(ImGuiContext* context);
+  static inline constexpr std::string_view Name() { return "ImGui"; }
+
+  ImGuiRenderPass();
   virtual ~ImGuiRenderPass();
 
   void CreateResources() override;
@@ -23,7 +24,6 @@ class ImGuiRenderPass : public RenderPass {
   void Render(const RenderContext& render_context) override;
 
  private:
-  ImGuiContext* context_;
   std::unique_ptr<Texture2D> font_texture_;
 
   std::unique_ptr<ShaderProgram> shader_program_;
