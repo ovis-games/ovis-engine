@@ -31,6 +31,7 @@ RenderPass* RenderingViewport::AddRenderPass(std::unique_ptr<RenderPass> render_
   insert_return_value.first->second->viewport_ = this;
   if (graphics_context_ != nullptr) {
     insert_return_value.first->second->graphics_context_ = graphics_context_;
+    insert_return_value.first->second->CreateResources();
   }
   render_passes_sorted_ = false;
 
