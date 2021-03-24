@@ -24,8 +24,11 @@ target_link_libraries(
   PUBLIC
     ovis::core
     ovis::rendering
+    ovis::rendering2d
+    ovis::physics2d
     ovis::input
     ovis::networking
+    ovis::imgui
 )
 
 # target_add_assets(
