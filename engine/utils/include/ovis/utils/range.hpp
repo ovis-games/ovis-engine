@@ -37,9 +37,9 @@ class IntegralRange {
     Iterator(const Iterator&) = default;
     Iterator& operator=(const Iterator&) = default;
 
-    inline bool operator==(const Iterator& rhs) { return m_value == rhs.m_value; }
+    inline bool operator==(const Iterator& rhs) const { return m_value == rhs.m_value; }
 
-    inline bool operator!=(const Iterator& rhs) { return m_value != rhs.m_value; }
+    inline bool operator!=(const Iterator& rhs) const { return m_value != rhs.m_value; }
 
     inline T operator*() const { return m_value; }
     inline T operator->() const { return m_value; }
@@ -112,9 +112,9 @@ class IndexedRange {
 
     Iterator& operator=(const Iterator&) = default;
 
-    inline bool operator==(const Iterator& rhs) { return m_value.m_iterator == rhs.m_value.m_iterator; }
+    inline bool operator==(const Iterator& rhs) const { return m_value.m_iterator == rhs.m_value.m_iterator; }
 
-    inline bool operator!=(const Iterator& rhs) { return m_value.m_iterator != rhs.m_value.m_iterator; }
+    inline bool operator!=(const Iterator& rhs) const { return m_value.m_iterator != rhs.m_value.m_iterator; }
 
     inline const IndexedValue& operator*() const { return m_value; }
 
@@ -170,15 +170,15 @@ class KeyRange {
   class IteratorAdapter {
    public:
     IteratorAdapter(const IteratorAdapter&) = default;
-    ~IteratorType() = default;
+    ~IteratorAdapter() = default;
 
     inline IteratorAdapter(IteratorType iterator) : iterator_(iterator) {}
 
     IteratorAdapter& operator=(const IteratorAdapter&) = default;
 
-    inline bool operator==(const IteratorAdapter& rhs) { return iterator_ == rhs.iterator_; }
+    inline bool operator==(const IteratorAdapter& rhs) const { return iterator_ == rhs.iterator_; }
 
-    inline bool operator!=(const IteratorAdapter& rhs) { return iterator_ != rhs.iterator_; }
+    inline bool operator!=(const IteratorAdapter& rhs) const { return iterator_ != rhs.iterator_; }
 
     inline const auto& operator*() const { return iterator_->first; }
 
