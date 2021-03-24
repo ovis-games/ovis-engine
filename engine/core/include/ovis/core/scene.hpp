@@ -21,8 +21,8 @@ namespace ovis {
 class SceneController;
 class SceneObject;
 class GraphicsContext;
-class ResourceManager;
 class Window;
+class SceneViewport;
 
 class Scene : public Serializable {
   friend class SceneController;
@@ -34,8 +34,8 @@ class Scene : public Serializable {
 
   inline bool is_playing() const { return is_playing_; }
 
-  inline ResourceManager* resource_manager() const { return resource_manager_; }
-  inline void SetResourceManager(ResourceManager* resource_manager) { resource_manager_ = resource_manager; }
+  inline SceneViewport* main_viewport() const { return main_viewport_; }
+  inline void SetMainViewport(SceneViewport* viewport) { main_viewport_ = viewport; }
 
   template <typename ControllerType, typename... ArgumentTypes>
   ControllerType* AddController(ArgumentTypes&&... constructor_args) {
@@ -112,8 +112,9 @@ class Scene : public Serializable {
   bool controllers_sorted_ = false;
 
   std::unordered_map<std::string, std::unique_ptr<SceneObject>> objects_;
-  ResourceManager* resource_manager_;
   bool is_playing_ = false;
+
+  SceneViewport* main_viewport_;
 
   static const json schema_;
 };

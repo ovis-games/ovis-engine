@@ -278,10 +278,10 @@ void Scene::DeleteRemovedControllers() {
 void Scene::SortControllers() {
   // First depends on second beeing already rendered
   std::multimap<std::string, std::string> dependencies;
-  std::set<std::string> controllers_left_;
+  std::set<std::string> controllers_left;
 
   for (const auto& name_controller_pair : controllers_) {
-    controllers_left_.insert(name_controller_pair.first);
+    controllers_left.insert(name_controller_pair.first);
 
     for (auto update_before : name_controller_pair.second->update_before_list_) {
       if (controllers_.count(update_before) == 0) {
@@ -301,13 +301,19 @@ void Scene::SortControllers() {
   }
 
   LogV("Sorting controllers:");
+#ifndef NDEBUG
+  for (const auto& [controller, dependency] : dependencies) {
+    LogV("{} depends on {}", controller, dependency);
+  }
+#endif
+
   controller_order_.clear();
   controller_order_.reserve(controllers_.size());
-  while (controllers_left_.size() > 0) {
-    auto next = std::find_if(controllers_left_.begin(), controllers_left_.end(),
+  while (controllers_left.size() > 0) {
+    auto next = std::find_if(controllers_left.begin(), controllers_left.end(),
                              [&dependencies](const std::string& value) { return dependencies.count(value) == 0; });
 
-    SDL_assert(next != controllers_left_.end());
+    SDL_assert(next != controllers_left.end());
     LogV(" {}", *next);
 
     SDL_assert(controllers_.find(*next) != controllers_.end());
@@ -319,7 +325,7 @@ void Scene::SortControllers() {
         ++i;
       }
     }
-    controllers_left_.erase(next);
+    controllers_left.erase(next);
   }
 
   LogV("Controllers sorted!");

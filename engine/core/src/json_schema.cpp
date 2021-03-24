@@ -1,9 +1,9 @@
 #include <optional>
 #include <unordered_map>
 
-#include <ovis/utils/asset_library.hpp>
 #include <ovis/utils/json.hpp>
 #include <ovis/utils/log.hpp>
+#include <ovis/core/asset_library.hpp>
 
 namespace ovis {
 
