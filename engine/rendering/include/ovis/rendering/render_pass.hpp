@@ -51,7 +51,6 @@ class RenderPass : public StaticFactory<RenderPass, std::unique_ptr<RenderPass>(
  private:
   RenderingViewport* viewport_ = nullptr;
   GraphicsContext* graphics_context_ = nullptr;
-  ResourceManager* resource_manager_ = nullptr;
   std::string name_;
   std::set<std::string> render_before_list_;
   std::set<std::string> render_after_list_;
