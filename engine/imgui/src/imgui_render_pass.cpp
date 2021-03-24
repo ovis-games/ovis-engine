@@ -17,6 +17,12 @@ ImGuiRenderPass::~ImGuiRenderPass() {}
 void ImGuiRenderPass::CreateResources() {
   SDL_assert(GetEngineAssetLibrary() != nullptr);
 
+  auto start_frame_controller = viewport()->scene()->GetController<ImGuiStartFrameController>();
+  SDL_assert(start_frame_controller != nullptr);
+  ImGui::SetCurrentContext(start_frame_controller->imgui_context_.get());
+
+  LogI("Loading ImGui resources!");
+
   shader_program_ = LoadShaderProgram(GetEngineAssetLibrary(), "ui", context());
 
   unsigned char* pixels;
@@ -37,7 +43,13 @@ void ImGuiRenderPass::CreateResources() {
 
 void ImGuiRenderPass::Render(const RenderContext& render_context) {
   auto start_frame_controller = viewport()->scene()->GetController<ImGuiStartFrameController>();
+  if (start_frame_controller == nullptr || !start_frame_controller->frame_started_) {
+    LogV("Skipping ImGui rendering!");
+    return;
+  }
+
   ImGui::SetCurrentContext(start_frame_controller->imgui_context_.get());
+
   ImGui::Render();
   ImDrawData* draw_data = ImGui::GetDrawData();
 
@@ -102,6 +114,7 @@ void ImGuiRenderPass::Render(const RenderContext& render_context) {
       draw_item.vertex_input = vertex_input_.get();
       draw_item.index_buffer = index_buffer_.get();
       draw_item.shader_program = shader_program_.get();
+      draw_item.render_target_configuration = viewport()->GetDefaultRenderTargetConfiguration();
       draw_item.start = command.IdxOffset;
       draw_item.count = command.ElemCount;
       draw_item.base_vertex = command.VtxOffset;
@@ -113,7 +126,7 @@ void ImGuiRenderPass::Render(const RenderContext& render_context) {
       draw_item.scissor_rect->operator[](0) = command.ClipRect.x;
       draw_item.scissor_rect->operator[](1) = command.ClipRect.y;
       draw_item.scissor_rect->operator[](2) = command.ClipRect.z - command.ClipRect.x;
-      draw_item.scissor_rect->operator[](2) = command.ClipRect.w - command.ClipRect.y;
+      draw_item.scissor_rect->operator[](3) = command.ClipRect.w - command.ClipRect.y;
       context()->Draw(draw_item);
     }
   }

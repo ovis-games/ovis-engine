@@ -10,14 +10,16 @@ ImGuiEndFrameController::ImGuiEndFrameController() : SceneController(Name()) {
 }
 
 void ImGuiEndFrameController::Update(std::chrono::microseconds delta_time) {
-#ifdef _DEBUG
   auto start_frame_controller = scene()->GetController<ImGuiStartFrameController>();
+#ifdef _DEBUG
   if (!start_frame_controller) {
     LogE("Controller '{}' needs controller '{}' to be present", Id(), ImGuiStartFrameController::Id());
   }
   SDL_assert(ImGui::GetCurrentContext() == start_frame_controller->imgui_context_.get());
 #endif
-  ImGui::EndFrame();
+  if (start_frame_controller != nullptr && start_frame_controller->frame_started_) {
+    ImGui::EndFrame();
+  }
 }
 
 }  // namespace ovis

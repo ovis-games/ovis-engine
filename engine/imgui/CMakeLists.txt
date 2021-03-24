@@ -28,4 +28,5 @@ target_add_assets(
   ovis-imgui
 
   assets/imgui.schema.json
+  assets/ui.shader.vert assets/ui.shader.frag
 )

@@ -7,7 +7,7 @@ namespace ovis
 
 class ImGuiEndFrameController : public SceneController {
  public:
-  static inline constexpr std::string_view Name() { return "ImGuiStartFrame"; }
+  static inline constexpr std::string_view Name() { return "ImGuiEndFrame"; }
 
   ImGuiEndFrameController();
 

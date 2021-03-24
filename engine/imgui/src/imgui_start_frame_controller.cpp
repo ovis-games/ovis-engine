@@ -1,6 +1,7 @@
 #include <imgui.h>
 
 #include <ovis/utils/down_cast.hpp>
+#include <ovis/utils/log.hpp>
 #include <ovis/utils/platform.hpp>
 #include <ovis/input/key_events.hpp>
 #include <ovis/input/mouse_button.hpp>
@@ -110,7 +111,16 @@ void ImGuiStartFrameController::Update(std::chrono::microseconds delta_time) {
     io.MouseDown[i] = mouse_button_pressed_[i] || GetMouseButtonState(GetMouseButtonFromImGuiIndex(i));
     mouse_button_pressed_[i] = false;
   }
-  ImGui::NewFrame();
+  auto* viewport = scene()->main_viewport();
+  const Vector2 viewport_dimensions = viewport != nullptr ? viewport->GetDimensions() : Vector2::Zero();
+  if (io.Fonts->Fonts.Size > 0 && viewport_dimensions != Vector2::Zero()) {
+    io.DisplaySize = viewport_dimensions;
+    ImGui::NewFrame();
+    frame_started_ = true;
+  } else {
+    frame_started_ = false;
+    LogV("Skip imgui update resources not loaded yet or invalid viewport!");
+  }
 }
 
 void ImGuiStartFrameController::ProcessEvent(Event* event) {

@@ -9,8 +9,9 @@
 namespace ovis {
 
 class ImGuiStartFrameController : public SceneController {
- friend class ImGuiEndFrameController;
- friend class ImGuiRenderPass;
+  friend class ImGuiEndFrameController;
+  friend class ImGuiRenderPass;
+  friend class ImGuiWindow;
 
  public:
   static inline constexpr std::string_view Name() { return "ImGuiStartFrame"; }
@@ -25,6 +26,7 @@ class ImGuiStartFrameController : public SceneController {
 
   // Indicates whether a mouse button was just pressed
   bool mouse_button_pressed_[5] = {false, false, false, false, false};
+  bool frame_started_ = false;
 };
 
 }  // namespace ovis
