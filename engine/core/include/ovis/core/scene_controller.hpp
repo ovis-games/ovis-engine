@@ -9,8 +9,8 @@
 #include <sol/sol.hpp>
 
 #include <ovis/utils/class.hpp>
-#include <ovis/core/event.hpp>
 #include <ovis/utils/static_factory.hpp>
+#include <ovis/core/event.hpp>
 
 #if OVIS_ENABLE_BUILT_IN_PROFILING == 1
 #include <ovis/utils/profiling.hpp>
@@ -49,8 +49,11 @@ class SceneController : public StaticFactory<SceneController, std::unique_ptr<Sc
   static void RegisterType(sol::table* module);
 
  protected:
-  void UpdateBefore(const std::string& controller_name);
-  void UpdateAfter(const std::string& controller_name);
+  void UpdateBefore(std::string_view controller_name);
+  template <typename T> inline void UpdateBefore() { UpdateBefore(T::Name()); }
+
+  void UpdateAfter(std::string_view controller_name);
+  template <typename T> inline void UpdateAfter() { UpdateAfter(T::Name()); }
 
  private:
   Scene* scene_;

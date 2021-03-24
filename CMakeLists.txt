@@ -9,7 +9,7 @@ include(cmake/assets.cmake)
 include(cmake/doc.cmake)
 include(cmake/doc-tests.cmake)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
 
 if (OVIS_BUILD_TESTS)

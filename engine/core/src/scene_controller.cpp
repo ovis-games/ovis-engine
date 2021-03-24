@@ -57,12 +57,12 @@ void SceneController::RegisterType(sol::table* module) {
   scene_controller_type["name"] = sol::property(&SceneController::name);
 }
 
-void SceneController::UpdateBefore(const std::string& controller_name) {
-  update_before_list_.insert(controller_name);
+void SceneController::UpdateBefore(std::string_view controller_name) {
+  update_before_list_.emplace(controller_name);
 }
 
-void SceneController::UpdateAfter(const std::string& controller_name) {
-  update_after_list_.insert(controller_name);
+void SceneController::UpdateAfter(std::string_view controller_name) {
+  update_after_list_.emplace(controller_name);
 }
 
 }  // namespace ovis

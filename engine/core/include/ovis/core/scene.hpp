@@ -57,7 +57,7 @@ class Scene : public Serializable {
   template <typename ControllerType>
   inline ControllerType* GetController() const {
     static_assert(std::is_base_of<SceneController, ControllerType>::value);
-    return down_cast<ControllerType*>(GetControllerInternal(ControllerType::Id()));
+    return down_cast<ControllerType*>(GetControllerInternal(ControllerType::Name()));
   }
 
   SceneObject* CreateObject(const std::string& object_name);
