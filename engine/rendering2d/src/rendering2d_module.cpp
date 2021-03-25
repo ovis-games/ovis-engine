@@ -28,6 +28,8 @@ bool LoadRendering2DModule() {
     LoadRenderingModule();
 
     SceneObjectComponent::Register("Sprite", []() { return std::make_unique<Sprite>(); });
+    RenderPass::Register("SpriteRenderer", []() { return std::make_unique<SpriteRenderer>(); });
+
     lua.require("ovis.rendering2d", &LoadRendering2DModule);
     module_loaded = true;
   }
