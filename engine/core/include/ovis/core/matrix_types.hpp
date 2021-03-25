@@ -132,6 +132,69 @@ struct is_matrix : public std::integral_constant<bool, std::is_same<T, Matrix2>(
 namespace fmt {
 
 template <>
+struct fmt::formatter<ovis::Matrix2> {
+  char presentation = 'f';
+
+  // Parses format specifications of the form ['f' | 'e'].
+  constexpr auto parse(format_parse_context& ctx) {
+    auto it = ctx.begin(), end = ctx.end();
+    if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
+    if (it != end && *it != '}') throw format_error("invalid format");
+    return it;
+  }
+
+  template <typename FormatContext>
+  auto format(const ovis::Matrix2& matrix, FormatContext& ctx) {
+    for (int i = 0; i < ovis::Matrix2::ROW_COUNT; ++i) {
+      format_to(ctx.out(), "\n{}", matrix[i]);
+    }
+    return ctx.out();
+  }
+};
+
+template <>
+struct fmt::formatter<ovis::Matrix3> {
+  char presentation = 'f';
+
+  // Parses format specifications of the form ['f' | 'e'].
+  constexpr auto parse(format_parse_context& ctx) {
+    auto it = ctx.begin(), end = ctx.end();
+    if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
+    if (it != end && *it != '}') throw format_error("invalid format");
+    return it;
+  }
+
+  template <typename FormatContext>
+  auto format(const ovis::Matrix3& matrix, FormatContext& ctx) {
+    for (int i = 0; i < ovis::Matrix3::ROW_COUNT; ++i) {
+      format_to(ctx.out(), "\n{}", matrix[i]);
+    }
+    return ctx.out();
+  }
+};
+
+template <>
+struct fmt::formatter<ovis::Matrix3x4> {
+  char presentation = 'f';
+
+  // Parses format specifications of the form ['f' | 'e'].
+  constexpr auto parse(format_parse_context& ctx) {
+    auto it = ctx.begin(), end = ctx.end();
+    if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
+    if (it != end && *it != '}') throw format_error("invalid format");
+    return it;
+  }
+
+  template <typename FormatContext>
+  auto format(const ovis::Matrix3x4& matrix, FormatContext& ctx) {
+    for (int i = 0; i < ovis::Matrix3x4::ROW_COUNT; ++i) {
+      format_to(ctx.out(), "\n{}", matrix[i]);
+    }
+    return ctx.out();
+  }
+};
+
+template <>
 struct fmt::formatter<ovis::Matrix4> {
   char presentation = 'f';
 
@@ -145,14 +208,10 @@ struct fmt::formatter<ovis::Matrix4> {
 
   template <typename FormatContext>
   auto format(const ovis::Matrix4& matrix, FormatContext& ctx) {
-    return format_to(
-        ctx.out(),
-        presentation == 'f' ? "\n({:.5f}, {:.5f}, {:.5f}, {:.5f})\n({:.5f}, {:.5f}, {:.5f}, {:.5f})\n({:.5f}, {:.5f}, "
-                              "{:.5f}, {:.5f})\n({:.5f}, {:.5f}, {:.5f}, {:.5f})"
-                            : "\n({:.1e}, {:.1e}, {:.1e}, {:.1e})\n({:.1e}, {:.1e}, {:.1e}, {:.1e})\n({:.1e}, {:.1e}, "
-                              "{:.1e}, {:.1e})\n({:.1e}, {:.1e}, {:.1e}, {:.1e})",
-        matrix[0][0], matrix[0][1], matrix[0][2], matrix[0][3], matrix[1][0], matrix[1][1], matrix[1][2], matrix[1][3],
-        matrix[2][0], matrix[2][1], matrix[2][2], matrix[2][3], matrix[3][0], matrix[3][1], matrix[3][2], matrix[3][3]);
+    for (int i = 0; i < ovis::Matrix4::ROW_COUNT; ++i) {
+      format_to(ctx.out(), "\n{}", matrix[i]);
+    }
+    return ctx.out();
   }
 };
 
