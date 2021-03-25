@@ -19,7 +19,6 @@ class EditorCameraController : public SceneController {
   Camera camera_;
   Transform transform_;
   RenderingViewport* viewport_;
-  bool right_button_down_ = false;
 };
 
 }  // namespace editor

@@ -19,20 +19,17 @@ EditorCameraController::EditorCameraController(RenderingViewport* viewport)
 
 void EditorCameraController::Update(std::chrono::microseconds delta_time) {
   camera_.SetAspectRatio(viewport_->GetAspectRatio());
-  // viewport_->SetCamera()
+  viewport_->SetCustomCameraMatrices(transform_.world_to_local_matrix(), camera_.projection_matrix());
+  viewport_->SetCamera(nullptr);
 }
 
 void EditorCameraController::ProcessEvent(Event* event) {
   if (event->type() == MouseButtonPressEvent::TYPE) {
     if (static_cast<MouseButtonPressEvent*>(event)->button() == MouseButton::Right()) {
-      right_button_down_ = true;
       event->StopPropagation();
     }
   } else if (event->type() == MouseMoveEvent::TYPE) {
-    if (!GetMouseButtonState(MouseButton::Right())) {
-      right_button_down_ = false;
-    }
-    if (right_button_down_) {
+    if (GetMouseButtonState(MouseButton::Right())) {
       MouseMoveEvent* mouse_move_event = static_cast<MouseMoveEvent*>(event);
 
       SDL_assert(viewport_ == mouse_move_event->viewport());
