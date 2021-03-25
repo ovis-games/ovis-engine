@@ -165,7 +165,7 @@ void Transform::RegisterType(sol::table* module) {
 
 void Transform::CalculateMatrices() const {
   local_to_world_ = Matrix3x4::FromTransformation(position_, scale_, rotation_);
-  world_to_local_ = Matrix3x4::FromTransformation(-position_, 1.f / scale_, Invert(rotation_));
+  world_to_local_ = InvertAffine(local_to_world_);
   dirty = false;
 }
 
