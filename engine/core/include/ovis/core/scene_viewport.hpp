@@ -29,8 +29,14 @@ class SceneViewport {
 
   inline Camera* camera() const { return camera_; }
   inline void SetCamera(Camera* camera) {
-    SDL_assert(scene_ == camera->scene_object()->scene());
+    SDL_assert(camera == nullptr || scene_ == camera->scene_object()->scene());
     camera_ = camera;
+  }
+  inline void SetCustomCameraMatrices(Matrix3x4 world_to_view_space, Matrix4 view_to_clip_space) {
+    custom_world_to_view_space_ = world_to_view_space;
+    custom_view_to_world_space_ = InvertAffine(world_to_view_space);
+    custom_view_to_clip_space_ = view_to_clip_space;
+    custom_clip_to_view_space_ = Invert(custom_view_to_clip_space_);
   }
 
   inline Vector2 DeviceCoordinatesToNormalizedDeviceCoordinates(Vector2 device_coordinates) {
@@ -43,7 +49,8 @@ class SceneViewport {
   }
 
   inline Vector3 NormalizedDeviceCoordinatesToViewSpace(Vector3 ndc) {
-    return camera_ ? camera_->NormalizedDeviceCoordinatesToViewSpace(ndc) : ndc;
+    return camera_ ? camera_->NormalizedDeviceCoordinatesToViewSpace(ndc)
+                   : TransformPosition(custom_clip_to_view_space_, ndc);
   }
 
   inline Vector3 DeviceCoordinatesToViewSpace(const Vector2& device_coordinates, float normalized_depth = -1.0f) {
@@ -53,15 +60,21 @@ class SceneViewport {
 
   inline Vector3 DeviceCoordinatesToWorldSpace(const Vector2& device_coordinates, float normalized_depth = -1.0f) {
     const Vector3 view_space_position = DeviceCoordinatesToViewSpace(device_coordinates, normalized_depth);
-    Transform* transform = camera_ ? camera_->scene_object()->GetComponent<Transform>("Transform") : nullptr;
-    if (transform) {
-      return transform->LocalPositionToWorldSpace(view_space_position);
+    if (camera_) {
+      Transform* transform = camera_->scene_object()->GetComponent<Transform>("Transform");
+      return transform ? transform->LocalPositionToWorldSpace(view_space_position) : view_space_position;
     } else {
-      return view_space_position;
+      return TransformPosition(custom_view_to_world_space_, view_space_position);
     }
   }
 
   static void RegisterType(sol::table* module);
+
+ protected:
+  Matrix3x4 custom_world_to_view_space_;
+  Matrix3x4 custom_view_to_world_space_;
+  Matrix4 custom_view_to_clip_space_;
+  Matrix4 custom_clip_to_view_space_;
 
  private:
   Scene* scene_ = nullptr;

@@ -9,6 +9,15 @@ void RenderingViewport::Render() {
   }
 
   RenderContext render_context;
+  if (camera()) {
+    SDL_assert(false && "Not yet implemented!");
+  } else {
+    render_context.view_to_clip_space = custom_view_to_clip_space_;
+    render_context.clip_to_view_space = custom_clip_to_view_space_;
+    render_context.world_to_view_space = custom_world_to_view_space_;
+    render_context.view_to_world_space = custom_view_to_world_space_;
+    render_context.world_to_clip_space = AffineCombine(custom_view_to_clip_space_, custom_world_to_view_space_);
+  }
   for (RenderPass* render_pass : render_pass_order_) {
     render_pass->Render(render_context);
   }
