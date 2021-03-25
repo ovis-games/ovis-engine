@@ -30,6 +30,7 @@ class ImGuiWindow : public SceneController {
   void SetFlags(ImGuiWindowFlags window_flags);
 
  protected:
+  bool HasFrameStarted() const;
   virtual void BeforeBegin() {}
   virtual void DrawContent() {}
 

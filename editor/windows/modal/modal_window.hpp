@@ -9,7 +9,7 @@ class ModalWindow : public ImGuiWindow {
  public:
   ModalWindow(const std::string& id, const std::string& window_title = "");
 
-  void DrawImGui() override;
+  void Update(std::chrono::microseconds delta_time) override;
 };
 
 }  // namespace editor
