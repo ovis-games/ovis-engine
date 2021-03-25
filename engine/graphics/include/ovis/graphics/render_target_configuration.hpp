@@ -22,7 +22,7 @@ class RenderTargetConfiguration : public GraphicsResource {
   RenderTargetConfiguration(GraphicsContext* context, const RenderTargetConfigurationDescription& description);
   virtual ~RenderTargetConfiguration() override;
 
-  void ClearColor(size_t color_attachment_index, float color[4]);
+  void ClearColor(size_t color_attachment_index, const float color[4]);
   void ClearDepth(float depth = 1.0f);
 
   inline std::size_t width() const { return width_; }
