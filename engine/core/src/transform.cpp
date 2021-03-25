@@ -6,7 +6,7 @@
 namespace ovis {
 
 namespace {
-static const json SCHEMA = {{"$ref", "base#/$defs/transform"}};
+static const json SCHEMA = {{"$ref", "core#/$defs/transform"}};
 }
 
 json Transform::Serialize() const {
@@ -16,16 +16,16 @@ json Transform::Serialize() const {
 }
 
 bool Transform::Deserialize(const json& data) {
-  if (data.contains("Position")) {
-    const Vector3 position = data.at("Position");
+  if (data.contains("position")) {
+    const Vector3 position = data.at("position");
     SetPosition(position);
   }
-  if (data.contains("Rotation")) {
-    const Vector3 euler_angles = Vector3(data.at("Rotation")) * DegreesToRadiansFactor<float>();
+  if (data.contains("rotation")) {
+    const Vector3 euler_angles = Vector3(data.at("rotation")) * DegreesToRadiansFactor<float>();
     SetRotation(Quaternion::FromEulerAngles(euler_angles.x, euler_angles.y, euler_angles.z));
   }
-  if (data.contains("Scale")) {
-    const Vector3 scale = data.at("Scale");
+  if (data.contains("scale")) {
+    const Vector3 scale = data.at("scale");
     SetScale(scale);
   }
   // TODO: calculate matrices

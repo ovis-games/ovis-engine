@@ -18,7 +18,7 @@
           "description": "The body type: static, kinematic, or dynamic.\nstatic: zero mass, zero velocity, may be manually moved\nkinematic: zero mass, non-zero velocity set by user, moved by solver\ndynamic: positive mass, non-zero velocity determined by forces, moved by solver\nNote: if a dynamic body would have zero mass, the mass is set to one."
         },
         "linear_velocity": {
-          "$ref": "math#/$defs/vector2",
+          "$ref": "core#/$defs/vector2",
           "title": "Linear Velocity",
           "default": [0, 0],
           "description": "The linear velocity of the body's origin in world co-ordinates."
@@ -136,7 +136,7 @@
           "title": "Vertices",
           "type": "array",
           "items": {
-            "$ref": "math#/$defs/vector2"
+            "$ref": "core#/$defs/vector2"
           }
         },
         "radius": {

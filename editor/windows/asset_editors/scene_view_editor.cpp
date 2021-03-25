@@ -50,7 +50,7 @@ SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(s
   icons_.eye = LoadTexture2D("icon-eye", EditorWindow::instance()->context());
 
   editing_scene()->Play();
-  // editing_scene()->AddController<ObjectSelectionController>(game_scene());
+  editing_scene()->AddController<ObjectSelectionController>(game_scene());
 }
 
 void SceneViewEditor::Update(std::chrono::microseconds delta_time) {

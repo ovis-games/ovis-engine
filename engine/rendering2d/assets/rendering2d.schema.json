@@ -8,7 +8,7 @@
       "description": "Represents a 2D object in a scene.",
       "properties": {
         "Color": {
-          "$ref": "math#/$defs/color",
+          "$ref": "core#/$defs/color",
           "description": "The color of the sprite."
         },
         "Texture": {
@@ -16,7 +16,7 @@
           "description": "A texture that will be displayed on the sprite."
         },
         "Size": {
-          "$ref": "math#/$defs/vector2",
+          "$ref": "core#/$defs/vector2",
           "description": "The size of the sprite.",
           "default": [100, 100]
         }

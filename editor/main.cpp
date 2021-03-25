@@ -21,10 +21,10 @@ int main(int argc, char* argv[]) {
     Log::AddListener(ConsoleLogger);
     Log::AddListener([](LogLevel, const std::string& text) { LogWindow::log_history.push_back(text); });
 
-    ImGui::SetCustomJsonFunction("math#/$defs/vector2", &ImGui::InputVector2);
-    ImGui::SetCustomJsonFunction("math#/$defs/vector3", &ImGui::InputVector3);
-    ImGui::SetCustomJsonFunction("math#/$defs/vector4", &ImGui::InputVector4);
-    ImGui::SetCustomJsonFunction("math#/$defs/color", &ImGui::InputColor);
+    ImGui::SetCustomJsonFunction("core#/$defs/vector2", &ImGui::InputVector2);
+    ImGui::SetCustomJsonFunction("core#/$defs/vector3", &ImGui::InputVector3);
+    ImGui::SetCustomJsonFunction("core#/$defs/vector4", &ImGui::InputVector4);
+    ImGui::SetCustomJsonFunction("core#/$defs/color", &ImGui::InputColor);
 
     if (argc != 4) {
       LogE("Invalid number of arguments to editor");

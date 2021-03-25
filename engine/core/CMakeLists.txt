@@ -38,6 +38,12 @@ target_link_libraries(
     middleclass
 )
 
+target_add_assets(
+  ovis-core
+
+  assets/core.schema.json
+)
+
 if (OVIS_BUILD_TESTS)
   add_executable(
     ovis-core-test

@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft/2019-09/schema#",
+
   "$defs": {
     "vector2": {
       "title": "Vector2",
@@ -44,6 +45,28 @@
         "type": "number"
       },
       "default": [1, 1, 1, 1]
+    },
+    "transform": {
+      "title": "Transform",
+      "type": "object",
+      "description": "Represents the transformation of an object in a 3D space.",
+      "properties": {
+        "position": {
+          "$ref": "core#/$defs/vector3",
+          "title": "Position",
+          "description": "The position of the object."
+        },
+        "rotation": {
+          "$ref": "core#/$defs/vector3",
+          "title": "Rotation",
+          "description": "The rotation of the object in degree."
+        },
+        "scale": {
+          "$ref": "core#/$defs/vector3",
+          "title": "Scale",
+          "description": "The scaling of the object."
+        }
+      }
     }
   }
 }
