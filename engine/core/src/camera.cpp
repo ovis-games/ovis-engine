@@ -102,15 +102,18 @@ void Camera::CalculateMatrices() const {
       const float half_width = half_height * aspect_ratio_;
       projection_matrix_ = Matrix4::FromOrthographicProjection(-half_width, half_width, -half_height, half_height,
                                                                near_clip_plane_, far_clip_plane_);
+      break;
     }
 
     case ProjectionType::PERSPECTIVE: {
       projection_matrix_ =
           Matrix4::FromPerspectiveProjection(vertical_field_of_view_, aspect_ratio_, near_clip_plane_, far_clip_plane_);
+      break;
     }
 
     default:
       SDL_assert(false && "Invalid projection type");
+      break;
   }
   inverse_projection_matrix_ = Invert(projection_matrix_);
   dirty_ = false;
