@@ -42,8 +42,6 @@ class RenderPass : public StaticFactory<RenderPass, std::unique_ptr<RenderPass>(
   virtual void ReleaseResources() {}
   virtual void Render(const RenderContext& render_context) = 0;
 
-  virtual void DrawImGui() {}
-
  protected:
   void RenderBefore(const std::string& renderer_name);
   void RenderAfter(const std::string& renderer_name);

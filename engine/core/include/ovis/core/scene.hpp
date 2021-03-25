@@ -92,8 +92,6 @@ class Scene : public Serializable {
 
   void ProcessEvent(Event* event);
 
-  void DrawImGui();
-
   json Serialize() const override;
   bool Deserialize(const json& serialized_object) override;
   const json* GetSchema() const override { return &schema_; }

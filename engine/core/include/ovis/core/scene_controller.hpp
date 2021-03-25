@@ -44,7 +44,6 @@ class SceneController : public StaticFactory<SceneController, std::unique_ptr<Sc
   virtual void Update(std::chrono::microseconds delta_time);
 
   virtual void ProcessEvent(Event* event);
-  virtual void DrawImGui() {}
 
   static void RegisterType(sol::table* module);
 

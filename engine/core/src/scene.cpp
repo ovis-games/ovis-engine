@@ -215,12 +215,6 @@ void Scene::ProcessEvent(Event* event) {
   }
 }
 
-void Scene::DrawImGui() {
-  for (const auto& controller : controller_order_) {
-    controller->DrawImGui();
-  }
-}
-
 json Scene::Serialize() const {
   json serialized_object = {{"version", "0.1"}};
   auto& controllers = serialized_object["controllers"] = json::object();
