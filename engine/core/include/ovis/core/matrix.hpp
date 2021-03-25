@@ -285,6 +285,33 @@ inline constexpr Vector3 TransformPosition(const Matrix4& transform_matrix, cons
   return Vector3{transformed_vector.x, transformed_vector.y, transformed_vector.z} / transformed_vector.w;
 }
 
+inline Matrix3x4 InvertAffineNoScale(const Matrix3x4& matrix) {
+  // See https://lxjk.github.io/2017/09/03/Fast-4x4-Matrix-Inverse-with-SSE-SIMD-Explained.html for an explanation.
+  // Note here the translation is in the last column, not the last row!.
+  Matrix3x4 result;
+
+  const Vector3 translation = ExtractColumn(matrix, 3);
+  for (int i = 0; i < 3; ++i) {
+    const Vector3 column = ExtractColumn(matrix, i);
+    result[i] = Vector4::FromVector3(column, -Dot(column, translation));
+  }
+
+  return result;
+}
+
+inline Matrix3x4 InvertAffine(const Matrix3x4& matrix) {
+  // Same as above, but we'll take the scaling into account.
+  Matrix3x4 result;
+
+  const Vector3 translation = ExtractColumn(matrix, 3);
+  for (int i = 0; i < 3; ++i) {
+    const Vector3 column = ExtractColumn(matrix, i);
+    const float scale = SquaredLength(column);
+    result[i] = (1.0f / scale) * Vector4::FromVector3(column, -Dot(column, translation));
+  }
+  return result;
+}
+
 inline Matrix4 Invert(const Matrix4& matrix) {
   // TODO: implement the method explained here:
   // https://lxjk.github.io/2017/09/03/Fast-4x4-Matrix-Inverse-with-SSE-SIMD-Explained.html
