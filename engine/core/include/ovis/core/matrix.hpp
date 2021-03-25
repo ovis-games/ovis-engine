@@ -188,7 +188,7 @@ inline constexpr Matrix4 Matrix4::FromPerspectiveProjection(float vertical_field
 }
 
 template <typename T, std::enable_if_t<is_matrix<T>::value, bool> = true>
-inline auto ExtractColumn(const T& matrix, int column_index) {
+inline constexpr auto ExtractColumn(const T& matrix, int column_index) {
   Vector<T::ROW_COUNT> vector;
   for (int i = 0; i < T::ROW_COUNT; ++i) {
     vector[i] = matrix[i][column_index];
@@ -197,7 +197,7 @@ inline auto ExtractColumn(const T& matrix, int column_index) {
 }
 
 template <typename T, std::enable_if_t<is_matrix<T>::value, bool> = true>
-inline auto Transpose(const T& matrix) {
+inline constexpr auto Transpose(const T& matrix) {
   Matrix<T::COLUMN_COUNT, T::ROW_COUNT> result;
   for (int i = 0; i < T::ROW_COUNT; ++i) {
     for (int j = 0; j < T::COLUMN_COUNT; ++j) {
@@ -209,7 +209,7 @@ inline auto Transpose(const T& matrix) {
 
 template <typename T, typename U,
           std::enable_if_t<is_matrix<T>::value && is_matrix<U>::value && U::COLUMN_COUNT == T::ROW_COUNT, bool> = true>
-inline Matrix<U::ROW_COUNT, T::COLUMN_COUNT> operator*(const T& lhs, const U& rhs) {
+inline constexpr Matrix<U::ROW_COUNT, T::COLUMN_COUNT> operator*(const T& lhs, const U& rhs) {
   Matrix<U::ROW_COUNT, T::COLUMN_COUNT> result;
   for (int i = 0; i < T::ROW_COUNT; ++i) {
     for (int j = 0; j < T::COLUMN_COUNT; ++j) {
@@ -235,7 +235,7 @@ inline constexpr auto AffineCombine(const T& lhs, const Matrix3x4& rhs) {
 }
 
 template <typename T, std::enable_if_t<is_matrix<T>::value, bool> = true>
-inline T operator*=(T& lhs, const T& rhs) {
+inline constexpr T operator*=(T& lhs, const T& rhs) {
   return lhs = lhs * rhs;
 }
 
@@ -243,7 +243,7 @@ template <typename MatrixType, typename VectorType,
           std::enable_if_t<is_matrix<MatrixType>::value && is_vector<VectorType>::value &&
                                MatrixType::COLUMN_COUNT == VectorType::ELEMENT_COUNT,
                            bool> = true>
-inline Vector<MatrixType::ROW_COUNT> operator*(const MatrixType& matrix, const VectorType& vector) {
+inline constexpr Vector<MatrixType::ROW_COUNT> operator*(const MatrixType& matrix, const VectorType& vector) {
   Vector<MatrixType::ROW_COUNT> result;
   for (int i = 0; i < MatrixType::ROW_COUNT; ++i) {
     result[i] = Dot(matrix[i], vector);
@@ -255,7 +255,7 @@ template <typename MatrixType, typename VectorType,
           std::enable_if_t<is_matrix<MatrixType>::value && is_vector<VectorType>::value &&
                                MatrixType::ROW_COUNT == VectorType::ELEMENT_COUNT,
                            bool> = true>
-inline Vector<MatrixType::COLUMN_COUNT> operator*(const VectorType& vector, const MatrixType& matrix) {
+inline constexpr Vector<MatrixType::COLUMN_COUNT> operator*(const VectorType& vector, const MatrixType& matrix) {
   Vector<MatrixType::COLUMN_COUNT> result;
   for (int i = 0; i < MatrixType::COLUMN_COUNT; ++i) {
     result[i] = Dot(vector, ExtractColumn(matrix, i));
@@ -285,7 +285,7 @@ inline constexpr Vector3 TransformPosition(const Matrix4& transform_matrix, cons
   return Vector3{transformed_vector.x, transformed_vector.y, transformed_vector.z} / transformed_vector.w;
 }
 
-inline Matrix3x4 InvertAffineNoScale(const Matrix3x4& matrix) {
+inline constexpr Matrix3x4 InvertAffineNoScale(const Matrix3x4& matrix) {
   // See https://lxjk.github.io/2017/09/03/Fast-4x4-Matrix-Inverse-with-SSE-SIMD-Explained.html for an explanation.
   // Note here the translation is in the last column, not the last row!.
   Matrix3x4 result;
@@ -299,7 +299,7 @@ inline Matrix3x4 InvertAffineNoScale(const Matrix3x4& matrix) {
   return result;
 }
 
-inline Matrix3x4 InvertAffine(const Matrix3x4& matrix) {
+inline constexpr Matrix3x4 InvertAffine(const Matrix3x4& matrix) {
   // Same as above, but we'll take the scaling into account.
   Matrix3x4 result;
 
@@ -312,7 +312,7 @@ inline Matrix3x4 InvertAffine(const Matrix3x4& matrix) {
   return result;
 }
 
-inline Matrix4 Invert(const Matrix4& matrix) {
+inline constexpr Matrix4 Invert(const Matrix4& matrix) {
   // TODO: implement the method explained here:
   // https://lxjk.github.io/2017/09/03/Fast-4x4-Matrix-Inverse-with-SSE-SIMD-Explained.html
 
