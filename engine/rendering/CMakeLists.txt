@@ -6,6 +6,7 @@ add_library(
   include/ovis/rendering/rendering_viewport.hpp src/rendering_viewport.cpp
   include/ovis/rendering/render_target_viewport.hpp src/render_target_viewport.cpp
   include/ovis/rendering/render_pass.hpp src/render_pass.cpp
+  include/ovis/rendering/clear_pass.hpp src/clear_pass.cpp
   include/ovis/rendering/debug_render_pass.hpp src/debug_render_pass.cpp
 )
 add_library(ovis::rendering ALIAS ovis-rendering)

@@ -9,7 +9,9 @@
 
 namespace ovis {
 
-SpriteRenderer::SpriteRenderer() : RenderPass("SpriteRenderer") {}
+SpriteRenderer::SpriteRenderer() : RenderPass("SpriteRenderer") {
+  RenderAfter("ClearPass");
+}
 
 void SpriteRenderer::CreateResources() {
   shader_program_ = LoadShaderProgram(GetEngineAssetLibrary(), "sprite", context());
