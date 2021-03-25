@@ -109,7 +109,7 @@ union alignas(sizeof(float) * 4) Vector4 {
   static constexpr int ELEMENT_COUNT = 4;
 
   inline static constexpr Vector4 FromVector2(Vector2 v, float z = 0.0f, float w = 0.0f) { return {v.x, v.y, z, w}; }
-  inline static constexpr Vector4 FromVector3(Vector3 v, float w = 0.0f) { return {v.x, v.y, v.y, w}; }
+  inline static constexpr Vector4 FromVector3(Vector3 v, float w = 0.0f) { return {v.x, v.y, v.z, w}; }
 
   inline static constexpr Vector4 Zero() { return {0.0f, 0.0f, 0.0f, 0.0f}; }
   inline static constexpr Vector4 One() { return {1.0f, 1.0f, 1.0f, 1.0f}; }
