@@ -485,7 +485,7 @@ void SceneViewEditor::CreateSceneViewport(ImVec2 size) {
     editing_scene()->AddController<EditorCameraController>(scene_viewport_.get());
 
     // scene_viewport_->AddRenderPass("Clear");
-    // scene_viewport_->AddRenderPass("SpriteRenderer");
+    scene_viewport_->AddRenderPass("SpriteRenderer");
     // scene_viewport_->AddRenderPass("Physics2DDebugLayer");
     // scene_viewport_->AddRenderPass(std::make_unique<SelectedObjectBoundingBox>(editing_scene()));
     // scene_viewport_->AddRenderPass(std::make_unique<GizmoRenderer>(editing_scene()));
