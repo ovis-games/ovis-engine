@@ -3,7 +3,7 @@
 
 namespace ovis {
 
-ClearPass::ClearPass() : RenderPass("Clear") {}
+ClearPass::ClearPass() : RenderPass("ClearPass") {}
 
 void ClearPass::Render(const RenderContext&) {
   if (clear_color_) {
