@@ -17,9 +17,9 @@ class SceneViewport {
 
   // Float precisiton should be plenty, as single precision floats can represent integers between
   // 0 and 16777216 exactly.
-  virtual Vector2 GetDimensions() = 0;
+  virtual Vector2 GetDimensions() const = 0;
 
-  inline float GetAspectRatio() {
+  inline float GetAspectRatio() const {
     const Vector2 size = GetDimensions();
     return size.x / size.y;
   }
@@ -39,33 +39,59 @@ class SceneViewport {
     custom_clip_to_view_space_ = Invert(custom_view_to_clip_space_);
   }
 
-  inline Vector2 DeviceCoordinatesToNormalizedDeviceCoordinates(Vector2 device_coordinates) {
-    return (2.0f * device_coordinates / (GetDimensions() - Vector2::One()) - Vector2::One()) * Vector2{1.0f, -1.0f};
+  inline Vector3 ScreenSpacePositionToClipSpace(Vector3 screen_space_coordinates) const {
+    return (2.0f * screen_space_coordinates / Vector3::FromVector2(GetDimensions() - Vector2::One(), 1.0f) -
+            Vector3::One()) *
+           Vector3{1.0f, -1.0f, 1.0f};
   }
 
-  inline Vector2 NormalizedDeviceCoordinatesToDeviceCoordinates(Vector2 normalized_device_coordinates) {
-    return ((0.5f * Vector2{1.0f, -1.0f} * normalized_device_coordinates) + Vector2{0.5f, 0.5f}) *
-           (GetDimensions() - Vector2::One());
+  inline Vector3 ClipSpacePositionToScreenSpace(Vector3 clip_space_coordinates) const {
+    return ((0.5f * Vector3{1.0f, -1.0f, 1.0f} * clip_space_coordinates) + Vector3{0.5f, 0.5f, 0.5f}) *
+           Vector3::FromVector2(GetDimensions() - Vector2::One(), 1.0f);
   }
 
-  inline Vector3 NormalizedDeviceCoordinatesToViewSpace(Vector3 ndc) {
-    return camera_ ? camera_->NormalizedDeviceCoordinatesToViewSpace(ndc)
-                   : TransformPosition(custom_clip_to_view_space_, ndc);
+  inline Vector3 ClipSpacePositionToViewSpace(Vector3 clip_space_coordinates) const {
+    return camera_ ? camera_->ClipSpacePositionToViewSpace(clip_space_coordinates)
+                   : TransformPosition(custom_clip_to_view_space_, clip_space_coordinates);
   }
 
-  inline Vector3 DeviceCoordinatesToViewSpace(const Vector2& device_coordinates, float normalized_depth = -1.0f) {
-    const Vector2 ndc = DeviceCoordinatesToNormalizedDeviceCoordinates(device_coordinates);
-    return NormalizedDeviceCoordinatesToViewSpace(Vector3::FromVector2(ndc, normalized_depth));
+  inline Vector3 ViewSpacePositionToClipSpace(Vector3 view_space_coordinates) const {
+    return camera_ ? camera_->ViewSpacePositionToClipSpace(view_space_coordinates)
+                   : TransformPosition(custom_view_to_clip_space_, view_space_coordinates);
   }
 
-  inline Vector3 DeviceCoordinatesToWorldSpace(const Vector2& device_coordinates, float normalized_depth = -1.0f) {
-    const Vector3 view_space_position = DeviceCoordinatesToViewSpace(device_coordinates, normalized_depth);
-    if (camera_) {
-      Transform* transform = camera_->scene_object()->GetComponent<Transform>("Transform");
-      return transform ? transform->LocalPositionToWorldSpace(view_space_position) : view_space_position;
-    } else {
-      return TransformPosition(custom_view_to_world_space_, view_space_position);
-    }
+  inline Vector3 ScreenSpacePositionToViewSpace(Vector3 screen_space_coordinates) const {
+    return ClipSpacePositionToViewSpace(ScreenSpacePositionToClipSpace(screen_space_coordinates));
+  }
+
+  inline Vector3 ViewSpacePositionToScreenSpace(Vector3 view_space_coordinates) const {
+    return ClipSpacePositionToScreenSpace(ViewSpacePositionToClipSpace(view_space_coordinates));
+  }
+
+  inline Vector3 ViewSpacePositionToWorldSpace(Vector3 view_space_coordinates) const {
+    return camera_ ? camera_->ViewSpacePositionToWorldSpace(view_space_coordinates)
+                   : TransformPosition(custom_view_to_clip_space_, view_space_coordinates);
+  }
+
+  inline Vector3 WorldSpacePositionToViewSpace(Vector3 world_space_coordinates) const {
+    return camera_ ? camera_->WorldSpacePositionToViewSpace(world_space_coordinates)
+                   : TransformPosition(custom_clip_to_view_space_, world_space_coordinates);
+  }
+
+  inline Vector3 ClipSpacePositionToWorldSpace(Vector3 clip_space_coordinates) const {
+    return ViewSpacePositionToWorldSpace(ClipSpacePositionToViewSpace(clip_space_coordinates));
+  }
+
+  inline Vector3 WorldSpacePositionToClipSpace(Vector3 world_space_coordinates) const {
+    return ViewSpacePositionToClipSpace(WorldSpacePositionToViewSpace(world_space_coordinates));
+  }
+
+  inline Vector3 ScreenSpacePositionToWorldSpace(Vector3 screen_space_coordinates) const {
+    return ViewSpacePositionToWorldSpace(ScreenSpacePositionToViewSpace(screen_space_coordinates));
+  }
+
+  inline Vector3 WorldSpacePositionToScreenSpace(Vector3 world_space_coordinates) const {
+    return ViewSpacePositionToScreenSpace(WorldSpacePositionToViewSpace(world_space_coordinates));
   }
 
   static void RegisterType(sol::table* module);

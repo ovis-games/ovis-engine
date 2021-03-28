@@ -65,20 +65,20 @@ class Transform : public SceneObjectComponent {
     if (roll) *roll = ExtractRoll(rotation_);
   }
 
-  inline Vector3 LocalDirectionToWorldSpace(Vector3 direction) const {
-    return TransformDirection(local_to_world_matrix(), direction);
+  inline Vector3 ObjectSpaceDirectionToWorldSpace(Vector3 object_space_direction) const {
+    return TransformDirection(local_to_world_matrix(), object_space_direction);
   }
 
-  inline Vector3 WorldDirectionToLocalSpace(Vector3 direction) const {
-    return TransformDirection(world_to_local_matrix(), direction);
+  inline Vector3 WorldSpaceDirectionToObjectSpace(Vector3 world_space_direction) const {
+    return TransformDirection(world_to_local_matrix(), world_space_direction);
   }
 
-  inline Vector3 LocalPositionToWorldSpace(Vector3 position) const {
-    return TransformPosition(local_to_world_matrix(), position);
+  inline Vector3 ObjectSpacePositionToWorldSpace(Vector3 object_space_coordinates) const {
+    return TransformPosition(local_to_world_matrix(), object_space_coordinates);
   }
 
-  inline Vector3 WorldPositionToLocalSpace(Vector3 position) const {
-    return TransformPosition(world_to_local_matrix(), position);
+  inline Vector3 WorldSpacePositionToObjectSpace(Vector3 world_space_coordinates) const {
+    return TransformPosition(world_to_local_matrix(), world_space_coordinates);
   }
 
   inline Matrix3x4 local_to_world_matrix() const {
