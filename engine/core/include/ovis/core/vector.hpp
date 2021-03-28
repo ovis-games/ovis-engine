@@ -11,6 +11,14 @@
 
 namespace ovis {
 
+inline constexpr Vector2 ConstructOrthogonalVectorCW(const Vector2& vector) {
+  return {vector.y, -vector.x};
+}
+
+inline constexpr Vector2 ConstructOrthogonalVectorCCW(const Vector2& vector) {
+  return {-vector.y, vector.x};
+}
+
 inline constexpr Vector3 ConstructOrthogonalVector(const Vector3& vector) {
   if (std::abs(vector.x) > std::abs(vector.y)) {
     return Vector3{-vector.z, 0.0f, vector.x} / std::sqrt(vector.x * vector.x + vector.z * vector.z);
