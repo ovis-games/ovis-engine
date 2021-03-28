@@ -37,6 +37,18 @@ union alignas(sizeof(float) * 2) Vector2 {
   inline static constexpr Vector2 PositiveY() { return {0.0f, 1.0f}; }
   inline static constexpr Vector2 NegativeY() { return {0.0f, -1.0f}; }
 
+  // Represents the coordinates of a unit square centered at the origin. Thus, all the absolut value of all component
+  // in all vectors is 0.5 and the index in binary indicates the sign of the component. If the LSB is zero the sign
+  // of the x component is negative, otherwise its positive and so on.
+  inline static constexpr std::array<Vector2, 4> UnitSquare() {
+    return {{
+        {-0.5f, -0.5f},
+        {+0.5f, -0.5f},
+        {-0.5f, +0.5f},
+        {+0.5f, +0.5f},
+    }};
+  };
+
   static void RegisterType(sol::table* module);
 };
 static_assert(sizeof(Vector2) == 8);
@@ -79,6 +91,22 @@ union alignas(sizeof(float) * 4) Vector3 {
   inline static constexpr Vector3 NegativeY() { return {0.0f, -1.0f, 0.0f}; }
   inline static constexpr Vector3 PositiveZ() { return {0.0f, 0.0f, 1.0f}; }
   inline static constexpr Vector3 NegativeZ() { return {0.0f, 0.0f, -1.0f}; }
+
+  // Represents the coordinates of a unit cube centered at the origin. Thus, all the absolut value of all component
+  // in all vectors is 0.5 and the index in binary indicates the sign of the component. If the LSB is zero the sign
+  // of the x component is negative, otherwise its positive and so on.
+  inline static constexpr std::array<Vector3, 8> UnitCube() {
+    return {{
+        {-0.5f, -0.5f, -0.5f},
+        {+0.5f, -0.5f, -0.5f},
+        {-0.5f, +0.5f, -0.5f},
+        {+0.5f, +0.5f, -0.5f},
+        {-0.5f, -0.5f, +0.5f},
+        {+0.5f, -0.5f, +0.5f},
+        {-0.5f, +0.5f, +0.5f},
+        {+0.5f, +0.5f, +0.5f},
+    }};
+  };
 
   static void RegisterType(sol::table* module);
 };
@@ -127,6 +155,30 @@ union alignas(sizeof(float) * 4) Vector4 {
   inline static constexpr Vector4 NegativeZ() { return {0.0f, 0.0f, -1.0f, 0.0f}; }
   inline static constexpr Vector4 PositiveW() { return {0.0f, 0.0f, 0.0f, 1.0f}; }
   inline static constexpr Vector4 NegativeW() { return {0.0f, 0.0f, 0.0f, -1.0f}; }
+
+  // Represents the coordinates of a unit hypercube centered at the origin. Thus, all the absolut value of all component
+  // in all vectors is 0.5 and the index in binary indicates the sign of the component. If the LSB is zero the sign
+  // of the x component is negative, otherwise its positive and so on.
+  inline static constexpr std::array<Vector4, 16> UnitHypercube() {
+    return {{
+        {-0.5f, -0.5f, -0.5f, -0.5f},
+        {+0.5f, -0.5f, -0.5f, -0.5f},
+        {-0.5f, +0.5f, -0.5f, -0.5f},
+        {+0.5f, +0.5f, -0.5f, -0.5f},
+        {-0.5f, -0.5f, +0.5f, -0.5f},
+        {+0.5f, -0.5f, +0.5f, -0.5f},
+        {-0.5f, +0.5f, +0.5f, -0.5f},
+        {+0.5f, +0.5f, +0.5f, -0.5f},
+        {-0.5f, -0.5f, -0.5f, +0.5f},
+        {+0.5f, -0.5f, -0.5f, +0.5f},
+        {-0.5f, +0.5f, -0.5f, +0.5f},
+        {+0.5f, +0.5f, -0.5f, +0.5f},
+        {-0.5f, -0.5f, +0.5f, +0.5f},
+        {+0.5f, -0.5f, +0.5f, +0.5f},
+        {-0.5f, +0.5f, +0.5f, +0.5f},
+        {+0.5f, +0.5f, +0.5f, +0.5f},
+    }};
+  };
 };
 static_assert(sizeof(Vector4) == 16);
 static_assert(std::is_trivially_copyable<Vector4>());
