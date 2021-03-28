@@ -70,7 +70,7 @@ RenderTargetConfiguration* Window::GetDefaultRenderTargetConfiguration() {
   return graphics_context_.default_render_target_configuration();
 }
 
-Vector2 Window::GetDimensions() {
+Vector2 Window::GetDimensions() const {
   int width;
   int height;
   SDL_GetWindowSize(sdl_window_, &width, &height);

@@ -108,59 +108,59 @@ void Transform::RegisterType(sol::table* module) {
     return yaw_pitch_roll;
   };
 
-  /// Transforms a direcion from local to world space.
+  /// Transforms a direcion from object to world space.
   // If the transform contains any scaling the magnitude of the vector will likely change.
-  // @function local_direction_to_world_space
+  // @function object_space_direction_to_world_space
   // @param[type=Vector3] direction
   // @treturn Vector3
   // @see 03-spaces.md
-  // @see world_direction_to_local_space
+  // @see world_direction_to_object_space
   // @usage Vector3 = core.Vector3
   // local transform = Transform.new()
   // transform:rotate(Vector3.POSITIVE_Y, 90)
-  // local transformed_direction = transform:local_direction_to_world_space(Vector3.POSITIVE_X)
+  // local transformed_direction = transform:object_space_direction_to_world_space(Vector3.POSITIVE_X)
   // assert(Vector3.length(transformed_direction - Vector3.POSITIVE_Z) < 0.1)
-  transform_type["local_direction_to_world_space"] = &Transform::LocalDirectionToWorldSpace;
+  transform_type["object_space_direction_to_world_space"] = &Transform::ObjectSpaceDirectionToWorldSpace;
 
-  /// Transforms a direcion from world to local space.
+  /// Transforms a direcion from world to object space.
   // If the transform contains any scaling the magnitude of the vector will likely change.
-  // @function world_direction_to_local_space
+  // @function world_space_direction_to_object_space
   // @param[type=Vector3] direction
   // @treturn Vector3
   // @see 03-spaces.md
-  // @see local_direction_to_world_space
+  // @see object_direction_to_world_space
   // @usage Vector3 = core.Vector3
   // local transform = Transform.new()
   // transform:rotate(Vector3.POSITIVE_Y, 90)
-  // local transformed_direction = transform:world_direction_to_local_space(Vector3.POSITIVE_Z)
+  // local transformed_direction = transform:world_space_direction_to_object_space(Vector3.POSITIVE_Z)
   // assert(Vector3.length(transformed_direction - Vector3.POSITIVE_X) < 0.1)
-  transform_type["world_direction_to_local_space"] = &Transform::WorldDirectionToLocalSpace;
+  transform_type["world_space_direction_to_object_space"] = &Transform::WorldSpaceDirectionToObjectSpace;
 
   /// Transforms a position in local space to world space.
-  // @function local_position_to_world_space
-  // @param[type=Vector3] position
+  // @function object_space_position_to_world_space
+  // @param[type=Vector3] object_space_coordinates
   // @treturn Vector3
   // @see 03-spaces.md
   // @see world_position_to_local_space
   // @usage Vector3 = core.Vector3
   // local transform = Transform.new()
   // transform:move(Vector3.new(0, 1, 0))
-  // local transformed_position = transform:local_position_to_world_space(Vector3.new(1, 0, 0))
+  // local transformed_position = transform:object_space_position_to_world_space(Vector3.new(1, 0, 0))
   // assert(transformed_position == Vector3.new(1, 1, 0))
-  transform_type["local_position_to_world_space"] = &Transform::LocalPositionToWorldSpace;
+  transform_type["object_space_position_to_world_space"] = &Transform::ObjectSpacePositionToWorldSpace;
 
   /// Transforms a position in  world space to local space.
-  // @function world_position_to_local_space
-  // @param[type=Vector3] position
+  // @function world_space_position_to_object_space
+  // @param[type=Vector3] world_space_coordinates
   // @treturn Vector3
   // @see 03-spaces.md
   // @see local_position_to_world_space
   // @usage Vector3 = core.Vector3
   // local transform = Transform.new()
   // transform:move(Vector3.new(0, 1, 0))
-  // local transformed_position = transform:world_position_to_local_space(Vector3.new(1, 1, 0))
+  // local transformed_position = transform:world_space_position_to_object_space(Vector3.new(1, 1, 0))
   // assert(transformed_position == Vector3.new(1, 0, 0))
-  transform_type["world_position_to_local_space"] = &Transform::WorldPositionToLocalSpace;
+  transform_type["world_space_position_to_object_space"] = &Transform::WorldSpacePositionToObjectSpace;
 }
 
 void Transform::CalculateMatrices() const {

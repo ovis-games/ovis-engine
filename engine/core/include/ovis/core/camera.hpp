@@ -5,7 +5,9 @@
 #include <ovis/utils/json.hpp>
 #include <ovis/core/math_constants.hpp>
 #include <ovis/core/matrix.hpp>
+#include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_object_component.hpp>
+#include <ovis/core/transform.hpp>
 
 namespace ovis {
 
@@ -65,12 +67,30 @@ class Camera : public SceneObjectComponent {
     return inverse_projection_matrix_;
   }
 
-  inline Vector3 ViewSpaceToNormalizedDeviceCoordinates(Vector3 view_space_position) {
-    return TransformPosition(projection_matrix(), view_space_position);
+  inline Vector3 ViewSpacePositionToClipSpace(Vector3 view_space_coordinates) const {
+    return TransformPosition(projection_matrix(), view_space_coordinates);
   }
 
-  inline Vector3 NormalizedDeviceCoordinatesToViewSpace(Vector3 ndc) {
-    return TransformPosition(inverse_projection_matrix(), ndc);
+  inline Vector3 ClipSpacePositionToViewSpace(Vector3 clip_space_coordinates) const {
+    return TransformPosition(inverse_projection_matrix(), clip_space_coordinates);
+  }
+
+  inline Vector3 WorldSpacePositionToViewSpace(Vector3 world_space_coordinates) const {
+    const Transform* transform = scene_object()->GetComponent<Transform>("Transform");
+    return transform ? transform->WorldSpacePositionToObjectSpace(world_space_coordinates) : world_space_coordinates;
+  }
+
+  inline Vector3 ViewSpacePositionToWorldSpace(Vector3 view_space_coordinates) const {
+    const Transform* transform = scene_object()->GetComponent<Transform>("Transform");
+    return transform ? transform->ObjectSpacePositionToWorldSpace(view_space_coordinates) : view_space_coordinates;
+  }
+
+  inline Vector3 WorldSpacePositionToClipSpace(Vector3 world_space_coordinates) const {
+    return ViewSpacePositionToClipSpace(WorldSpacePositionToViewSpace(world_space_coordinates));
+  }
+
+  inline Vector3 ClipSpacePositionToWorldSpace(Vector3 clip_space_coordinates) const {
+    return ViewSpacePositionToWorldSpace(ClipSpacePositionToViewSpace(clip_space_coordinates));
   }
 
   json Serialize() const override;

@@ -46,7 +46,7 @@ class Window : public RenderingViewport {
 
   RenderTargetConfiguration* GetDefaultRenderTargetConfiguration() override;
 
-  Vector2 GetDimensions() override;
+  Vector2 GetDimensions() const override;
   void Resize(int width, int height);
 
   virtual bool SendEvent(const SDL_Event& event);

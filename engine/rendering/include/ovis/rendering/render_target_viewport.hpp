@@ -15,7 +15,7 @@ class RenderTargetViewport : public RenderingViewport {
   RenderTargetViewport(GraphicsContext* graphics_context, const RenderTargetViewportDescription& description);
 
   void Resize(std::size_t width, std::size_t height);
-  inline Vector2 GetDimensions() override {
+  inline Vector2 GetDimensions() const override {
     return {static_cast<float>(description_.color_description.texture_description.width),
             static_cast<float>(description_.color_description.texture_description.height)};
   }
