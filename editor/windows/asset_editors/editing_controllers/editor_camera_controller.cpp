@@ -1,5 +1,6 @@
 #include "editor_camera_controller.hpp"
 
+#include <ovis/utils/log.hpp>
 #include <ovis/input/mouse_button.hpp>
 #include <ovis/input/mouse_events.hpp>
 
@@ -33,10 +34,9 @@ void EditorCameraController::ProcessEvent(Event* event) {
       MouseMoveEvent* mouse_move_event = static_cast<MouseMoveEvent*>(event);
 
       SDL_assert(viewport_ == mouse_move_event->viewport());
-      const Vector3 world0 = viewport_->DeviceCoordinatesToWorldSpace(Vector3::Zero());
-      const Vector3 world1 =
-          viewport_->DeviceCoordinatesToWorldSpace(mouse_move_event->relative_screen_space_position());
-      transform_.Move(world0 - world1);
+      const Vector3 camera_offset = -viewport_->ScreenSpaceDirectionToWorldSpace(
+          Vector3::FromVector2(mouse_move_event->relative_screen_space_position()));
+      transform_.Move(camera_offset);
       event->StopPropagation();
     }
   } else if (event->type() == MouseWheelEvent::TYPE) {
