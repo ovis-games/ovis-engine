@@ -18,7 +18,7 @@ class GizmoRenderer : public PrimitiveRenderer {
 
  private:
   Scene* editing_scene_;
-  float gizmo_radius_ = 10.0f;
+  float gizmo_radius_ = 75.0f;
 };
 
 }  // namespace editor

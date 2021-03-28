@@ -10,7 +10,7 @@ namespace editor {
 
 class EditorCameraController : public SceneController {
  public:
-  EditorCameraController(RenderingViewport* viewport);
+  EditorCameraController(Scene* game_scene);
 
   void Update(std::chrono::microseconds delta_time) override;
   void ProcessEvent(Event* event) override;
@@ -18,7 +18,7 @@ class EditorCameraController : public SceneController {
  private:
   Camera camera_;
   Transform transform_;
-  RenderingViewport* viewport_;
+  Scene* game_scene_;
 };
 
 }  // namespace editor

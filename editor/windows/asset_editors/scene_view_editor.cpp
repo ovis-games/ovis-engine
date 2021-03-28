@@ -5,6 +5,7 @@
 #include "../../imgui_extensions/input_serializable.hpp"
 #include "../../imgui_extensions/texture_button.hpp"
 #include "editing_controllers/editor_camera_controller.hpp"
+#include "editing_controllers/gizmo_controller.hpp"
 #include "editing_controllers/object_selection_controller.hpp"
 #include "editor_overlays/gizmo_renderer.hpp"
 #include "editor_overlays/selected_object_bounding_box.hpp"
@@ -51,6 +52,8 @@ SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(s
 
   editing_scene()->Play();
   editing_scene()->AddController<ObjectSelectionController>(game_scene());
+  editing_scene()->AddController<GizmoController>(game_scene());
+  editing_scene()->AddController<EditorCameraController>(game_scene());
 }
 
 void SceneViewEditor::Update(std::chrono::microseconds delta_time) {
@@ -144,7 +147,7 @@ void SceneViewEditor::DrawToolbar() {
 
   ImGui::SameLine();
   if (ImGui::TextureButton(icons_.move.get())) {
-    SDL_assert(false);
+    editing_scene()->GetController<GizmoController>()->SetGizmoType(GizmoController::GizmoType::MOVE);
   }
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Move");
@@ -152,7 +155,7 @@ void SceneViewEditor::DrawToolbar() {
 
   ImGui::SameLine();
   if (ImGui::TextureButton(icons_.rotate.get())) {
-    SDL_assert(false);
+    editing_scene()->GetController<GizmoController>()->SetGizmoType(GizmoController::GizmoType::ROTATE);
   }
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Rotate");
@@ -160,7 +163,7 @@ void SceneViewEditor::DrawToolbar() {
 
   ImGui::SameLine();
   if (ImGui::TextureButton(icons_.scale.get())) {
-    SDL_assert(false);
+    editing_scene()->GetController<GizmoController>()->SetGizmoType(GizmoController::GizmoType::SCALE);
   }
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Scale");
@@ -480,9 +483,6 @@ void SceneViewEditor::CreateSceneViewport(ImVec2 size) {
     scene_viewport_description.color_description.texture_description.mip_map_count = 0;
     scene_viewport_ = std::make_unique<RenderTargetViewport>(
         EditorWindow::instance()->context(), scene_viewport_description);
-
-    
-    editing_scene()->AddController<EditorCameraController>(scene_viewport_.get());
 
     scene_viewport_->AddRenderPass("ClearPass");
     scene_viewport_->AddRenderPass("SpriteRenderer");

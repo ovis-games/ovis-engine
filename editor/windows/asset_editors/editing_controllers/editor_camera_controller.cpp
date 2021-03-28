@@ -7,8 +7,8 @@
 namespace ovis {
 namespace editor {
 
-EditorCameraController::EditorCameraController(RenderingViewport* viewport)
-    : SceneController("EditorCameraController"), viewport_(viewport) {
+EditorCameraController::EditorCameraController(Scene* game_scene)
+    : SceneController("EditorCameraController"), game_scene_(game_scene) {
   SubscribeToEvent(MouseMoveEvent::TYPE);
   SubscribeToEvent(MouseButtonPressEvent::TYPE);
   SubscribeToEvent(MouseWheelEvent::TYPE);
@@ -19,9 +19,14 @@ EditorCameraController::EditorCameraController(RenderingViewport* viewport)
 }
 
 void EditorCameraController::Update(std::chrono::microseconds delta_time) {
-  camera_.SetAspectRatio(viewport_->GetAspectRatio());
-  viewport_->SetCustomCameraMatrices(transform_.world_to_local_matrix(), camera_.projection_matrix());
-  viewport_->SetCamera(nullptr);
+  auto viewport = game_scene_->main_viewport();
+  if (!viewport) {
+    return;
+  }
+
+  camera_.SetAspectRatio(viewport->GetAspectRatio());
+  viewport->SetCustomCameraMatrices(transform_.world_to_local_matrix(), camera_.projection_matrix());
+  viewport->SetCamera(nullptr);
 }
 
 void EditorCameraController::ProcessEvent(Event* event) {
@@ -33,8 +38,8 @@ void EditorCameraController::ProcessEvent(Event* event) {
     if (GetMouseButtonState(MouseButton::Right())) {
       MouseMoveEvent* mouse_move_event = static_cast<MouseMoveEvent*>(event);
 
-      SDL_assert(viewport_ == mouse_move_event->viewport());
-      const Vector3 camera_offset = -viewport_->ScreenSpaceDirectionToWorldSpace(
+      SDL_assert(scene()->main_viewport() == mouse_move_event->viewport());
+      const Vector3 camera_offset = -mouse_move_event->viewport()->ScreenSpaceDirectionToWorldSpace(
           Vector3::FromVector2(mouse_move_event->relative_screen_space_position()));
       transform_.Move(camera_offset);
       event->StopPropagation();

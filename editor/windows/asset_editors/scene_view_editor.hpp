@@ -11,7 +11,6 @@ namespace editor {
 
 class SceneViewEditor : public AssetEditor {
  public:
-
   SceneViewEditor(const std::string& asset_id);
 
   void Update(std::chrono::microseconds delta_time) override;
