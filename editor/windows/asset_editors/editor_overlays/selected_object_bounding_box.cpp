@@ -21,12 +21,11 @@ void SelectedObjectBoundingBox::Render(const RenderContext& render_context) {
 
     Transform* transform = scene_object->GetComponent<Transform>("Transform");
     if (transform != nullptr) {
-      const Vector3 normalied_device_coordinates =
+      const Vector3 clip_space_coordinates =
           TransformPosition(render_context.world_to_view_space, transform->position());
-      const Vector2 device_coordinates =
-          viewport()->NormalizedDeviceCoordinatesToDeviceCoordinates(normalied_device_coordinates);
-      DrawDisc(Vector3{device_coordinates.x, device_coordinates.y, 0.0f}, 20.0f, Color::Red());
-      LogV("Drawing disc at {}", device_coordinates);
+      const Vector3 screen_space_coordinates = viewport()->ClipSpacePositionToScreenSpace(clip_space_coordinates);
+      DrawDisc(screen_space_coordinates, 20.0f, Color::Red());
+      LogV("Drawing disc at {}", screen_space_coordinates);
     }
 
     EndDraw();
