@@ -7,7 +7,7 @@ add_library(
   include/ovis/rendering/render_target_viewport.hpp src/render_target_viewport.cpp
   include/ovis/rendering/render_pass.hpp src/render_pass.cpp
   include/ovis/rendering/clear_pass.hpp src/clear_pass.cpp
-  include/ovis/rendering/debug_render_pass.hpp src/debug_render_pass.cpp
+  include/ovis/rendering/primitive_renderer.hpp src/primitive_renderer.cpp
 )
 add_library(ovis::rendering ALIAS ovis-rendering)
 
@@ -22,6 +22,12 @@ target_link_libraries(
   PUBLIC
     ovis::core
     ovis::graphics
+)
+
+target_add_assets(
+  ovis-rendering
+
+  assets/primitive_rendering.shader.vert assets/primitive_rendering.shader.frag
 )
 
 if (OVIS_BUILD_TESTS)

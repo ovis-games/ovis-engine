@@ -2,12 +2,12 @@
 
 #include <string>
 
-#include <ovis/rendering/debug_render_pass.hpp>
+#include <ovis/rendering/primitive_renderer.hpp>
 
 namespace ovis {
 namespace editor {
 
-class SelectedObjectBoundingBox : public DebugRenderPass {
+class SelectedObjectBoundingBox : public PrimitiveRenderer {
  public:
   SelectedObjectBoundingBox(Scene* editing_scene);
 

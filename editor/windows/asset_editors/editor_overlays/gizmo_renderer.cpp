@@ -9,7 +9,10 @@
 namespace ovis {
 namespace editor {
 
-GizmoRenderer::GizmoRenderer(Scene* editing_scene) : DebugRenderPass("GizmoRenderer"), editing_scene_(editing_scene) {}
+GizmoRenderer::GizmoRenderer(Scene* editing_scene) : PrimitiveRenderer("GizmoRenderer"), editing_scene_(editing_scene) {
+  RenderAfter("SpriteRenderer");
+  SetDrawSpace(DrawSpace::SCREEN);
+}
 
 void GizmoRenderer::Render(const RenderContext& render_context) {
   auto* object_selection_controller =
@@ -21,8 +24,8 @@ void GizmoRenderer::Render(const RenderContext& render_context) {
 
     Transform* transform = scene_object->GetComponent<Transform>("Transform");
     if (transform != nullptr) {
-      Vector3 x_direction = transform->LocalDirectionToWorldSpace(Vector3::PositiveX());
-      DrawLine(transform->position(), transform->position() + gizmo_radius_ * x_direction, Color::Red());
+      const Vector3 x_direction = transform->LocalDirectionToWorldSpace(Vector3::PositiveX());
+      DrawLine(transform->position(), transform->position() + gizmo_radius_ * x_direction, Color::Red(), 5.0f);
     }
 
     EndDraw();

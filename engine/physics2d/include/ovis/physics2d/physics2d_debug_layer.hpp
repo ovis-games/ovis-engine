@@ -5,7 +5,7 @@
 
 namespace ovis {
 
-// class Physics2DDebugLayer : public DebugRenderPass, public b2Draw {
+// class Physics2DDebugLayer : public PrimitiveRenderer, public b2Draw {
 //  public:
 //   Physics2DDebugLayer();
 

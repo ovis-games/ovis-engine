@@ -18,7 +18,7 @@ namespace ovis {
 
 // }  // namespace
 
-// Physics2DDebugLayer::Physics2DDebugLayer() : DebugRenderPass("Physics2DDebugLayer") {
+// Physics2DDebugLayer::Physics2DDebugLayer() : PrimitiveRenderer("Physics2DDebugLayer") {
 //   enable_alpha_blending_ = true;
 // }
 
@@ -53,7 +53,7 @@ namespace ovis {
 // }
 
 // void Physics2DDebugLayer::DrawCircle(const b2Vec2& center, float radius, const b2Color& color) {
-//   DebugRenderPass::DrawCircle(ConvertVector(center), radius, ConvertColor(color));
+//   PrimitiveRenderer::DrawCircle(ConvertVector(center), radius, ConvertColor(color));
 // }
 
 // void Physics2DDebugLayer::DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2& axis,
@@ -61,9 +61,9 @@ namespace ovis {
 //   const Color converted_color = ConvertColor(color);
 
 //   Vector3 converted_center = ConvertVector(center);
-//   DebugRenderPass::DrawDisc(converted_center, radius, GetSolidColor(color));
-//   DebugRenderPass::DrawCircle(converted_center, radius, converted_color);
-//   DebugRenderPass::DrawLine(converted_center, converted_center + radius * ConvertVector(axis), converted_color);
+//   PrimitiveRenderer::DrawDisc(converted_center, radius, GetSolidColor(color));
+//   PrimitiveRenderer::DrawCircle(converted_center, radius, converted_color);
+//   PrimitiveRenderer::DrawLine(converted_center, converted_center + radius * ConvertVector(axis), converted_color);
 // }
 
 // void Physics2DDebugLayer::DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {
@@ -77,7 +77,7 @@ namespace ovis {
 // }
 
 // void Physics2DDebugLayer::DrawPoint(const b2Vec2& p, float size, const b2Color& color) {
-//   DebugRenderPass::DrawPoint(ConvertVector(p), size, ConvertColor(color));
+//   PrimitiveRenderer::DrawPoint(ConvertVector(p), size, ConvertColor(color));
 // }
 
 }  // namespace ovis

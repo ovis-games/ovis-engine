@@ -2,12 +2,12 @@
 
 #include <string>
 
-#include <ovis/rendering/debug_render_pass.hpp>
+#include <ovis/rendering/primitive_renderer.hpp>
 
 namespace ovis {
 namespace editor {
 
-class GizmoRenderer : public DebugRenderPass {
+class GizmoRenderer : public PrimitiveRenderer {
  public:
   GizmoRenderer(Scene* editing_scene);
 

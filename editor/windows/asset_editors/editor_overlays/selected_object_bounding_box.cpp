@@ -3,16 +3,13 @@
 #include "../editing_controllers/object_selection_controller.hpp"
 
 #include <ovis/core/transform.hpp>
-
 #include <ovis/rendering/rendering_viewport.hpp>
 
 namespace ovis {
 namespace editor {
 
 SelectedObjectBoundingBox::SelectedObjectBoundingBox(Scene* editing_scene)
-    : DebugRenderPass("SelectedObjectBoundingBox"), editing_scene_(editing_scene) {
-  SetDrawSpace(DrawSpace::VIEWPORT);
-}
+    : PrimitiveRenderer("SelectedObjectBoundingBox"), editing_scene_(editing_scene) {}
 
 void SelectedObjectBoundingBox::Render(const RenderContext& render_context) {
   auto* object_selection_controller =
