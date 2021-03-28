@@ -22,7 +22,7 @@ bool Transform::Deserialize(const json& data) {
   }
   if (data.contains("rotation")) {
     const Vector3 euler_angles = Vector3(data.at("rotation")) * DegreesToRadiansFactor<float>();
-    SetRotation(Quaternion::FromEulerAngles(euler_angles.x, euler_angles.y, euler_angles.z));
+    SetRotation(Quaternion::FromEulerAngles(euler_angles.y, euler_angles.x, euler_angles.z));
   }
   if (data.contains("scale")) {
     const Vector3 scale = data.at("scale");
