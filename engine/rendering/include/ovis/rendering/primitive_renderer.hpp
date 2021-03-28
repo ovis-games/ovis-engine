@@ -44,11 +44,15 @@ class PrimitiveRenderer : public RenderPass {
   void DrawPoint(const Vector3& position, float size, const Color& color);
 
   // Line Drawing
-  void DrawLine(const Vector3& start, const Vector3& end, const Color& color, float thickness = 1.0f);
-  void DrawLoop(std::span<const Vector3> positions, const Color& color, float thickness = 1.0f);
-  void DrawCircle(const Vector3& center, float radius, const Color& color, float thickness = 1.0f, size_t num_segments = 20,
-                  const Vector3& support_vector0 = Vector3::PositiveX(),
+  void DrawLine(const Vector3& start, const Vector3& end, const Color& color, float thickness = 3.0f);
+  void DrawLoop(std::span<const Vector3> positions, const Color& color, float thickness = 3.0f);
+  void DrawCircle(const Vector3& center, float radius, const Color& color, float thickness = 3.0f,
+                  size_t num_segments = 20, const Vector3& support_vector0 = Vector3::PositiveX(),
                   const Vector3& support_vector1 = Vector3::PositiveY());
+
+  // 2D Arrow
+  void DrawArrow(const Vector3& start, const Vector3& end, const Color& color, float thickness = 3.0f,
+                 float arrow_width = 2.0f, float arrow_length = 2.0f);
 
   // Solid Drawing
   void DrawTriangle(const Vector3& v0, const Vector3& v1, const Vector3& v2, const Color& color);

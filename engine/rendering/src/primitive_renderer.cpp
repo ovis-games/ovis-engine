@@ -115,7 +115,7 @@ void PrimitiveRenderer::DrawLine(const Vector3& start, const Vector3& end, const
   const uint32_t converted_color = ConvertToRGBA8(color);
   const Vector3 p0 = TransformPosition(to_screen_space_, start);
   const Vector3 p1 = TransformPosition(to_screen_space_, end);
-  const Vector3 orthogonal = Vector3::FromVector2(ConstructOrthogonalVector(Normalize<Vector2>(p1 - p0)));
+  const Vector3 orthogonal = Vector3::FromVector2(ConstructOrthogonalVectorCCW(Normalize<Vector2>(p1 - p0)));
   const float half_thickness = thickness * 0.5f;
 
   const Vector3 p00 = p0 + half_thickness * orthogonal;
@@ -169,6 +169,27 @@ void PrimitiveRenderer::DrawCircle(const Vector3& center, float radius, const Co
     previous_position = new_position;
   }
   DrawLine(previous_position, base_position, color, thickness);
+}
+
+void PrimitiveRenderer::DrawArrow(const Vector3& start, const Vector3& end, const Color& color, float thickness,
+                                  float arrow_width, float arrow_length) {
+  const Vector3 start_to_end = end - start;
+  const float start_to_end_length = Length(start_to_end);
+  const Vector3 line_end = start + start_to_end * (start_to_end_length - thickness * arrow_length) / start_to_end_length;
+
+  DrawLine(start, line_end, color, thickness);
+
+  const Vector3 orthogonal = Vector3::FromVector2(Normalize(ConstructOrthogonalVectorCCW(start_to_end)));
+  const float offset = 0.5f * thickness * arrow_width;
+
+  // clang-format off
+  DrawTriangle(
+    line_end + orthogonal * offset,
+    line_end - orthogonal * offset,
+    end,
+    color
+  );
+  // clang-format on
 }
 
 void PrimitiveRenderer::DrawTriangle(const Vector3& v0, const Vector3& v1, const Vector3& v2, const Color& color) {
