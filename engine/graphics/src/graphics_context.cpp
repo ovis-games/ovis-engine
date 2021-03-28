@@ -1,5 +1,4 @@
 #include <ovis/utils/log.hpp>
-
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/index_buffer.hpp>
 #include <ovis/graphics/render_target_configuration.hpp>
@@ -103,8 +102,8 @@ void GraphicsContext::Draw(const DrawItem& draw_item) {
     }
   }
   if (draw_item.scissor_rect.has_value() && *draw_item.scissor_rect != current_scissor_rect_) {
-    const int bottom = targets->height() - (*draw_item.scissor_rect)[1] - (*draw_item.scissor_rect)[3];
-    glScissor((*draw_item.scissor_rect)[0], bottom, (*draw_item.scissor_rect)[2], (*draw_item.scissor_rect)[3]);
+    const int bottom = targets->height() - draw_item.scissor_rect->top - draw_item.scissor_rect->height;
+    glScissor(draw_item.scissor_rect->left, bottom, draw_item.scissor_rect->width, draw_item.scissor_rect->height);
     current_scissor_rect_ = *draw_item.scissor_rect;
   }
 

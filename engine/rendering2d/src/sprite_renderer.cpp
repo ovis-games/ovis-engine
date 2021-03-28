@@ -88,15 +88,8 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
                                   AffineCombine(transform->local_to_world_matrix(), size_matrix))
                   : AffineCombine(render_context.world_to_clip_space, size_matrix);
 
-    Mat4x4 local_to_clip_space_matrix;
-    for (int i = 0; i < 4; ++i) {
-      for (int j = 0; j < 4; ++j) {
-        local_to_clip_space_matrix[i][j] = world_view_projection[i][j];
-      }
-    }
-    Vec4 color2 = {color[0], color[1], color[2], color[3]};
-    shader_program_->SetUniform("WorldViewProjection", local_to_clip_space_matrix);
-    shader_program_->SetUniform("Color", color2);
+    shader_program_->SetUniform("WorldViewProjection", world_view_projection);
+    shader_program_->SetUniform("Color", color);
     shader_program_->SetTexture("Texture", texture.get());
     context()->Draw(draw_item);
   }

@@ -59,13 +59,7 @@ void ImGuiRenderPass::Render(const RenderContext& render_context) {
   float B = draw_data->DisplayPos.y + draw_data->DisplaySize.y;
   const Matrix4 ortho_projection = Matrix4::FromOrthographicProjection(L, R, B, T, -1.0f, 1.0f);
 
-  Mat4x4 projection;
-  for (int i = 0; i < 4; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      projection[i][j] = ortho_projection[i][j];
-    }
-  }
-  shader_program_->SetUniform("Projection", projection);
+  shader_program_->SetUniform("Projection", ortho_projection);
 
   for (int i = 0; i < draw_data->CmdListsCount; ++i) {
     auto command_list = draw_data->CmdLists[i];
@@ -123,10 +117,10 @@ void ImGuiRenderPass::Render(const RenderContext& render_context) {
       draw_item.blend_state.source_color_factor = SourceBlendFactor::SOURCE_ALPHA;
       draw_item.blend_state.destination_color_factor = DestinationBlendFactor::ONE_MINUS_SOURCE_ALPHA;
       draw_item.scissor_rect.emplace();
-      draw_item.scissor_rect->operator[](0) = command.ClipRect.x;
-      draw_item.scissor_rect->operator[](1) = command.ClipRect.y;
-      draw_item.scissor_rect->operator[](2) = command.ClipRect.z - command.ClipRect.x;
-      draw_item.scissor_rect->operator[](3) = command.ClipRect.w - command.ClipRect.y;
+      draw_item.scissor_rect->left = command.ClipRect.x;
+      draw_item.scissor_rect->top = command.ClipRect.y;
+      draw_item.scissor_rect->width = command.ClipRect.z - command.ClipRect.x;
+      draw_item.scissor_rect->height = command.ClipRect.w - command.ClipRect.y;
       context()->Draw(draw_item);
     }
   }

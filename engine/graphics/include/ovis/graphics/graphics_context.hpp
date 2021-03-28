@@ -6,8 +6,9 @@
 #include <vector>
 
 #include <SDL2/SDL.h>
-#include <ovis/utils/class.hpp>
 
+#include <ovis/utils/class.hpp>
+#include <ovis/core/rect.hpp>
 #include <ovis/graphics/blend_state.hpp>
 #include <ovis/graphics/depth_buffer_state.hpp>
 #include <ovis/graphics/gl.hpp>
@@ -43,7 +44,7 @@ struct DrawItem {
   Uint32 base_vertex = 0;
   DepthBufferState depth_buffer_state;
   BlendState blend_state;
-  std::optional<IntVec4> scissor_rect;
+  std::optional<Rect<int>> scissor_rect;
   RenderTargetConfiguration* render_target_configuration = nullptr;
   bool enable_culling = false;
 };
@@ -93,7 +94,7 @@ class GraphicsContext final {
   std::vector<bool> m_vertex_attrib_array_states;
   std::vector<GLuint> m_bound_textures;
   bool scissoring_enabled_;
-  IntVec4 current_scissor_rect_;
+  Rect<int> current_scissor_rect_;
   bool culling_enabled_ = false;
   int x1, x2, x3;  // TODO: figure out why these three padding members are necessary oO
   size_t viewport_width_;

@@ -21,6 +21,7 @@ add_library(
   include/ovis/graphics/uniform_buffer.hpp src/uniform_buffer.cpp
   include/ovis/graphics/vertex_buffer.hpp src/vertex_buffer.cpp
   include/ovis/graphics/vertex_input.hpp src/vertex_input.cpp
+  include/ovis/graphics/graphics_types.hpp src/graphics_types.cpp
 )
 add_library(ovis::graphics ALIAS ovis-graphics)
 
@@ -47,7 +48,7 @@ target_include_directories(
 target_link_libraries(
   ovis-graphics
   PUBLIC
-    ovis::utils
+    ovis::core
 )
 
 if (NOT OVIS_EMSCRIPTEN)
