@@ -5,6 +5,7 @@
 #include <sol/sol.hpp>
 
 #include <ovis/core/camera.hpp>
+#include <ovis/core/intersection.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/core/transform.hpp>
 
@@ -37,6 +38,12 @@ class SceneViewport {
     custom_view_to_world_space_ = InvertAffine(world_to_view_space);
     custom_view_to_clip_space_ = view_to_clip_space;
     custom_clip_to_view_space_ = Invert(custom_view_to_clip_space_);
+  }
+
+  inline Ray3D CalculateViewRay(Vector2 screen_space_coordinates) {
+    const Vector3 origin = ScreenSpacePositionToWorldSpace(Vector3::FromVector2(screen_space_coordinates, 0.0f));
+    const Vector3 destination = ScreenSpacePositionToWorldSpace(Vector3::FromVector2(screen_space_coordinates, 1.0f));
+    return {origin, destination - origin};
   }
 
   inline Vector3 ScreenSpacePositionToClipSpace(Vector3 screen_space_coordinates) const {
