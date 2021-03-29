@@ -273,16 +273,6 @@ inline constexpr Vector3 TransformPosition(const Matrix3x4& transform_matrix, co
   return transform_matrix * position_vector;
 }
 
-inline constexpr Vector3 TransformDirection(const Matrix4& transform_matrix, const Vector3& vector) {
-  const Vector4 direction_vector = {vector.x, vector.y, vector.z, 0.0f};
-  const Vector4 transformed_vector = transform_matrix * direction_vector;
-  if (std::abs(transformed_vector.w) > 0.00001f) {  // TODO: introduce some epsilon here
-    return Vector3{transformed_vector.x, transformed_vector.y, transformed_vector.z} / transformed_vector.w;
-  } else {
-    return Vector3{transformed_vector.x, transformed_vector.y, transformed_vector.z};
-  }
-}
-
 inline constexpr Vector3 TransformPosition(const Matrix4& transform_matrix, const Vector3& vector) {
   const Vector4 position_vector = {vector.x, vector.y, vector.z, 1.0f};
   const Vector4 transformed_vector = transform_matrix * position_vector;

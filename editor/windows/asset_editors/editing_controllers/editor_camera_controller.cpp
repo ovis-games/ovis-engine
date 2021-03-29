@@ -37,10 +37,17 @@ void EditorCameraController::ProcessEvent(Event* event) {
   } else if (event->type() == MouseMoveEvent::TYPE) {
     if (GetMouseButtonState(MouseButton::Right())) {
       MouseMoveEvent* mouse_move_event = static_cast<MouseMoveEvent*>(event);
-
       SDL_assert(scene()->main_viewport() == mouse_move_event->viewport());
-      const Vector3 camera_offset = -mouse_move_event->viewport()->ScreenSpaceDirectionToWorldSpace(
-          Vector3::FromVector2(mouse_move_event->relative_screen_space_position()));
+
+      const Vector2 old_mouse_position =
+          mouse_move_event->screen_space_position() - mouse_move_event->relative_screen_space_position();
+      const Vector3 previous_world_space_position =
+          mouse_move_event->viewport()->ScreenSpacePositionToWorldSpace(Vector3::FromVector2(old_mouse_position, 0.0f));
+      const Vector3 new_world_space_position = mouse_move_event->viewport()->ScreenSpacePositionToWorldSpace(
+          Vector3::FromVector2(mouse_move_event->screen_space_position(), 0.0f));
+
+      const Vector3 camera_offset = previous_world_space_position - new_world_space_position;
+
       transform_.Move(camera_offset);
       event->StopPropagation();
     }

@@ -42,7 +42,7 @@ class GizmoController : public SceneController {
   // TODO: safe reference to object
   bool object_selected_ = false;
   MovementSelection movement_selection_;
-  Vector3 object_position_;
+  Vector3 object_position_screen_space_;
   LineSegment2D line_x_;
   LineSegment2D line_y_;
   LineSegment2D line_z_;

@@ -104,24 +104,6 @@ class SceneViewport {
            Vector3::FromVector2(GetDimensions() - Vector2::One(), 1.0f);
   }
 
-  inline Vector3 ClipSpaceDirectionToViewSpace(Vector3 clip_space_direction) const {
-    return camera_ ? camera_->ClipSpaceDirectionToViewSpace(clip_space_direction)
-                   : TransformDirection(custom_clip_to_view_space_, clip_space_direction);
-  }
-
-  inline Vector3 ViewSpaceDirectionToClipSpace(Vector3 view_space_direction) const {
-    return camera_ ? camera_->ViewSpaceDirectionToClipSpace(view_space_direction)
-                   : TransformDirection(custom_view_to_clip_space_, view_space_direction);
-  }
-
-  inline Vector3 ScreenSpaceDirectionToViewSpace(Vector3 screen_space_direction) const {
-    return ClipSpaceDirectionToViewSpace(ScreenSpaceDirectionToClipSpace(screen_space_direction));
-  }
-
-  inline Vector3 ViewSpaceDirectionToScreenSpace(Vector3 view_space_direction) const {
-    return ClipSpaceDirectionToScreenSpace(ViewSpaceDirectionToClipSpace(view_space_direction));
-  }
-
   inline Vector3 ViewSpaceDirectionToWorldSpace(Vector3 view_space_direction) const {
     return camera_ ? camera_->ViewSpaceDirectionToWorldSpace(view_space_direction)
                    : TransformDirection(custom_view_to_world_space_, view_space_direction);
@@ -130,21 +112,6 @@ class SceneViewport {
   inline Vector3 WorldSpaceDirectionToViewSpace(Vector3 world_space_direction) const {
     return camera_ ? camera_->WorldSpaceDirectionToViewSpace(world_space_direction)
                    : TransformDirection(custom_world_to_view_space_, world_space_direction);
-  }
-
-  inline Vector3 ClipSpaceDirectionToWorldSpace(Vector3 clip_space_direction) const {
-    return ViewSpaceDirectionToWorldSpace(ClipSpaceDirectionToViewSpace(clip_space_direction));
-  }
-
-  inline Vector3 WorldSpaceDirectionToClipSpace(Vector3 world_space_direction) const {
-    return ViewSpaceDirectionToClipSpace(WorldSpaceDirectionToViewSpace(world_space_direction));
-  }
-
-  inline Vector3 ScreenSpaceDirectionToWorldSpace(Vector3 screen_space_direction) const {
-    return ViewSpaceDirectionToWorldSpace(ScreenSpaceDirectionToViewSpace(screen_space_direction));
-  }
-  inline Vector3 WorldSpaceDirectionToScreenSpace(Vector3 world_space_direction) const {
-    return ViewSpaceDirectionToScreenSpace(WorldSpaceDirectionToViewSpace(world_space_direction));
   }
 
   static void RegisterType(sol::table* module);

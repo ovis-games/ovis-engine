@@ -45,20 +45,22 @@ void GizmoController::Update(std::chrono::microseconds) {
   Transform* transform = scene_object->GetComponent<Transform>("Transform");
   if (transform != nullptr) {
     auto viewport = game_scene_->main_viewport();
-    object_position_ = viewport->WorldSpacePositionToScreenSpace(transform->position());
+    object_position_screen_space_ = viewport->WorldSpacePositionToScreenSpace(transform->position());
 
-    Vector2 position2d = object_position_;
+    Vector2 position2d = object_position_screen_space_;
 
     const Quaternion rotation = transform->rotation();
 
-    const Vector2 x_direction = viewport->WorldSpaceDirectionToScreenSpace(rotation * Vector3::PositiveX());
-    line_x_ = {position2d, position2d + gizmo_radius_ * x_direction};
+    const Vector3 unit_offset = viewport->WorldSpacePositionToScreenSpace(transform->position() + Vector3::PositiveX());
+    const float scaling_factor = gizmo_radius_ / Length(unit_offset - object_position_screen_space_);
 
-    const Vector2 y_direction = viewport->WorldSpaceDirectionToScreenSpace(rotation * Vector3::PositiveY());
-    line_y_ = {position2d, position2d + gizmo_radius_ * y_direction};
+    auto get_endpoint_in_screen_space = [&, this](Vector3 axis) -> Vector2 {
+      return viewport->WorldSpacePositionToScreenSpace(transform->position() + scaling_factor * (rotation * axis));
+    };
 
-    const Vector2 z_direction = viewport->WorldSpaceDirectionToScreenSpace(rotation * Vector3::PositiveZ());
-    line_z_ = {position2d, position2d + gizmo_radius_ * z_direction};
+    line_x_ = {position2d, get_endpoint_in_screen_space(Vector3::PositiveX())};
+    line_y_ = {position2d, get_endpoint_in_screen_space(Vector3::PositiveY())};
+    line_z_ = {position2d, get_endpoint_in_screen_space(Vector3::PositiveZ())};
   }
 }
 
@@ -76,10 +78,10 @@ void GizmoController::ProcessEvent(Event* event) {
 
   if (event->type() == MouseMoveEvent::TYPE) {
     auto mouse_move_event = static_cast<MouseMoveEvent*>(event);
-    const Vector2 position = mouse_move_event->screen_space_position();
+    const Vector2 mouse_position = mouse_move_event->screen_space_position();
 
     if (!GetMouseButtonState(MouseButton::Left())) {
-      if (CheckMousePosition(position)) {
+      if (CheckMousePosition(mouse_position)) {
         event->StopPropagation();
       }
     } else {
@@ -92,17 +94,22 @@ void GizmoController::ProcessEvent(Event* event) {
         direction = line_z_.endpoints[1] - line_z_.endpoints[0];
       }
 
-      Vector3 screen_space_offset = Vector3::Zero();
+      Vector2 screen_space_offset = Vector3::Zero();
       if (SquaredLength(direction) > 0) {
         const Vector2 normalized_direction = Normalize(direction);
         const float t = Dot(normalized_direction, mouse_move_event->relative_screen_space_position());
-        screen_space_offset = Vector3::FromVector2(t * normalized_direction);
+        screen_space_offset = t * normalized_direction;
       } else if (movement_selection_ != MovementSelection::NOTHING) {
-        screen_space_offset = Vector3::FromVector2(mouse_move_event->relative_screen_space_position());
+        screen_space_offset = mouse_move_event->relative_screen_space_position();
       }
 
-      const Vector3 world_space_offset =
-          mouse_move_event->viewport()->ScreenSpaceDirectionToWorldSpace(screen_space_offset);
+      const Vector2 old_mouse_position = mouse_position - mouse_move_event->relative_screen_space_position();
+      const Vector3 previous_world_space_position = mouse_move_event->viewport()->ScreenSpacePositionToWorldSpace(
+          Vector3::FromVector2(old_mouse_position, object_position_screen_space_.z));
+      const Vector3 new_world_space_position = mouse_move_event->viewport()->ScreenSpacePositionToWorldSpace(
+          Vector3::FromVector2(old_mouse_position + screen_space_offset, object_position_screen_space_.z));
+
+      const Vector3 world_space_offset = new_world_space_position - previous_world_space_position;
       transform->Move(world_space_offset);
     }
   } else if (event->type() == MouseButtonPressEvent::TYPE) {
@@ -121,7 +128,7 @@ void GizmoController::ProcessEvent(Event* event) {
 }
 
 bool GizmoController::CheckMousePosition(Vector2 position) {
-  if (Length(position - static_cast<Vector2>(object_position_)) <= point_size_) {
+  if (Length(position - static_cast<Vector2>(object_position_screen_space_)) <= point_size_) {
     movement_selection_ = MovementSelection::XYZ;
     return true;
   } else if (DistanceToLineSegment(position, line_x_) <= line_thickness_) {
