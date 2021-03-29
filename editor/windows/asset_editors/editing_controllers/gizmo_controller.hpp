@@ -2,6 +2,7 @@
 
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_controller.hpp>
+#include <ovis/input/mouse_events.hpp>
 
 namespace ovis {
 namespace editor {
@@ -19,7 +20,7 @@ class GizmoController : public SceneController {
   static constexpr std::string_view Name() { return "GizmoController"; }
 
   enum class GizmoType { MOVE, ROTATE, SCALE };
-  enum class MovementSelection {
+  enum class AxisSelection {
     NOTHING,
     X,
     Y,
@@ -39,18 +40,31 @@ class GizmoController : public SceneController {
   Scene* game_scene_;
   GizmoType type_ = GizmoType::MOVE;
 
+  std::string current_tooltip_;
+
   // TODO: safe reference to object
   bool object_selected_ = false;
-  MovementSelection movement_selection_;
+  AxisSelection selected_axes_;
+
   Vector3 object_position_screen_space_;
-  LineSegment2D line_x_;
-  LineSegment2D line_y_;
-  LineSegment2D line_z_;
-  float gizmo_radius_ = 75.0f;
-  float line_thickness_ = 5.0f;
-  float point_size_ = 9.0f;
+  Vector3 x_axis_endpoint_screen_space_;
+  Vector3 y_axis_endpoint_screen_space_;
+  Vector3 z_axis_endpoint_screen_space_;
+
+  Vector3 object_position_world_space_;
+  Vector3 x_axis_world_space_;
+  Vector3 y_axis_world_space_;
+  Vector3 z_axis_world_space_;
+
+  float gizmo_radius_screen_space_ = 75.0f;
+  float line_thickness_screen_space_ = 5.0f;
+  float point_size_screen_space_ = 9.0f;
+
+  // how many screen space pixels is covered by 1 unit in world space
+  float world_to_screen_space_factor_;
 
   bool CheckMousePosition(Vector2 position);
+  void HandleDragging(MouseMoveEvent* mouse_move_event);
 };
 
 }  // namespace editor
