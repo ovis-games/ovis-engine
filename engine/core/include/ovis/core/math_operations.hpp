@@ -211,7 +211,7 @@ inline constexpr T operator/=(T& lhs, const T& rhs) {
   return lhs;
 }
 
-template <typename T, std::enable_if_t<is_math_type<T>::value, bool> = true>
+template <typename T, std::enable_if_t<is_vector<T>::value, bool> = true>
 inline constexpr float SquaredLength(const T& vector) {
   float result = 0.0f;
   for (int i = 0; i < T::ELEMENT_COUNT; ++i) {
@@ -220,17 +220,27 @@ inline constexpr float SquaredLength(const T& vector) {
   return result;
 }
 
-template <typename T, std::enable_if_t<is_math_type<T>::value, bool> = true>
+template <typename T, std::enable_if_t<is_vector<T>::value, bool> = true>
 inline constexpr float Length(const T& vector) {
   return std::sqrt(SquaredLength(vector));
 }
 
-template <typename T, std::enable_if_t<is_math_type<T>::value, bool> = true>
+template <typename T, std::enable_if_t<is_vector<T>::value, bool> = true>
+inline constexpr float SquaredDistance(const T& a, const T& b) {
+  return SquaredLength(a - b);
+}
+
+template <typename T, std::enable_if_t<is_vector<T>::value, bool> = true>
+inline constexpr float Distance(const T& a, const T& b) {
+  return Length(a - b);
+}
+
+template <typename T, std::enable_if_t<is_vector<T>::value, bool> = true>
 inline constexpr T Normalize(const T& vector) {
   return vector * (1.0f / Length(vector));
 }
 
-template <typename T, std::enable_if_t<is_math_type<T>::value, bool> = true>
+template <typename T, std::enable_if_t<is_vector<T>::value || is_quaternion<T>::value, bool> = true>
 inline constexpr float Dot(const T& lhs, const T& rhs) {
   float result = 0.0f;
   for (int i = 0; i < T::ELEMENT_COUNT; ++i) {
