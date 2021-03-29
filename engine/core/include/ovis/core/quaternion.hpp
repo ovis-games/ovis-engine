@@ -19,7 +19,7 @@ inline constexpr Quaternion Quaternion::Identity() {
 }
 
 inline constexpr Quaternion Quaternion::FromAxisAndAngle(const Vector3& axis, float angle) {
-  const float half_angle = 0.5f * half_angle;
+  const float half_angle = 0.5f * angle;
   const float sin_half_angle = std::sin(half_angle);
   const float cos_half_angle = std::cos(half_angle);
 
@@ -77,11 +77,14 @@ inline Vector3 ExtractEulerAngles(const Quaternion& quaternion) {
 }
 
 inline Quaternion operator*(const Quaternion& lhs, const Quaternion& rhs) {
-  Quaternion result;
-  for (int i = 0; i < 4; ++i) {
-    result[i] = lhs[i] * rhs[i];
-  }
-  return result;
+  return {
+    // clang-format off
+    lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z,
+    lhs.w * rhs.x + lhs.x * rhs.w + lhs.y * rhs.z - lhs.z * rhs.y,
+    lhs.w * rhs.y + lhs.y * rhs.w + lhs.z * rhs.x - lhs.x * rhs.z,
+    lhs.w * rhs.z + lhs.z * rhs.w + lhs.x * rhs.y - lhs.y * rhs.x
+    // clang-format on
+  };
 }
 
 inline Vector3 operator*(const Quaternion& quaternion, const Vector3& vector) {
