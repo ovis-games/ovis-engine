@@ -22,6 +22,7 @@ add_library(
   include/ovis/core/matrix_types.hpp src/matrix_types.cpp
   include/ovis/core/matrix.hpp src/matrix.cpp
   include/ovis/core/math_operations.hpp src/math_operations.cpp
+  include/ovis/core/intersection.hpp src/intersection.cpp
 )
 add_library(ovis::core ALIAS ovis-core)
 
