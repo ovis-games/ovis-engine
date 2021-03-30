@@ -74,6 +74,43 @@ void GizmoRenderer::Render(const RenderContext& render_context) {
                  gizmo_controller->line_thickness_screen_space_, 400, x_direction, y_direction);
       break;
     }
+
+    case GizmoController::GizmoType::SCALE:
+      DrawLine(Vector3::FromVector2(gizmo_controller->object_position_screen_space_),
+               Vector3::FromVector2(gizmo_controller->x_axis_endpoint_screen_space_),
+               gizmo_controller->selected_axes_ == GizmoController::AxisSelection::X ? Color(1.0f, 0.0f, 0.0f, 1.0f)
+                                                                                     : Color(1.0f, 0.0f, 0.0f, 0.6f),
+               gizmo_controller->line_thickness_screen_space_);
+      DrawPoint(Vector3::FromVector2(gizmo_controller->x_axis_endpoint_screen_space_),
+                gizmo_controller->line_thickness_screen_space_ * 2,
+                gizmo_controller->selected_axes_ == GizmoController::AxisSelection::X ? Color(1.0f, 0.0f, 0.0f, 1.0f)
+                                                                                      : Color(1.0f, 0.0f, 0.0f, 0.6f));
+
+      DrawLine(Vector3::FromVector2(gizmo_controller->object_position_screen_space_),
+               Vector3::FromVector2(gizmo_controller->y_axis_endpoint_screen_space_),
+               gizmo_controller->selected_axes_ == GizmoController::AxisSelection::Y ? Color(0.0f, 1.0f, 0.0f, 1.0f)
+                                                                                     : Color(0.0f, 1.0f, 0.0f, 0.6f),
+               gizmo_controller->line_thickness_screen_space_);
+      DrawPoint(Vector3::FromVector2(gizmo_controller->y_axis_endpoint_screen_space_),
+                gizmo_controller->line_thickness_screen_space_ * 2,
+                gizmo_controller->selected_axes_ == GizmoController::AxisSelection::Y ? Color(0.0f, 1.0f, 0.0f, 1.0f)
+                                                                                      : Color(0.0f, 1.0f, 0.0f, 0.6f));
+
+      DrawLine(Vector3::FromVector2(gizmo_controller->object_position_screen_space_),
+               Vector3::FromVector2(gizmo_controller->z_axis_endpoint_screen_space_),
+               gizmo_controller->selected_axes_ == GizmoController::AxisSelection::Z ? Color(0.0f, 0.0f, 1.0f, 1.0f)
+                                                                                     : Color(0.0f, 0.0f, 1.0f, 0.6f),
+               gizmo_controller->line_thickness_screen_space_);
+      DrawPoint(Vector3::FromVector2(gizmo_controller->z_axis_endpoint_screen_space_),
+                gizmo_controller->line_thickness_screen_space_ * 2,
+                gizmo_controller->selected_axes_ == GizmoController::AxisSelection::Z ? Color(0.0f, 0.0f, 1.0f, 1.0f)
+                                                                                      : Color(0.0f, 0.0f, 1.0f, 0.6f));
+
+      DrawDisc(Vector3::FromVector2(gizmo_controller->object_position_screen_space_),
+               gizmo_controller->point_size_screen_space_,
+               gizmo_controller->selected_axes_ == GizmoController::AxisSelection::XYZ ? Color(1.0f, 1.0f, 1.0f, 1.0f)
+                                                                                       : Color(0.8f, 0.8f, 0.8f, 1.0f));
+      break;
   }
 
   EndDraw();

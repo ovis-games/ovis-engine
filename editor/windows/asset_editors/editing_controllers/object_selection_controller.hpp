@@ -1,14 +1,16 @@
 #pragma once
 
+#include "editor_controller.hpp"
+
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_controller.hpp>
 
 namespace ovis {
 namespace editor {
 
-class ObjectSelectionController : public SceneController {
+class ObjectSelectionController : public EditorController {
  public:
-  ObjectSelectionController(Scene* game_scene);
+  ObjectSelectionController();
 
   void ProcessEvent(Event* event) override;
 
@@ -21,7 +23,6 @@ class ObjectSelectionController : public SceneController {
   SceneObject* selected_object() const;
 
  private:
-  Scene* game_scene_;
   mutable std::string selected_object_name_;
 
   void CheckSelectionValidity() const;

@@ -2,6 +2,7 @@
 
 #include "../../action_history.hpp"
 #include "asset_editor.hpp"
+#include "editing_controllers/editor_controller.hpp"
 
 #include <ovis/rendering/render_target_viewport.hpp>
 #include <ovis/core/scene.hpp>
@@ -10,6 +11,8 @@ namespace ovis {
 namespace editor {
 
 class SceneViewEditor : public AssetEditor {
+  friend class EditorController;
+
  public:
   SceneViewEditor(const std::string& asset_id);
 
@@ -26,6 +29,14 @@ class SceneViewEditor : public AssetEditor {
  protected:
   void SetSerializedScene(const json& data);
   void SubmitChangesToScene();
+
+  template <typename T>
+  void AddEditorController() {
+    static_assert(std::is_base_of_v<EditorController, T>);
+    EditorController* controller = editing_scene()->AddController<T>();
+    controller->game_scene_ = game_scene();
+    controller->editor_ = this;
+  }
 
  private:
   void DrawContent() override;

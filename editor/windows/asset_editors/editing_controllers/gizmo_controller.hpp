@@ -1,7 +1,8 @@
 #pragma once
 
+#include "editor_controller.hpp"
+
 #include <ovis/core/scene.hpp>
-#include <ovis/core/scene_controller.hpp>
 #include <ovis/input/mouse_events.hpp>
 
 namespace ovis {
@@ -13,7 +14,7 @@ struct LineSegment2D {
 
 float DistanceToLineSegment(Vector2 point, const LineSegment2D& line_segment);
 
-class GizmoController : public SceneController {
+class GizmoController : public EditorController {
   friend class GizmoRenderer;
 
  public:
@@ -27,8 +28,9 @@ class GizmoController : public SceneController {
     Z,
     XYZ,
   };
+  enum class CoordinateSystem { OBJECT, WORLD };
 
-  GizmoController(Scene* game_scene);
+  GizmoController();
 
   void Update(std::chrono::microseconds delta_time) override;
   void ProcessEvent(Event* event) override;
@@ -36,9 +38,19 @@ class GizmoController : public SceneController {
   inline void SetGizmoType(GizmoType type) { type_ = type; }
   inline GizmoType gizmo_type() { return type_; }
 
+  inline void SetCoordinateSystem(CoordinateSystem coordinate_system) { coordinate_system_ = coordinate_system; }
+  inline void SwitchCoordinateSystem() {
+    if (coordinate_system_ == CoordinateSystem::WORLD) {
+      coordinate_system_ = CoordinateSystem::OBJECT;
+    } else {
+      coordinate_system_ = CoordinateSystem::WORLD;
+    }
+  }
+  inline CoordinateSystem coordinate_system() { return coordinate_system_; }
+
  private:
-  Scene* game_scene_;
   GizmoType type_ = GizmoType::MOVE;
+  CoordinateSystem coordinate_system_ = CoordinateSystem::OBJECT;
 
   std::string current_tooltip_;
 

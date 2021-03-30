@@ -7,8 +7,7 @@
 namespace ovis {
 namespace editor {
 
-EditorCameraController::EditorCameraController(Scene* game_scene)
-    : SceneController("EditorCameraController"), game_scene_(game_scene) {
+EditorCameraController::EditorCameraController() : EditorController("EditorCameraController") {
   SubscribeToEvent(MouseMoveEvent::TYPE);
   SubscribeToEvent(MouseButtonPressEvent::TYPE);
   SubscribeToEvent(MouseWheelEvent::TYPE);
@@ -19,7 +18,7 @@ EditorCameraController::EditorCameraController(Scene* game_scene)
 }
 
 void EditorCameraController::Update(std::chrono::microseconds delta_time) {
-  auto viewport = game_scene_->main_viewport();
+  auto viewport = game_scene()->main_viewport();
   if (!viewport) {
     return;
   }

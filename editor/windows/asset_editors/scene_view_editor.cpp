@@ -51,9 +51,9 @@ SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(s
   icons_.eye = LoadTexture2D("icon-eye", EditorWindow::instance()->context());
 
   editing_scene()->Play();
-  editing_scene()->AddController<ObjectSelectionController>(game_scene());
-  editing_scene()->AddController<GizmoController>(game_scene());
-  editing_scene()->AddController<EditorCameraController>(game_scene());
+  AddEditorController<ObjectSelectionController>();
+  AddEditorController<GizmoController>();
+  AddEditorController<EditorCameraController>();
 }
 
 void SceneViewEditor::Update(std::chrono::microseconds delta_time) {
@@ -164,6 +164,14 @@ void SceneViewEditor::DrawToolbar() {
   ImGui::SameLine();
   if (ImGui::TextureButton(icons_.scale.get())) {
     editing_scene()->GetController<GizmoController>()->SetGizmoType(GizmoController::GizmoType::SCALE);
+  }
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("Scale");
+  }
+
+  ImGui::SameLine();
+  if (ImGui::Button("Local vs global")) {
+    editing_scene()->GetController<GizmoController>()->SwitchCoordinateSystem();
   }
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Scale");

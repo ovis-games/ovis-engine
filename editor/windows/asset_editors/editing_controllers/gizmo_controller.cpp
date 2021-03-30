@@ -8,6 +8,7 @@
 #include <ovis/core/intersection.hpp>
 #include <ovis/core/scene_viewport.hpp>
 #include <ovis/core/transform.hpp>
+#include <ovis/input/key_events.hpp>
 #include <ovis/input/mouse_button.hpp>
 
 namespace ovis {
@@ -27,10 +28,11 @@ float DistanceToLineSegment(Vector2 point, const LineSegment2D& line_segment) {
   return Length(point - projected_point_on_line_segment);
 }
 
-GizmoController::GizmoController(Scene* game_scene) : SceneController("GizmoController"), game_scene_(game_scene) {
+GizmoController::GizmoController() : EditorController("GizmoController") {
   SubscribeToEvent(MouseMoveEvent::TYPE);
   SubscribeToEvent(MouseButtonPressEvent::TYPE);
   SubscribeToEvent(MouseButtonReleaseEvent::TYPE);
+  SubscribeToEvent(KeyPressEvent::TYPE);
 }
 
 void GizmoController::Update(std::chrono::microseconds) {
@@ -50,7 +52,7 @@ void GizmoController::Update(std::chrono::microseconds) {
   }
   object_selected_ = true;
 
-  auto viewport = game_scene_->main_viewport();
+  auto viewport = game_scene()->main_viewport();
   object_position_world_space_ = transform->position();
   object_position_screen_space_ = viewport->WorldSpacePositionToScreenSpace(object_position_world_space_);
 
@@ -59,14 +61,29 @@ void GizmoController::Update(std::chrono::microseconds) {
   const Quaternion rotation = transform->rotation();
 
   const Vector3 unit_offset = viewport->WorldSpacePositionToScreenSpace(transform->position() + Vector3::PositiveX());
-  world_to_screen_space_factor_ = Length(unit_offset - object_position_screen_space_);
+  world_to_screen_space_factor_ = Distance(unit_offset, object_position_screen_space_);
 
-  x_axis_world_space_ =
-      (gizmo_radius_screen_space_ / world_to_screen_space_factor_) * (rotation * Vector3::PositiveX());
-  y_axis_world_space_ =
-      (gizmo_radius_screen_space_ / world_to_screen_space_factor_) * (rotation * Vector3::PositiveY());
-  z_axis_world_space_ =
-      (gizmo_radius_screen_space_ / world_to_screen_space_factor_) * (rotation * Vector3::PositiveZ());
+  // Scaling in world space is not possible
+  if (type_ == GizmoType::SCALE && coordinate_system_ == CoordinateSystem::WORLD) {
+    coordinate_system_ = CoordinateSystem::OBJECT;
+  }
+
+  switch (coordinate_system_) {
+    case CoordinateSystem::OBJECT:
+      x_axis_world_space_ =
+          (gizmo_radius_screen_space_ / world_to_screen_space_factor_) * (rotation * Vector3::PositiveX());
+      y_axis_world_space_ =
+          (gizmo_radius_screen_space_ / world_to_screen_space_factor_) * (rotation * Vector3::PositiveY());
+      z_axis_world_space_ =
+          (gizmo_radius_screen_space_ / world_to_screen_space_factor_) * (rotation * Vector3::PositiveZ());
+      break;
+
+    case CoordinateSystem::WORLD:
+      x_axis_world_space_ = (gizmo_radius_screen_space_ / world_to_screen_space_factor_) * Vector3::PositiveX();
+      y_axis_world_space_ = (gizmo_radius_screen_space_ / world_to_screen_space_factor_) * Vector3::PositiveY();
+      z_axis_world_space_ = (gizmo_radius_screen_space_ / world_to_screen_space_factor_) * Vector3::PositiveZ();
+      break;
+  }
 
   x_axis_endpoint_screen_space_ =
       viewport->WorldSpacePositionToScreenSpace(object_position_world_space_ + x_axis_world_space_);
@@ -107,10 +124,24 @@ void GizmoController::ProcessEvent(Event* event) {
     auto button_release_event = static_cast<MouseButtonReleaseEvent*>(event);
     current_tooltip_ = "";
     if (selected_axes_ != AxisSelection::NOTHING) {
+      SubmitChangesToScene();
       event->StopPropagation();
     }
     // We may hover another gizmo now, so recheck it
     CheckMousePosition(button_release_event->screen_space_position());
+  } else if (event->type() == KeyPressEvent::TYPE) {
+    auto key_press_event = static_cast<KeyPressEvent*>(event);
+
+    // TODO: make shortcuts configurable
+    if (key_press_event->key() == Key::W()) {
+      SetGizmoType(GizmoType::MOVE);
+    } else if (key_press_event->key() == Key::E()) {
+      SetGizmoType(GizmoType::ROTATE);
+    } else if (key_press_event->key() == Key::R()) {
+      SetGizmoType(GizmoType::SCALE);
+    } else if (key_press_event->key() == Key::Q()) {
+      SwitchCoordinateSystem();
+    }
   }
 }
 
@@ -140,7 +171,7 @@ bool GizmoController::CheckMousePosition(Vector2 position) {
       }
 
     case GizmoType::ROTATE:
-      auto viewport = game_scene_->main_viewport();
+      auto viewport = game_scene()->main_viewport();
       const Ray3D view_ray = viewport->CalculateViewRay(position);
       auto hitting_rotate_gizmo = [this, view_ray, viewport](Vector3 rotation_axis) -> bool {
         const Plane3D plane = Plane3D::FromPointAndNormal(object_position_world_space_, rotation_axis);
@@ -236,17 +267,52 @@ void GizmoController::HandleDragging(MouseMoveEvent* mouse_move_event) {
 
       const Vector3 previous_intersection_direction = Normalize(*previous_intersection - object_position_world_space_);
       const Vector3 current_intersection_direction = Normalize(*current_intersection - object_position_world_space_);
-      const float sign = Dot(Cross(previous_intersection_direction, current_intersection_direction), rotation_axis);
       const float absolute_angle = std::acos(Dot(previous_intersection_direction, current_intersection_direction));
-      const float angle = std::copysign(absolute_angle, sign);
-      transform->Rotate(Normalize(rotation_axis), angle);
-      const auto q = Quaternion::FromAxisAndAngle(Normalize(rotation_axis), angle);
-      current_tooltip_ = fmt::format("{}\n{}\n{}\n{}°", transform->rotation(), q, q * transform->rotation(),
-                                     angle * RadiansToDegreesFactor<float>());
+      if (!std::isnan(absolute_angle)) {
+        const float sign = Dot(Cross(previous_intersection_direction, current_intersection_direction), rotation_axis);
+        const float angle = std::copysign(absolute_angle, sign);
+        transform->Rotate(Normalize(rotation_axis), angle);
+        const auto q = Quaternion::FromAxisAndAngle(Normalize(rotation_axis), angle);
+      }
+
+      float yaw, pitch, roll;
+      transform->GetYawPitchRoll(&yaw, &pitch, &roll);
+      current_tooltip_ = fmt::format("Yaw {}°, pitch {}°, roll {}°", yaw * RadiansToDegreesFactor<float>(),
+                                     pitch * RadiansToDegreesFactor<float>(), roll * RadiansToDegreesFactor<float>());
       break;
     }
 
     case GizmoType::SCALE:
+      Vector3 scale_direction_world_space;
+      if (selected_axes_ == AxisSelection::X) {
+        scale_direction_world_space = x_axis_world_space_;
+      } else if (selected_axes_ == AxisSelection::Y) {
+        scale_direction_world_space = y_axis_world_space_;
+      } else if (selected_axes_ == AxisSelection::Z) {
+        scale_direction_world_space = z_axis_world_space_;
+      } else if (selected_axes_ == AxisSelection::XYZ) {
+        scale_direction_world_space = x_axis_world_space_ + y_axis_world_space_ + z_axis_world_space_;
+      }
+      const Vector3 screen_offset = mouse_move_event->viewport()->WorldSpacePositionToScreenSpace(
+          object_position_world_space_ + scale_direction_world_space);
+      const Vector2 scale_direction_screen_space = Normalize(screen_offset - object_position_screen_space_);
+      const float distance_in_scale_direction =
+          Dot(scale_direction_screen_space, mouse_move_event->relative_screen_space_position());
+      const float scale_factor = std::powf(1.01, distance_in_scale_direction);
+
+      Vector3 scale = transform->scale();
+      if (selected_axes_ == AxisSelection::X) {
+        scale.x *= scale_factor;
+      } else if (selected_axes_ == AxisSelection::Y) {
+        scale.y *= scale_factor;
+      } else if (selected_axes_ == AxisSelection::Z) {
+        scale.z *= scale_factor;
+      } else if (selected_axes_ == AxisSelection::XYZ) {
+        scale *= scale_factor;
+      }
+      transform->SetScale(scale);
+
+      current_tooltip_ = fmt::format("{}", transform->scale());
       break;
   }
 }

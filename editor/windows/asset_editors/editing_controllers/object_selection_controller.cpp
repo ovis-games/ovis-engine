@@ -5,8 +5,8 @@
 namespace ovis {
 namespace editor {
 
-ObjectSelectionController::ObjectSelectionController(Scene* game_scene)
-    : SceneController("ObjectSelectionController"), game_scene_(game_scene) {}
+ObjectSelectionController::ObjectSelectionController()
+    : EditorController("ObjectSelectionController") {}
 
 void ObjectSelectionController::ProcessEvent(Event* event) {}
 
@@ -17,7 +17,7 @@ void ObjectSelectionController::SelectObject(const std::string& object_name) {
 }
 void ObjectSelectionController::SelectObject(SceneObject* object) {
   if (object != nullptr) {
-    SDL_assert(object->scene() == game_scene_);
+    SDL_assert(object->scene() == game_scene());
     SelectObject(object->name());
   } else {
     selected_object_name_ = "";
@@ -38,11 +38,11 @@ const std::string& ObjectSelectionController::selected_object_name() const {
 }
 SceneObject* ObjectSelectionController::selected_object() const {
   CheckSelectionValidity();
-  return selected_object_name_.length() > 0 ? game_scene_->GetObject(selected_object_name_) : nullptr;
+  return selected_object_name_.length() > 0 ? game_scene()->GetObject(selected_object_name_) : nullptr;
 }
 
 void ObjectSelectionController::CheckSelectionValidity() const {
-  if (selected_object_name_ != "" && !game_scene_->ContainsObject(selected_object_name_)) {
+  if (selected_object_name_ != "" && !game_scene()->ContainsObject(selected_object_name_)) {
     LogV("The game scene does not contain the object {}", selected_object_name_);
     selected_object_name_ = "";
   }
