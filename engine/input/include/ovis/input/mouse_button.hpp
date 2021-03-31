@@ -15,7 +15,7 @@ struct MouseButton {
   std::string_view id() const;
   std::string_view name() const;
 
-  static MouseButton FromName(const std::string_view& name);
+  static MouseButton FromName(std::string_view name);
 
   static constexpr MouseButton Left() { return {0}; }
   static constexpr MouseButton Middle() { return {1}; }

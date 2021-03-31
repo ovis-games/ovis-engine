@@ -17,7 +17,7 @@ struct Key {
   std::string_view id() const;
   std::string_view name() const;
 
-  static Key FromName(const std::string_view& name);
+  static Key FromName(std::string_view name);
 
   static constexpr Key Digit1() { return {SDL_SCANCODE_1}; }
   static constexpr Key Digit2() { return {SDL_SCANCODE_2}; }

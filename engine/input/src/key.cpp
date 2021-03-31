@@ -366,7 +366,7 @@ std::string_view Key::name() const {
   // clang-format on
 }
 
-Key Key::FromName(const std::string_view& name) {
+Key Key::FromName(std::string_view name) {
   return {KEY_NAME_TO_KEY.at(name)};
 }
 

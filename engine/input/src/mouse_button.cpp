@@ -44,7 +44,7 @@ std::string_view MouseButton::name() const {
   // clang-format on
 }
 
-MouseButton MouseButton::FromName(const std::string_view& name) {
+MouseButton MouseButton::FromName(std::string_view name) {
   return {BUTTON_NAME_TO_BUTTON.at(name)};
 }
 
