@@ -369,6 +369,10 @@ void SceneViewEditor::DrawObjectTree() {
               if (ImGui::Selectable("Rename")) {
                 renaming_state_ = RenamingState::STARTED_RENAMING;
               }
+              if (ImGui::Selectable("Duplicate")) {
+                game_scene()->CreateObject(object->name(), object->Serialize());
+                SubmitChangesToScene();
+              }
               if (ImGui::Selectable("Remove")) {
                 game_scene()->DeleteObject(object->name());
                 SubmitChangesToScene();
