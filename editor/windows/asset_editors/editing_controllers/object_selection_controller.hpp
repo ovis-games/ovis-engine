@@ -10,6 +10,8 @@ namespace editor {
 
 class ObjectSelectionController : public EditorController {
  public:
+  static constexpr std::string_view Name() { return "ObjectSelectionController"; }
+
   ObjectSelectionController();
 
   void ProcessEvent(Event* event) override;

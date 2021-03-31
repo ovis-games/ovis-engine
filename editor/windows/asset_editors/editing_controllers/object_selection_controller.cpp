@@ -21,7 +21,7 @@ AxisAlignedBoundingBox3D GetComponentAABB(std::string_view id, SceneObjectCompon
 
 }  // namespace
 
-ObjectSelectionController::ObjectSelectionController() : EditorController("ObjectSelectionController") {
+ObjectSelectionController::ObjectSelectionController() : EditorController(Name()) {
   SubscribeToEvent(MouseButtonPressEvent::TYPE);
 }
 

@@ -13,7 +13,7 @@ SelectedObjectBoundingBox::SelectedObjectBoundingBox(Scene* editing_scene)
 
 void SelectedObjectBoundingBox::Render(const RenderContext& render_context) {
   auto* object_selection_controller =
-      editing_scene_->GetController<ObjectSelectionController>("ObjectSelectionController");
+      editing_scene_->GetController<ObjectSelectionController>();
   SceneObject* scene_object = object_selection_controller->selected_object();
 
   if (scene_object != nullptr) {

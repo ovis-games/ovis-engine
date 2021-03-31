@@ -32,10 +32,12 @@ TransformationToolsController::TransformationToolsController() : EditorControlle
   SubscribeToEvent(MouseMoveEvent::TYPE);
   SubscribeToEvent(MouseButtonPressEvent::TYPE);
   SubscribeToEvent(MouseButtonReleaseEvent::TYPE);
+
+  UpdateBefore<ObjectSelectionController>();
 }
 
 void TransformationToolsController::Update(std::chrono::microseconds) {
-  auto* object_selection_controller = scene()->GetController<ObjectSelectionController>("ObjectSelectionController");
+  auto* object_selection_controller = scene()->GetController<ObjectSelectionController>();
   SDL_assert(object_selection_controller != nullptr);
 
   SceneObject* scene_object = object_selection_controller->selected_object();
@@ -190,7 +192,7 @@ bool TransformationToolsController::CheckMousePosition(Vector2 position) {
 }
 
 void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_event) {
-  auto* object_selection_controller = scene()->GetController<ObjectSelectionController>("ObjectSelectionController");
+  auto* object_selection_controller = scene()->GetController<ObjectSelectionController>();
   SDL_assert(object_selection_controller != nullptr);
   SceneObject* scene_object = object_selection_controller->selected_object();
   SDL_assert(scene_object);

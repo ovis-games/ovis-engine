@@ -316,7 +316,7 @@ void SceneViewEditor::DrawInspectorContent() {
 }
 
 void SceneViewEditor::DrawObjectTree() {
-  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>("ObjectSelectionController");
+  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
 
   ImVec2 available_content_region = ImGui::GetContentRegionAvail();
   if (ImGui::BeginChild("ObjectView", ImVec2(0, available_content_region.y / 2), true)) {
@@ -414,7 +414,7 @@ void SceneViewEditor::DrawObjectTree() {
 }
 
 void SceneViewEditor::DrawSelectionProperties() {
-  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>("ObjectSelectionController");
+  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
 
   ImVec2 available_content_region = ImGui::GetContentRegionAvail();
   if (ImGui::BeginChild("SelectionProperties", ImVec2(0, available_content_region.y), true)) {
@@ -428,7 +428,7 @@ void SceneViewEditor::DrawSelectionProperties() {
 }
 
 void SceneViewEditor::DrawSceneObjectProperties() {
-  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>("ObjectSelectionController");
+  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
 
   SceneObject* selected_object = object_selection_controller->selected_object();
 
@@ -532,7 +532,7 @@ SceneObject* SceneViewEditor::CreateObject(const std::string& base_name, bool in
     counter++;
     object_name = base_name + std::to_string(counter);
   }
-  editing_scene()->GetController<ObjectSelectionController>("ObjectSelectionController")->SelectObject(object_name);
+  editing_scene()->GetController<ObjectSelectionController>()->SelectObject(object_name);
   if (initiate_rename) {
     renaming_state_ = RenamingState::STARTED_RENAMING;
   }
