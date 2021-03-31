@@ -65,6 +65,16 @@ union Matrix3x4 {
   static constexpr int ROW_COUNT = 3;
   static constexpr int COLUMN_COUNT = 4;
 
+  inline static constexpr Matrix3x4 IdentityTransformation() {
+    return {{
+        // clang-format off
+        {1.0f, 0.0f, 0.0f, 0.0f},
+        {0.0f, 1.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 1.0f, 0.0f},
+        // clang-format on
+    }};
+  }
+
   inline static constexpr Matrix3x4 FromTransformation(const Vector3& translation, const Vector3& scaling,
                                                        const Quaternion& rotation);
   inline static constexpr Matrix3x4 FromTranslation(const Vector3& translation);
