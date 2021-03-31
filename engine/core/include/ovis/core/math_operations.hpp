@@ -249,4 +249,22 @@ inline constexpr float Dot(const T& lhs, const T& rhs) {
   return result;
 }
 
+template <typename T, std::enable_if_t<is_vector<T>::value || is_quaternion<T>::value, bool> = true>
+inline constexpr float MinComponent(const T& value) {
+  float minimum = value[0];
+  for (int i = 1; i < T::ELEMENT_COUNT; ++i) {
+    minimum = min(minimum, value[i]);
+  }
+  return minimum;
+}
+
+template <typename T, std::enable_if_t<is_vector<T>::value || is_quaternion<T>::value, bool> = true>
+inline constexpr float MaxComponent(const T& value) {
+  float maximum = value[0];
+  for (int i = 1; i < T::ELEMENT_COUNT; ++i) {
+    maximum = max(maximum, value[i]);
+  }
+  return maximum;
+}
+
 }  // namespace ovis
