@@ -9,24 +9,31 @@ namespace ovis {
 namespace editor {
 
 SelectedObjectBoundingBox::SelectedObjectBoundingBox(Scene* editing_scene)
-    : PrimitiveRenderer("SelectedObjectBoundingBox"), editing_scene_(editing_scene) {}
+    : PrimitiveRenderer(Name()), editing_scene_(editing_scene) {}
 
 void SelectedObjectBoundingBox::Render(const RenderContext& render_context) {
-  auto* object_selection_controller =
-      editing_scene_->GetController<ObjectSelectionController>();
-  SceneObject* scene_object = object_selection_controller->selected_object();
+  auto* object_selection_controller = editing_scene_->GetController<ObjectSelectionController>();
+  SceneObject* object = object_selection_controller->selected_object();
+  AxisAlignedBoundingBox3D aabb = object_selection_controller->selected_object_aabb();
 
-  if (scene_object != nullptr) {
+  if (object != nullptr) {
     BeginDraw(render_context);
 
-    Transform* transform = scene_object->GetComponent<Transform>("Transform");
-    if (transform != nullptr) {
-      const Vector3 clip_space_coordinates =
-          TransformPosition(render_context.world_to_view_space, transform->position());
-      const Vector3 screen_space_coordinates = viewport()->ClipSpacePositionToScreenSpace(clip_space_coordinates);
-      DrawDisc(screen_space_coordinates, 20.0f, Color::Red());
-      LogV("Drawing disc at {}", screen_space_coordinates);
+    Transform* transform = object->GetComponent<Transform>("Transform");
+    const Matrix3x4 local_to_world = transform ? transform->local_to_world_matrix() : Matrix3x4::IdentityTransformation();
+    std::array<Vector3, 8> aabb_vertices;
+    for (int i = 0; i < 8; ++i) {
+      aabb_vertices[i] = TransformPosition(local_to_world, aabb.center + 2.0f * Vector3::UnitCube()[i] * aabb.half_extend);
     }
+
+    DrawLine(aabb_vertices[4], aabb_vertices[5], Color::White());
+    DrawLine(aabb_vertices[6], aabb_vertices[7], Color::White());
+    DrawLine(aabb_vertices[4], aabb_vertices[6], Color::White());
+    DrawLine(aabb_vertices[5], aabb_vertices[7], Color::White());
+    DrawLine(aabb_vertices[0], aabb_vertices[1], Color::White());
+    DrawLine(aabb_vertices[2], aabb_vertices[3], Color::White());
+    DrawLine(aabb_vertices[0], aabb_vertices[2], Color::White());
+    DrawLine(aabb_vertices[1], aabb_vertices[3], Color::White());
 
     EndDraw();
   }

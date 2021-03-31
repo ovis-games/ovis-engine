@@ -9,6 +9,8 @@ namespace editor {
 
 class SelectedObjectBoundingBox : public PrimitiveRenderer {
  public:
+  static constexpr std::string_view Name() { return "SelectedObjectBoundingBox"; }
+
   SelectedObjectBoundingBox(Scene* editing_scene);
 
   void Render(const RenderContext& render_context) override;

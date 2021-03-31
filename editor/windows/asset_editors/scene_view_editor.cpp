@@ -510,10 +510,11 @@ void SceneViewEditor::CreateSceneViewport(ImVec2 size) {
     scene_viewport_->AddRenderPass("ClearPass");
     scene_viewport_->AddRenderPass("SpriteRenderer");
     // scene_viewport_->AddRenderPass("Physics2DDebugLayer");
-    // scene_viewport_->AddRenderPass(std::make_unique<SelectedObjectBoundingBox>(editing_scene()));
+    scene_viewport_->AddRenderPass(std::make_unique<SelectedObjectBoundingBox>(editing_scene()));
     scene_viewport_->AddRenderPass(std::make_unique<TransformationToolsRenderer>(editing_scene()));
     // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "Physics2DDebugLayer");
-    // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "SelectedObjectBoundingBox");
+    scene_viewport_->AddRenderPassDependency("SpriteRenderer", SelectedObjectBoundingBox::Name());
+    scene_viewport_->AddRenderPassDependency(SelectedObjectBoundingBox::Name(), TransformationToolsRenderer::Name());
     // scene_viewport_->AddRenderPassDependency("SelectedObjectBoundingBox", "GizmoRenderer");
     // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "GizmoRenderer");
     scene_viewport_->SetScene(game_scene());

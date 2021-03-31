@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <span>
 
 #include <ovis/core/vector.hpp>
 
@@ -47,9 +48,28 @@ struct AxisAlignedBoundingBox {
     return {center, 0.5f * extend};
   }
 
+  static inline constexpr AxisAlignedBoundingBox<VectorType> FromMinMax(VectorType min, VectorType max) {
+    return {0.5f * (min + max), 0.5f * (max - min)};
+  }
+
+  static inline constexpr AxisAlignedBoundingBox<VectorType> FromPoints(std::span<VectorType> points) {
+    SDL_assert(points.size() > 0);
+    VectorType minimum = points[0];
+    VectorType maximum = points[0];
+    for (const VectorType p : points) {
+      minimum = ovis::min(p, minimum);
+      maximum = ovis::min(p, maximum);
+    }
+    return FromMinMax(minimum, maximum);
+  }
+
   static inline constexpr AxisAlignedBoundingBox<VectorType> Empty() {
     return {VectorType::Zero(), VectorType::Zero()};
   }
+
+  inline constexpr VectorType min() const { return center - half_extend; }
+
+  inline constexpr VectorType max() const { return center + half_extend; }
 };
 using AxisAlignedBoundingBox2D = AxisAlignedBoundingBox<Vector2>;
 using AxisAlignedBoundingBox3D = AxisAlignedBoundingBox<Vector3>;
@@ -94,8 +114,8 @@ inline constexpr std::optional<RayAABBIntersection> ComputeRayAABBIntersection(
 
 template <typename VectorType>
 inline constexpr std::optional<RayAABBIntersection> ComputeRayAABBIntersection(Ray<VectorType> ray,
-                                                                      AxisAlignedBoundingBox<VectorType> aabb,
-                                                                      float t_min, float t_max) {
+                                                                               AxisAlignedBoundingBox<VectorType> aabb,
+                                                                               float t_min, float t_max) {
   const VectorType inverse_direction = 1.0f / ray.direction;
   const VectorType aabb_min = aabb.center - aabb.half_extend;
   const VectorType aabb_max = aabb.center + aabb.half_extend;

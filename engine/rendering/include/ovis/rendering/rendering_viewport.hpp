@@ -31,6 +31,9 @@ class RenderingViewport : public SceneViewport {
   inline void AddRenderPassDependency(std::string rendered_first, std::string rendered_second) {
     render_pass_dependencies_.insert(std::make_pair(std::move(rendered_second), std::move(rendered_first)));
   }
+  inline void AddRenderPassDependency(std::string_view rendered_first, std::string_view rendered_second) {
+    render_pass_dependencies_.insert(std::make_pair(std::string(rendered_second), std::string(rendered_first)));
+  }
 
   RenderTargetTexture2D* CreateRenderTarget2D(const std::string& id,
                                               const RenderTargetTexture2DDescription& description);
