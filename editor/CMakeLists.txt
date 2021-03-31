@@ -59,8 +59,9 @@ add_executable(
   windows/asset_editors/editing_controllers/object_selection_controller.hpp windows/asset_editors/editing_controllers/object_selection_controller.cpp
   windows/asset_editors/editing_controllers/transformation_tools_controller.hpp windows/asset_editors/editing_controllers/transformation_tools_controller.cpp
 
-  windows/asset_editors/editor_overlays/selected_object_bounding_box.hpp windows/asset_editors/editor_overlays/selected_object_bounding_box.cpp
-  windows/asset_editors/editor_overlays/transformation_tools_renderer.hpp windows/asset_editors/editor_overlays/transformation_tools_renderer.cpp
+  windows/asset_editors/editor_render_passes/editor_render_pass.hpp windows/asset_editors/editor_render_passes/editor_render_pass.cpp
+  windows/asset_editors/editor_render_passes/selected_object_bounding_box.hpp windows/asset_editors/editor_render_passes/selected_object_bounding_box.cpp
+  windows/asset_editors/editor_render_passes/transformation_tools_renderer.hpp windows/asset_editors/editor_render_passes/transformation_tools_renderer.cpp
 
   windows/asset_importers/asset_importer.hpp windows/asset_importers/asset_importer.cpp
 )

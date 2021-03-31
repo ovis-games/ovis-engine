@@ -7,8 +7,8 @@
 #include "editing_controllers/editor_camera_controller.hpp"
 #include "editing_controllers/object_selection_controller.hpp"
 #include "editing_controllers/transformation_tools_controller.hpp"
-#include "editor_overlays/selected_object_bounding_box.hpp"
-#include "editor_overlays/transformation_tools_renderer.hpp"
+#include "editor_render_passes/selected_object_bounding_box.hpp"
+#include "editor_render_passes/transformation_tools_renderer.hpp"
 
 #include <imgui_stdlib.h>
 
@@ -79,14 +79,20 @@ void SceneViewEditor::ChangeRunState(RunState new_state) {
   switch (new_state)
   {
   case RunState::RUNNING:
-    if (run_state() == RunState::PAUSED) {
-      // Nothing to do here
-      run_state_ = RunState::RUNNING;
-    } else if (run_state() == RunState::STOPPED) {
-      SubmitChangesToScene();
-      game_scene()->Deserialize(GetCurrentJsonFileState());
-      game_scene()->Play();
-      run_state_ = RunState::RUNNING;
+    switch (run_state()) {
+      case RunState::STOPPED:
+        SubmitChangesToScene();
+        game_scene()->Deserialize(GetCurrentJsonFileState());
+        [[fallthrough]];
+  
+      case RunState::PAUSED:
+        run_state_ = RunState::RUNNING;
+        game_scene()->Play();
+        break;
+
+      case RunState::RUNNING:
+        // nothing to do here
+        break;
     }
     break;
 
@@ -96,17 +102,26 @@ void SceneViewEditor::ChangeRunState(RunState new_state) {
       SDL_assert(false);
       run_state_ = RunState::PAUSED;
     } else if (run_state() == RunState::RUNNING) {
-      // Nothing to do here
+      game_scene()->Stop();
       run_state_ = RunState::PAUSED;
     }
     break;
 
   case RunState::STOPPED:
-    if (run_state() == RunState::RUNNING || run_state() == RunState::PAUSED) {
-      game_scene()->Stop();
-      serialized_scene_editing_copy_ = GetCurrentJsonFileState();
-      game_scene()->Deserialize(serialized_scene_editing_copy_);
-      run_state_= RunState::STOPPED;
+    switch (run_state()) {
+      case RunState::RUNNING:
+        game_scene()->Stop();
+        [[fallthrough]];
+
+      case RunState::PAUSED:
+        serialized_scene_editing_copy_ = GetCurrentJsonFileState();
+        game_scene()->Deserialize(serialized_scene_editing_copy_);
+        run_state_= RunState::STOPPED;
+        break;
+
+      case RunState::STOPPED:
+        // nothing to do here
+        break;
     }
     break;
   }
