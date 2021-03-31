@@ -31,7 +31,7 @@ class RenderPass : public StaticFactory<RenderPass, std::unique_ptr<RenderPass>(
   friend class RenderingViewport;
 
  public:
-  RenderPass(const std::string& name);
+  RenderPass(std::string_view name);
   virtual ~RenderPass() = default;
 
   inline RenderingViewport* viewport() const { return viewport_; }

@@ -4,7 +4,7 @@
 
 namespace ovis {
 
-PrimitiveRenderer::PrimitiveRenderer(const std::string& name) : RenderPass(name) {}
+PrimitiveRenderer::PrimitiveRenderer(std::string_view name) : RenderPass(name) {}
 
 void PrimitiveRenderer::CreateResources() {
   SDL_assert(!is_drawing_);
@@ -175,7 +175,8 @@ void PrimitiveRenderer::DrawArrow(const Vector3& start, const Vector3& end, cons
                                   float arrow_width, float arrow_length) {
   const Vector3 start_to_end = end - start;
   const float start_to_end_length = Length(start_to_end);
-  const Vector3 line_end = start + start_to_end * (start_to_end_length - thickness * arrow_length) / start_to_end_length;
+  const Vector3 line_end =
+      start + start_to_end * (start_to_end_length - thickness * arrow_length) / start_to_end_length;
 
   DrawLine(start, line_end, color, thickness);
 

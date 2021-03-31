@@ -2,7 +2,7 @@
 
 namespace ovis {
 
-RenderPass::RenderPass(const std::string& name)
+RenderPass::RenderPass(std::string_view name)
     : name_(name)
 #if OVIS_ENABLE_BUILT_IN_PROFILING
       ,
