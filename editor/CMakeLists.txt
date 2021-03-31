@@ -57,10 +57,10 @@ add_executable(
   windows/asset_editors/editing_controllers/editor_controller.hpp windows/asset_editors/editing_controllers/editor_controller.cpp
   windows/asset_editors/editing_controllers/editor_camera_controller.hpp windows/asset_editors/editing_controllers/editor_camera_controller.cpp
   windows/asset_editors/editing_controllers/object_selection_controller.hpp windows/asset_editors/editing_controllers/object_selection_controller.cpp
-  windows/asset_editors/editing_controllers/gizmo_controller.hpp windows/asset_editors/editing_controllers/gizmo_controller.cpp
+  windows/asset_editors/editing_controllers/transformation_tools_controller.hpp windows/asset_editors/editing_controllers/transformation_tools_controller.cpp
 
   windows/asset_editors/editor_overlays/selected_object_bounding_box.hpp windows/asset_editors/editor_overlays/selected_object_bounding_box.cpp
-  windows/asset_editors/editor_overlays/gizmo_renderer.hpp windows/asset_editors/editor_overlays/gizmo_renderer.cpp
+  windows/asset_editors/editor_overlays/transformation_tools_renderer.hpp windows/asset_editors/editor_overlays/transformation_tools_renderer.cpp
 
   windows/asset_importers/asset_importer.hpp windows/asset_importers/asset_importer.cpp
 )

@@ -14,15 +14,15 @@ struct LineSegment2D {
 
 float DistanceToLineSegment(Vector2 point, const LineSegment2D& line_segment);
 
-class GizmoController : public EditorController {
-  friend class GizmoRenderer;
+class TransformationToolsController : public EditorController {
+  friend class TransformationToolsRenderer;
 
  public:
-  static constexpr std::string_view Name() { return "GizmoController"; }
+  static constexpr std::string_view Name() { return "TransformationTools"; }
 
-  enum class GizmoType { MOVE, ROTATE, SCALE };
-  enum class AxisSelection {
-    NOTHING,
+  enum class TransformationType { MOVE, ROTATE, SCALE };
+  enum class AxesSelection {
+    NONE,
     X,
     Y,
     Z,
@@ -30,13 +30,13 @@ class GizmoController : public EditorController {
   };
   enum class CoordinateSystem { OBJECT, WORLD };
 
-  GizmoController();
+  TransformationToolsController();
 
   void Update(std::chrono::microseconds delta_time) override;
   void ProcessEvent(Event* event) override;
 
-  inline void SetGizmoType(GizmoType type) { type_ = type; }
-  inline GizmoType gizmo_type() { return type_; }
+  inline void SelectTransformationType(TransformationType type) { type_ = type; }
+  inline TransformationType transformation_type() { return type_; }
 
   inline void SetCoordinateSystem(CoordinateSystem coordinate_system) { coordinate_system_ = coordinate_system; }
   inline void SwitchCoordinateSystem() {
@@ -49,14 +49,14 @@ class GizmoController : public EditorController {
   inline CoordinateSystem coordinate_system() { return coordinate_system_; }
 
  private:
-  GizmoType type_ = GizmoType::MOVE;
+  TransformationType type_ = TransformationType::MOVE;
   CoordinateSystem coordinate_system_ = CoordinateSystem::OBJECT;
 
   std::string current_tooltip_;
 
   // TODO: safe reference to object
   bool object_selected_ = false;
-  AxisSelection selected_axes_;
+  AxesSelection selected_axes_;
 
   Vector3 object_position_screen_space_;
   Vector3 x_axis_endpoint_screen_space_;

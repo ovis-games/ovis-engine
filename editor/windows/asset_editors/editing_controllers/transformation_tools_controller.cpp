@@ -1,4 +1,4 @@
-#include "gizmo_controller.hpp"
+#include "transformation_tools_controller.hpp"
 
 #include "object_selection_controller.hpp"
 
@@ -28,14 +28,13 @@ float DistanceToLineSegment(Vector2 point, const LineSegment2D& line_segment) {
   return Length(point - projected_point_on_line_segment);
 }
 
-GizmoController::GizmoController() : EditorController("GizmoController") {
+TransformationToolsController::TransformationToolsController() : EditorController(Name()) {
   SubscribeToEvent(MouseMoveEvent::TYPE);
   SubscribeToEvent(MouseButtonPressEvent::TYPE);
   SubscribeToEvent(MouseButtonReleaseEvent::TYPE);
-  SubscribeToEvent(KeyPressEvent::TYPE);
 }
 
-void GizmoController::Update(std::chrono::microseconds) {
+void TransformationToolsController::Update(std::chrono::microseconds) {
   auto* object_selection_controller = scene()->GetController<ObjectSelectionController>("ObjectSelectionController");
   SDL_assert(object_selection_controller != nullptr);
 
@@ -64,7 +63,7 @@ void GizmoController::Update(std::chrono::microseconds) {
   world_to_screen_space_factor_ = Distance(unit_offset, object_position_screen_space_);
 
   // Scaling in world space is not possible
-  if (type_ == GizmoType::SCALE && coordinate_system_ == CoordinateSystem::WORLD) {
+  if (type_ == TransformationType::SCALE && coordinate_system_ == CoordinateSystem::WORLD) {
     coordinate_system_ = CoordinateSystem::OBJECT;
   }
 
@@ -97,7 +96,7 @@ void GizmoController::Update(std::chrono::microseconds) {
   }
 }
 
-void GizmoController::ProcessEvent(Event* event) {
+void TransformationToolsController::ProcessEvent(Event* event) {
   if (!object_selected_) {
     return;
   }
@@ -110,7 +109,7 @@ void GizmoController::ProcessEvent(Event* event) {
         event->StopPropagation();
       }
     } else {
-      if (selected_axes_ != AxisSelection::NOTHING) {
+      if (selected_axes_ != AxesSelection::NONE) {
         HandleDragging(mouse_move_event);
       }
     }
@@ -123,54 +122,41 @@ void GizmoController::ProcessEvent(Event* event) {
   } else if (event->type() == MouseButtonReleaseEvent::TYPE) {
     auto button_release_event = static_cast<MouseButtonReleaseEvent*>(event);
     current_tooltip_ = "";
-    if (selected_axes_ != AxisSelection::NOTHING) {
+    if (selected_axes_ != AxesSelection::NONE) {
       SubmitChangesToScene();
       event->StopPropagation();
     }
     // We may hover another gizmo now, so recheck it
     CheckMousePosition(button_release_event->screen_space_position());
-  } else if (event->type() == KeyPressEvent::TYPE) {
-    auto key_press_event = static_cast<KeyPressEvent*>(event);
-
-    // TODO: make shortcuts configurable
-    if (key_press_event->key() == Key::W()) {
-      SetGizmoType(GizmoType::MOVE);
-    } else if (key_press_event->key() == Key::E()) {
-      SetGizmoType(GizmoType::ROTATE);
-    } else if (key_press_event->key() == Key::R()) {
-      SetGizmoType(GizmoType::SCALE);
-    } else if (key_press_event->key() == Key::Q()) {
-      SwitchCoordinateSystem();
-    }
   }
 }
 
-bool GizmoController::CheckMousePosition(Vector2 position) {
-  switch (gizmo_type()) {
-    case GizmoController::GizmoType::MOVE:
+bool TransformationToolsController::CheckMousePosition(Vector2 position) {
+  switch (transformation_type()) {
+    case TransformationToolsController::TransformationType::MOVE:
       [[fallthrough]];
-    case GizmoType::SCALE:
+    case TransformationType::SCALE:
       if (Length(position - static_cast<Vector2>(object_position_screen_space_)) <= point_size_screen_space_) {
-        selected_axes_ = AxisSelection::XYZ;
+        selected_axes_ = AxesSelection::XYZ;
         return true;
       } else if (DistanceToLineSegment(position, {object_position_screen_space_, x_axis_endpoint_screen_space_}) <=
                  line_thickness_screen_space_) {
-        selected_axes_ = AxisSelection::X;
+        selected_axes_ = AxesSelection::X;
         return true;
       } else if (DistanceToLineSegment(position, {object_position_screen_space_, y_axis_endpoint_screen_space_}) <=
                  line_thickness_screen_space_) {
-        selected_axes_ = AxisSelection::Y;
+        selected_axes_ = AxesSelection::Y;
         return true;
       } else if (DistanceToLineSegment(position, {object_position_screen_space_, z_axis_endpoint_screen_space_}) <=
                  line_thickness_screen_space_) {
-        selected_axes_ = AxisSelection::Z;
+        selected_axes_ = AxesSelection::Z;
         return true;
       } else {
-        selected_axes_ = AxisSelection::NOTHING;
+        selected_axes_ = AxesSelection::NONE;
         return false;
       }
 
-    case GizmoType::ROTATE:
+    case TransformationType::ROTATE:
       auto viewport = game_scene()->main_viewport();
       const Ray3D view_ray = viewport->CalculateViewRay(position);
       auto hitting_rotate_gizmo = [this, view_ray, viewport](Vector3 rotation_axis) -> bool {
@@ -188,22 +174,22 @@ bool GizmoController::CheckMousePosition(Vector2 position) {
       };
 
       if (hitting_rotate_gizmo(x_axis_world_space_)) {
-        selected_axes_ = AxisSelection::X;
+        selected_axes_ = AxesSelection::X;
         return true;
       } else if (hitting_rotate_gizmo(y_axis_world_space_)) {
-        selected_axes_ = AxisSelection::Y;
+        selected_axes_ = AxesSelection::Y;
         return true;
       } else if (hitting_rotate_gizmo(z_axis_world_space_)) {
-        selected_axes_ = AxisSelection::Z;
+        selected_axes_ = AxesSelection::Z;
         return true;
       } else {
-        selected_axes_ = AxisSelection::NOTHING;
+        selected_axes_ = AxesSelection::NONE;
         return false;
       }
   }
 }
 
-void GizmoController::HandleDragging(MouseMoveEvent* mouse_move_event) {
+void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_event) {
   auto* object_selection_controller = scene()->GetController<ObjectSelectionController>("ObjectSelectionController");
   SDL_assert(object_selection_controller != nullptr);
   SceneObject* scene_object = object_selection_controller->selected_object();
@@ -215,14 +201,14 @@ void GizmoController::HandleDragging(MouseMoveEvent* mouse_move_event) {
   const Vector2 previous_mouse_position_screen_space =
       current_mouse_position_screen_space - mouse_move_event->relative_screen_space_position();
 
-  switch (gizmo_type()) {
-    case GizmoController::GizmoType::MOVE: {
+  switch (transformation_type()) {
+    case TransformationToolsController::TransformationType::MOVE: {
       Vector3 world_space_direction = Vector3::Zero();
-      if (selected_axes_ == AxisSelection::X) {
+      if (selected_axes_ == AxesSelection::X) {
         world_space_direction = x_axis_world_space_;
-      } else if (selected_axes_ == AxisSelection::Y) {
+      } else if (selected_axes_ == AxesSelection::Y) {
         world_space_direction = y_axis_world_space_;
-      } else if (selected_axes_ == AxisSelection::Z) {
+      } else if (selected_axes_ == AxesSelection::Z) {
         world_space_direction = z_axis_world_space_;
       }
 
@@ -237,20 +223,20 @@ void GizmoController::HandleDragging(MouseMoveEvent* mouse_move_event) {
         const Vector3 normalized_world_space_direction = Normalize(world_space_direction);
         const float t = Dot(normalized_world_space_direction, world_space_offset);
         transform->Move(t * normalized_world_space_direction);
-      } else if (selected_axes_ != AxisSelection::NOTHING) {
+      } else if (selected_axes_ != AxesSelection::NONE) {
         transform->Move(world_space_offset);
       }
       current_tooltip_ = fmt::format("{}", transform->position());
       break;
     }
 
-    case GizmoType::ROTATE: {
+    case TransformationType::ROTATE: {
       Vector3 rotation_axis;
-      if (selected_axes_ == AxisSelection::X) {
+      if (selected_axes_ == AxesSelection::X) {
         rotation_axis = x_axis_world_space_;
-      } else if (selected_axes_ == AxisSelection::Y) {
+      } else if (selected_axes_ == AxesSelection::Y) {
         rotation_axis = y_axis_world_space_;
-      } else if (selected_axes_ == AxisSelection::Z) {
+      } else if (selected_axes_ == AxesSelection::Z) {
         rotation_axis = z_axis_world_space_;
       }
 
@@ -282,15 +268,15 @@ void GizmoController::HandleDragging(MouseMoveEvent* mouse_move_event) {
       break;
     }
 
-    case GizmoType::SCALE:
+    case TransformationType::SCALE:
       Vector3 scale_direction_world_space;
-      if (selected_axes_ == AxisSelection::X) {
+      if (selected_axes_ == AxesSelection::X) {
         scale_direction_world_space = x_axis_world_space_;
-      } else if (selected_axes_ == AxisSelection::Y) {
+      } else if (selected_axes_ == AxesSelection::Y) {
         scale_direction_world_space = y_axis_world_space_;
-      } else if (selected_axes_ == AxisSelection::Z) {
+      } else if (selected_axes_ == AxesSelection::Z) {
         scale_direction_world_space = z_axis_world_space_;
-      } else if (selected_axes_ == AxisSelection::XYZ) {
+      } else if (selected_axes_ == AxesSelection::XYZ) {
         scale_direction_world_space = x_axis_world_space_ + y_axis_world_space_ + z_axis_world_space_;
       }
       const Vector3 screen_offset = mouse_move_event->viewport()->WorldSpacePositionToScreenSpace(
@@ -301,13 +287,13 @@ void GizmoController::HandleDragging(MouseMoveEvent* mouse_move_event) {
       const float scale_factor = std::powf(1.01, distance_in_scale_direction);
 
       Vector3 scale = transform->scale();
-      if (selected_axes_ == AxisSelection::X) {
+      if (selected_axes_ == AxesSelection::X) {
         scale.x *= scale_factor;
-      } else if (selected_axes_ == AxisSelection::Y) {
+      } else if (selected_axes_ == AxesSelection::Y) {
         scale.y *= scale_factor;
-      } else if (selected_axes_ == AxisSelection::Z) {
+      } else if (selected_axes_ == AxesSelection::Z) {
         scale.z *= scale_factor;
-      } else if (selected_axes_ == AxisSelection::XYZ) {
+      } else if (selected_axes_ == AxesSelection::XYZ) {
         scale *= scale_factor;
       }
       transform->SetScale(scale);

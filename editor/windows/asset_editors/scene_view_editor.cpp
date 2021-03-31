@@ -5,10 +5,10 @@
 #include "../../imgui_extensions/input_serializable.hpp"
 #include "../../imgui_extensions/texture_button.hpp"
 #include "editing_controllers/editor_camera_controller.hpp"
-#include "editing_controllers/gizmo_controller.hpp"
 #include "editing_controllers/object_selection_controller.hpp"
-#include "editor_overlays/gizmo_renderer.hpp"
+#include "editing_controllers/transformation_tools_controller.hpp"
 #include "editor_overlays/selected_object_bounding_box.hpp"
+#include "editor_overlays/transformation_tools_renderer.hpp"
 
 #include <imgui_stdlib.h>
 
@@ -52,7 +52,7 @@ SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(s
 
   editing_scene()->Play();
   AddEditorController<ObjectSelectionController>();
-  AddEditorController<GizmoController>();
+  AddEditorController<TransformationToolsController>();
   AddEditorController<EditorCameraController>();
 }
 
@@ -147,7 +147,7 @@ void SceneViewEditor::DrawToolbar() {
 
   ImGui::SameLine();
   if (ImGui::TextureButton(icons_.move.get())) {
-    editing_scene()->GetController<GizmoController>()->SetGizmoType(GizmoController::GizmoType::MOVE);
+    editing_scene()->GetController<TransformationToolsController>()->SelectTransformationType(TransformationToolsController::TransformationType::MOVE);
   }
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Move");
@@ -155,7 +155,7 @@ void SceneViewEditor::DrawToolbar() {
 
   ImGui::SameLine();
   if (ImGui::TextureButton(icons_.rotate.get())) {
-    editing_scene()->GetController<GizmoController>()->SetGizmoType(GizmoController::GizmoType::ROTATE);
+    editing_scene()->GetController<TransformationToolsController>()->SelectTransformationType(TransformationToolsController::TransformationType::ROTATE);
   }
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Rotate");
@@ -163,7 +163,7 @@ void SceneViewEditor::DrawToolbar() {
 
   ImGui::SameLine();
   if (ImGui::TextureButton(icons_.scale.get())) {
-    editing_scene()->GetController<GizmoController>()->SetGizmoType(GizmoController::GizmoType::SCALE);
+    editing_scene()->GetController<TransformationToolsController>()->SelectTransformationType(TransformationToolsController::TransformationType::SCALE);
   }
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Scale");
@@ -171,7 +171,7 @@ void SceneViewEditor::DrawToolbar() {
 
   ImGui::SameLine();
   if (ImGui::Button("Local vs global")) {
-    editing_scene()->GetController<GizmoController>()->SwitchCoordinateSystem();
+    editing_scene()->GetController<TransformationToolsController>()->SwitchCoordinateSystem();
   }
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Scale");
@@ -496,7 +496,7 @@ void SceneViewEditor::CreateSceneViewport(ImVec2 size) {
     scene_viewport_->AddRenderPass("SpriteRenderer");
     // scene_viewport_->AddRenderPass("Physics2DDebugLayer");
     // scene_viewport_->AddRenderPass(std::make_unique<SelectedObjectBoundingBox>(editing_scene()));
-    scene_viewport_->AddRenderPass(std::make_unique<GizmoRenderer>(editing_scene()));
+    scene_viewport_->AddRenderPass(std::make_unique<TransformationToolsRenderer>(editing_scene()));
     // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "Physics2DDebugLayer");
     // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "SelectedObjectBoundingBox");
     // scene_viewport_->AddRenderPassDependency("SelectedObjectBoundingBox", "GizmoRenderer");
