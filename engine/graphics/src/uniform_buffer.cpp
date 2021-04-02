@@ -56,7 +56,7 @@ std::size_t GetUniformSize(GLenum type) {
 }  // namespace
 
 UniformBuffer::UniformBuffer(GraphicsContext* context, const UniformBufferDescription& description)
-    : GraphicsResource(context) {
+    : GraphicsResource(context, Type::UNIFORM_BUFFER) {
   GLuint program_name = description.shader_program->m_program_name;
   GLint num_uniforms = 0;
   glGetProgramiv(program_name, GL_ACTIVE_UNIFORMS, &num_uniforms);

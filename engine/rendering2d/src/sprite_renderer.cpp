@@ -2,7 +2,6 @@
 #include <ovis/core/transform.hpp>
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/render_target_configuration.hpp>
-#include <ovis/rendering/graphics_loader.hpp>
 #include <ovis/rendering/rendering_viewport.hpp>
 #include <ovis/rendering2d/sprite.hpp>
 #include <ovis/rendering2d/sprite_renderer.hpp>
@@ -80,7 +79,7 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
     if (texture_iterator == textures_.end()) {
       texture_iterator = textures_.insert(std::make_pair(texture_asset, LoadTexture2D(texture_asset, context()))).first;
     }
-    const std::unique_ptr<Texture2D>& texture = texture_iterator->second;
+    Texture2D* texture = texture_iterator->second.get();
 
     Transform* transform = object->GetComponent<Transform>("Transform");
     const Matrix4 world_view_projection =
@@ -90,7 +89,7 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
 
     shader_program_->SetUniform("WorldViewProjection", world_view_projection);
     shader_program_->SetUniform("Color", color);
-    shader_program_->SetTexture("Texture", texture.get());
+    shader_program_->SetTexture("Texture", texture);
     context()->Draw(draw_item);
   }
 }

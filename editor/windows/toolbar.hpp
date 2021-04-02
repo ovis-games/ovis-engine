@@ -21,11 +21,11 @@ class Toolbar : public ImGuiWindow {
 
  private:
   struct Icons {
-    std::unique_ptr<Texture2D> save;
-    std::unique_ptr<Texture2D> undo;
-    std::unique_ptr<Texture2D> redo;
-    std::unique_ptr<Texture2D> package;
-    std::unique_ptr<Texture2D> windows;
+    std::shared_ptr<Texture2D> save;
+    std::shared_ptr<Texture2D> undo;
+    std::shared_ptr<Texture2D> redo;
+    std::shared_ptr<Texture2D> package;
+    std::shared_ptr<Texture2D> windows;
   } icons_;
   ImVec2 icon_size_ = {28, 28};
 

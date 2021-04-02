@@ -11,7 +11,7 @@
 namespace ovis {
 
 ShaderProgram::ShaderProgram(GraphicsContext* context, const ShaderProgramDescription& description)
-    : GraphicsResource(context), m_description(description), m_program_name(glCreateProgram()) {
+    : GraphicsResource(context, Type::SHADER_PROGRAM), m_description(description), m_program_name(glCreateProgram()) {
   AttachShader(description.vertex_shader_source, GL_VERTEX_SHADER);
   AttachShader(description.fragment_shader_source, GL_FRAGMENT_SHADER);
 
@@ -125,6 +125,40 @@ void ShaderProgram::Bind() {
     context()->m_bound_program = m_program_name;
   }
   m_uniform_buffer->Bind();
+}
+
+std::unique_ptr<ShaderProgram> LoadShaderProgram(const std::string& asset_id, GraphicsContext* graphics_context) {
+  return LoadShaderProgram(
+      GetApplicationAssetLibrary()->Contains(asset_id) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary(),
+      asset_id, graphics_context);
+}
+
+std::unique_ptr<ShaderProgram> LoadShaderProgram(AssetLibrary* asset_library, const std::string& asset_id,
+                                                 GraphicsContext* graphics_context) {
+  ShaderProgramDescription description;
+
+  if (!asset_library->Contains(asset_id)) {
+    LogE("Cannot find asset '{}'", asset_id);
+    return {};
+  }
+
+  std::optional<std::string> vertex_shader_source = asset_library->LoadAssetTextFile(asset_id, "vert");
+  if (!vertex_shader_source) {
+    LogE("Shader program '{}' does not have a corresponding vertex shader", asset_id);
+    return {};
+  } else {
+    description.vertex_shader_source = *vertex_shader_source;
+  }
+
+  std::optional<std::string> fragment_shader_source = asset_library->LoadAssetTextFile(asset_id, "frag");
+  if (!fragment_shader_source) {
+    LogE("Shader program '{}' does not have a corresponding fragment shader", asset_id);
+    return {};
+  } else {
+    description.fragment_shader_source = *fragment_shader_source;
+  }
+
+  return std::make_unique<ShaderProgram>(graphics_context, description);
 }
 
 }  // namespace ovis

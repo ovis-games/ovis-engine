@@ -19,7 +19,7 @@ class TextureEditor : public AssetEditor {
   void Save() override;
 
  private:
-  std::unique_ptr<Texture2D> texture_;
+  std::shared_ptr<Texture2D> texture_;
   Texture2DDescription description_;
   float scale_ = 1.0f;
 };

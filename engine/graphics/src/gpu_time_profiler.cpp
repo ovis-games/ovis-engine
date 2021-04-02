@@ -2,7 +2,7 @@
 
 namespace ovis {
 
-GPUQuery::GPUQuery(GraphicsContext* context) : GraphicsResource(context), name_(0) {
+GPUQuery::GPUQuery(GraphicsContext* context) : GraphicsResource(context, Type::QUERY), name_(0) {
 #if !OVIS_EMSCRIPTEN
   glGenQueries(1, &name_);
   SDL_assert(name_ != 0);

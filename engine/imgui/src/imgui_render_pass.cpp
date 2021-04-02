@@ -3,7 +3,6 @@
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/graphics/graphics_context.hpp>
-#include <ovis/rendering/graphics_loader.hpp>
 #include <ovis/rendering/rendering_viewport.hpp>
 #include <ovis/imgui/imgui_render_pass.hpp>
 #include <ovis/imgui/imgui_start_frame_controller.hpp>
@@ -38,7 +37,7 @@ void ImGuiRenderPass::CreateResources() {
   font_texture_desc.mip_map_count = 1;
   font_texture_ = std::make_unique<Texture2D>(context(), font_texture_desc, pixels);
 
-  ImGui::GetIO().Fonts->TexID = font_texture_.get();
+  ImGui::GetIO().Fonts->TexID = font_texture_->id();
 }
 
 void ImGuiRenderPass::Render(const RenderContext& render_context) {
@@ -102,7 +101,12 @@ void ImGuiRenderPass::Render(const RenderContext& render_context) {
     for (int command_index = 0; command_index < command_list->CmdBuffer.Size; ++command_index) {
       const auto& command = command_list->CmdBuffer[command_index];
 
-      shader_program_->SetTexture("Texture", reinterpret_cast<Texture2D*>(command.TextureId));
+      GraphicsResource* texture = context()->GetResource(command.TextureId);
+      if (texture && texture->type() == GraphicsResource::Type::TEXTURE_2D) {
+        shader_program_->SetTexture("Texture", down_cast<Texture2D*>(texture));
+      } else {
+        shader_program_->SetTexture("Texture", static_cast<Texture2D*>(nullptr));
+      }
 
       DrawItem draw_item;
       draw_item.vertex_input = vertex_input_.get();

@@ -7,7 +7,7 @@
 namespace ovis {
 
 VertexInput::VertexInput(GraphicsContext* context, const VertexInputDescription& description)
-    : GraphicsResource(context), m_description(description) {
+    : GraphicsResource(context, Type::VERTEX_INPUT), m_description(description) {
   for (const auto& vertex_attribute : description.vertex_attributes) {
     SDL_assert(vertex_attribute.buffer_index < description.vertex_buffers.size());
   }

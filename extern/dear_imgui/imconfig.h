@@ -15,6 +15,7 @@
 #pragma once
 
 #include <ovis/core/vector.hpp>
+#include <ovis/graphics/graphics_resource.hpp>
 
 //---- Define assertion handler. Defaults to calling assert().
 // If your macro uses multiple statements, make sure is enclosed in a 'do { .. } while (0)' block so it can be used as a single statement.
@@ -75,6 +76,8 @@
 #define IM_VEC4_CLASS_EXTRA                                                 \
         ImVec4(const ovis::Vector4& v) { x = v.x; y = v.y; z = v.z; w = v.w; }     \
         operator ovis::Vector4() const { return {x, y, z, w}; }
+
+#define ImTextureID ::ovis::GraphicsResource::Id
 
 
 //---- Use 32-bit vertex indices (default is 16-bit) is one way to allow large meshes with more than 64K vertices.

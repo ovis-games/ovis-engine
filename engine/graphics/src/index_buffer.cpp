@@ -4,7 +4,7 @@
 namespace ovis {
 
 IndexBuffer::IndexBuffer(GraphicsContext* context, const IndexBufferDescription& description, const void* index_data)
-    : GraphicsBuffer(context), m_description(description) {
+    : GraphicsBuffer(context, Type::INDEX_BUFFER), m_description(description) {
   SDL_assert(description.index_format != IndexFormat::UINT16 || description.size_in_bytes % 2 == 0);
   Bind();
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, description.size_in_bytes, index_data, GL_STATIC_DRAW);

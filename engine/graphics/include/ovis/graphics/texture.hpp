@@ -25,7 +25,7 @@ class Texture : public GraphicsResource {
   friend class UniformBuffer;
 
  public:
-  Texture(GraphicsContext* context);
+  Texture(GraphicsContext* context, Type type);
   virtual ~Texture() override;
 
  protected:

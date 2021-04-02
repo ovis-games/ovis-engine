@@ -8,7 +8,7 @@ namespace ovis {
 
 RenderTargetConfiguration::RenderTargetConfiguration(GraphicsContext* context,
                                                      const RenderTargetConfigurationDescription& description)
-    : GraphicsResource(context) {
+    : GraphicsResource(context, Type::RENDER_TARGET_CONFIGURATION) {
   glGenFramebuffers(1, &m_frame_buffer);
 
   Bind();
@@ -80,7 +80,7 @@ void RenderTargetConfiguration::ClearDepth(float depth) {
 }
 
 RenderTargetConfiguration::RenderTargetConfiguration(GraphicsContext* context, std::size_t width, std::size_t height)
-    : GraphicsResource(context),
+    : GraphicsResource(context, Type::RENDER_TARGET_CONFIGURATION),
       m_frame_buffer(0),
       width_(width),
       height_(height),

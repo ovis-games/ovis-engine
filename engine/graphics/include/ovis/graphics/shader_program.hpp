@@ -60,4 +60,8 @@ class ShaderProgram : public GraphicsResource {
   void Bind();
 };
 
+std::unique_ptr<ShaderProgram> LoadShaderProgram(const std::string& asset_id, GraphicsContext* graphics_context);
+std::unique_ptr<ShaderProgram> LoadShaderProgram(AssetLibrary* asset_library, const std::string& asset_id,
+                                                 GraphicsContext* graphics_context);
+
 }  // namespace ovis

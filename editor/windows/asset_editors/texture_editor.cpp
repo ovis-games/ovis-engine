@@ -8,7 +8,6 @@
 #include <ovis/utils/range.hpp>
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/lua.hpp>
-#include <ovis/rendering/graphics_loader.hpp>
 #include <ovis/application/application.hpp>
 
 namespace ovis {
@@ -24,7 +23,7 @@ TextureEditor::TextureEditor(const std::string& texture_id) : AssetEditor(textur
 
 void TextureEditor::DrawContent() {
   ImVec2 image_size = {description_.width * scale_, description_.height * scale_};
-  ImGui::Image(texture_.get(), image_size);
+  ImGui::Image(texture_->id(), image_size);
   if (ImGui::IsItemHovered() && ImGui::GetIO().KeyCtrl) {
     scale_ += ImGui::GetIO().MouseWheel * 0.1f;
   }

@@ -71,11 +71,19 @@ class GraphicsContext final {
   inline RenderTargetConfiguration* default_render_target_configuration() const {
     return m_default_render_target_configuration.get();
   }
+  inline GraphicsResource* GetResource(GraphicsResource::Id resource_id) const {
+    const size_t index = GraphicsResource::ExtractIndex(resource_id);
+    if (index >= resources_.size()) {
+      return nullptr;
+    }
+    GraphicsResource* resource = resources_[index];
+    return resource->id() == resource_id ? resource : nullptr;
+  }
 
  private:
   SDL_Window* window_;
   SDL_GLContext m_context;
-  std::set<GraphicsResource*> m_graphics_resources;
+  std::vector<GraphicsResource*> resources_;
   std::unique_ptr<RenderTargetConfiguration> m_default_render_target_configuration;
 
   struct {

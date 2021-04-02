@@ -12,7 +12,7 @@ class RenderTarget : public GraphicsResource {
   friend class RenderTargetConfiguration;
 
  public:
-  RenderTarget(GraphicsContext* context) : GraphicsResource(context) {}
+  RenderTarget(GraphicsContext* context) : GraphicsResource(context, Type::RENDER_TARGET) {}
   virtual ~RenderTarget() override = default;
 
   virtual size_t GetWidth() const = 0;

@@ -11,7 +11,7 @@
 namespace ovis {
 
 Cubemap::Cubemap(GraphicsContext* context, const CubemapDescription& description, const void* pixels)
-    : Texture(context), m_description(description) {
+    : Texture(context, Type::TEXTURE_CUBE), m_description(description) {
   Bind(0);
 
   GLenum internal_format;

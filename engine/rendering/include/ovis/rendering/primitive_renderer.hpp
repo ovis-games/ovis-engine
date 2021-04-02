@@ -13,7 +13,6 @@
 #include <ovis/graphics/shader_program.hpp>
 #include <ovis/graphics/vertex_buffer.hpp>
 #include <ovis/graphics/vertex_input.hpp>
-#include <ovis/rendering/graphics_loader.hpp>
 #include <ovis/rendering/render_pass.hpp>
 
 namespace ovis {

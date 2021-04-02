@@ -7,7 +7,7 @@ namespace ovis {
 
 class GraphicsBuffer : public GraphicsResource {
  protected:
-  GraphicsBuffer(GraphicsContext* context);
+  GraphicsBuffer(GraphicsContext* context, Type type);
   virtual ~GraphicsBuffer() override;
 
   inline GLuint name() const { return name_; }

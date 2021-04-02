@@ -1,6 +1,7 @@
 #include "toolbar.hpp"
 
 #include "../editor_window.hpp"
+#include "../imgui_extensions/texture_button.hpp"
 #include "asset_editors/asset_editor.hpp"
 #include "asset_viewer_window.hpp"
 #include "inspector_window.hpp"
@@ -9,7 +10,6 @@
 #include <imgui_internal.h>
 
 #include <ovis/utils/platform.hpp>
-#include <ovis/rendering/graphics_loader.hpp>
 #include <ovis/input/key.hpp>
 #include <ovis/input/key_events.hpp>
 
@@ -56,7 +56,7 @@ void Toolbar::BeforeBegin() {
 void Toolbar::DrawContent() {
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(48, 48, 48)));
 
-  if (ImGui::ImageButton(icons_.save.get(), icon_size_)) {
+  if (ImGui::TextureButton(icons_.save.get())) {
     Save();
   }
   if (ImGui::IsItemHovered()) {
@@ -68,7 +68,7 @@ void Toolbar::DrawContent() {
   }
 
   ImGui::SameLine();
-  if (ImGui::ImageButton(icons_.undo.get(), icon_size_)) {
+  if (ImGui::TextureButton(icons_.undo.get(), icon_size_)) {
     Undo();
   }
   if (ImGui::IsItemHovered()) {
@@ -80,7 +80,7 @@ void Toolbar::DrawContent() {
   }
 
   ImGui::SameLine();
-  if (ImGui::ImageButton(icons_.redo.get(), icon_size_)) {
+  if (ImGui::TextureButton(icons_.redo.get(), icon_size_)) {
     Redo();
   }
   if (ImGui::IsItemHovered()) {
@@ -92,7 +92,7 @@ void Toolbar::DrawContent() {
   }
 
   ImGui::SameLine();
-  if (ImGui::ImageButton(icons_.package.get(), icon_size_)) {
+  if (ImGui::TextureButton(icons_.package.get(), icon_size_)) {
     scene()->AddController("PackagingWindow");
   }
   if (ImGui::IsItemHovered()) {
@@ -101,7 +101,7 @@ void Toolbar::DrawContent() {
 
   ImGui::SameLine();
   ImVec2 window_button_pos = ImGui::GetCursorPos();
-  if (ImGui::ImageButton(icons_.windows.get(), icon_size_)) {
+  if (ImGui::TextureButton(icons_.windows.get(), icon_size_)) {
     ImGui::OpenPopup("testtest");
   }
   if (ImGui::IsItemHovered()) {

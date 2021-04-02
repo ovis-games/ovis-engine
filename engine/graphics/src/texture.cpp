@@ -2,7 +2,7 @@
 
 namespace ovis {
 
-Texture::Texture(GraphicsContext* context) : GraphicsResource(context) {
+Texture::Texture(GraphicsContext* context, Type type) : GraphicsResource(context, type) {
   glGenTextures(1, &name_);
 }
 

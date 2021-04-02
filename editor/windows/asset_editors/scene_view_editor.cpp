@@ -257,7 +257,7 @@ void SceneViewEditor::DrawViewport() {
   scene_viewport_->Render();
 
   const Vector2 top_left = static_cast<Vector2>(ImGui::GetWindowPos()) + static_cast<Vector2>(ImGui::GetCursorPos());
-  ImGui::Image(scene_viewport_->color_texture()->texture(), available_space, ImVec2(0, 1), ImVec2(1, 0),
+  ImGui::Image(scene_viewport_->color_texture()->texture()->id(), available_space, ImVec2(0, 1), ImVec2(1, 0),
                ImVec4(1, 1, 1, 1), border_color);
   scene_window_focused_ = ImGui::IsWindowFocused();
 

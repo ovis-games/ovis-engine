@@ -4,7 +4,7 @@
 
 namespace ovis {
 
-GraphicsBuffer::GraphicsBuffer(GraphicsContext* context) : GraphicsResource(context), name_(0) {
+GraphicsBuffer::GraphicsBuffer(GraphicsContext* context, Type type) : GraphicsResource(context, type), name_(0) {
   glGenBuffers(1, &name_);
   SDL_assert(name_ != 0);
 }

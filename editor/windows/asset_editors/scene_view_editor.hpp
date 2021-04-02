@@ -68,13 +68,13 @@ class SceneViewEditor : public AssetEditor {
   std::vector<SceneObject*> cached_scene_objects_;
 
   struct Icons {
-    std::unique_ptr<Texture2D> play;
-    std::unique_ptr<Texture2D> pause;
-    std::unique_ptr<Texture2D> stop;
-    std::unique_ptr<Texture2D> move;
-    std::unique_ptr<Texture2D> rotate;
-    std::unique_ptr<Texture2D> scale;
-    std::unique_ptr<Texture2D> eye;
+    std::shared_ptr<Texture2D> play;
+    std::shared_ptr<Texture2D> pause;
+    std::shared_ptr<Texture2D> stop;
+    std::shared_ptr<Texture2D> move;
+    std::shared_ptr<Texture2D> rotate;
+    std::shared_ptr<Texture2D> scale;
+    std::shared_ptr<Texture2D> eye;
   } icons_;
 
   RunState run_state_ = RunState::STOPPED;
