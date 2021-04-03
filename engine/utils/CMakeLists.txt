@@ -14,6 +14,8 @@ add_library(
   include/ovis/utils/profiling.hpp src/profiling.cpp
   include/ovis/utils/serialize.hpp src/serialize.cpp
   include/ovis/utils/platform.hpp src/platform.cpp
+  include/ovis/utils/small_vector.hpp src/small_vector.cpp
+  include/ovis/utils/safe_pointer.hpp src/safe_pointer.cpp
   include/ovis/utils/static_factory.hpp src/static_factory.cpp
 )
 add_library(ovis::utils ALIAS ovis-utils)

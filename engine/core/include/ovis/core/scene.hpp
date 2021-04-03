@@ -10,11 +10,12 @@
 #include <sol/sol.hpp>
 
 #include <ovis/utils/down_cast.hpp>
-#include <ovis/core/event.hpp>
 #include <ovis/utils/json.hpp>
+#include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/serialize.hpp>
-#include <ovis/core/vector.hpp>
+#include <ovis/core/event.hpp>
 #include <ovis/core/scene_object.hpp>
+#include <ovis/core/vector.hpp>
 
 namespace ovis {
 
@@ -24,7 +25,7 @@ class GraphicsContext;
 class Window;
 class SceneViewport;
 
-class Scene : public Serializable {
+class Scene : public Serializable, public SafelyReferenceable {
   friend class SceneController;
   friend class SceneObject;
 

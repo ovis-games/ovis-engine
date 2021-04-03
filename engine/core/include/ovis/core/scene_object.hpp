@@ -7,6 +7,7 @@
 #include <ovis/utils/class.hpp>
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/json.hpp>
+#include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/serialize.hpp>
 #include <ovis/core/scene_object_component.hpp>
 
@@ -14,7 +15,7 @@ namespace ovis {
 
 class Scene;
 
-class SceneObject : public Serializable {
+class SceneObject : public Serializable, public SafelyReferenceable {
   MAKE_NON_COPYABLE(SceneObject);
 
  public:

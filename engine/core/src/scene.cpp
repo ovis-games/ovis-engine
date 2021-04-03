@@ -354,7 +354,9 @@ void Scene::RegisterType(sol::table* module) {
   // assert(first_object.name == "object")
   // local second_object = scene:add_object("object")
   // assert(second_object.name == "object2")
-  scene_type["add_object"] = sol::resolve<SceneObject*(const std::string&)>(&Scene::CreateObject);
+  scene_type["add_object"] = [](Scene* scene, const std::string& name) {
+    return safe_ptr(scene->CreateObject(name));
+  };
 
   /// Removes an object from the scene.
   // @function Scene:remove_object
@@ -398,7 +400,7 @@ void Scene::RegisterType(sol::table* module) {
   //   core.log(obj)
   // end
   scene_type["objects"] = [](Scene& scene) {
-    return [&scene, object_index = std::make_shared<size_t>(0)]() -> SceneObject* {
+    return [&scene, object_index = std::make_shared<size_t>(0)]() -> safe_ptr<SceneObject> {
       if (*object_index < scene.objects_.size()) {
         SceneObject* object = std::next(scene.objects_.begin(), *object_index)->second.get();
         (*object_index)++;
