@@ -13,12 +13,12 @@
 namespace ovis {
 namespace editor {
 
-std::vector<LuaError> ParseLuaErrorMessage(const std::string& error_message) {
+std::vector<LuaError> ParseLuaErrorMessage(std::string_view error_message) {
   std::vector<LuaError> errors;
   std::regex lua_error_regex("^(.+):(\\d+): (.+)");
 
-  for (const auto& match : make_range(std::sregex_iterator(error_message.begin(), error_message.end(), lua_error_regex),
-                                      std::sregex_iterator())) {
+  for (const auto& match : make_range(std::cregex_iterator(error_message.begin(), error_message.end(), lua_error_regex),
+                                      std::cregex_iterator())) {
     errors.push_back({match[1].str(), std::stoi(match[2].str()), match[3].str()});
   }
 

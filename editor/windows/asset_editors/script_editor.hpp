@@ -12,7 +12,7 @@ struct LuaError {
   int line;
   std::string message;
 };
-std::vector<LuaError> ParseLuaErrorMessage(const std::string& error_message);
+std::vector<LuaError> ParseLuaErrorMessage(std::string_view error_message);
 
 class ScriptEditor : public AssetEditor {
  public:

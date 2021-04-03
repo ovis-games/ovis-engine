@@ -84,6 +84,28 @@ void EmscriptenUpdate() {
 }
 #endif  // OVIS_EMSCRIPTEN
 
+void LuaPanic(sol::optional<std::string_view> message) {
+  LogE("Lua panic!");
+  if (message) {
+    LogE("{}", *message);
+  }
+  LuaErrorEvent event(message.value_or(""));
+  for (auto window : Window::all_windows()) {
+    window->scene()->ProcessEvent(&event);
+  }
+}
+
+void LuaError(sol::optional<std::string_view> message) {
+  LogE("Lua error");
+  if (message) {
+    LogE("{}", *message);
+  }
+  LuaErrorEvent event(message.value_or(""));
+  for (auto window : Window::all_windows()) {
+    window->scene()->ProcessEvent(&event);
+  }
+}
+
 }  // namespace
 
 void Init() {
@@ -97,6 +119,10 @@ void Init() {
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
     LogE("Failed to initialize SDL: {}", SDL_GetError());
   }
+  lua.set_panic(sol::c_call<decltype(&LuaPanic), &LuaPanic>);
+
+  lua["OvisErrorHandler"] = LuaError;
+  sol::protected_function::set_default_handler(lua["OvisErrorHandler"]);
 }
 
 void Run() {

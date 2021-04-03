@@ -1,5 +1,5 @@
-#include <ovis/core/asset_library.hpp>
 #include <ovis/utils/log.hpp>
+#include <ovis/core/asset_library.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/core/script_scene_controller.hpp>
 
@@ -47,6 +47,8 @@ ScriptSceneController::ScriptSceneController(const std::string& name, sol::table
       update_function_ = instance_["update"];
       process_event_function_ = instance_["process_event"];
     }
+  } else {
+    LogE("Failed to find constructor for '{}'", name);
   }
 }
 
@@ -104,7 +106,7 @@ int ScriptSceneController::LoadLuaModule(lua_State* l) {
 
   auto get_controller = []() {};
 
-    sol::table core = lua["require"]("ovis.core");
+  sol::table core = lua["require"]("ovis.core");
   sol::table scene_controller_type = core["class"]("SceneController");
   scene_controller_type["subscribe_to_event"] = sol::overload(
       [](sol::table scene_controller, std::string event_type) {
@@ -161,6 +163,7 @@ std::unique_ptr<ScriptSceneController> LoadScriptSceneController(const std::stri
         if (controller && controller->is_valid()) {
           return controller;
         } else {
+          LogE("Failed to create class instance for script controller '{}'", asset_id);
           return nullptr;
         }
       } else {

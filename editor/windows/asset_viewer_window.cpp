@@ -11,8 +11,8 @@
 
 #include <imgui.h>
 
-#include <ovis/core/asset_library.hpp>
 #include <ovis/utils/log.hpp>
+#include <ovis/core/asset_library.hpp>
 #include <ovis/core/lua.hpp>
 
 namespace ovis {
@@ -21,15 +21,7 @@ namespace editor {
 AssetViewerWindow::AssetViewerWindow() : ImGuiWindow("Assets"), current_path_("/") {
   UpdateAfter("Dockspace Window");
 
-  // Lua::on_error.Subscribe([this](const std::string& error_message) {
-  //   LogE("Lua error: {}", error_message);
-
-  //   std::vector<LuaError> errors = ParseLuaErrorMessage(error_message);
-  //   if (errors.size() > 0) {
-  //     ScriptEditor* script_editor = down_cast<ScriptEditor*>(OpenAssetEditor(errors[0].asset_id));
-  //     script_editor->SetErrors(errors);
-  //   }
-  // });
+  SubscribeToEvent(LuaErrorEvent::TYPE);
 }
 
 void AssetViewerWindow::DrawContent() {
@@ -77,11 +69,16 @@ void AssetViewerWindow::DrawContent() {
   ImGui::EndChild();
 }
 
-// bool AssetViewerWindow::ProcessEvent(const SDL_Event& event) {
-
-
-//   return false;
-// }
+void AssetViewerWindow::ProcessEvent(Event* event) {
+  if (event->type() == LuaErrorEvent::TYPE) {
+    auto* lua_error_event = down_cast<LuaErrorEvent*>(event);
+    std::vector<LuaError> errors = ParseLuaErrorMessage(lua_error_event->message());
+    if (errors.size() > 0) {
+      ScriptEditor* script_editor = down_cast<ScriptEditor*>(OpenAssetEditor(errors[0].asset_id));
+      script_editor->SetErrors(errors);
+    }
+  }
+}
 
 AssetEditor* AssetViewerWindow::OpenAssetEditor(const std::string& asset_id) {
   auto editor = scene()->GetController<AssetEditor>(AssetEditor::GetAssetEditorId(asset_id));
