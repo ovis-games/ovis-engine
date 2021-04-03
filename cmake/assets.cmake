@@ -25,7 +25,7 @@ function(target_add_assets target)
   target_link_options(
     ${target}
     PUBLIC
-      "SHELL:--embed-file ${CMAKE_CURRENT_BINARY_DIR}/assets/@/ovis_assets"
+      "SHELL:--preload-file ${CMAKE_CURRENT_BINARY_DIR}/assets/@/ovis_assets"
   )
 
 endfunction()
