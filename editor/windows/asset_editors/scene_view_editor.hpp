@@ -26,6 +26,8 @@ class SceneViewEditor : public AssetEditor {
   inline Scene* game_scene() { return &game_scene_; }
   inline Scene* editing_scene() { return &editing_scene_; }
 
+  SceneObject* GetSelectedObject();
+
  protected:
   void SetSerializedScene(const json& data);
   void SubmitChangesToScene();
@@ -37,6 +39,9 @@ class SceneViewEditor : public AssetEditor {
     controller->game_scene_ = game_scene();
     controller->editor_ = this;
   }
+
+  void CopySelectedObjectToClipboard();
+  SceneObject* PasteObjectFromClipboard();
 
  private:
   void DrawContent() override;
@@ -52,13 +57,11 @@ class SceneViewEditor : public AssetEditor {
   void CreateSceneViewport(ImVec2 size);
 
   SceneObject* CreateObject(const std::string& base_name, bool initiate_rename = false);
-  SceneObject* GetObjectAtPosition(Vector2 world_position);
   json::json_pointer GetComponentPath(const std::string& object_name, const std::string& component_id) {
     return json::json_pointer("/objects/" + object_name + "/components/" + component_id);
   }
 
   std::unique_ptr<RenderTargetViewport> scene_viewport_;
-  bool scene_window_focused_ = false;
 
   Vector2 latest_mouse_position_ = Vector2::NotANumber();
 

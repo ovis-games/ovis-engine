@@ -110,6 +110,13 @@ void Scene::DeleteObject(const std::string& object_name) {
   objects_.erase(object_name);
 }
 
+void Scene::DeleteObject(SceneObject* object) {
+  if (object != nullptr) {
+    SDL_assert(object->scene() == this);
+    DeleteObject(object->name());
+  }
+}
+
 void Scene::ClearObjects() {
   objects_.clear();
 }
@@ -373,15 +380,12 @@ void Scene::RegisterType(sol::table* module) {
   // assert(scene:contains_object("object"))
   // scene:remove_object(obj)
   // assert(not scene:contains_object("object"))
-  // -- do not use obj anymore!
+  // assert(obj == nil)
   scene_type["remove_object"] =
   sol::overload(
-    &Scene::DeleteObject,
-    [](Scene* scene, SceneObject* object){
-      if (scene != nullptr && object != nullptr) {
-        scene->DeleteObject(object->name());
-      }
-  });
+    sol::resolve<void(const std::string&)>(&Scene::DeleteObject),
+    sol::resolve<void(SceneObject*)>(&Scene::DeleteObject)
+  );
 
   /// Checks whether an object exists.
   // @function Scene:contains_object
@@ -391,7 +395,6 @@ void Scene::RegisterType(sol::table* module) {
   // assert(scene:contains_object("object"))
   // scene:remove_object(obj)
   // assert(not scene:contains_object("object"))
-  // -- do not use obj anymore!
   scene_type["contains_object"] = &Scene::ContainsObject;
 
   /// Returns an iterator to all objects in the scene

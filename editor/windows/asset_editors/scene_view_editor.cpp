@@ -1,5 +1,6 @@
 #include "scene_view_editor.hpp"
 
+#include "../../clipboard.hpp"
 #include "../../editor_window.hpp"
 #include "../../imgui_extensions/input_asset.hpp"
 #include "../../imgui_extensions/input_serializable.hpp"
@@ -127,6 +128,38 @@ void SceneViewEditor::ChangeRunState(RunState new_state) {
   }
 }
 
+
+SceneObject* SceneViewEditor::GetSelectedObject() {
+  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
+  SDL_assert(object_selection_controller != nullptr);
+  return object_selection_controller->selected_object();
+}
+
+void SceneViewEditor::CopySelectedObjectToClipboard() {
+  SceneObject* object = GetSelectedObject();
+  if (object != nullptr) {
+    SetClipboardData(object->name(), "application/scene_object_name");
+    SetClipboardData(object->Serialize().dump(), "application/scene_object_data");
+  }
+}
+
+SceneObject* SceneViewEditor::PasteObjectFromClipboard() {
+  const auto object_name = GetClipboardData("application/scene_object_name");
+  const auto serialized_object = GetClipboardData("application/scene_object_data");
+  if (object_name && serialized_object) {
+    auto object = game_scene()->CreateObject(*object_name, json::parse(*serialized_object));
+
+    auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
+    SDL_assert(object_selection_controller != nullptr);
+    object_selection_controller->SelectObject(object);
+
+    SubmitChangesToScene();
+    return object;
+  } else {
+    return nullptr;
+  }
+}
+
 void SceneViewEditor::DrawContent() {
   DrawToolbar();
   DrawViewport();
@@ -238,6 +271,9 @@ void SceneViewEditor::DrawToolbar() {
 }
 
 void SceneViewEditor::DrawViewport() {
+  ImGuiIO& io = ImGui::GetIO();
+  const bool control_or_command = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;
+
   ImVec4 border_color(0, 0, 0, 1);
   if (run_state() != RunState::STOPPED) {
     border_color.x = 1;
@@ -259,15 +295,35 @@ void SceneViewEditor::DrawViewport() {
   const Vector2 top_left = static_cast<Vector2>(ImGui::GetWindowPos()) + static_cast<Vector2>(ImGui::GetCursorPos());
   ImGui::Image(scene_viewport_->color_texture()->texture()->id(), available_space, ImVec2(0, 1), ImVec2(1, 0),
                ImVec4(1, 1, 1, 1), border_color);
-  scene_window_focused_ = ImGui::IsWindowFocused();
+  ImGui::SetItemDefaultFocus();
+  const Vector2 mouse_position = Vector2(ImGui::GetMousePos()) - top_left;
+  
+  if (ImGui::IsWindowFocused() && control_or_command && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C))) {
+    CopySelectedObjectToClipboard();
+  }
+  if (ImGui::IsWindowFocused() && control_or_command && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_V))) {
+    SceneObject* object = PasteObjectFromClipboard();
+    if (object && object->HasComponent("Transform")) {
+      Transform* transform = object->GetComponent<Transform>("Transform");
+      SDL_assert(transform != nullptr);
+      const Vector3 screen_space_position = scene_viewport_->WorldSpacePositionToScreenSpace(transform->position());
+      const Vector3 new_screen_space_position = Vector3::FromVector2(mouse_position, screen_space_position.z);
+      const Vector3 new_world_space_position = scene_viewport_->ScreenSpacePositionToWorldSpace(new_screen_space_position);
+      transform->SetPosition(new_world_space_position);
+      SubmitChangesToScene();
+    }
+  }
+  if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete))) {
+    LogI("Delete object");
+    game_scene()->DeleteObject(GetSelectedObject());
+    SubmitChangesToScene();
+  }
 
-  const auto& io = ImGui::GetIO();
   if (ImGui::IsItemHovered()) {
     if (io.MouseWheel != 0 || io.MouseWheelH != 0) {
       MouseWheelEvent mouse_wheel_event({io.MouseWheelH, io.MouseWheel});
       ProcessViewportInputEvent(&mouse_wheel_event);
     }
-    const Vector2 mouse_position = Vector2(ImGui::GetMousePos()) - top_left;
     if (mouse_position != latest_mouse_position_) {
       const Vector2 relative_position =
           std::isnan(latest_mouse_position_.x) || std::isnan(latest_mouse_position_.y) ? Vector2::Zero() : mouse_position - latest_mouse_position_;
@@ -316,6 +372,9 @@ void SceneViewEditor::DrawInspectorContent() {
 }
 
 void SceneViewEditor::DrawObjectTree() {
+  ImGuiIO& io = ImGui::GetIO();
+  const bool control_or_command = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;
+
   auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
 
   ImVec2 available_content_region = ImGui::GetContentRegionAvail();
@@ -325,6 +384,10 @@ void SceneViewEditor::DrawObjectTree() {
         CreateObject("New Object", true);
       }
       ImGui::EndPopup();
+    }
+  
+    if (ImGui::IsWindowFocused() && control_or_command && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_V))) {
+      PasteObjectFromClipboard();
     }
 
     ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
@@ -365,6 +428,14 @@ void SceneViewEditor::DrawObjectTree() {
               object_selection_controller->SelectObject(object);
               SDL_assert(object_selection_controller->selected_object_name() == object->name());
             }
+            if (ImGui::IsItemFocused() && control_or_command && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C))) {
+              CopySelectedObjectToClipboard();
+            }
+            if (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete))) {
+              game_scene()->DeleteObject(GetSelectedObject());
+              SubmitChangesToScene();
+            }
+
             if (ImGui::BeginPopupContextItem()) {
               if (ImGui::Selectable("Rename")) {
                 renaming_state_ = RenamingState::STARTED_RENAMING;
@@ -542,41 +613,6 @@ SceneObject* SceneViewEditor::CreateObject(const std::string& base_name, bool in
     renaming_state_ = RenamingState::STARTED_RENAMING;
   }
   return game_scene()->CreateObject(object_name);
-}
-
-SceneObject* SceneViewEditor::GetObjectAtPosition(Vector2 world_position) {
-  SceneObject* object_at_position = nullptr;
-  float z = std::numeric_limits<float>::infinity();
-
-  // for (SceneObject* object : game_scene()->GetObjects()) {
-  //   Vector2 size;
-  //   if (object->HasComponent("Sprite")) {
-  //     size = object->GetComponent<SpriteComponent>("Sprite")->size();
-  //   }
-
-  //   Vector3 position = Vector3::Zero();
-  //   if (object->HasComponent("Transform")) {
-  //     Transform* transform = object->GetComponent<TransformComponent>("Transform");
-  //     position = transform->position();
-  //     size *= Vector2(transform->scale());
-  //   }
-
-  //   const Vector2 half_size = size * 0.5f;
-
-  //   LogI("Candidate: {}", object->name());
-  //   LogI("World position: {}", world_position);
-  //   LogI("Object position: {}", position);
-  //   LogI("Object Size: {}", size);
-
-  //   if (position.x - half_size.x <= world_position.x && world_position.x <= position.x + half_size.x &&
-  //       position.y - half_size.y <= world_position.y && world_position.y <= position.y + half_size.y &&
-  //       position.z < z) {
-  //     object_at_position = object;
-  //     z = position.z;
-  //   }
-  // }
-
-  return object_at_position;
 }
 
 }  // namespace editor
