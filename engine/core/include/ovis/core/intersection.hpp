@@ -53,7 +53,7 @@ struct AxisAlignedBoundingBox {
   }
 
   static inline constexpr AxisAlignedBoundingBox<VectorType> FromPoints(std::span<VectorType> points) {
-    SDL_assert(points.size() > 0);
+    // SDL_assert(points.size() > 0);
     VectorType minimum = points[0];
     VectorType maximum = points[0];
     for (const VectorType p : points) {
