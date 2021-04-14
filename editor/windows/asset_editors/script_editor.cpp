@@ -30,6 +30,7 @@ ScriptEditor::ScriptEditor(const std::string& script_id) : AssetEditor(script_id
 
   editor_.SetLanguageDefinition(lang);
   editor_.SetShowWhitespaces(false);
+  editor_.SetTabSize(3);
 
   std::optional<std::string> lua_code = LoadTextFile("lua");
   if (lua_code) {
