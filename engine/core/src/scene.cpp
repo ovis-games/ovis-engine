@@ -365,6 +365,18 @@ void Scene::RegisterType(sol::table* module) {
     return safe_ptr(scene->CreateObject(name));
   };
 
+  /// Returns an object of the scene.
+  // @function Scene:get_object
+  // @string name The name of the object.
+  // @treturn SceneObject
+  // @usage local object = scene:add_object("object")
+  // assert(object.name == "object")
+  // local same_object = scene:get_object("object")
+  // assert(object == same_object)
+  scene_type["get_object"] = [](Scene* scene, const std::string& name) {
+    return safe_ptr(scene->GetObject(name));
+  };
+
   /// Removes an object from the scene.
   // @function Scene:remove_object
   // @string name The name of the object
@@ -407,7 +419,7 @@ void Scene::RegisterType(sol::table* module) {
       if (*object_index < scene.objects_.size()) {
         SceneObject* object = std::next(scene.objects_.begin(), *object_index)->second.get();
         (*object_index)++;
-        return object;
+        return safe_ptr(object);
       } else {
         return nullptr;
       }
@@ -420,17 +432,17 @@ void Scene::RegisterType(sol::table* module) {
   // @usage for obj in scene:objects() do
   //   core.log(obj)
   // end
-  scene_type["controllers"] = [](Scene& scene) {
-    return [&scene, object_index = std::make_shared<size_t>(0)]() -> SceneObject* {
-      if (*object_index < scene.objects_.size()) {
-        SceneObject* object = std::next(scene.objects_.begin(), *object_index)->second.get();
-        (*object_index)++;
-        return object;
-      } else {
-        return nullptr;
-      }
-    };
-  };
+  // scene_type["controllers"] = [](Scene& scene) {
+  //   return [&scene, object_index = std::make_shared<size_t>(0)]() -> SceneObject* {
+  //     if (*object_index < scene.objects_.size()) {
+  //       SceneObject* object = std::next(scene.objects_.begin(), *object_index)->second.get();
+  //       (*object_index)++;
+  //       return object;
+  //     } else {
+  //       return nullptr;
+  //     }
+  //   };
+  // };
 
   // clang-format on
 }

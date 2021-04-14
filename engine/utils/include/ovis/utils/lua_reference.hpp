@@ -5,6 +5,8 @@
 
 #include <sol/sol.hpp>
 
+#include <ovis/utils/safe_pointer.hpp>
+
 namespace ovis {
 
 // class LuaReferenceBase {};
@@ -12,7 +14,7 @@ namespace ovis {
 // template <typename T>
 // class LuaReference;
 
-class DynamicallyLuaReferencableBase {
+class DynamicallyLuaReferencableBase : public SafelyReferenceable {
  public:
   virtual ~DynamicallyLuaReferencableBase() = default;
 
@@ -26,11 +28,11 @@ class DynamicallyLuaReferencable : public DynamicallyLuaReferencableBase {
  public:
   virtual ~DynamicallyLuaReferencable() {}
 
-  sol::lua_value GetValue() override { return static_cast<T*>(this); }
+  sol::lua_value GetValue() override { return safe_ptr<T>(this); }
 };
 
 #define OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE(type) \
-  sol::lua_value GetValue() override { return this; }
+  sol::lua_value GetValue() override { return safe_ptr<type>(this); }
 
 // template <typename T>
 // class LuaReference {

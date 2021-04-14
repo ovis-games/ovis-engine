@@ -100,8 +100,10 @@ void SceneObject::RegisterType(sol::table* module) {
   // @return The newly added component
   // @usage local transform = some_object:add_component("Transform")
   // assert(transform ~= nil)
-  scene_object_type["add_component"] =
-      static_cast<SceneObjectComponent* (SceneObject::*)(const std::string&)>(&SceneObject::AddComponent);
+  scene_object_type["add_component"] = [](SceneObject* object, const std::string& component_id) {
+    SceneObjectComponent* component = object->AddComponent(component_id);
+    return component ? component->GetValue() : nullptr;
+  };
 
   /// Checks whether a component is attached to an object.
   // @function has_component

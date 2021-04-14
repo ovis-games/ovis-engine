@@ -8,6 +8,8 @@
 
 #include <sol/sol.hpp>
 
+#include <ovis/utils/log.hpp>
+
 namespace ovis {
 
 class safe_ptr_base;
@@ -80,28 +82,26 @@ class safe_ptr : public safe_ptr_base {
  public:
   constexpr safe_ptr() noexcept {}
   constexpr safe_ptr(std::nullptr_t) noexcept {}
-  safe_ptr(T* pointer) : safe_ptr_base(pointer) {}
+  explicit safe_ptr(T* pointer) : safe_ptr_base(pointer) {}
 
   inline T* get() const noexcept { return static_cast<T*>(pointer_); }
-  inline T& operator*() const { return *get_throw(); }
-  inline T* operator->() const { return get_throw(); }
-
- private:
   inline T* get_throw() const {
     if (pointer_ == nullptr) {
       throw std::runtime_error("Trying to access non valid pointer.");
     }
     return get();
   }
+  inline T& operator*() const { return *get_throw(); }
+  inline T* operator->() const { return get_throw(); }
 };
 
 template <typename T>
-inline bool operator==(const safe_ptr<T> lhs, const safe_ptr<T> rhs) {
+inline bool operator==(const safe_ptr<T>& lhs, const safe_ptr<T>& rhs) {
   return lhs.get() == rhs.get();
 }
 
 template <typename T>
-inline bool operator==(const safe_ptr<T> lhs, T* const rhs) {
+inline bool operator==(const safe_ptr<T>& lhs, T* const rhs) {
   return lhs.get() == rhs;
 }
 
@@ -111,12 +111,12 @@ inline bool operator==(T* const lhs, const safe_ptr<T> rhs) {
 }
 
 template <typename T>
-inline bool operator==(const safe_ptr<T> lhs, std::nullptr_t) {
+inline bool operator==(const safe_ptr<T>& lhs, std::nullptr_t) {
   return lhs.get() == nullptr;
 }
 
 template <typename T>
-inline bool operator==(std::nullptr_t, const safe_ptr<T> rhs) {
+inline bool operator==(std::nullptr_t, const safe_ptr<T>& rhs) {
   return nullptr == rhs.get();
 }
 
@@ -163,3 +163,16 @@ struct unique_usertype_traits<ovis::safe_ptr<T>> {
   static type* get(const actual_type& ptr) { return ptr.get(); }
 };
 }  // namespace sol
+
+template <typename T, std::enable_if_t<std::is_base_of_v<ovis::SafelyReferenceable, T>, bool> = true>
+void sol_lua_check_access(sol::types<T>, lua_State* L, int index, sol::stack::record& tracking) {
+	sol::optional<ovis::safe_ptr<T>&> safe_ptr = sol::stack::check_get<ovis::safe_ptr<T>&>(L, index, sol::no_panic, tracking);
+	if (!safe_ptr.has_value()) {
+		return;
+	}
+
+	if ((*safe_ptr).get() == nullptr) {
+		// freak out in whatever way is appropriate, here
+		throw std::runtime_error("You dun goofed");
+	}
+}
