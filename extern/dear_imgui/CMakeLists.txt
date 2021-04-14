@@ -20,5 +20,4 @@ target_link_libraries(
   DearImGui
   PUBLIC
     ovis::core
-    ovis::graphics
 )
