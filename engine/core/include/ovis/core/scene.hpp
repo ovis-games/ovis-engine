@@ -63,6 +63,7 @@ class Scene : public Serializable, public SafelyReferenceable {
 
   SceneObject* CreateObject(const std::string& object_name);
   SceneObject* CreateObject(const std::string& object_name, const json& serialized_object);
+  SceneObject* CreateObject(const std::string& object_name, const sol::table& properties);
   void DeleteObject(const std::string& object_name);
   void DeleteObject(SceneObject* object);
   void ClearObjects();

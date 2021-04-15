@@ -4,14 +4,14 @@
 
 #include <SDL2/SDL_assert.h>
 
-#include <ovis/core/asset_library.hpp>
 #include <ovis/utils/log.hpp>
 #include <ovis/utils/utf8.hpp>
+#include <ovis/core/asset_library.hpp>
+#include <ovis/core/lua.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_controller.hpp>
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/script_scene_controller.hpp>
-#include <ovis/core/lua.hpp>
 
 namespace ovis {
 
@@ -102,6 +102,16 @@ SceneObject* Scene::CreateObject(const std::string& object_name) {
 SceneObject* Scene::CreateObject(const std::string& object_name, const json& serialized_object) {
   auto object = CreateObject(object_name);
   object->Deserialize(serialized_object);
+  return object;
+}
+
+SceneObject* Scene::CreateObject(const std::string& object_name, const sol::table& component_properties) {
+  auto object = CreateObject(object_name);
+
+  for (const auto& [key, value] : component_properties) {
+    object->AddComponent(key.as<std::string>(), value.as<sol::table>());
+  }
+
   return object;
 }
 
@@ -361,9 +371,13 @@ void Scene::RegisterType(sol::table* module) {
   // assert(first_object.name == "object")
   // local second_object = scene:add_object("object")
   // assert(second_object.name == "object2")
-  scene_type["add_object"] = [](Scene* scene, const std::string& name) {
-    return safe_ptr(scene->CreateObject(name));
-  };
+  scene_type["add_object"] = sol::overload(
+    [](Scene* scene, const std::string& name) {
+      return safe_ptr(scene->CreateObject(name));
+    },
+    [](Scene* scene, const std::string& name, const sol::table& component_properties) {
+      return safe_ptr(scene->CreateObject(name, component_properties));
+    });
 
   /// Returns an object of the scene.
   // @function Scene:get_object

@@ -1,6 +1,7 @@
 #include <SDL2/SDL_assert.h>
 
 #include <ovis/utils/log.hpp>
+#include <ovis/core/lua.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_object.hpp>
 
@@ -27,6 +28,19 @@ SceneObjectComponent* SceneObject::AddComponent(const std::string& component_id)
       return components_.insert(std::make_pair(component_id, std::move(*component))).first->second.get();
     }
   }
+}
+
+SceneObjectComponent* SceneObject::AddComponent(const std::string& component_id, const sol::table& properties) {
+  SceneObjectComponent* component = AddComponent(component_id);
+
+  if (component != nullptr) {
+    sol::table lua_component = component->GetValue().as<sol::table>();
+    for (const auto& [key, value] : properties) {
+      lua_component[key] = value;
+    }
+  }
+
+  return component;
 }
 
 bool SceneObject::HasComponent(const std::string& component_id) const {
@@ -100,10 +114,15 @@ void SceneObject::RegisterType(sol::table* module) {
   // @return The newly added component
   // @usage local transform = some_object:add_component("Transform")
   // assert(transform ~= nil)
-  scene_object_type["add_component"] = [](SceneObject* object, const std::string& component_id) {
-    SceneObjectComponent* component = object->AddComponent(component_id);
-    return component ? component->GetValue() : nullptr;
-  };
+  scene_object_type["add_component"] = sol::overload(
+      [](SceneObject* object, const std::string& component_id) {
+        SceneObjectComponent* component = object->AddComponent(component_id);
+        return component ? component->GetValue() : nullptr;
+      },
+      [](SceneObject* object, const std::string& component_id, const sol::table& properties) -> sol::lua_value {
+        SceneObjectComponent* component = object->AddComponent(component_id, properties);
+        return component ? component->GetValue() : nullptr;
+      });
 
   /// Checks whether a component is attached to an object.
   // @function has_component

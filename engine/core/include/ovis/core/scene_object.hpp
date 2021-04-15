@@ -31,6 +31,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   }
 
   SceneObjectComponent* AddComponent(const std::string& component_id);
+  SceneObjectComponent* AddComponent(const std::string& component_id, const sol::table& component_properties);
   bool HasComponent(const std::string& component_id) const;
 
   template <typename ComponentType = SceneObjectComponent>
