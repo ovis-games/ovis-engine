@@ -1,3 +1,4 @@
+#include <ovis/utils/platform.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/input/emscripten_callbacks.hpp>
 #include <ovis/input/key_events.hpp>
@@ -150,13 +151,16 @@ EM_BOOL HandleKeyDownEvent(int event_type, const EmscriptenKeyboardEvent* keyboa
     return true;
   }
 
+  const bool default_modifier_pressed =
+      GetPlatform() == Platform::MACOS ? keyboard_event->metaKey : keyboard_event->ctrlKey;
+
   // Never prevent default action for CTRL+V or Insert key (Paste)
-  if ((key == Key::V() && keyboard_event->ctrlKey) || key == Key::Insert()) {
+  if ((key == Key::V() && default_modifier_pressed) || key == Key::Insert()) {
     return false;
   }
 
-  // Never prevent default action for CTRL+C (Copy)
-  if (key == Key::C() && keyboard_event->ctrlKey) {
+  // Never prevent default action for CTRL+C (Copy) and CTRL+X (Cut)
+  if ((key == Key::C() || key == Key::X()) && default_modifier_pressed) {
     return false;
   }
 

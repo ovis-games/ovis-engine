@@ -21,6 +21,13 @@ int EMSCRIPTEN_KEEPALIVE OvisClipboard_Copy() {
   return clipboard_data.size();
 }
 
+int EMSCRIPTEN_KEEPALIVE OvisClipboard_Cut() {
+  clipboard_data.clear();
+  // Do a "0" update so imgui is able to copy the string
+  ovis::editor::EditorWindow::instance()->Update(std::chrono::microseconds(0));
+  return clipboard_data.size();
+}
+
 const char* EMSCRIPTEN_KEEPALIVE OvisClipboard_GetCopiedDataFormat(int index) {
   if (index < clipboard_data.size()) {
     return std::next(clipboard_data.begin(), index)->first.c_str();
