@@ -143,7 +143,7 @@ EM_BOOL HandleKeyDownEvent(int event_type, const EmscriptenKeyboardEvent* keyboa
   if (keyboard_event->repeat == false) {
     KeyPressEvent key_press_event(key);
     scene_viewport->scene()->ProcessEvent(&key_press_event);
-    key_press_event_is_propagating = !key_press_event.is_propagating();
+    key_press_event_is_propagating = key_press_event.is_propagating();
   }
 
   // Always prevent default action for the tab key
