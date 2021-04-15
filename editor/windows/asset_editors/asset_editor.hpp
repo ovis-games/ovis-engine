@@ -38,6 +38,7 @@ class AssetEditor : public ImGuiWindow {
   }
   virtual void Redo();
 
+  void ProcessEvent(Event* event) override;
   void Update(std::chrono::microseconds) override;
   static AssetEditor* last_focused_document_window;
 

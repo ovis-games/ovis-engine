@@ -8,6 +8,7 @@
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/lua.hpp>
 #include <ovis/core/script_scene_controller.hpp>
+#include <ovis/input/key.hpp>
 #include <ovis/application/application.hpp>
 
 namespace ovis {
@@ -40,6 +41,13 @@ ScriptEditor::ScriptEditor(const std::string& script_id) : AssetEditor(script_id
 
 void ScriptEditor::DrawContent() {
   editor_.Render("ScriptEditor");
+  ImGuiIO& io = ImGui::GetIO();
+  auto shift = io.KeyShift;
+  auto ctrl = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;
+  auto alt = io.ConfigMacOSXBehaviors ? io.KeyCtrl : io.KeyAlt;
+  if (!editor_.IsReadOnly() && ctrl && !shift && !alt && ImGui::IsKeyPressed(Key::S().code)) {
+    Save();
+  }
 }
 
 void ScriptEditor::Save() {

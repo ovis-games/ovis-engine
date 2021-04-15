@@ -1,6 +1,7 @@
 #include "asset_editor.hpp"
 
 #include <ovis/core/asset_library.hpp>
+#include <ovis/input/key_events.hpp>
 
 namespace ovis {
 namespace editor {
@@ -11,6 +12,7 @@ AssetEditor::AssetEditor(const std::string& asset_id)
     : ImGuiWindow(GetAssetEditorId(asset_id), asset_id),
       asset_id_(asset_id),
       current_undo_redo_position_(changes_.begin()) {
+  SubscribeToEvent(KeyPressEvent::TYPE);
   UpdateAfter("Dockspace Window");
 }
 
@@ -56,6 +58,16 @@ void AssetEditor::Redo() {
   }
 }
 
+void AssetEditor::ProcessEvent(Event* event) {
+  if (event->type() == KeyPressEvent::TYPE) {
+    auto key_press_event = static_cast<KeyPressEvent*>(event);
+    if (key_press_event->key() == Key::S() && (GetKeyState(Key::ControlLeft()) || GetKeyState(Key::ControlRight()))) {
+      Save();
+      event->StopPropagation();
+    }
+  }
+}
+
 void AssetEditor::Update(std::chrono::microseconds delta_time) {
   ImGuiWindow::Update(delta_time);
   if (has_focus()) {
@@ -64,7 +76,7 @@ void AssetEditor::Update(std::chrono::microseconds delta_time) {
 }
 
 const std::string AssetEditor::GetAssetEditorId(const std::string& asset_id) {
-  return "AssetEditor - " + asset_id;\
+  return "AssetEditor - " + asset_id;
 }
 
 void AssetEditor::SetupJsonFile(const json& default_data, const std::string& file_type) {
