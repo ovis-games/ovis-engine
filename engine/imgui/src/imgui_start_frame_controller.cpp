@@ -166,7 +166,7 @@ void ImGuiStartFrameController::ProcessEvent(Event* event) {
   } else if (event->type() == TextInputEvent::TYPE) {
     TextInputEvent* text_event = down_cast<TextInputEvent*>(event);
     io.AddInputCharactersUTF8(text_event->text().c_str());
-    if (io.WantCaptureKeyboard) {
+    if (io.WantTextInput) {
       event->StopPropagation();
     }
   } else if (event->type() == KeyPressEvent::TYPE) {
@@ -177,7 +177,7 @@ void ImGuiStartFrameController::ProcessEvent(Event* event) {
     io.KeyCtrl = GetKeyState(Key::ControlLeft()) || GetKeyState(Key::ControlRight());
     io.KeyAlt = GetKeyState(Key::AltLeft()) || GetKeyState(Key::AltRight());
     io.KeySuper = GetKeyState(Key::MetaLeft()) || GetKeyState(Key::MetaRight());
-    if (io.WantCaptureKeyboard) {
+    if (io.WantCaptureKeyboard && !io.WantTextInput) {
       event->StopPropagation();
     }
   } else if (event->type() == KeyReleaseEvent::TYPE) {
@@ -188,7 +188,7 @@ void ImGuiStartFrameController::ProcessEvent(Event* event) {
     io.KeyCtrl = GetKeyState(Key::ControlLeft()) || GetKeyState(Key::ControlRight());
     io.KeyAlt = GetKeyState(Key::AltLeft()) || GetKeyState(Key::AltRight());
     io.KeySuper = GetKeyState(Key::MetaLeft()) || GetKeyState(Key::MetaRight());
-    if (io.WantCaptureKeyboard) {
+    if (io.WantCaptureKeyboard && !io.WantTextInput) {
       event->StopPropagation();
     }
   }
