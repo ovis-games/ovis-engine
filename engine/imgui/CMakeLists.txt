@@ -29,4 +29,6 @@ target_add_assets(
 
   assets/imgui.schema.json
   assets/ui.shader.vert assets/ui.shader.frag
+  assets/OpenSans-Regular.font.ttf
+  assets/Inconsolata-Regular.font.ttf
 )

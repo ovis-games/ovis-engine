@@ -5,7 +5,6 @@
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/rendering/rendering_viewport.hpp>
 #include <ovis/imgui/imgui_render_pass.hpp>
-#include <ovis/imgui/imgui_start_frame_controller.hpp>
 
 namespace ovis {
 
@@ -20,24 +19,13 @@ void ImGuiRenderPass::CreateResources() {
   SDL_assert(start_frame_controller != nullptr);
   ImGui::SetCurrentContext(start_frame_controller->imgui_context_.get());
 
+  if (start_frame_controller->reload_font_atlas_) {
+    ReloadFontAtlas(start_frame_controller);
+  }
+
   LogI("Loading ImGui resources!");
 
   shader_program_ = LoadShaderProgram(GetEngineAssetLibrary(), "ui", context());
-
-  unsigned char* pixels;
-  int width;
-  int height;
-  ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-
-  Texture2DDescription font_texture_desc;
-  font_texture_desc.width = width;
-  font_texture_desc.height = height;
-  font_texture_desc.format = TextureFormat::RGBA_UINT8;
-  font_texture_desc.filter = TextureFilter::BILINEAR;
-  font_texture_desc.mip_map_count = 1;
-  font_texture_ = std::make_unique<Texture2D>(context(), font_texture_desc, pixels);
-
-  ImGui::GetIO().Fonts->TexID = font_texture_->id();
 }
 
 void ImGuiRenderPass::Render(const RenderContext& render_context) {
@@ -128,6 +116,19 @@ void ImGuiRenderPass::Render(const RenderContext& render_context) {
       context()->Draw(draw_item);
     }
   }
+}
+
+void ImGuiRenderPass::ReloadFontAtlas(ImGuiStartFrameController* start_frame_controller) {
+  Texture2DDescription font_texture_desc;
+  font_texture_desc.width = start_frame_controller->font_atlas_width_;
+  font_texture_desc.height = start_frame_controller->font_atlas_height_;
+  font_texture_desc.format = TextureFormat::RGBA_UINT8;
+  font_texture_desc.filter = TextureFilter::BILINEAR;
+  font_texture_desc.mip_map_count = 1;
+  font_texture_ = std::make_unique<Texture2D>(context(), font_texture_desc, start_frame_controller->font_atlas_pixels_);
+
+  ImGui::GetIO().Fonts->TexID = font_texture_->id();
+  start_frame_controller->reload_font_atlas_ = false;
 }
 
 }  // namespace ovis

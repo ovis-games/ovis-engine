@@ -12,6 +12,7 @@
 #include <ovis/utils/platform.hpp>
 #include <ovis/input/key.hpp>
 #include <ovis/input/key_events.hpp>
+#include <ovis/imgui/imgui_start_frame_controller.hpp>
 
 namespace ovis {
 namespace editor {
@@ -23,12 +24,6 @@ Toolbar::Toolbar() : ImGuiWindow("Toolbar", "") {
 
   SetFlags(ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings);
-
-  icons_.save = LoadTexture2D("icon-save", EditorWindow::instance()->context());
-  icons_.undo = LoadTexture2D("icon-undo", EditorWindow::instance()->context());
-  icons_.redo = LoadTexture2D("icon-redo", EditorWindow::instance()->context());
-  icons_.package = LoadTexture2D("icon-package", EditorWindow::instance()->context());
-  icons_.windows = LoadTexture2D("icon-windows", EditorWindow::instance()->context());
 
   SubscribeToEvent(KeyPressEvent::TYPE);
 }
@@ -49,16 +44,20 @@ void Toolbar::ProcessEvent(Event* event) {
 void Toolbar::BeforeBegin() {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
   ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y));
-  ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, icon_size_.y + 10));
+  ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, 28 + 10)); // y: icon size + padding
   ImGui::SetNextWindowViewport(viewport->ID);
 }
 
 void Toolbar::DrawContent() {
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(48, 48, 48)));
 
-  if (ImGui::TextureButton(icons_.save.get())) {
+  ImFont* font_awesome = scene()->GetController<ImGuiStartFrameController>()->GetFont("FontAwesomeSolid");
+
+  ImGui::PushFont(font_awesome);
+  if (ImGui::Button("\uf0c7")) {
     Save();
   }
+  ImGui::PopFont();
   if (ImGui::IsItemHovered()) {
     if (AssetEditor::last_focused_document_window != nullptr) {
       ImGui::SetTooltip("Save: %s", AssetEditor::last_focused_document_window->asset_id().c_str());
@@ -68,9 +67,11 @@ void Toolbar::DrawContent() {
   }
 
   ImGui::SameLine();
-  if (ImGui::TextureButton(icons_.undo.get(), icon_size_)) {
+  ImGui::PushFont(font_awesome);
+  if (ImGui::Button("\uf0e2")) {
     Undo();
   }
+  ImGui::PopFont();
   if (ImGui::IsItemHovered()) {
     if (AssetEditor::last_focused_document_window != nullptr && AssetEditor::last_focused_document_window->CanUndo()) {
       ImGui::SetTooltip("Undo");
@@ -80,9 +81,11 @@ void Toolbar::DrawContent() {
   }
 
   ImGui::SameLine();
-  if (ImGui::TextureButton(icons_.redo.get(), icon_size_)) {
+  ImGui::PushFont(font_awesome);
+  if (ImGui::Button("\uf01e")) {
     Redo();
   }
+  ImGui::PopFont();
   if (ImGui::IsItemHovered()) {
     if (AssetEditor::last_focused_document_window != nullptr && AssetEditor::last_focused_document_window->CanRedo()) {
       ImGui::SetTooltip("Redo");
@@ -92,18 +95,22 @@ void Toolbar::DrawContent() {
   }
 
   ImGui::SameLine();
-  if (ImGui::TextureButton(icons_.package.get(), icon_size_)) {
+  ImGui::PushFont(font_awesome);
+  if (ImGui::Button("\uf466")) {
     scene()->AddController("PackagingWindow");
   }
+  ImGui::PopFont();
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Package game");
   }
 
   ImGui::SameLine();
   ImVec2 window_button_pos = ImGui::GetCursorPos();
-  if (ImGui::TextureButton(icons_.windows.get(), icon_size_)) {
+  ImGui::PushFont(font_awesome);
+  if (ImGui::Button("\uf2d2")) {
     ImGui::OpenPopup("testtest");
   }
+  ImGui::PopFont();
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Windows");
   }

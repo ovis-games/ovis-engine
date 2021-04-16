@@ -109,6 +109,7 @@ target_add_assets(
   assets/icon-windows.texture2d.json
   assets/line.shader.frag
   assets/line.shader.vert
+  assets/FontAwesomeSolid.font.otf
 )
 
 add_custom_target(

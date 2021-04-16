@@ -20,15 +20,6 @@ class Toolbar : public ImGuiWindow {
   void DrawContent() override;
 
  private:
-  struct Icons {
-    std::shared_ptr<Texture2D> save;
-    std::shared_ptr<Texture2D> undo;
-    std::shared_ptr<Texture2D> redo;
-    std::shared_ptr<Texture2D> package;
-    std::shared_ptr<Texture2D> windows;
-  } icons_;
-  ImVec2 icon_size_ = {28, 28};
-
   void Save();
   void Undo();
   void Redo();

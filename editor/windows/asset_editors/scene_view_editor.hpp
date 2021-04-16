@@ -69,17 +69,6 @@ class SceneViewEditor : public AssetEditor {
   RenamingState renaming_state_ = RenamingState::IS_NOT_RENAMING;
 
   std::vector<SceneObject*> cached_scene_objects_;
-
-  struct Icons {
-    std::shared_ptr<Texture2D> play;
-    std::shared_ptr<Texture2D> pause;
-    std::shared_ptr<Texture2D> stop;
-    std::shared_ptr<Texture2D> move;
-    std::shared_ptr<Texture2D> rotate;
-    std::shared_ptr<Texture2D> scale;
-    std::shared_ptr<Texture2D> eye;
-  } icons_;
-
   RunState run_state_ = RunState::STOPPED;
   json serialized_scene_editing_copy_;
   Scene game_scene_;

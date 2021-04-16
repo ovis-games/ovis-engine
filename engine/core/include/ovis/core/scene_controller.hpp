@@ -20,7 +20,8 @@ namespace ovis {
 
 class Scene;
 
-class SceneController : public StaticFactory<SceneController, std::unique_ptr<SceneController>()> {
+class SceneController : 
+                        public StaticFactory<SceneController, std::unique_ptr<SceneController>()> {
   MAKE_NON_COPY_OR_MOVABLE(SceneController);
   friend class Scene;
 
@@ -49,10 +50,16 @@ class SceneController : public StaticFactory<SceneController, std::unique_ptr<Sc
 
  protected:
   void UpdateBefore(std::string_view controller_name);
-  template <typename T> inline void UpdateBefore() { UpdateBefore(T::Name()); }
+  template <typename T>
+  inline void UpdateBefore() {
+    UpdateBefore(T::Name());
+  }
 
   void UpdateAfter(std::string_view controller_name);
-  template <typename T> inline void UpdateAfter() { UpdateAfter(T::Name()); }
+  template <typename T>
+  inline void UpdateAfter() {
+    UpdateAfter(T::Name());
+  }
 
  private:
   Scene* scene_;

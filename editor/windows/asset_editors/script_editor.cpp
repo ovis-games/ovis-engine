@@ -7,8 +7,10 @@
 #include <ovis/utils/range.hpp>
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/lua.hpp>
+#include <ovis/core/scene.hpp>
 #include <ovis/core/script_scene_controller.hpp>
 #include <ovis/input/key.hpp>
+#include <ovis/imgui/imgui_start_frame_controller.hpp>
 #include <ovis/application/application.hpp>
 
 namespace ovis {
@@ -40,7 +42,13 @@ ScriptEditor::ScriptEditor(const std::string& script_id) : AssetEditor(script_id
 }
 
 void ScriptEditor::DrawContent() {
+  auto start_frame_controller = scene()->GetController<ImGuiStartFrameController>();
+  SDL_assert(start_frame_controller != nullptr);
+
+  ImGui::PushFont(start_frame_controller->GetFont("Inconsolata-Regular"));
   editor_.Render("ScriptEditor");
+  ImGui::PopFont();
+
   ImGuiIO& io = ImGui::GetIO();
   auto shift = io.KeyShift;
   auto ctrl = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;

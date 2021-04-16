@@ -9,10 +9,13 @@
 #include <ovis/graphics/vertex_buffer.hpp>
 #include <ovis/graphics/vertex_input.hpp>
 #include <ovis/rendering/render_pass.hpp>
+#include <ovis/imgui/imgui_start_frame_controller.hpp>
 
 namespace ovis {
 
 class ImGuiRenderPass : public RenderPass {
+  friend class ImGuiStartFrameController;
+
  public:
   static inline constexpr std::string_view Name() { return "ImGui"; }
 
@@ -30,6 +33,8 @@ class ImGuiRenderPass : public RenderPass {
   std::unique_ptr<VertexBuffer> vertex_buffer_;
   std::unique_ptr<VertexInput> vertex_input_;
   std::unique_ptr<IndexBuffer> index_buffer_;
+
+  void ReloadFontAtlas(ImGuiStartFrameController* start_frame_controller);
 };
 
 }  // namespace ovis

@@ -21,6 +21,7 @@
 #include <ovis/core/transform.hpp>
 #include <ovis/input/mouse_button.hpp>
 #include <ovis/input/mouse_events.hpp>
+#include <ovis/imgui/imgui_start_frame_controller.hpp>
 
 namespace ovis {
 namespace editor {
@@ -43,14 +44,6 @@ MouseButton GetMouseButtonFromImGuiIndex(int button) {
 }  // namespace
 
 SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(scene_asset) {
-  icons_.play = LoadTexture2D("icon-play", EditorWindow::instance()->context());
-  icons_.pause = LoadTexture2D("icon-pause", EditorWindow::instance()->context());
-  icons_.stop = LoadTexture2D("icon-stop", EditorWindow::instance()->context());
-  icons_.move = LoadTexture2D("icon-move", EditorWindow::instance()->context());
-  icons_.rotate = LoadTexture2D("icon-rotate", EditorWindow::instance()->context());
-  icons_.scale = LoadTexture2D("icon-scale", EditorWindow::instance()->context());
-  icons_.eye = LoadTexture2D("icon-eye", EditorWindow::instance()->context());
-
   editing_scene()->Play();
   AddEditorController<ObjectSelectionController>();
   AddEditorController<TransformationToolsController>();
@@ -167,25 +160,34 @@ void SceneViewEditor::DrawContent() {
 
 void SceneViewEditor::DrawToolbar() {
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(48, 48, 48)));
+
+  ImFont* font_awesome = scene()->GetController<ImGuiStartFrameController>()->GetFont("FontAwesomeSolid");
+
   if (run_state() == RunState::RUNNING) {
-    if (ImGui::TextureButton(icons_.pause.get())) {
+    ImGui::PushFont(font_awesome);
+    if (ImGui::Button("\uf04c")) {
       ChangeRunState(RunState::PAUSED);
     }
+    ImGui::PopFont();
     if (ImGui::IsItemHovered()) {
       ImGui::SetTooltip("Pause");
     }
   } else {
-    if (ImGui::TextureButton(icons_.play.get())) {
+    ImGui::PushFont(font_awesome);
+    if (ImGui::Button("\uf04b")) {
       ChangeRunState(RunState::RUNNING);
     }
+    ImGui::PopFont();
     if (ImGui::IsItemHovered()) {
       ImGui::SetTooltip("Run");
     }
   }
   ImGui::SameLine();
-  if (ImGui::TextureButton(icons_.stop.get())) {
+  ImGui::PushFont(font_awesome);
+  if (ImGui::Button("\uf04d")) {
     ChangeRunState(RunState::STOPPED);
   }
+  ImGui::PopFont();
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Stop");
   }
@@ -193,36 +195,47 @@ void SceneViewEditor::DrawToolbar() {
   ImGui::SameLine();
   ImGui::Dummy(ImVec2(20, 0));
 
+  auto transformation_controller = editing_scene()->GetController<TransformationToolsController>();
+
   ImGui::SameLine();
-  if (ImGui::TextureButton(icons_.move.get())) {
-    editing_scene()->GetController<TransformationToolsController>()->SelectTransformationType(TransformationToolsController::TransformationType::MOVE);
+  ImGui::PushFont(font_awesome);
+  if (ImGui::Button("\uf0b2")) {
+    transformation_controller->SelectTransformationType(TransformationToolsController::TransformationType::MOVE);
   }
+  ImGui::PopFont();
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Move");
   }
 
   ImGui::SameLine();
-  if (ImGui::TextureButton(icons_.rotate.get())) {
-    editing_scene()->GetController<TransformationToolsController>()->SelectTransformationType(TransformationToolsController::TransformationType::ROTATE);
+  ImGui::PushFont(font_awesome);
+  if (ImGui::Button("\uf2f1")) {
+    transformation_controller->SelectTransformationType(TransformationToolsController::TransformationType::ROTATE);
   }
+  ImGui::PopFont();
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Rotate");
   }
 
   ImGui::SameLine();
-  if (ImGui::TextureButton(icons_.scale.get())) {
-    editing_scene()->GetController<TransformationToolsController>()->SelectTransformationType(TransformationToolsController::TransformationType::SCALE);
+  ImGui::PushFont(font_awesome);
+  if (ImGui::Button("\uf424")) {
+    transformation_controller->SelectTransformationType(TransformationToolsController::TransformationType::SCALE);
   }
+  ImGui::PopFont();
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Scale");
   }
 
   ImGui::SameLine();
-  if (ImGui::Button("Local vs global")) {
-    editing_scene()->GetController<TransformationToolsController>()->SwitchCoordinateSystem();
+  ImGui::PushFont(font_awesome);
+  const bool world_coordinate_system = transformation_controller->coordinate_system() == TransformationToolsController::CoordinateSystem::WORLD;
+  if (ImGui::Button(world_coordinate_system ? "\uf1b2" : "\uf0ac")) {
+    transformation_controller->SwitchCoordinateSystem();
   }
+  ImGui::PopFont();
   if (ImGui::IsItemHovered()) {
-    ImGui::SetTooltip("Scale");
+    ImGui::SetTooltip(world_coordinate_system ? "Switch to local coordinate system" : "Switch to global coordinate system");
   }
 
   ImGui::SameLine();
@@ -230,9 +243,11 @@ void SceneViewEditor::DrawToolbar() {
 
   ImGui::SameLine();
   ImVec2 eyebutton_pos = ImGui::GetCursorScreenPos();
-  if (ImGui::TextureButton(icons_.eye.get())) {
+  ImGui::PushFont(font_awesome);
+  if (ImGui::Button("\uf06e")) {
     ImGui::OpenPopup("Overlay Settings");
   }
+  ImGui::PopFont();
   if (ImGui::IsItemHovered()) {
     ImGui::SetTooltip("Overlay settings");
   }
@@ -368,6 +383,7 @@ void SceneViewEditor::DrawViewport() {
 
 void SceneViewEditor::DrawInspectorContent() {
   DrawObjectTree();
+  ImGui::Separator();
   DrawSelectionProperties();
 }
 
@@ -378,7 +394,7 @@ void SceneViewEditor::DrawObjectTree() {
   auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
 
   ImVec2 available_content_region = ImGui::GetContentRegionAvail();
-  if (ImGui::BeginChild("ObjectView", ImVec2(0, available_content_region.y / 2), true)) {
+  if (ImGui::BeginChild("ObjectView", ImVec2(0, available_content_region.y / 2), false)) {
     if (ImGui::BeginPopupContextWindow()) {
       if (ImGui::Selectable("Create Object")) {
         CreateObject("New Object", true);
@@ -491,45 +507,48 @@ void SceneViewEditor::DrawObjectTree() {
 void SceneViewEditor::DrawSelectionProperties() {
   auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
 
-  ImVec2 available_content_region = ImGui::GetContentRegionAvail();
-  if (ImGui::BeginChild("SelectionProperties", ImVec2(0, available_content_region.y), true)) {
-    if (object_selection_controller->has_selected_object()) {
-      DrawSceneObjectProperties();
-    } else {
-      DrawSceneProperties();
-    }
+  if (object_selection_controller->has_selected_object()) {
+    DrawSceneObjectProperties();
+  } else {
+    DrawSceneProperties();
   }
-  ImGui::EndChild();
 }
 
 void SceneViewEditor::DrawSceneObjectProperties() {
   auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
 
   SceneObject* selected_object = object_selection_controller->selected_object();
+  SDL_assert(selected_object != nullptr);
 
   if (!selected_object) {
     return;
   }
 
-  for (const auto& component_id : selected_object->GetComponentIds()) {
-    Serializable* component = selected_object->GetComponent(component_id);
+  ImGui::Text("Components of %s:", selected_object->name().c_str());
 
-    // Get component path
-    const json::json_pointer component_path = GetComponentPath(object_selection_controller->selected_object_name(), component_id);
-    if (serialized_scene_editing_copy_.contains(component_path)) {
-      json& serialized_component = serialized_scene_editing_copy_[component_path];
-      const ovis::json* component_schema = component->GetSchema();
+  ImVec2 available_content_region = ImGui::GetContentRegionAvail();
+  if (ImGui::BeginChild("SceneObjectComponents", ImVec2(0, available_content_region.y), false)) {
+    for (const auto& component_id : selected_object->GetComponentIds()) {
+      Serializable* component = selected_object->GetComponent(component_id);
 
-      if (ImGui::InputJson(component_id.c_str(), &serialized_component,
-                           component_schema ? *component_schema : ovis::json{})) {
-        component->Deserialize(serialized_component);
-      }
-      if (ImGui::IsItemDeactivated()) {
-        // After editing is finished reserialize the component so the input gets "validated"
-        SubmitChangesToScene();
+      // Get component path
+      const json::json_pointer component_path = GetComponentPath(object_selection_controller->selected_object_name(), component_id);
+      if (serialized_scene_editing_copy_.contains(component_path)) {
+        json& serialized_component = serialized_scene_editing_copy_[component_path];
+        const ovis::json* component_schema = component->GetSchema();
+
+        if (ImGui::InputJson(component_id.c_str(), &serialized_component,
+                            component_schema ? *component_schema : ovis::json{})) {
+          component->Deserialize(serialized_component);
+        }
+        if (ImGui::IsItemDeactivated()) {
+          // After editing is finished reserialize the component so the input gets "validated"
+          SubmitChangesToScene();
+        }
       }
     }
   }
+  ImGui::EndChild();
 }
 
 void SceneViewEditor::DrawSceneProperties() {
@@ -594,6 +613,7 @@ void SceneViewEditor::CreateSceneViewport(ImVec2 size) {
     // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "GizmoRenderer");
     scene_viewport_->SetScene(game_scene());
     game_scene()->SetMainViewport(scene_viewport_.get());
+    editing_scene()->SetMainViewport(scene_viewport_.get());
   } else {
     if (size.x > 0 && size.y > 0) {
       scene_viewport_->Resize(size.x, size.y);

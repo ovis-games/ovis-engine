@@ -3,10 +3,13 @@
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/log.hpp>
 #include <ovis/utils/platform.hpp>
+#include <ovis/core/asset_library.hpp>
+#include <ovis/rendering/rendering_viewport.hpp>
 #include <ovis/input/key_events.hpp>
 #include <ovis/input/mouse_button.hpp>
 #include <ovis/input/mouse_events.hpp>
 #include <ovis/input/text_input_event.hpp>
+#include <ovis/imgui/imgui_render_pass.hpp>
 #include <ovis/imgui/imgui_start_frame_controller.hpp>
 
 namespace ovis {
@@ -59,6 +62,8 @@ ImGuiStartFrameController::ImGuiStartFrameController()
   SubscribeToEvent(KeyReleaseEvent::TYPE);
 
   ImGuiIO& io = ImGui::GetIO();
+  LoadFont("OpenSans-Regular");
+  LoadFont("Inconsolata-Regular");
 
 #if !OVIS_EMSCRIPTEN
   io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
@@ -111,6 +116,21 @@ void ImGuiStartFrameController::Update(std::chrono::microseconds delta_time) {
     io.MouseDown[i] = mouse_button_pressed_[i] || GetMouseButtonState(GetMouseButtonFromImGuiIndex(i));
     mouse_button_pressed_[i] = false;
   }
+
+  if (font_added_) {
+    ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&font_atlas_pixels_, &font_atlas_width_, &font_atlas_height_);
+    font_added_ = false;
+    reload_font_atlas_ = true;
+    // TODO: can I release the font memory now? (the one in the map)
+    RenderingViewport* viewport = dynamic_cast<RenderingViewport*>(scene()->main_viewport());
+    SDL_assert(viewport != nullptr);
+    auto render_pass = viewport->GetRenderPass<ImGuiRenderPass>(std::string(ImGuiRenderPass::Name()));
+    if (render_pass != nullptr) {
+      render_pass->ReloadFontAtlas(this);
+      SDL_assert(reload_font_atlas_ == false);
+    }
+  }
+
   auto* viewport = scene()->main_viewport();
   const Vector2 viewport_dimensions = viewport != nullptr ? viewport->GetDimensions() : Vector2::Zero();
   if (io.Fonts->Fonts.Size > 0 && viewport_dimensions != Vector2::Zero()) {
@@ -191,6 +211,63 @@ void ImGuiStartFrameController::ProcessEvent(Event* event) {
     if (io.WantCaptureKeyboard && !io.WantTextInput) {
       event->StopPropagation();
     }
+  }
+}
+
+ImFont* ImGuiStartFrameController::LoadFont(std::string_view asset, float size, std::vector<std::pair<ImWchar, ImWchar>> ranges) {
+  if (auto font = fonts_.find(asset); font != fonts_.end()) {
+    return font->second.font;
+  }
+
+  auto asset_as_string = std::string(asset);
+  AssetLibrary* asset_library = GetApplicationAssetLibrary()->Contains(asset_as_string) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary();
+
+  if (!asset_library->Contains(asset_as_string) || asset_library->GetAssetType(asset_as_string) != "font") {
+    LogE("Could not load font: {}", asset);
+    return nullptr;
+  }
+
+  const auto asset_file_types = asset_library->GetAssetFileTypes(asset_as_string);
+  const bool is_ttf_file = std::find(asset_file_types.begin(), asset_file_types.end(), "ttf") != asset_file_types.end();
+
+  auto font_data = GetEngineAssetLibrary()->LoadAssetBinaryFile(std::string(asset), is_ttf_file ? "ttf" : "otf");
+  if (font_data) {
+    ImGui::SetCurrentContext(imgui_context_.get());
+    ImGuiIO& io = ImGui::GetIO();
+
+    auto inserted = fonts_.insert(std::make_pair(asset, FontData{std::move(*font_data), {}, nullptr}));
+    ImFontConfig config;
+    config.FontDataOwnedByAtlas = false;
+
+    if (ranges.size() > 0) {
+      std::vector<ImWchar>* glyph_ranges = &inserted.first->second.glyph_ranges;
+
+      glyph_ranges->reserve(ranges.size() * 2 + 1);
+      for (auto range : ranges) {
+        glyph_ranges->push_back(range.first);
+        glyph_ranges->push_back(range.second);
+      }
+      glyph_ranges->push_back(0);
+      config.GlyphRanges = glyph_ranges->data();
+    }
+
+    font_added_ = true;
+    return inserted.first->second.font = io.Fonts->AddFontFromMemoryTTF(
+      inserted.first->second.font_file.data(),
+      inserted.first->second.font_file.size(),
+      size,
+      &config);
+  } else {
+    LogE("Could not load font {}: only ttf and otf files are supported!", asset);
+    return nullptr;
+  }
+}
+
+ImFont* ImGuiStartFrameController::GetFont(std::string_view name, float size) {
+  if (auto font = fonts_.find(name); font != fonts_.end()) {
+    return font->second.font;
+  } else {
+    return nullptr;
   }
 }
 
