@@ -1,4 +1,4 @@
-FROM emscripten/emsdk:2.0.10
+FROM emscripten/emsdk:2.0.17
 
 COPY . /ovis-engine
 WORKDIR /ovis-engine/build
