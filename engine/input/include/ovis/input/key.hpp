@@ -135,6 +135,10 @@ struct Key {
 };
 static_assert(sizeof(Key) == sizeof(Key::KeyCode));
 
+// TODO: don't store the keys in a vector as we already have them in a map. Instead of storing them twice adapt the map
+// iterators.
+const std::vector<Key>& Keys();
+
 inline bool operator==(Key lhs, Key rhs) {
   return lhs.code == rhs.code;
 }

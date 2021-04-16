@@ -1,7 +1,8 @@
 #include <unordered_map>
 
-#include <ovis/input/key.hpp>
 #include <SDL2/SDL_assert.h>
+
+#include <ovis/input/key.hpp>
 
 namespace ovis {
 
@@ -740,6 +741,21 @@ void Key::RegisterType(sol::table* module) {
   key_type["F24"] = sol::property(&Key::F24);
 }
 
+namespace {
+std::vector<Key> MakeKeysVector() {
+  std::vector<Key> keys;
+  keys.reserve(KEY_NAME_TO_KEY.size());
+  std::transform(KEY_NAME_TO_KEY.cbegin(), KEY_NAME_TO_KEY.cend(), std::back_inserter(keys),
+                 [](std::pair<std::string_view, Key::KeyCode> key) -> Key { return {key.second}; });
+  return keys;
+}
+
+static const std::vector<Key> KEYS = MakeKeysVector();
+}  // namespace
+
+const std::vector<Key>& Keys() {
+  return KEYS;
+}
 namespace {
 bool key_states[SDL_NUM_SCANCODES] = {false};
 }

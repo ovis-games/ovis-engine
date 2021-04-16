@@ -225,6 +225,18 @@ EM_BOOL HandleMouseUpEvent(int event_type, const EmscriptenMouseEvent* mouse_eve
   return false;
 }
 
+EM_BOOL HandleBlurEvent(int event_type, const EmscriptenFocusEvent* focus_event, void* viewport) {
+  SceneViewport* scene_viewport = static_cast<SceneViewport*>(viewport);
+  for (Key key : Keys()) {
+    if (GetKeyState(key)) {
+      SetKeyState(key, false);
+      KeyReleaseEvent key_release_event(key);
+      scene_viewport->scene()->ProcessEvent(&key_release_event);
+    }
+  }
+  return false;
+}
+
 #endif
 
 }  // namespace ovis
