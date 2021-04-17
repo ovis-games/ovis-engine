@@ -524,7 +524,36 @@ void SceneViewEditor::DrawSceneObjectProperties() {
     return;
   }
 
+  ImFont* font_awesome = scene()->GetController<ImGuiStartFrameController>()->GetFont("FontAwesomeSolid");
+
   ImGui::Text("Components of %s:", selected_object->name().c_str());
+  ImGui::SameLine();
+
+  ImVec2 button_position = ImGui::GetCursorScreenPos();
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(48, 48, 48)));
+  ImGui::PushFont(font_awesome);
+  if (ImGui::Button("\uf0fe")) {
+    ImGui::OpenPopup("Add Component");
+  }
+  ImGui::PopFont();
+  ImGui::PopStyleColor();
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("Add Component");
+  }
+  
+  ImVec2 next_line_pos = ImGui::GetCursorScreenPos();
+  ImGui::SetNextWindowPos({button_position.x, next_line_pos.y});
+  if (ImGui::BeginPopup("Add Component")) {
+    for (const auto& component_id : SceneObjectComponent::registered_ids()) {
+      if (!selected_object->HasComponent(component_id)) {
+        if (ImGui::Selectable(component_id.c_str())) {
+          selected_object->AddComponent(component_id);
+          SubmitChangesToScene();
+        }
+      }
+    }
+    ImGui::EndPopup();
+  }
 
   ImVec2 available_content_region = ImGui::GetContentRegionAvail();
   if (ImGui::BeginChild("SceneObjectComponents", ImVec2(0, available_content_region.y), false)) {
