@@ -14,7 +14,7 @@ SettingsEditor::SettingsEditor(const std::string& settings_id) : AssetEditor(set
 
 void SettingsEditor::DrawContent() {
   json settings = settings_;
-  if (ImGui::InputJson("Game Settings", &settings, GameSettings::SCHEMA, ImGuiInputJsonFlags_IgnoreEnclosingObject)) {
+  if (ImGui::InputJson("Game Settings", &settings, GameSettings::SCHEMA, nullptr, ImGuiInputJsonFlags_IgnoreEnclosingObject)) {
     settings_ = settings;
     SubmitJsonFile(settings_);
   }

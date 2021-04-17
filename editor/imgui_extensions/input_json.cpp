@@ -27,7 +27,7 @@ void DisplayTooltip(const ovis::json& schema) {
   }
 }
 
-bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, int flags, int depth) {
+bool InputJson(const char* label, ovis::json* value, bool* keep, const ovis::json& schema, int flags, int depth) {
   SDL_assert(value != nullptr);
   bool json_changed = false;
 
@@ -59,7 +59,7 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
       ovis::json referenced_schema = referenced_schema_file->at(schema_reference_pointer);
       // TODO: patch referenced_schema with values overriden in 'schema' variable
 
-      json_changed = InputJson(label, value, referenced_schema, flags, depth);
+      json_changed = InputJson(label, value, keep, referenced_schema, flags, depth);
     }
   } else if (schema.contains("type")) {
     const std::string type = schema["type"];
@@ -73,7 +73,11 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
           pushed = true;
         }
 
-        display_properties = ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen);
+        display_properties = ImGui::CollapsingHeader(label, keep, ImGuiTreeNodeFlags_DefaultOpen);
+        if (keep != nullptr && !*keep) {
+          display_properties = false;
+          json_changed = true;
+        }
         DisplayTooltip(schema);
       }
 
@@ -92,8 +96,13 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
                 label = property.key();
               }
 
-              if (InputJson(label.c_str(), &value->at(property.key()), property.value(),
+              bool keep_child = true;
+              if (InputJson(label.c_str(), &value->at(property.key()), &keep_child, property.value(),
                             flags & (~ImGuiInputJsonFlags_IgnoreEnclosingObject), new_depth)) {
+                json_changed = true;
+              }
+              if (!keep_child) {
+                value->erase(property.key());
                 json_changed = true;
               }
             }
@@ -130,9 +139,15 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
           for (size_t i = 0; i < value->size(); ++i) {
             ovis::json array_item = value->at(i);
             std::string item_label = std::string(label) + "[" + std::to_string(i) + "]";
-            if (InputJson(item_label.c_str(), &array_item, items, flags & (~ImGuiInputJsonFlags_IgnoreEnclosingObject),
+
+            bool keep_element = true;
+            if (InputJson(item_label.c_str(), &array_item, &keep_element, items, flags & (~ImGuiInputJsonFlags_IgnoreEnclosingObject),
                           new_depth)) {
               value->at(i) = array_item;
+              json_changed = true;
+            }
+            if (!keep_element) {
+              value->erase(i);
               json_changed = true;
             }
           }
@@ -204,8 +219,8 @@ bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, i
 
 }  // namespace
 
-bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, int flags) {
-  return InputJson(label, value, schema, flags, 0);
+bool InputJson(const char* label, ovis::json* value, const ovis::json& schema, bool* keep, int flags) {
+  return InputJson(label, value, keep, schema, flags, 0);
 }
 
 void SetCustomJsonFunction(const std::string& schema_reference, InputJsonFunction function) {

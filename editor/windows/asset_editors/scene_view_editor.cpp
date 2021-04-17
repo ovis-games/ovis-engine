@@ -566,9 +566,15 @@ void SceneViewEditor::DrawSceneObjectProperties() {
         json& serialized_component = serialized_scene_editing_copy_[component_path];
         const ovis::json* component_schema = component->GetSchema();
 
+        bool keep = true;
         if (ImGui::InputJson(component_id.c_str(), &serialized_component,
-                            component_schema ? *component_schema : ovis::json{})) {
-          component->Deserialize(serialized_component);
+                            component_schema ? *component_schema : ovis::json{}, &keep)) {
+          if (!keep) {
+            selected_object->RemoveComponent(component_id);
+            SubmitChangesToScene();
+          } else {
+            component->Deserialize(serialized_component);
+          }
         }
         if (ImGui::IsItemDeactivated()) {
           // After editing is finished reserialize the component so the input gets "validated"
