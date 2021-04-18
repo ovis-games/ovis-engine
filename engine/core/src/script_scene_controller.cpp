@@ -89,13 +89,10 @@ void ScriptSceneController::ProcessEvent(Event* event) {
 
   auto event_callback_entry = GetSubscribedEventsTable(instance_)[event->type()];
   if (event_callback_entry.get_type() == sol::type::string) {
-    LogD("Call {}", event_callback_entry.get<std::string>());
     event_callback = instance_[event_callback_entry];
   } else if (event_callback_entry.get_type() == sol::type::function) {
-    LogD("Call function");
     event_callback = event_callback_entry;
   } else {
-    LogD("Call process_event");
     event_callback = process_event_function_;
   }
 
