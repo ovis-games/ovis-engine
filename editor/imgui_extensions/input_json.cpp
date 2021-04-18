@@ -141,8 +141,8 @@ bool InputJson(const char* label, ovis::json* value, bool* keep, const ovis::jso
             std::string item_label = std::string(label) + "[" + std::to_string(i) + "]";
 
             bool keep_element = true;
-            if (InputJson(item_label.c_str(), &array_item, &keep_element, items, flags & (~ImGuiInputJsonFlags_IgnoreEnclosingObject),
-                          new_depth)) {
+            if (InputJson(item_label.c_str(), &array_item, &keep_element, items,
+                          flags & (~ImGuiInputJsonFlags_IgnoreEnclosingObject), new_depth)) {
               value->at(i) = array_item;
               json_changed = true;
             }
@@ -161,8 +161,20 @@ bool InputJson(const char* label, ovis::json* value, bool* keep, const ovis::jso
         ImGui::TreePop();
       }
     } else if (type == "number") {
+      const float min = schema.contains("minimum") ? schema.at("minimum").get<float>() : std::numeric_limits<float>::min();
+      const float max = schema.contains("maximum") ? schema.at("maximum").get<float>() : std::numeric_limits<float>::max();
+
       float number = *value;
-      if (ImGui::DragFloat(label, &number, 1.0f, 0.0f, 0.0f, "%.2f")) {
+      if (ImGui::DragFloat(label, &number, 1.0f, min, max, "%.2f")) {
+        *value = number;
+        json_changed = true;
+      }
+      DisplayTooltip(schema);
+    } else if (type == "integer") {
+      const int min = schema.contains("minimum") ? schema.at("minimum").get<int>() : std::numeric_limits<int>::min();
+      const int max = schema.contains("maximum") ? schema.at("maximum").get<int>() : std::numeric_limits<int>::max();
+      int number = *value;
+      if (ImGui::DragInt(label, &number, 1.0f, min, max)) {
         *value = number;
         json_changed = true;
       }
