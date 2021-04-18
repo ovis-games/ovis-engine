@@ -169,4 +169,8 @@ void RigidBody2D::DeserializeShape(const json& data) {
   fixture_definition_.shape = shape_.get();
 }
 
+void RigidBody2D::RegisterType(sol::table* module) {
+
+}
+
 }  // namespace ovis

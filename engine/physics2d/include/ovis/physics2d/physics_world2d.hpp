@@ -14,8 +14,14 @@ class PhysicsWorld2D : public SceneController {
 
   void Update(std::chrono::microseconds delta_time) override;
 
+  const json* GetSchema() const override;
+  json Serialize() const override;
+  bool Deserialize(const json& data) override;
+
  private:
   b2World world_;
+
+  static const json SCHEMA;
 };
 
 }  // namespace ovis

@@ -587,28 +587,72 @@ void SceneViewEditor::DrawSceneObjectProperties() {
 }
 
 void SceneViewEditor::DrawSceneProperties() {
-  for (const std::string& controller : SceneController::registered_ids()) {
-    bool controller_enabled = game_scene()->GetController(controller) != nullptr;
-    if (ImGui::Checkbox(controller.c_str(), &controller_enabled)) {
-      if (controller_enabled) {
-        game_scene()->AddController(controller);
-      } else {
-        game_scene()->RemoveController(controller);
+  ImFont* font_awesome = scene()->GetController<ImGuiStartFrameController>()->GetFont("FontAwesomeSolid");
+
+  ImGui::Text("Scene controllers");
+  ImGui::SameLine();
+
+  ImVec2 button_position = ImGui::GetCursorScreenPos();
+  ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(48, 48, 48)));
+  ImGui::PushFont(font_awesome);
+  if (ImGui::Button("\uf0fe")) {
+    ImGui::OpenPopup("Add Controller");
+  }
+  ImGui::PopFont();
+  ImGui::PopStyleColor();
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetTooltip("Add Controller");
+  }
+  
+  ImVec2 next_line_pos = ImGui::GetCursorScreenPos();
+  ImGui::SetNextWindowPos({button_position.x, next_line_pos.y});
+  if (ImGui::BeginPopup("Add Controller")) {
+    for (const std::string& controller : SceneController::registered_ids()) {
+      if (!game_scene()->HasController(controller)) {
+        if (ImGui::Selectable(controller.c_str())) {
+          game_scene()->AddController(controller);
+          SubmitChangesToScene();
+        }
       }
-      SubmitChangesToScene();
+    }
+    for (const std::string& controller : GetApplicationAssetLibrary()->GetAssetsWithType("scene_controller")) {
+      if (!game_scene()->HasController(controller)) {
+        if (ImGui::Selectable(controller.c_str())) {
+          game_scene()->AddController(controller);
+          SubmitChangesToScene();
+        }
+      }
+    }
+    ImGui::EndPopup();
+  }
+
+  ImVec2 available_content_region = ImGui::GetContentRegionAvail();
+  if (ImGui::BeginChild("SceneControllers", ImVec2(0, available_content_region.y), false)) {
+    for (const auto& controller : game_scene()->controllers()) {
+      // Get component path
+      const json::json_pointer controller_path = GetControllerPath(controller->name());
+      if (serialized_scene_editing_copy_.contains(controller_path)) {
+        json& serialized_controller = serialized_scene_editing_copy_[controller_path];
+        const ovis::json* controller_schema = controller->GetSchema();
+
+        bool keep = true;
+        if (ImGui::InputJson(controller->name().c_str(), &serialized_controller,
+                            controller_schema ? *controller_schema : ovis::json{}, &keep)) {
+          if (!keep) {
+            game_scene()->RemoveController(controller->name());
+            SubmitChangesToScene();
+          } else {
+            controller->Deserialize(serialized_controller);
+          }
+        }
+        if (ImGui::IsItemDeactivated()) {
+          // After editing is finished reserialize the controller so the input gets "validated"
+          SubmitChangesToScene();
+        }
+      }
     }
   }
-  for (const std::string& controller : GetApplicationAssetLibrary()->GetAssetsWithType("scene_controller")) {
-    bool controller_enabled = game_scene()->GetController(controller) != nullptr;
-    if (ImGui::Checkbox(controller.c_str(), &controller_enabled)) {
-      if (controller_enabled) {
-        game_scene()->AddController(controller);
-      } else {
-        game_scene()->RemoveController(controller);
-      }
-      SubmitChangesToScene();
-    }
-  }
+  ImGui::EndChild();
 }
 
 void SceneViewEditor::SetSerializedScene(const json& data) {

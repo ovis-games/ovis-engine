@@ -1,10 +1,13 @@
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/transform.hpp>
+#include <ovis/physics2d/box2d.hpp>
 #include <ovis/physics2d/physics_world2d.hpp>
 #include <ovis/physics2d/rigid_body2d.hpp>
 
 namespace ovis {
+
+const json PhysicsWorld2D::SCHEMA = {{"$ref", "physics2d#/$defs/physics_world2d"}};
 
 PhysicsWorld2D::PhysicsWorld2D() : SceneController("PhysicsWorld2D"), world_(b2Vec2(0.0f, -9.81f)) {}
 
@@ -45,6 +48,23 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
       transform->SetYawPitchRoll(yaw, pitch, body->body_->GetAngle());
     }
   }
+}
+
+const json* PhysicsWorld2D::GetSchema() const {
+  return &SCHEMA;
+}
+
+json PhysicsWorld2D::Serialize() const {
+  json data = json::object();
+  data["gravity"] = FromBox2DVec2(world_.GetGravity());
+  return data;
+}
+
+bool PhysicsWorld2D::Deserialize(const json& data) {
+  if (data.contains("gravity")) {
+    world_.SetGravity(ToBox2DVec2(data.at("gravity")));
+  }
+  return true;
 }
 
 }  // namespace ovis

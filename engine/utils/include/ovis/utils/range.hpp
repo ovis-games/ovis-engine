@@ -164,8 +164,8 @@ IndexedRange<T, I> IndexRange(C&& container) {
   return {container.begin(), container.end()};
 }
 
-template <typename IteratorType>
-class KeyRange {
+template <size_t ELEMENT_INDEX, typename IteratorType>
+class TupleElementRange {
  public:
   class IteratorAdapter {
    public:
@@ -180,9 +180,9 @@ class KeyRange {
 
     inline bool operator!=(const IteratorAdapter& rhs) const { return iterator_ != rhs.iterator_; }
 
-    inline const auto& operator*() const { return iterator_->first; }
+    inline const auto& operator*() const { return std::get<ELEMENT_INDEX>(*iterator_); }
 
-    inline auto* operator->() const { return &iterator_->first; }
+    inline auto* operator->() const { return &std::get<ELEMENT_INDEX>(*iterator_); }
 
     inline IteratorAdapter& operator++() {
       ++iterator_;
@@ -196,7 +196,7 @@ class KeyRange {
   };
 
  public:
-  inline KeyRange(const IteratorType& begin, const IteratorType& end) : begin_(begin), end_(end) {}
+  inline TupleElementRange(const IteratorType& begin, const IteratorType& end) : begin_(begin), end_(end) {}
 
   inline IteratorAdapter begin() { return {begin_}; }
 
@@ -208,12 +208,22 @@ IteratorType end_;
 };
 
 template <typename Range>
-KeyRange<decltype(std::declval<Range>().begin())> Keys(Range& range) {
+TupleElementRange<0, decltype(std::declval<Range>().begin())> Keys(Range& range) {
   return {range.begin(), range.end()};
 }
 
 template <typename Range>
-KeyRange<decltype(std::declval<Range>().cbegin())> Keys(const Range& range) {
+TupleElementRange<0, decltype(std::declval<Range>().cbegin())> Keys(const Range& range) {
+  return {range.cbegin(), range.cend()};
+}
+
+template <typename Range>
+TupleElementRange<1, decltype(std::declval<Range>().begin())> Values(Range& range) {
+  return {range.begin(), range.end()};
+}
+
+template <typename Range>
+TupleElementRange<1, decltype(std::declval<Range>().cbegin())> Values(const Range& range) {
   return {range.cbegin(), range.cend()};
 }
 

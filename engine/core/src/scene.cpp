@@ -64,6 +64,27 @@ SceneController* Scene::AddController(const std::string& scene_controller_id) {
   return AddController(std::move(controller));
 }
 
+SceneController* Scene::AddController(const std::string& id, const json& serialized_controller) {
+  SceneController* controller = AddController(id);
+  if (controller) {
+    controller->Deserialize(serialized_controller);
+  }
+  return controller;
+}
+
+// SceneController* Scene::AddController(const std::string& id, const sol::table& properties) {
+//   SceneController* controller = AddController(id);
+
+//   if (controller != nullptr) {
+//     sol::table lua_controller = controller->GetValue().as<sol::table>();
+//     for (const auto& [key, value] : properties) {
+//       lua_controller[key] = value;
+//     }
+//   }
+
+//   return controller;
+// }
+
 void Scene::RemoveController(const std::string& id) {
   const auto scene_controller = controllers_.find(id);
   if (scene_controller == controllers_.end()) {
@@ -85,6 +106,10 @@ void Scene::ClearControllers() {
   }
   controllers_.clear();
   InvalidateControllerOrder();
+}
+
+bool Scene::HasController(const std::string& id) const {
+  return controllers_.contains(id);
 }
 
 SceneObject* Scene::CreateObject(const std::string& object_name) {
@@ -236,7 +261,7 @@ json Scene::Serialize() const {
   json serialized_object = {{"version", "0.1"}};
   auto& controllers = serialized_object["controllers"] = json::object();
   for (const auto& controller : controllers_) {
-    controllers[controller.first] = json::object();
+    controllers[controller.first] = controller.second->Serialize();
   }
 
   auto& objects = serialized_object["objects"] = json::object();
@@ -258,11 +283,7 @@ bool Scene::Deserialize(const json& serialized_object) {
 
   if (serialized_object.contains("controllers") && serialized_object["controllers"].is_object()) {
     for (const auto& controller : serialized_object["controllers"].items()) {
-      // SDL_assert(std::find(SceneController::GetRegisteredControllers().begin(),
-      //                      SceneController::GetRegisteredControllers().end(),
-      //                      controller.key()) != SceneController::GetRegisteredControllers().end());
-      LogV("Adding controller '{}'", controller.key());
-      AddController(controller.key());
+      AddController(controller.key(), controller.value());
     }
   }
 

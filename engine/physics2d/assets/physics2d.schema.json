@@ -3,8 +3,16 @@
 
   "$defs": {
     "physics_world2d": {
-      "title": "Physics2D Controller",
-      "type": "object"
+      "title": "Physics World 2D",
+      "type": "object",
+      "properties": {
+        "gravity": {
+          "$ref": "core#/$defs/vector2",
+          "title": "Gravity",
+          "default": [0, -9.81],
+          "description": "The world gravity vector."
+        }
+      }
     },
     "box2d_body": {
       "title": "Rigid Body 2D",

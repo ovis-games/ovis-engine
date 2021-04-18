@@ -19,6 +19,8 @@ class RigidBody2D : public SceneObjectComponent {
   bool Deserialize(const json& data) override;
   const json* GetSchema() const override { return &SCHEMA; }
 
+  static void RegisterType(sol::table* module);
+
  private:
   b2BodyDef body_definition_;
   std::unique_ptr<b2Shape> shape_;

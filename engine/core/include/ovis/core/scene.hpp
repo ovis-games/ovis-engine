@@ -11,6 +11,7 @@
 
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/json.hpp>
+#include <ovis/utils/range.hpp>
 #include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/serialize.hpp>
 #include <ovis/core/event.hpp>
@@ -46,8 +47,13 @@ class Scene : public Serializable, public SafelyReferenceable {
   }
   SceneController* AddController(std::unique_ptr<SceneController> scene_controller);
   SceneController* AddController(const std::string& id);
+  SceneController* AddController(const std::string& id, const json& serialized_controller);
+  // SceneController* AddController(const std::string& id, const sol::table& properties);
   void RemoveController(const std::string& id);
   void ClearControllers();
+  bool HasController(const std::string& id) const;
+  inline auto controller_ids() const { return Keys(controllers_); }
+  inline auto controllers() const { return Values(controllers_); }
 
   template <typename ControllerType = SceneController>
   inline ControllerType* GetController(const std::string& controller_name) const {

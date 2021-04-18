@@ -9,6 +9,7 @@
 #include <sol/sol.hpp>
 
 #include <ovis/utils/class.hpp>
+#include <ovis/utils/serialize.hpp>
 #include <ovis/utils/static_factory.hpp>
 #include <ovis/core/event.hpp>
 
@@ -20,8 +21,7 @@ namespace ovis {
 
 class Scene;
 
-class SceneController : 
-                        public StaticFactory<SceneController, std::unique_ptr<SceneController>()> {
+class SceneController : public Serializable, public StaticFactory<SceneController, std::unique_ptr<SceneController>()> {
   MAKE_NON_COPY_OR_MOVABLE(SceneController);
   friend class Scene;
 
@@ -46,6 +46,11 @@ class SceneController :
 
   virtual void ProcessEvent(Event* event);
 
+  // Default implementation that does nothing
+  const json* GetSchema() const override { return &DEFAULT_SCHEMA; }
+  json Serialize() const override;
+  bool Deserialize(const json& data) override;
+
   static void RegisterType(sol::table* module);
 
  protected:
@@ -67,6 +72,8 @@ class SceneController :
   std::set<std::string> update_before_list_;
   std::set<std::string> update_after_list_;
   std::set<std::string> subscribed_events_;
+
+  static const json DEFAULT_SCHEMA;
 
 #if OVIS_ENABLE_BUILT_IN_PROFILING
   CPUTimeProfiler update_profiler_;

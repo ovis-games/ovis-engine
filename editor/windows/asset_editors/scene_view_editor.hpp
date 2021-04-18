@@ -60,6 +60,9 @@ class SceneViewEditor : public AssetEditor {
   json::json_pointer GetComponentPath(const std::string& object_name, const std::string& component_id) {
     return json::json_pointer("/objects/" + object_name + "/components/" + component_id);
   }
+  json::json_pointer GetControllerPath(const std::string& controller_id) {
+    return json::json_pointer("/controllers/" + controller_id);
+  }
 
   std::unique_ptr<RenderTargetViewport> scene_viewport_;
 

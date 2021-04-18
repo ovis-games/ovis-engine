@@ -8,6 +8,8 @@
 
 namespace ovis {
 
+const json SceneController::DEFAULT_SCHEMA = {{"type", "object"}};
+
 SceneController::SceneController(std::string_view name)
     : name_(name)
 #if OVIS_ENABLE_BUILT_IN_PROFILING
@@ -41,6 +43,14 @@ void SceneController::Update(std::chrono::microseconds /*delta_time*/) {}
 void SceneController::ProcessEvent(Event* event) {
   SDL_assert(IsSubscribedToEvent(std::string(event->type())));
   (void)event;
+}
+
+json SceneController::Serialize() const {
+  return json::object();
+}
+
+bool SceneController::Deserialize(const json& data) {
+  return true;
 }
 
 void SceneController::RegisterType(sol::table* module) {
