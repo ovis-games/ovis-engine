@@ -11,6 +11,27 @@
           "title": "Gravity",
           "default": [0, -9.81],
           "description": "The world gravity vector."
+        },
+        "update_rate": {
+          "type": "number",
+          "title": "Update Rate (Hz)",
+          "default": 50,
+          "minimum": 1,
+          "description": "The update rate in Hz."
+        },
+        "velocity_iterations": {
+          "type": "integer",
+          "title": "Velocity Iterations",
+          "default": 6,
+          "minimum": 1,
+          "description": "Number of iterations for the velocity constraint solver."
+        },
+        "position_iterations": {
+          "type": "integer",
+          "title": "Position Iterations",
+          "default": 6,
+          "minimum": 1,
+          "description": "Number of iterations for the position constraint solver."
         }
       }
     },

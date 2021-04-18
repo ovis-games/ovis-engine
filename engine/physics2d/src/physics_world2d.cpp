@@ -10,11 +10,16 @@ namespace ovis {
 
 const json PhysicsWorld2D::SCHEMA = {{"$ref", "physics2d#/$defs/physics_world2d"}};
 
-PhysicsWorld2D::PhysicsWorld2D() : SceneController("PhysicsWorld2D"), world_(b2Vec2(0.0f, -9.81f)) {
+PhysicsWorld2D::PhysicsWorld2D()
+    : SceneController("PhysicsWorld2D"), world_(b2Vec2(0.0f, -9.81f)), accumulated_time_(0) {
   world_.SetContactListener(this);
 }
 
 void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
+  if (delta_time.count() == 0) {
+    return;
+  }
+
   std::vector<SceneObject*> scene_objects = scene()->GetSceneObjectsWithComponent("RigidBody2D");
 
   for (SceneObject* object : scene_objects) {
@@ -35,7 +40,17 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
     }
   }
 
-  world_.Step(1.0f / 60, 6, 6);
+  accumulated_time_ += delta_time;
+  const float step_size = 1.0f / update_rate_;
+  const auto step_size_us =
+      std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::duration<float>(step_size));
+  LogV("Accumulated time: {}", accumulated_time_.count() / 1000000.0);
+
+  while (accumulated_time_ >= step_size_us) {
+    world_.Step(step_size, velocity_iterations_, position_iterations_);
+    accumulated_time_ -= step_size_us;
+    LogV("PhysicsWorld2D step: {}", step_size);
+  }
 
   for (SceneObject* object : scene_objects) {
     Transform* transform = object->GetComponent<Transform>("Transform");
@@ -60,12 +75,24 @@ const json* PhysicsWorld2D::GetSchema() const {
 json PhysicsWorld2D::Serialize() const {
   json data = json::object();
   data["gravity"] = FromBox2DVec2(world_.GetGravity());
+  data["update_rate"] = update_rate_;
+  data["velocity_iterations"] = velocity_iterations_;
+  data["position_iterations"] = position_iterations_;
   return data;
 }
 
 bool PhysicsWorld2D::Deserialize(const json& data) {
   if (data.contains("gravity")) {
     world_.SetGravity(ToBox2DVec2(data.at("gravity")));
+  }
+  if (data.contains("update_rate")) {
+    update_rate_ = data.at("update_rate");
+  }
+  if (data.contains("velocity_iterations")) {
+    velocity_iterations_ = data.at("velocity_iterations");
+  }
+  if (data.contains("position_iterations")) {
+    position_iterations_ = data.at("position_iterations");
   }
   return true;
 }

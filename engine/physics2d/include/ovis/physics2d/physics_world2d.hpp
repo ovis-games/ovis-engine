@@ -27,6 +27,10 @@ class PhysicsWorld2D : public SceneController, public b2ContactListener {
 
  private:
   b2World world_;
+  float update_rate_ = 50.0f;
+  int velocity_iterations_ = 6;
+  int position_iterations_ = 6;
+  std::chrono::microseconds accumulated_time_;
 
   static const json SCHEMA;
 };
