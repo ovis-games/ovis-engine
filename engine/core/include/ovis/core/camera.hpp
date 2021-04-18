@@ -20,7 +20,7 @@ void to_json(json& data, const ProjectionType& projection_type);
 void from_json(const json& data, ProjectionType& projection_type);
 
 class Camera : public SceneObjectComponent {
-  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE(Camera);
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
 
  public:
   inline void SetProjectionType(ProjectionType projection_type) {

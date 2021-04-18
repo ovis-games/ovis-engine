@@ -31,8 +31,8 @@ class DynamicallyLuaReferencable : public DynamicallyLuaReferencableBase {
   sol::lua_value GetValue() override { return safe_ptr<T>(this); }
 };
 
-#define OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE(type) \
-  sol::lua_value GetValue() override { return safe_ptr<type>(this); }
+#define OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE() \
+  sol::lua_value GetValue() override { return safe_ptr(this); }
 
 // template <typename T>
 // class LuaReference {

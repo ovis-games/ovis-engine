@@ -10,7 +10,7 @@
 namespace ovis {
 
 class Sprite : public SceneObjectComponent {
-  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE(Sprite);
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
 
  public:
   inline Color color() const { return color_; }

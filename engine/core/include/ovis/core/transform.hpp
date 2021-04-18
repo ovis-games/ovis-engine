@@ -10,7 +10,7 @@
 namespace ovis {
 
 class Transform : public SceneObjectComponent {
-  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE(Transform);
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
   friend class TransformController;
 
  public:

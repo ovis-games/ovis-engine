@@ -9,6 +9,8 @@ namespace ovis {
 extern sol::state lua;
 
 class LuaErrorEvent : public Event {
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
+
  public:
   inline static const std::string TYPE = "LuaError";
 
