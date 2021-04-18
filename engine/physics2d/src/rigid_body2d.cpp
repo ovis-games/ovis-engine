@@ -9,9 +9,12 @@ namespace ovis {
 const json RigidBody2D::SCHEMA = {{"$ref", "physics2d#/$defs/box2d_body"}};
 
 RigidBody2D::RigidBody2D() {
+  body_definition_.userData.pointer = reinterpret_cast<uintptr_t>(this);
+
   shape_ = std::make_unique<b2CircleShape>();
   shape_->m_radius = 10.0f;
   fixture_definition_.shape = shape_.get();
+  fixture_definition_.userData.pointer = reinterpret_cast<uintptr_t>(this);
 }
 
 json RigidBody2D::Serialize() const {

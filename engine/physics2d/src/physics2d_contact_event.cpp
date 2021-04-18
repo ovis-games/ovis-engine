@@ -13,9 +13,17 @@ void Physics2DContactEvent::RegisterType(sol::table* module) {
   contact_event_type["is_touching"] = sol::property(&Physics2DContactEvent::is_touching);
 
   /// Has this contact been disabled?
-  // @field[type=bool] is_touching
+  // @field[type=bool] is_enabled
   contact_event_type["is_enabled"] =
       sol::property(&Physics2DContactEvent::is_enabled, &Physics2DContactEvent::SetEnabled);
+
+  /// The first of the two objects that made contact.
+  // @field[type=ovis.core.SceneObject] first_object
+  contact_event_type["first_object"] = sol::property(&Physics2DContactEvent::first_object);
+
+  /// The second of the two objects that made contact.
+  // @field[type=ovis.core.SceneObject] second_object
+  contact_event_type["second_object"] = sol::property(&Physics2DContactEvent::second_object);
 
   /// The friction between the objects.
   // @field[type=number] friction

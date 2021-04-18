@@ -3,6 +3,8 @@
 #include <box2d/b2_contact.h>
 
 #include <ovis/core/event.hpp>
+#include <ovis/core/scene_object.hpp>
+#include <ovis/physics2d/rigid_body2d.hpp>
 
 namespace ovis {
 
@@ -15,7 +17,12 @@ class Physics2DContactEvent : public Event {
   inline bool is_enabled() const { return contact_->IsEnabled(); }
   inline void SetEnabled(bool enabled) { contact_->SetEnabled(enabled); }
 
-  // TODO: Add getters for rigid bodies
+  inline SceneObject* first_object() const {
+    return reinterpret_cast<RigidBody2D*>(contact_->GetFixtureA()->GetUserData().pointer)->scene_object();
+  }
+  inline SceneObject* second_object() const {
+    return reinterpret_cast<RigidBody2D*>(contact_->GetFixtureB()->GetUserData().pointer)->scene_object();
+  }
 
   inline float friction() const { return contact_->GetFriction(); }
   inline void SetFriction(float friction) { contact_->SetFriction(friction); }
