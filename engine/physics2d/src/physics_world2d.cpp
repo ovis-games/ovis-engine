@@ -2,6 +2,7 @@
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/transform.hpp>
 #include <ovis/physics2d/box2d.hpp>
+#include <ovis/physics2d/physics2d_events.hpp>
 #include <ovis/physics2d/physics_world2d.hpp>
 #include <ovis/physics2d/rigid_body2d.hpp>
 
@@ -9,7 +10,9 @@ namespace ovis {
 
 const json PhysicsWorld2D::SCHEMA = {{"$ref", "physics2d#/$defs/physics_world2d"}};
 
-PhysicsWorld2D::PhysicsWorld2D() : SceneController("PhysicsWorld2D"), world_(b2Vec2(0.0f, -9.81f)) {}
+PhysicsWorld2D::PhysicsWorld2D() : SceneController("PhysicsWorld2D"), world_(b2Vec2(0.0f, -9.81f)) {
+  world_.SetContactListener(this);
+}
 
 void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
   std::vector<SceneObject*> scene_objects = scene()->GetSceneObjectsWithComponent("RigidBody2D");
@@ -65,6 +68,26 @@ bool PhysicsWorld2D::Deserialize(const json& data) {
     world_.SetGravity(ToBox2DVec2(data.at("gravity")));
   }
   return true;
+}
+
+void PhysicsWorld2D::BeginContact(b2Contact* contact) {
+  Physics2DBeginContactEvent event(contact);
+  scene()->ProcessEvent(&event);
+}
+
+void PhysicsWorld2D::EndContact(b2Contact* contact) {
+  Physics2DEndContactEvent event(contact);
+  scene()->ProcessEvent(&event);
+}
+
+void PhysicsWorld2D::PreSolve(b2Contact* contact, const b2Manifold* old_manifold) {
+  Physics2DPreSolveEvent event(contact, old_manifold);
+  scene()->ProcessEvent(&event);
+}
+
+void PhysicsWorld2D::PostSolve(b2Contact* contact, const b2ContactImpulse* impulse) {
+  Physics2DPostSolveEvent event(contact, impulse);
+  scene()->ProcessEvent(&event);
 }
 
 }  // namespace ovis

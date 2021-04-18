@@ -3,6 +3,7 @@
 #include <ovis/core/lua.hpp>
 #include <ovis/core/scene_controller.hpp>
 #include <ovis/physics2d/physics2d_debug_layer.hpp>
+#include <ovis/physics2d/physics2d_events.hpp>
 #include <ovis/physics2d/physics2d_module.hpp>
 #include <ovis/physics2d/physics_world2d.hpp>
 #include <ovis/physics2d/rigid_body2d.hpp>
@@ -18,6 +19,11 @@ int LoadPhysics2DModule(lua_State* l) {
   sol::table physics2d_module = state.create_table();
 
   RigidBody2D::RegisterType(&physics2d_module);
+  Physics2DContactEvent::RegisterType(&physics2d_module);
+  Physics2DBeginContactEvent::RegisterType(&physics2d_module);
+  Physics2DEndContactEvent::RegisterType(&physics2d_module);
+  Physics2DPreSolveEvent::RegisterType(&physics2d_module);
+  Physics2DPostSolveEvent::RegisterType(&physics2d_module);
 
   return physics2d_module.push();
 }

@@ -1,11 +1,6 @@
 #pragma once
 
-#include <ovis/core/event.hpp>
-
-namespace ovis {
-
-class BeginContactEvent : public Event {
- public:
-};
-
-}  // namespace ovis
+#include <ovis/physics2d/physics2d_begin_contact_event.hpp>
+#include <ovis/physics2d/physics2d_end_contact_event.hpp>
+#include <ovis/physics2d/physics2d_post_solve_event.hpp>
+#include <ovis/physics2d/physics2d_pre_solve_event.hpp>

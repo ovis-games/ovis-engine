@@ -9,7 +9,7 @@
 namespace ovis {
 
 class RigidBody2D : public SceneObjectComponent {
-  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE(RigidBody2D);
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
   friend class PhysicsWorld2D;
 
  public:
