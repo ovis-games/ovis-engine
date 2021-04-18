@@ -18,6 +18,8 @@ class KeyboardEvent : public Event {
 };
 
 class KeyPressEvent : public KeyboardEvent {
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
+
  public:
   inline static const std::string TYPE = "KeyPress";
 
@@ -27,6 +29,8 @@ class KeyPressEvent : public KeyboardEvent {
 };
 
 class KeyReleaseEvent : public KeyboardEvent {
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
+
  public:
   inline static const std::string TYPE = "KeyRelease";
 

@@ -8,6 +8,8 @@
 namespace ovis {
 
 class TextInputEvent : public Event {
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
+
  public:
   inline static const std::string TYPE = "TextInput";
 

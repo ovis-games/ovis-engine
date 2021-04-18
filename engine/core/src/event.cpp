@@ -21,7 +21,7 @@ void Event::RegisterType(sol::table* module) {
   // All events are passed to all controllers until they are handled. If you handled the event
   // appropriately and do not want any further processing of the event you should call stop_propagation.
   // @function stop_propagation
-  event_type["stop_propagation"] = sol::property(&Event::StopPropagation);
+  event_type["stop_propagation"] = &Event::StopPropagation;
 }
 
 }  // namespace ovis

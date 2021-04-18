@@ -23,6 +23,8 @@ class MouseEvent : public Event {
 };
 
 class MouseMoveEvent : public MouseEvent {
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
+
  public:
   inline static const std::string TYPE = "MouseMove";
 
@@ -52,6 +54,8 @@ class MouseButtonEvent : public MouseEvent {
 };
 
 class MouseButtonPressEvent : public MouseButtonEvent {
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
+
  public:
   inline static const std::string TYPE = "MouseButtonPress";
 
@@ -62,6 +66,8 @@ class MouseButtonPressEvent : public MouseButtonEvent {
 };
 
 class MouseButtonReleaseEvent : public MouseButtonEvent {
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
+
  public:
   inline static const std::string TYPE = "MouseButtonRelease";
 
@@ -72,6 +78,8 @@ class MouseButtonReleaseEvent : public MouseButtonEvent {
 };
 
 class MouseWheelEvent : public Event {
+  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
+
  public:
   inline static const std::string TYPE = "MouseWheelEvent";
 

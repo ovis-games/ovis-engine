@@ -10,6 +10,7 @@
 #include <ovis/core/scene_controller.hpp>
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_object_component.hpp>
+#include <ovis/core/script_scene_controller.hpp>
 #include <ovis/core/transform.hpp>
 #include <ovis/core/transform_controller.hpp>
 
@@ -76,6 +77,7 @@ int LoadCoreModule(lua_State* l) {
   Transform::RegisterType(&core_module);
   Camera::RegisterType(&core_module);
   SceneController::RegisterType(&core_module);
+  ScriptSceneController::RegisterType(&core_module);
   TransformController::RegisterType(&core_module);
   Transform::RegisterType(&core_module);
   Vector2::RegisterType(&core_module);

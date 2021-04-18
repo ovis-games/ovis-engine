@@ -87,27 +87,25 @@ void ScriptSceneController::ProcessEvent(Event* event) {
 
   sol::protected_function event_callback;
 
-  auto event_callback_entry = GetSubscribedEventsTable(instance_);
+  auto event_callback_entry = GetSubscribedEventsTable(instance_)[event->type()];
   if (event_callback_entry.get_type() == sol::type::string) {
+    LogD("Call {}", event_callback_entry.get<std::string>());
     event_callback = instance_[event_callback_entry];
   } else if (event_callback_entry.get_type() == sol::type::function) {
+    LogD("Call function");
     event_callback = event_callback_entry;
   } else {
+    LogD("Call process_event");
     event_callback = process_event_function_;
   }
 
   if (event_callback != sol::lua_nil) {
-    sol::protected_function_result result = process_event_function_.call(instance_, event);
+    sol::protected_function_result result = event_callback.call(instance_, event->GetValue());
   }
 }
 
-int ScriptSceneController::LoadLuaModule(lua_State* l) {
-  sol::state_view lua(l);
-
-  auto get_controller = []() {};
-
-  sol::table core = lua["require"]("ovis.core");
-  sol::table scene_controller_type = core["class"]("SceneController");
+void ScriptSceneController::RegisterType(sol::table* module) {
+  sol::table scene_controller_type = (*module)["class"]("ScriptSceneController");
   scene_controller_type["subscribe_to_event"] = sol::overload(
       [](sol::table scene_controller, std::string event_type) {
         GetSubscribedEventsTable(scene_controller)[event_type] = true;
@@ -125,27 +123,25 @@ int ScriptSceneController::LoadLuaModule(lua_State* l) {
         LogI("Subscribed to event '{}' via callback", event_type);
       });
 
-  scene_controller_type["unsubscribe_from_event"] = [&get_controller](sol::table scene_controller,
-                                                                      std::string event_type) {
+  scene_controller_type["unsubscribe_from_event"] = [](sol::table scene_controller, std::string event_type) {
     GetController(scene_controller)->UnsubscribeFromEvent(event_type);
     GetSubscribedEventsTable(scene_controller)[event_type] = sol::nil;
     LogI("Unsubscribed from event: {}", event_type);
   };
 
-  scene_controller_type["is_subscribed_to_event"] = [&get_controller](sol::table scene_controller,
-                                                                      std::string event_type) {
+  scene_controller_type["is_subscribed_to_event"] = [](sol::table scene_controller, std::string event_type) {
     return GetController(scene_controller)->IsSubscribedToEvent(event_type);
   };
 
   scene_controller_type["initialize"] = [](sol::table scene_controller) { GetSubscribedEventsTable(scene_controller); };
+  (*module)["ScriptSceneController"] = scene_controller_type;
+
 
   sol::usertype<ScriptSceneController> script_scene_controller_type =
-      lua.new_usertype<ScriptSceneController>("ScriptSceneController");
+      module->new_usertype<ScriptSceneController>("ScriptSceneControllerWrapper");
   script_scene_controller_type["subscribe_to_event"] = &ScriptSceneController::SubscribeToEvent;
   script_scene_controller_type["unsubscribe_from_event"] = &ScriptSceneController::UnsubscribeFromEvent;
   script_scene_controller_type["is_subscribed_to_event"] = &ScriptSceneController::IsSubscribedToEvent;
-
-  return scene_controller_type.push();
 }
 
 std::unique_ptr<ScriptSceneController> LoadScriptSceneController(const std::string& asset_id, sol::state* lua_state) {
