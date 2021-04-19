@@ -32,6 +32,8 @@ class PhysicsWorld2D : public SceneController, public b2ContactListener {
   int position_iterations_ = 6;
   std::chrono::microseconds accumulated_time_;
 
+  std::vector<b2Body*> body_cache_;
+
   static const json SCHEMA;
 };
 

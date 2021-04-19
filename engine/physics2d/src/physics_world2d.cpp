@@ -20,23 +20,28 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
     return;
   }
 
-  std::vector<SceneObject*> scene_objects = scene()->GetSceneObjectsWithComponent("RigidBody2D");
+  {
+    std::vector<SceneObject*> scene_objects = scene()->GetSceneObjectsWithComponent("RigidBody2D");
+    body_cache_.clear();
+    body_cache_.reserve(scene_objects.size());
 
-  for (SceneObject* object : scene_objects) {
-    Transform* transform = object->GetComponent<Transform>("Transform");
-    RigidBody2D* body = object->GetComponent<RigidBody2D>("RigidBody2D");
-    SDL_assert(body != nullptr);
+    for (SceneObject* object : scene_objects) {
+      Transform* transform = object->GetComponent<Transform>("Transform");
+      RigidBody2D* body = object->GetComponent<RigidBody2D>("RigidBody2D");
+      SDL_assert(body != nullptr);
 
-    if (body->body_ == nullptr) {
-      body->body_ = world_.CreateBody(&body->body_definition_);
-      SDL_assert(body->body_);
-      body->fixture_ = body->body_->CreateFixture(&body->fixture_definition_);
-    }
+      if (body->body_ == nullptr) {
+        body->body_ = world_.CreateBody(&body->body_definition_);
+        SDL_assert(body->body_);
+        body->fixture_ = body->body_->CreateFixture(&body->fixture_definition_);
+      }
+      body_cache_.push_back(body->body_);
 
-    if (transform) {
-      float roll;
-      transform->GetYawPitchRoll(nullptr, nullptr, &roll);
-      body->body_->SetTransform(b2Vec2(transform->position().x, transform->position().y), roll);
+      if (transform) {
+        float roll;
+        transform->GetYawPitchRoll(nullptr, nullptr, &roll);
+        body->body_->SetTransform(b2Vec2(transform->position().x, transform->position().y), roll);
+      }
     }
   }
 
@@ -44,20 +49,26 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
   const float step_size = 1.0f / update_rate_;
   const auto step_size_us =
       std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::duration<float>(step_size));
-  LogV("Accumulated time: {}", accumulated_time_.count() / 1000000.0);
 
   while (accumulated_time_ >= step_size_us) {
     world_.Step(step_size, velocity_iterations_, position_iterations_);
     accumulated_time_ -= step_size_us;
-    LogV("PhysicsWorld2D step: {}", step_size);
   }
 
-  for (SceneObject* object : scene_objects) {
+  // Destroy all rigid bodies that belong to objects that have been destroyed within a callback from Step():
+  for (b2Body* body : body_cache_) {
+    if (body->GetUserData().pointer == 0) {
+      world_.DestroyBody(body);
+    }
+  }
+
+  // Don't use the scene_objects vector from before, as the objects may not be valid anymore
+  for (SceneObject* object : scene()->GetSceneObjectsWithComponent("RigidBody2D")) {
     Transform* transform = object->GetComponent<Transform>("Transform");
     RigidBody2D* body = object->GetComponent<RigidBody2D>("RigidBody2D");
     SDL_assert(body != nullptr);
 
-    if (transform) {
+    if (transform != nullptr && body->body_ != nullptr) {
       b2Vec2 position = body->body_->GetPosition();
       transform->SetPosition({position.x, position.y, transform->position().z});
 
