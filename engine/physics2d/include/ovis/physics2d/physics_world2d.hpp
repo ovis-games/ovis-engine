@@ -12,6 +12,7 @@ class PhysicsWorld2D : public SceneController, public b2ContactListener {
 
  public:
   PhysicsWorld2D();
+  ~PhysicsWorld2D();
 
   void Update(std::chrono::microseconds delta_time) override;
 

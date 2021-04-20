@@ -15,6 +15,14 @@ PhysicsWorld2D::PhysicsWorld2D()
   world_.SetContactListener(this);
 }
 
+PhysicsWorld2D::~PhysicsWorld2D() {
+  for (SceneObject* object : scene()->GetSceneObjectsWithComponent("RigidBody2D")) {
+    RigidBody2D* body = object->GetComponent<RigidBody2D>("RigidBody2D");
+    body->body_ = nullptr;
+    body->fixture_ = nullptr;
+  }
+}
+
 void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
   if (delta_time.count() == 0) {
     return;

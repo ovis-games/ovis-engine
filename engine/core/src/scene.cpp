@@ -19,7 +19,12 @@ const json Scene::schema_ = {{"$ref", "engine#/$defs/scene"}};
 
 Scene::Scene() {}
 
-Scene::~Scene() {}
+Scene::~Scene() {
+  // Explicitly clear owning containers because the destructor of their objects may need to still access the scene.
+  objects_.clear();
+  controllers_.clear();
+  removed_controllers_.clear();
+}
 
 SceneController* Scene::AddController(std::unique_ptr<SceneController> scene_controller) {
   if (!scene_controller) {
