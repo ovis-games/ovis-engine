@@ -17,6 +17,7 @@ class SceneViewEditor : public AssetEditor {
   SceneViewEditor(const std::string& asset_id);
 
   void Update(std::chrono::microseconds delta_time) override;
+  void ProcessEvent(Event* event) override;
   void ProcessViewportInputEvent(Event* event);
 
   enum class RunState { STOPPED, PAUSED, RUNNING };

@@ -48,6 +48,8 @@ SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(s
   AddEditorController<ObjectSelectionController>();
   AddEditorController<TransformationToolsController>();
   AddEditorController<EditorCameraController>();
+
+  SubscribeToEvent(LuaErrorEvent::TYPE);
 }
 
 void SceneViewEditor::Update(std::chrono::microseconds delta_time) {
@@ -57,6 +59,17 @@ void SceneViewEditor::Update(std::chrono::microseconds delta_time) {
     serialized_scene_editing_copy_ = game_scene_.Serialize();
   } else {
     editing_scene_.Update(delta_time);
+  }
+}
+
+void SceneViewEditor::ProcessEvent(Event* event) {
+  AssetEditor::ProcessEvent(event);
+  if (event->is_propagating()) {
+    if (event->type() == LuaErrorEvent::TYPE) {
+      if (run_state() == RunState::RUNNING) {
+        ChangeRunState(RunState::PAUSED);
+      }
+    }
   }
 }
 
@@ -77,11 +90,11 @@ void SceneViewEditor::ChangeRunState(RunState new_state) {
       case RunState::STOPPED:
         SubmitChangesToScene();
         game_scene()->Deserialize(GetCurrentJsonFileState());
+        game_scene()->Play();
         [[fallthrough]];
   
       case RunState::PAUSED:
         run_state_ = RunState::RUNNING;
-        game_scene()->Play();
         break;
 
       case RunState::RUNNING:
@@ -96,7 +109,6 @@ void SceneViewEditor::ChangeRunState(RunState new_state) {
       SDL_assert(false);
       run_state_ = RunState::PAUSED;
     } else if (run_state() == RunState::RUNNING) {
-      game_scene()->Stop();
       run_state_ = RunState::PAUSED;
     }
     break;
@@ -104,10 +116,10 @@ void SceneViewEditor::ChangeRunState(RunState new_state) {
   case RunState::STOPPED:
     switch (run_state()) {
       case RunState::RUNNING:
-        game_scene()->Stop();
         [[fallthrough]];
 
       case RunState::PAUSED:
+        game_scene()->Stop();
         serialized_scene_editing_copy_ = GetCurrentJsonFileState();
         game_scene()->Deserialize(serialized_scene_editing_copy_);
         run_state_= RunState::STOPPED;
