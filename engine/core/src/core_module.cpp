@@ -92,8 +92,8 @@ bool LoadCoreModule() {
   if (!module_loaded) {
     lua.open_libraries(sol::lib::base, sol::lib::coroutine, sol::lib::string, sol::lib::math, sol::lib::table,
                        sol::lib::package);
-    SceneObjectComponent::Register("Transform", []() { return std::make_unique<Transform>(); });
-    SceneObjectComponent::Register("Camera", []() { return std::make_unique<Camera>(); });
+    SceneObjectComponent::Register("Transform", [](SceneObject*) { return std::make_unique<Transform>(); });
+    SceneObjectComponent::Register("Camera", [](SceneObject*) { return std::make_unique<Camera>(); });
 
     lua.require("ovis.core", &LoadCoreModule);
     module_loaded = true;

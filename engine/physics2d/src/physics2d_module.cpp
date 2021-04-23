@@ -33,7 +33,7 @@ bool LoadPhysics2DModule() {
   if (!module_loaded) {
     LoadCoreModule();
 
-    SceneObjectComponent::Register("RigidBody2D", []() { return std::make_unique<RigidBody2D>(); });
+    SceneObjectComponent::Register("RigidBody2D", [](SceneObject*) { return std::make_unique<RigidBody2D>(); });
     SceneController::Register("PhysicsWorld2D", []() { return std::make_unique<PhysicsWorld2D>(); });
     lua.require("ovis.physics2d", &LoadPhysics2DModule);
     module_loaded = true;

@@ -18,7 +18,7 @@ SceneObjectComponent* SceneObject::AddComponent(const std::string& component_id)
     LogE("Object '{}' already has the component '{}'.", name_, component_id);
     return nullptr;
   } else {
-    std::optional<std::unique_ptr<SceneObjectComponent>> component = SceneObjectComponent::Create(component_id);
+    std::optional<std::unique_ptr<SceneObjectComponent>> component = SceneObjectComponent::Create(component_id, this);
     if (!component.has_value()) {
       LogE("Component '{}' not registered or failed to create", component_id);
       return nullptr;
