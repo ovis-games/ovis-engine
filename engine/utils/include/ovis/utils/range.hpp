@@ -8,6 +8,9 @@ namespace ovis {
 template <typename BeginIteratorType, typename EndIteratorType = BeginIteratorType>
 class Range {
  public:
+  template <typename T>
+  inline Range(T& container) : begin_(std::begin(container)), end_(std::end(container)) {}
+
   inline Range(BeginIteratorType&& begin, EndIteratorType&& end)
       : begin_(std::forward<BeginIteratorType>(begin)), end_(std::forward<EndIteratorType>(end)) {}
 
@@ -18,6 +21,9 @@ class Range {
   BeginIteratorType begin_;
   EndIteratorType end_;
 };
+
+template <typename T>
+Range(T& container) -> Range<decltype(std::begin(container)), decltype(std::end(container))>;
 
 template <typename BeginIteratorType, typename EndIteratorType = BeginIteratorType>
 Range<BeginIteratorType, EndIteratorType> make_range(BeginIteratorType&& begin, EndIteratorType&& end) {
@@ -204,7 +210,7 @@ class TupleElementRange {
 
  private:
   IteratorType begin_;
-IteratorType end_;
+  IteratorType end_;
 };
 
 template <typename Range>
