@@ -21,18 +21,16 @@ class DynamicallyLuaReferencableBase : public SafelyReferenceable {
   virtual sol::lua_value GetValue() = 0;
 };
 
+#define OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE() \
+  sol::lua_value GetValue() override { return safe_ptr(this); }
+
 // Makes classes dyamically lua referencable, e.g., it takes into account the most derived type
 // when passing values to lua.
 template <typename T>
 class DynamicallyLuaReferencable : public DynamicallyLuaReferencableBase {
  public:
-  virtual ~DynamicallyLuaReferencable() {}
-
   sol::lua_value GetValue() override { return safe_ptr<T>(this); }
 };
-
-#define OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE() \
-  sol::lua_value GetValue() override { return safe_ptr(this); }
 
 // template <typename T>
 // class LuaReference {
