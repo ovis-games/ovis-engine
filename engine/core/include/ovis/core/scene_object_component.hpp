@@ -17,14 +17,15 @@ namespace ovis {
 
 class SceneObject;
 
-class SceneObjectComponent : public Serializable,
-                             public DynamicallyLuaReferencableBase,
-                             public StaticFactory<SceneObjectComponent, std::unique_ptr<SceneObjectComponent>(SceneObject*)> {
+class SceneObjectComponent
+    : public Serializable,
+      public DynamicallyLuaReferencableBase,
+      public StaticFactory<SceneObjectComponent, std::unique_ptr<SceneObjectComponent>(SceneObject*)> {
   MAKE_NON_COPY_OR_MOVABLE(SceneObjectComponent);
   friend class SceneObject;
 
  public:
-  SceneObjectComponent() = default;
+  explicit inline SceneObjectComponent(SceneObject* object) : scene_object_(object) {}
   virtual ~SceneObjectComponent() = default;
 
   inline SceneObject* scene_object() const { return scene_object_; }

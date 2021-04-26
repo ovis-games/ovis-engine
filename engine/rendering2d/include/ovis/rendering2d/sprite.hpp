@@ -13,6 +13,8 @@ class Sprite : public SceneObjectComponent {
   OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
 
  public:
+  explicit inline Sprite(SceneObject* object) : SceneObjectComponent(object) {}
+
   inline Color color() const { return color_; }
   inline Vector2 size() const { return size_; }
   inline std::string texture_asset() const { return texture_asset_; }

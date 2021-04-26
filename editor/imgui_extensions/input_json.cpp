@@ -1,6 +1,7 @@
 #include "input_json.hpp"
 
 #include "input_asset.hpp"
+#include <cmath>
 #include <string>
 
 #include <SDL2/SDL_assert.h>
@@ -161,11 +162,14 @@ bool InputJson(const char* label, ovis::json* value, bool* keep, const ovis::jso
         ImGui::TreePop();
       }
     } else if (type == "number") {
-      const float min = schema.contains("minimum") ? schema.at("minimum").get<float>() : std::numeric_limits<float>::min();
-      const float max = schema.contains("maximum") ? schema.at("maximum").get<float>() : std::numeric_limits<float>::max();
+      const float min =
+          schema.contains("minimum") ? schema.at("minimum").get<float>() : -std::numeric_limits<float>::infinity();
+      const float max =
+          schema.contains("maximum") ? schema.at("maximum").get<float>() : std::numeric_limits<float>::infinity();
+      const float step_size = std::isfinite(min) && std::isfinite(max) ? (max - min) / 100.0f : 1.0f;
 
       float number = *value;
-      if (ImGui::DragFloat(label, &number, 1.0f, min, max, "%.2f")) {
+      if (ImGui::DragFloat(label, &number, step_size, min, max, "%.2f")) {
         *value = number;
         json_changed = true;
       }

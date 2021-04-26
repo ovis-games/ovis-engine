@@ -35,7 +35,7 @@
         }
       }
     },
-    "box2d_body": {
+    "rigid_body_2d": {
       "title": "Rigid Body 2D",
       "type": "object",
       "properties": {
@@ -62,12 +62,16 @@
           "title": "Linear Damping",
           "type": "number",
           "default": 0,
+          "minimum": 0.0,
+          "maximum": 1.0,
           "description": "Linear damping is use to reduce the linear velocity. The damping parameter can be larger than 1.0f but the damping effect becomes sensitive to the time step when the damping parameter is large.\nUnits are 1/time"
         },
         "angular_damping": {
           "title": "Angular Damping",
           "type": "number",
           "default": 0,
+          "minimum": 0.0,
+          "maximum": 1.0,
           "description": "Angular damping is use to reduce the angular velocity. The damping parameter can be larger than 1.0f but the damping effect becomes sensitive to the time step when the damping parameter is large.\nUnits are 1/time"
         },
         "allow_sleep": {
@@ -105,48 +109,6 @@
           "type": "number",
           "default": 1,
           "description": "Scale the gravity applied to this body."
-        },
-        "friction": {
-          "title": "Friction",
-          "type": "number",
-          "default": 0.2,
-          "description": "The friction coefficient, usually in the range [0,1]."
-        },
-        "restitution": {
-          "title": "Restitution",
-          "type": "number",
-          "default": 0,
-          "description": "The restitution (elasticity) usually in the range [0,1]."
-        },
-        "restitution_threshold": {
-          "title": "Restitution Threshold",
-          "type": "number",
-          "default": 1,
-          "description": "Restitution velocity threshold, usually in m/s. Collisions above this speed have restitution applied (will bounce)."
-        },
-        "density": {
-          "title": "Density",
-          "type": "number",
-          "default": 0,
-          "description": "The density, usually in kg/m^2."
-        },
-        "is_sensor": {
-          "title": "Is Sensor",
-          "type": "boolean",
-          "default": false,
-          "description": "A sensor shape collects contact information but never generates a collision response."
-        },
-        "shape": {
-          "$ref": "physics2d#/$defs/collision_shape_2d"
-        }
-      }
-    },
-    "rigid_body_2d": {
-      "title": "Rigid Body 2D",
-      "type": "object",
-      "properties": {
-        "shape": {
-          "$ref": "physics2d#/$defs/collision_shape_2d"
         }
       }
     },
@@ -171,6 +133,50 @@
         "radius": {
           "title": "Radius",
           "type": "number"
+        }
+      }
+    },
+    "rigid_body_2d_fixture": {
+      "title": "Rigid Body 2D",
+      "type": "object",
+      "properties": {
+        "friction": {
+          "title": "Friction",
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0,
+          "description": "The friction coefficient, usually in the range [0,1]."
+        },
+        "restitution": {
+          "title": "Restitution",
+          "type": "number",
+          "default": 0,
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "The restitution (elasticity) usually in the range [0,1]."
+        },
+        "restitution_threshold": {
+          "title": "Restitution Threshold",
+          "type": "number",
+          "default": 1,
+          "description": "Restitution velocity threshold, usually in m/s. Collisions above this speed have restitution applied (will bounce)."
+        },
+        "density": {
+          "title": "Density",
+          "type": "number",
+          "default": 0,
+          "minimum": 0.0,
+          "description": "The density, usually in kg/m^2."
+        },
+        "is_sensor": {
+          "title": "Is Sensor",
+          "type": "boolean",
+          "default": false,
+          "description": "A sensor shape collects contact information but never generates a collision response."
+        },
+        "shape": {
+          "$ref": "physics2d#/$defs/collision_shape_2d"
         }
       }
     }

@@ -1,41 +1,64 @@
-#include <box2d/b2_circle_shape.h>
-#include <box2d/b2_polygon_shape.h>
-
 #include <ovis/core/math_constants.hpp>
+#include <ovis/core/scene.hpp>
+#include <ovis/core/scene_object.hpp>
+#include <ovis/physics2d/physics_world2d.hpp>
 #include <ovis/physics2d/rigid_body2d.hpp>
 
 namespace ovis {
 
-const json RigidBody2D::SCHEMA = {{"$ref", "physics2d#/$defs/box2d_body"}};
+const json RigidBody2D::SCHEMA = {{"$ref", "physics2d#/$defs/rigid_body_2d"}};
 
-RigidBody2D::RigidBody2D() {
-  body_definition_.userData.pointer = reinterpret_cast<uintptr_t>(this);
+RigidBody2D::RigidBody2D(SceneObject* object) : SceneObjectComponent(object) {
+  auto world = object->scene()->GetController<PhysicsWorld2D>();
 
-  shape_ = std::make_unique<b2CircleShape>();
-  shape_->m_radius = 10.0f;
-  fixture_definition_.shape = shape_.get();
-  fixture_definition_.userData.pointer = reinterpret_cast<uintptr_t>(this);
+  if (world == nullptr) {
+    LogE("RigidBody2D requires the controller 'PhysicsWorld2D'");
+    return;
+  }
+
+  if (world->world_.IsLocked()) {
+    std::get<0>(body_) = std::make_unique<b2BodyDef>();
+    std::get<0>(body_)->userData.pointer = reinterpret_cast<uintptr_t>(this);
+    world->bodies_to_create_.push_back(this);
+  } else {
+    b2BodyDef body_definition;
+    body_definition.userData.pointer = reinterpret_cast<uintptr_t>(this);
+    CreateInternals(&body_definition);
+  }
 }
 
 RigidBody2D::~RigidBody2D() {
-  // Don't actually destroy the body, we might be in a callback within Step(). Just set the userdata pointer, so the
-  // physics world will delete the object.
-  if (body_ != nullptr) {
-    body_->GetUserData().pointer = 0;
+  auto world = scene_object()->scene()->GetController<PhysicsWorld2D>();
+
+  if (world == nullptr) {
+    SDL_assert(!std::holds_alternative<b2Body*>(body_));
+    return;
+  }
+
+  if (scene_object()->HasComponent("RigidBody2DFixture")) {
+    scene_object()->GetComponent<RigidBody2DFixture>("RigidBody2DFixture")->DestroyFixture();
+  }
+
+  if (world->world_.IsLocked()) {
+    if (std::holds_alternative<b2Body*>(body_)) {
+      world->bodies_to_destroy_.push_back(std::get<b2Body*>(body_));
+    } else {
+      SDL_assert(std::find(world->bodies_to_create_.begin(), world->bodies_to_create_.end(), this) !=
+                 world->bodies_to_create_.end());
+      world->bodies_to_create_.erase(
+          std::remove(world->bodies_to_create_.begin(), world->bodies_to_create_.end(), this),
+          world->bodies_to_create_.end());
+    }
+  } else {
+    SDL_assert(std::holds_alternative<b2Body*>(body_));
+    world->world_.DestroyBody(std::get<b2Body*>(body_));
   }
 }
 
 json RigidBody2D::Serialize() const {
   json data = json::object();
 
-  if (auto type = this->type(); type == b2BodyType::b2_staticBody) {
-    data["type"] = "static";
-  } else if (type == b2BodyType::b2_kinematicBody) {
-    data["type"] = "kinematic";
-  } else if (type == b2BodyType::b2_dynamicBody) {
-    data["type"] = "dynamic";
-  }
-
+  data["type"] = TypeToString(type());
   data["linear_velocity"] = linear_velocity();
   data["angular_velocity"] = angular_velocity() * RadiansToDegreesFactor<float>();
   data["linear_damping"] = linear_damping();
@@ -47,18 +70,15 @@ json RigidBody2D::Serialize() const {
   data["is_enabled"] = is_enabled();
   data["gravity_scale"] = gravity_scale();
 
-  data["friction"] = fixture_definition_.friction;
-  data["restitution"] = fixture_definition_.restitution;
-  data["restitution_threshold"] = fixture_definition_.restitutionThreshold;
-  data["density"] = fixture_definition_.density;
-  data["is_sensor"] = fixture_definition_.isSensor;
-
-  data["shape"] = SerializeShape();
-
   return data;
 }
 
 bool RigidBody2D::Deserialize(const json& data) {
+  // The order is important here: first awake, then type and then the linear / angular velocity to correctly set the
+  // awake and velocities correctly.
+  if (data.contains("is_awake")) {
+    SetIsAwake(data.at("is_awake"));
+  }
   if (data.contains("type")) {
     SetType(StringToType(data["type"].get<std::string>()));
   }
@@ -77,9 +97,6 @@ bool RigidBody2D::Deserialize(const json& data) {
   if (data.contains("allow_sleep")) {
     SetAllowSleep(data.at("allow_sleep"));
   }
-  if (data.contains("is_awake")) {
-    SetIsAwake(data.at("is_awake"));
-  }
   if (data.contains("is_rotation_fixed")) {
     SetIsRotationFixed(data.at("is_rotation_fixed"));
   }
@@ -93,80 +110,7 @@ bool RigidBody2D::Deserialize(const json& data) {
     SetGravityScale(data.at("gravity_scale"));
   }
 
-  if (data.contains("friction")) {
-    fixture_definition_.friction = data.at("friction");
-  }
-  if (data.contains("restitution")) {
-    fixture_definition_.restitution = data.at("restitution");
-  }
-  if (data.contains("restitution_threshold")) {
-    fixture_definition_.restitutionThreshold = data.at("restitution_threshold");
-  }
-  if (data.contains("density")) {
-    fixture_definition_.density = data.at("density");
-  }
-  if (data.contains("is_sensor")) {
-    fixture_definition_.isSensor = data.at("is_sensor");
-  }
-
-  if (data.contains("shape")) {
-    DeserializeShape(data.at("shape"));
-  }
-
   return true;
-}
-
-json RigidBody2D::SerializeShape() const {
-  json data = json::object();
-
-  if (shape_->GetType() == b2Shape::e_circle) {
-    b2CircleShape* circle = static_cast<b2CircleShape*>(shape_.get());
-
-    data["type"] = "circle";
-    data["radius"] = circle->m_radius;
-  } else if (shape_->GetType() == b2Shape::e_polygon) {
-    b2PolygonShape* polygon = static_cast<b2PolygonShape*>(shape_.get());
-
-    data["type"] = "polygon";
-
-    std::vector<Vector2> vertices(polygon->m_count);
-    for (int i = 0; i < polygon->m_count; ++i) {
-      vertices[i].x = polygon->m_vertices[i].x;
-      vertices[i].y = polygon->m_vertices[i].y;
-    }
-
-    data["vertices"] = vertices;
-  }
-
-  return data;
-}
-
-void RigidBody2D::DeserializeShape(const json& data) {
-  if (data["type"] == "circle") {
-    shape_ = std::make_unique<b2CircleShape>();
-    if (data.contains("radius")) {
-      shape_->m_radius = data.at("radius");
-    }
-  } else if (data["type"] == "polygon") {
-    auto polygon_shape = std::make_unique<b2PolygonShape>();
-
-    if (data.contains("vertices")) {
-      std::vector<Vector2> vertices = data.at("vertices");
-      std::vector<b2Vec2> box2d_vertices;
-
-      box2d_vertices.reserve(vertices.size());
-      for (const auto& vertex : vertices) {
-        box2d_vertices.push_back(b2Vec2(vertex.x, vertex.y));
-      }
-      polygon_shape->Set(box2d_vertices.data(), box2d_vertices.size());
-    } else {
-      polygon_shape->SetAsBox(1.0f, 1.0f);
-    }
-
-    shape_ = std::move(polygon_shape);
-  }
-
-  fixture_definition_.shape = shape_.get();
 }
 
 void RigidBody2D::RegisterType(sol::table* module) {
@@ -299,6 +243,25 @@ void RigidBody2D::RegisterType(sol::table* module) {
   // @function apply_angular_impulse
   // @param[type=number] Impulse the angular impulse in units of kg*m*m/s.
   rigid_body2d_type["apply_angular_impulse"] = &RigidBody2D::ApplyAngularImpulse;
+}
+
+void RigidBody2D::CreateInternals(const b2BodyDef* definition) {
+  SDL_assert(!std::holds_alternative<b2Body*>(body_));
+
+  auto world = scene_object()->scene()->GetController<PhysicsWorld2D>();
+
+  if (world == nullptr) {
+    LogE("RigidBody2D requires the controller 'PhysicsWorld2D'");
+    return;
+  }
+
+  SDL_assert(!world->world_.IsLocked());
+  body_ = world->world_.CreateBody(definition);
+
+  if (scene_object()->HasComponent("RigidBody2DFixture")) {
+    auto fixture = scene_object()->GetComponent<RigidBody2DFixture>("RigidBody2DFixture");
+    fixture->CreateFixture();
+  }
 }
 
 }  // namespace ovis

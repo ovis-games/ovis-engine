@@ -23,6 +23,8 @@ class Camera : public SceneObjectComponent {
   OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
 
  public:
+  explicit inline Camera(SceneObject* object) : SceneObjectComponent(object) {}
+
   inline void SetProjectionType(ProjectionType projection_type) {
     projection_type_ = projection_type;
     dirty_ = true;

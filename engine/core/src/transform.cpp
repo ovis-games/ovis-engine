@@ -43,7 +43,7 @@ void Transform::RegisterType(sol::table* module) {
   // @usage local core = require "ovis.core"
   // local Transform = core.Transform
   sol::usertype<Transform> transform_type =
-      module->new_usertype<Transform>("Transform", sol::constructors<Transform()>());
+      module->new_usertype<Transform>("Transform", sol::no_constructor);
 
   /// The position of the transformation.
   // @field[type=Vector3] position

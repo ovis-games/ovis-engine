@@ -7,6 +7,7 @@
 #include <ovis/physics2d/physics2d_module.hpp>
 #include <ovis/physics2d/physics_world2d.hpp>
 #include <ovis/physics2d/rigid_body2d.hpp>
+#include <ovis/physics2d/rigid_body2d_fixture.hpp>
 
 namespace ovis {
 
@@ -33,7 +34,10 @@ bool LoadPhysics2DModule() {
   if (!module_loaded) {
     LoadCoreModule();
 
-    SceneObjectComponent::Register("RigidBody2D", [](SceneObject*) { return std::make_unique<RigidBody2D>(); });
+    SceneObjectComponent::Register("RigidBody2D",
+                                   [](SceneObject* object) { return std::make_unique<RigidBody2D>(object); });
+    SceneObjectComponent::Register("RigidBody2DFixture",
+                                   [](SceneObject* object) { return std::make_unique<RigidBody2DFixture>(object); });
     SceneController::Register("PhysicsWorld2D", []() { return std::make_unique<PhysicsWorld2D>(); });
     lua.require("ovis.physics2d", &LoadPhysics2DModule);
     module_loaded = true;

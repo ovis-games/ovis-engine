@@ -7,7 +7,7 @@
 namespace ovis {
 namespace editor {
 
-EditorCameraController::EditorCameraController() : EditorController("EditorCameraController") {
+EditorCameraController::EditorCameraController() : EditorController("EditorCameraController"), camera_(nullptr), transform_(nullptr) {
   SubscribeToEvent(MouseMoveEvent::TYPE);
   SubscribeToEvent(MouseButtonPressEvent::TYPE);
   SubscribeToEvent(MouseWheelEvent::TYPE);

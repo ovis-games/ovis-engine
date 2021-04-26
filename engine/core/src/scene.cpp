@@ -283,8 +283,8 @@ bool Scene::Deserialize(const json& serialized_object) {
     return false;
   }
 
-  ClearControllers();
   ClearObjects();
+  ClearControllers();
 
   if (serialized_object.contains("controllers") && serialized_object["controllers"].is_object()) {
     for (const auto& controller : serialized_object["controllers"].items()) {

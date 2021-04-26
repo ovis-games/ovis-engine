@@ -11,7 +11,13 @@ SceneObject::SceneObject(Scene* scene, const std::string& name) : scene_(scene),
   SDL_assert(scene_ != nullptr);
 }
 
-SceneObject::~SceneObject() {}
+SceneObject::~SceneObject() {
+  auto component_ids = GetComponentIds();
+  for (const auto& component_id : component_ids) {
+    RemoveComponent(component_id);
+  }
+  SDL_assert(components_.size() == 0);
+}
 
 SceneObjectComponent* SceneObject::AddComponent(const std::string& component_id) {
   if (HasComponent(component_id)) {
@@ -24,7 +30,6 @@ SceneObjectComponent* SceneObject::AddComponent(const std::string& component_id)
       return nullptr;
     } else {
       SDL_assert(*component != nullptr);
-      (*component)->scene_object_ = this;
       return components_.insert(std::make_pair(component_id, std::move(*component))).first->second.get();
     }
   }

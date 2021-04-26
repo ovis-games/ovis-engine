@@ -16,10 +16,11 @@ PhysicsWorld2D::PhysicsWorld2D()
 }
 
 PhysicsWorld2D::~PhysicsWorld2D() {
+  for (SceneObject* object : scene()->GetSceneObjectsWithComponent("RigidBody2DFixture")) {
+    object->RemoveComponent("RigidBody2DFixture");
+  }
   for (SceneObject* object : scene()->GetSceneObjectsWithComponent("RigidBody2D")) {
-    RigidBody2D* body = object->GetComponent<RigidBody2D>("RigidBody2D");
-    body->body_ = nullptr;
-    body->fixture_ = nullptr;
+    object->RemoveComponent("RigidBody2D");
   }
 }
 
@@ -28,27 +29,24 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
     return;
   }
 
-  {
-    std::vector<SceneObject*> scene_objects = scene()->GetSceneObjectsWithComponent("RigidBody2D");
-    body_cache_.clear();
-    body_cache_.reserve(scene_objects.size());
+  for (SceneObject* object : scene()->GetSceneObjectsWithComponent("RigidBody2D")) {
+    Transform* transform = object->GetComponent<Transform>("Transform");
+    RigidBody2D* body = object->GetComponent<RigidBody2D>("RigidBody2D");
+    SDL_assert(body != nullptr);
+    SDL_assert(std::holds_alternative<b2Body*>(body->body_));
 
-    for (SceneObject* object : scene_objects) {
-      Transform* transform = object->GetComponent<Transform>("Transform");
-      RigidBody2D* body = object->GetComponent<RigidBody2D>("RigidBody2D");
-      SDL_assert(body != nullptr);
+    if (transform) {
+      float roll;
+      transform->GetYawPitchRoll(nullptr, nullptr, &roll);
+      std::get<b2Body*>(body->body_)->SetTransform(ToBox2DVec2(transform->position()), roll);
+    } else {
+      std::get<b2Body*>(body->body_)->SetTransform({0, 0}, 0);
 
-      if (body->body_ == nullptr) {
-        body->body_ = world_.CreateBody(&body->body_definition_);
-        SDL_assert(body->body_);
-        body->fixture_ = body->body_->CreateFixture(&body->fixture_definition_);
-      }
-      body_cache_.push_back(body->body_);
-
-      if (transform) {
-        float roll;
-        transform->GetYawPitchRoll(nullptr, nullptr, &roll);
-        body->body_->SetTransform(b2Vec2(transform->position().x, transform->position().y), roll);
+      if (body->type() != b2BodyType::b2_staticBody) {
+        LogW(
+            "RigidBody2d with non-static type, without transform component attached to the object is not allowed. "
+            "Changing type to static!");
+        body->SetType(b2BodyType::b2_staticBody);
       }
     }
   }
@@ -61,28 +59,43 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
   while (accumulated_time_ >= step_size_us) {
     world_.Step(step_size, velocity_iterations_, position_iterations_);
     accumulated_time_ -= step_size_us;
-  }
 
-  // Destroy all rigid bodies that belong to objects that have been destroyed within a callback from Step():
-  for (b2Body* body : body_cache_) {
-    if (body->GetUserData().pointer == 0) {
+    for (RigidBody2D* body : bodies_to_create_) {
+      body->CreateInternals(std::get<0>(body->body_).get());
+    }
+    bodies_to_create_.clear();
+
+    for (RigidBody2DFixture* fixture : fixtures_to_create_) {
+      fixture->CreateFixture();
+    }
+    fixtures_to_create_.clear();
+
+    for (b2Fixture* fixture : fixtures_to_destroy_) {
+      fixture->GetBody()->DestroyFixture(fixture);
+    }
+    fixtures_to_destroy_.clear();
+
+    for (b2Body* body : bodies_to_destroy_) {
       world_.DestroyBody(body);
     }
+    bodies_to_destroy_.clear();
   }
 
-  // Don't use the scene_objects vector from before, as the objects may not be valid anymore
+  // Don't cache the scene_objects vector from before, as the objects may not be valid anymore
   for (SceneObject* object : scene()->GetSceneObjectsWithComponent("RigidBody2D")) {
     Transform* transform = object->GetComponent<Transform>("Transform");
     RigidBody2D* body = object->GetComponent<RigidBody2D>("RigidBody2D");
     SDL_assert(body != nullptr);
+    SDL_assert(std::holds_alternative<b2Body*>(body->body_));
 
-    if (transform != nullptr && body->body_ != nullptr) {
-      b2Vec2 position = body->body_->GetPosition();
+    if (transform != nullptr) {
+      b2Body* box2d_body = std::get<b2Body*>(body->body_);
+      b2Vec2 position = box2d_body->GetPosition();
       transform->SetPosition({position.x, position.y, transform->position().z});
 
       float yaw, pitch, roll;
       transform->GetYawPitchRoll(&yaw, &pitch, &roll);
-      transform->SetYawPitchRoll(yaw, pitch, body->body_->GetAngle());
+      transform->SetYawPitchRoll(yaw, pitch, box2d_body->GetAngle());
     }
   }
 }

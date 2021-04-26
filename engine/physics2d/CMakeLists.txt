@@ -4,6 +4,7 @@ add_library(
   include/ovis/physics2d/physics2d_module.hpp src/physics2d_module.cpp
   include/ovis/physics2d/physics_world2d.hpp src/physics_world2d.cpp
   include/ovis/physics2d/rigid_body2d.hpp src/rigid_body2d.cpp
+  include/ovis/physics2d/rigid_body2d_fixture.hpp src/rigid_body2d_fixture.cpp
   include/ovis/physics2d/physics2d_debug_layer.hpp src/physics2d_debug_layer.cpp
   include/ovis/physics2d/physics2d_contact_event.hpp src/physics2d_contact_event.cpp
   include/ovis/physics2d/physics2d_begin_contact_event.hpp src/physics2d_begin_contact_event.cpp

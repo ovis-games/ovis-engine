@@ -70,7 +70,7 @@ void Camera::RegisterType(sol::table* module) {
   // camera.near_clip_plane = 0.1
   // camera.far_clip_plane = 1000
   // some_scene.main_viewport.camera = camera
-  sol::usertype<Camera> camera_type = module->new_usertype<Camera>("Camera", sol::constructors<Camera()>());
+  sol::usertype<Camera> camera_type = module->new_usertype<Camera>("Camera", sol::no_constructor);
 
   /// The vertical field of view in degrees.
   // The horizontal field of view is calculated as @{vertical_field_of_view} * @{aspect_ratio}.
