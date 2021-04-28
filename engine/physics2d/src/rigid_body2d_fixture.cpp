@@ -1,3 +1,5 @@
+#include <iterator>
+
 #include <box2d/b2_chain_shape.h>
 #include <box2d/b2_circle_shape.h>
 #include <box2d/b2_edge_shape.h>
@@ -93,9 +95,45 @@ void RigidBody2DFixture::RegisterType(sol::table* module) {
 json RigidBody2DFixture::SerializeShape() const {
   json data = json::object();
 
-  if (shape()->GetType() == b2Shape::e_circle) {
-    data["type"] = "circle";
-    data["radius"] = static_cast<const b2CircleShape*>(shape())->m_radius;
+  data["type"] = TypeToString(shape()->GetType());
+  switch (shape()->GetType()) {
+    case b2Shape::e_circle:
+      data["radius"] = static_cast<const b2CircleShape*>(shape())->m_radius;
+      break;
+
+    case b2Shape::e_chain: {
+      auto chain_shape = static_cast<const b2ChainShape*>(shape());
+      std::vector<Vector2> vertices;
+      vertices.reserve(chain_shape->m_count);
+      std::transform(chain_shape->m_vertices, chain_shape->m_vertices + chain_shape->m_count,
+                     std::back_inserter(vertices), FromBox2DVec2);
+      data["vertices"] = vertices;
+      data["previous_vertex"] = FromBox2DVec2(chain_shape->m_prevVertex);
+      data["next_vertex"] = FromBox2DVec2(chain_shape->m_nextVertex);
+      break;
+    }
+
+    case b2Shape::e_edge: {
+      auto edge_shape = static_cast<const b2EdgeShape*>(shape());
+      data["vertices"] = {FromBox2DVec2(edge_shape->m_vertex1), FromBox2DVec2(edge_shape->m_vertex2)};
+      data["previous_vertex"] = FromBox2DVec2(edge_shape->m_vertex0);
+      data["next_vertex"] = FromBox2DVec2(edge_shape->m_vertex3);
+      data["edge_type"] = edge_shape->m_oneSided ? "one-sided" : "two-sided";
+      break;
+    }
+
+    case b2Shape::e_polygon: {
+      auto polygon_shape = static_cast<const b2PolygonShape*>(shape());
+      std::vector<Vector2> vertices;
+      vertices.reserve(polygon_shape->m_count);
+      std::transform(polygon_shape->m_vertices, polygon_shape->m_vertices + polygon_shape->m_count,
+                     std::back_inserter(vertices), FromBox2DVec2);
+      data["vertices"] = vertices;
+      break;
+    }
+
+    case b2Shape::e_typeCount:
+      break;
   }
 
   return data;
@@ -109,8 +147,65 @@ bool RigidBody2DFixture::DeserializeShape(b2FixtureDef* fixture_definition, cons
 
     if (data.contains("radius")) {
       circle_shape.m_radius = data.at("radius");
+    } else if (data.contains("vertices")) {
+      const std::vector<Vector2> vertices = data.at("vertices");
+      for (const Vector2& v : vertices) {
+        circle_shape.m_radius = std::max(circle_shape.m_radius, Length(v));
+      }
+    } else {
+      circle_shape.m_radius = 1.0f;
     }
     fixture_definition->shape = &circle_shape;
+    Reset(*fixture_definition);
+  } else if (type == "polygon") {
+    b2PolygonShape polygon_shape;
+
+    if (data.contains("vertices")) {
+      std::vector<Vector2> vertices = data.at("vertices");
+      if (vertices.size() < 3) {
+        polygon_shape.SetAsBox(1, 1);
+      } else {
+        std::vector<b2Vec2> points;
+        points.reserve(vertices.size());
+        std::transform(vertices.begin(), vertices.end(), std::back_inserter(points), ToBox2DVec2);
+        polygon_shape.Set(points.data(), points.size());
+      }
+    } else if (data.contains("radius")) {
+      polygon_shape.SetAsBox(data.at("radius"), data.at("radius"));
+    } else {
+      polygon_shape.SetAsBox(1, 1);
+    }
+
+    fixture_definition->shape = &polygon_shape;
+    Reset(*fixture_definition);
+  } else if (type == "edge") {
+    b2EdgeShape edge_shape;
+
+    if (data.contains("vertices")) {
+      const std::vector<Vector2> vertices = data.at("vertices");
+      if (vertices.size() < 2) {
+        edge_shape.SetTwoSided(b2Vec2(-1.0f, 0.0f), b2Vec2(1.0f, 0.0f));
+      } else {
+        edge_shape.m_vertex1 = ToBox2DVec2(vertices.front());
+        edge_shape.m_vertex2 = ToBox2DVec2(vertices.back());
+      }
+      if (data.contains("previous_vertex")) {
+        edge_shape.m_vertex0 = ToBox2DVec2(data.at("previous_vertex"));
+      }
+      if (data.contains("next_vertex")) {
+        edge_shape.m_vertex3 = ToBox2DVec2(data.at("next_vertex"));
+      }
+      if (data.contains("edge_type")) {
+        edge_shape.m_oneSided = data.at("edge_type").get<std::string>() == "one-sided";
+      }
+    } else if (data.contains("radius")) {
+      const b2Vec2 v(data.at("radius"), 0.0f);
+      edge_shape.SetTwoSided(-v, v);
+    } else {
+      edge_shape.SetTwoSided(b2Vec2(-1.0f, 0.0f), b2Vec2(1.0f, 0.0f));
+    }
+
+    fixture_definition->shape = &edge_shape;
     Reset(*fixture_definition);
   } else {
     b2CircleShape circle_shape;

@@ -133,6 +133,12 @@
         "radius": {
           "title": "Radius",
           "type": "number"
+        },
+        "edge_type": {
+          "title": "Edge Type",
+          "type": "string",
+          "enum": ["one-sided", "two-sided"],
+          "default": ["one-sided"]
         }
       }
     },
