@@ -112,5 +112,14 @@ void ObjectSelectionController::CheckSelectionValidity() const {
   }
 }
 
+SceneObject* GetSelectedObject(Scene* editing_scene) {
+  auto* object_selection_controller = editing_scene->GetController<ObjectSelectionController>();
+  if (object_selection_controller == nullptr) {
+    return nullptr;
+  } else {
+    return object_selection_controller->selected_object();
+  }
+}
+
 }  // namespace editor
 }  // namespace ovis

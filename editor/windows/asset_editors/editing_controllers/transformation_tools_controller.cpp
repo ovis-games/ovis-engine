@@ -192,9 +192,7 @@ bool TransformationToolsController::CheckMousePosition(Vector2 position) {
 }
 
 void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_event) {
-  auto* object_selection_controller = scene()->GetController<ObjectSelectionController>();
-  SDL_assert(object_selection_controller != nullptr);
-  SceneObject* scene_object = object_selection_controller->selected_object();
+  SceneObject* scene_object = GetSelectedObject(scene());
   SDL_assert(scene_object);
   Transform* transform = scene_object->GetComponent<Transform>("Transform");
   SDL_assert(transform);

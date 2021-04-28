@@ -34,5 +34,7 @@ class ObjectSelectionController : public EditorController {
   void CheckSelectionValidity() const;
 };
 
+SceneObject* GetSelectedObject(Scene* editing_scene);
+
 }  // namespace editor
 }  // namespace ovis
