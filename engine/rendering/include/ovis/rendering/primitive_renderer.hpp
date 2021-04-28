@@ -44,6 +44,7 @@ class PrimitiveRenderer : public RenderPass {
 
   // Line Drawing
   void DrawLine(const Vector3& start, const Vector3& end, const Color& color, float thickness = 3.0f);
+  void DrawLineStip(std::span<const Vector3> positions, const Color& color, float thickness = 3.0f);
   void DrawLoop(std::span<const Vector3> positions, const Color& color, float thickness = 3.0f);
   void DrawCircle(const Vector3& center, float radius, const Color& color, float thickness = 3.0f,
                   size_t num_segments = 20, const Vector3& support_vector0 = Vector3::PositiveX(),

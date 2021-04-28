@@ -144,12 +144,17 @@ void PrimitiveRenderer::DrawLine(const Vector3& start, const Vector3& end, const
   AddVertices(vertices);
 }
 
-void PrimitiveRenderer::DrawLoop(std::span<const Vector3> positions, const Color& color, float thickness) {
-  SDL_assert(positions.size() > 2);
+void PrimitiveRenderer::DrawLineStip(std::span<const Vector3> positions, const Color& color, float thickness) {
+  SDL_assert(positions.size() >= 2);
 
   for (size_t i = 0; i < positions.size() - 1; ++i) {
     DrawLine(positions[i], positions[i + 1], color, thickness);
   }
+}
+
+void PrimitiveRenderer::DrawLoop(std::span<const Vector3> positions, const Color& color, float thickness) {
+  SDL_assert(positions.size() > 2);
+  DrawLineStip(positions, color, thickness);
   DrawLine(positions.back(), positions.front(), color, thickness);
 }
 
@@ -195,9 +200,12 @@ void PrimitiveRenderer::DrawArrow(const Vector3& start, const Vector3& end, cons
 
 void PrimitiveRenderer::DrawTriangle(const Vector3& v0, const Vector3& v1, const Vector3& v2, const Color& color) {
   uint32_t converted_color = ConvertToRGBA8(color);
-  Vertex vertices[3] = {{{v0.x, v0.y, v0.z}, converted_color},
-                        {{v1.x, v1.y, v1.z}, converted_color},
-                        {{v2.x, v2.y, v2.z}, converted_color}};
+  const Vector3 screen_space_v0 = TransformPosition(to_screen_space_, v0);
+  const Vector3 screen_space_v1 = TransformPosition(to_screen_space_, v1);
+  const Vector3 screen_space_v2 = TransformPosition(to_screen_space_, v2);
+  Vertex vertices[3] = {{{screen_space_v0.x, screen_space_v0.y, screen_space_v0.z}, converted_color},
+                        {{screen_space_v1.x, screen_space_v1.y, screen_space_v1.z}, converted_color},
+                        {{screen_space_v2.x, screen_space_v2.y, screen_space_v2.z}, converted_color}};
   AddVertices(vertices);
 }
 
