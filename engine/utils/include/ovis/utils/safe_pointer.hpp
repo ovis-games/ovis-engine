@@ -80,9 +80,14 @@ class safe_ptr : public safe_ptr_base {
                 "The pointer type must derive from ovis::SafelyReferenceable");
 
  public:
-  constexpr safe_ptr() noexcept {}
-  constexpr safe_ptr(std::nullptr_t) noexcept {}
-  explicit safe_ptr(T* pointer) : safe_ptr_base(pointer) {}
+  inline constexpr safe_ptr() noexcept {}
+  inline constexpr safe_ptr(std::nullptr_t) noexcept {}
+  inline explicit safe_ptr(T* pointer) : safe_ptr_base(pointer) {}
+
+  inline safe_ptr<T>& operator=(T* other) {
+    reset(other);
+    return *this;
+  }
 
   inline T* get() const noexcept { return static_cast<T*>(pointer_); }
   inline T* get_throw() const {
@@ -93,6 +98,8 @@ class safe_ptr : public safe_ptr_base {
   }
   inline T& operator*() const { return *get_throw(); }
   inline T* operator->() const { return get_throw(); }
+
+  inline void reset(T* new_value = nullptr) { safe_ptr_base::reset(new_value); }
 };
 
 template <typename T>
@@ -166,13 +173,14 @@ struct unique_usertype_traits<ovis::safe_ptr<T>> {
 
 template <typename T, std::enable_if_t<std::is_base_of_v<ovis::SafelyReferenceable, T>, bool> = true>
 void sol_lua_check_access(sol::types<T>, lua_State* L, int index, sol::stack::record& tracking) {
-	sol::optional<ovis::safe_ptr<T>&> safe_ptr = sol::stack::check_get<ovis::safe_ptr<T>&>(L, index, sol::no_panic, tracking);
-	if (!safe_ptr.has_value()) {
-		return;
-	}
+  sol::optional<ovis::safe_ptr<T>&> safe_ptr =
+      sol::stack::check_get<ovis::safe_ptr<T>&>(L, index, sol::no_panic, tracking);
+  if (!safe_ptr.has_value()) {
+    return;
+  }
 
-	if ((*safe_ptr).get() == nullptr) {
-		// freak out in whatever way is appropriate, here
-		throw std::runtime_error("You dun goofed");
-	}
+  if ((*safe_ptr).get() == nullptr) {
+    // freak out in whatever way is appropriate, here
+    throw std::runtime_error("You dun goofed");
+  }
 }
