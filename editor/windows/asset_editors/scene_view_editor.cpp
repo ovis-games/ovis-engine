@@ -7,7 +7,9 @@
 #include "../../imgui_extensions/texture_button.hpp"
 #include "editing_controllers/editor_camera_controller.hpp"
 #include "editing_controllers/object_selection_controller.hpp"
+#include "editing_controllers/physics2d_shape_controller.hpp"
 #include "editing_controllers/transformation_tools_controller.hpp"
+#include "editor_render_passes/physics2d_shape_renderer.hpp"
 #include "editor_render_passes/selected_object_bounding_box.hpp"
 #include "editor_render_passes/transformation_tools_renderer.hpp"
 
@@ -48,6 +50,7 @@ SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(s
   AddEditorController<ObjectSelectionController>();
   AddEditorController<TransformationToolsController>();
   AddEditorController<EditorCameraController>();
+  AddEditorController<Physics2DShapeController>();
 
   SubscribeToEvent(LuaErrorEvent::TYPE);
 }
@@ -697,9 +700,11 @@ void SceneViewEditor::CreateSceneViewport(ImVec2 size) {
     // scene_viewport_->AddRenderPass("Physics2DDebugLayer");
     scene_viewport_->AddRenderPass(std::make_unique<SelectedObjectBoundingBox>(editing_scene()));
     scene_viewport_->AddRenderPass(std::make_unique<TransformationToolsRenderer>(editing_scene()));
+    scene_viewport_->AddRenderPass(std::make_unique<Physics2DShapeRenderer>(editing_scene()));
     // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "Physics2DDebugLayer");
     scene_viewport_->AddRenderPassDependency("SpriteRenderer", SelectedObjectBoundingBox::Name());
     scene_viewport_->AddRenderPassDependency(SelectedObjectBoundingBox::Name(), TransformationToolsRenderer::Name());
+    scene_viewport_->AddRenderPassDependency(SelectedObjectBoundingBox::Name(), Physics2DShapeRenderer::Name());
     // scene_viewport_->AddRenderPassDependency("SelectedObjectBoundingBox", "GizmoRenderer");
     // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "GizmoRenderer");
     scene_viewport_->SetScene(game_scene());
