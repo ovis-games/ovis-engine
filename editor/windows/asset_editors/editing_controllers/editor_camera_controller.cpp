@@ -25,7 +25,6 @@ void EditorCameraController::Update(std::chrono::microseconds delta_time) {
 
   camera_.SetAspectRatio(viewport->GetAspectRatio());
   viewport->SetCustomCameraMatrices(transform_.world_to_local_matrix(), camera_.projection_matrix());
-  viewport->SetCamera(nullptr);
 }
 
 void EditorCameraController::ProcessEvent(Event* event) {

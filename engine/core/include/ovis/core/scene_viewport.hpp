@@ -38,6 +38,7 @@ class SceneViewport {
     custom_view_to_world_space_ = InvertAffine(world_to_view_space);
     custom_view_to_clip_space_ = view_to_clip_space;
     custom_clip_to_view_space_ = Invert(custom_view_to_clip_space_);
+    camera_ = nullptr;
   }
 
   inline Ray3D CalculateViewRay(Vector2 screen_space_coordinates) {
