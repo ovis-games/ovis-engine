@@ -161,12 +161,14 @@ void PrimitiveRenderer::DrawLoop(std::span<const Vector3> positions, const Color
 void PrimitiveRenderer::DrawCircle(const Vector3& center, float radius, const Color& color, float thickness,
                                    size_t num_segments, const Vector3& support_vector0,
                                    const Vector3& support_vector1) {
-  SDL_assert(num_segments > 2);
+  const size_t final_segment_count =
+      num_segments < 2 ? CalculateSmoothCircleSegmentCount(center, radius, support_vector0, support_vector1)
+                       : num_segments;
 
   const Vector3 base_position = center + radius * support_vector1;
   Vector3 previous_position = base_position;
-  for (int i = 1; i < num_segments; ++i) {
-    const float angle = i * 2.0f * Pi<float>() / num_segments;
+  for (int i = 1; i < final_segment_count; ++i) {
+    const float angle = i * 2.0f * Pi<float>() / final_segment_count;
 
     const Vector3 new_position =
         center + radius * (std::sin(angle) * support_vector0 + std::cos(angle) * support_vector1);
@@ -211,12 +213,14 @@ void PrimitiveRenderer::DrawTriangle(const Vector3& v0, const Vector3& v1, const
 
 void PrimitiveRenderer::DrawDisc(const Vector3& center, float radius, const Color& color, size_t num_segments,
                                  const Vector3& support_vector0, const Vector3& support_vector1) {
-  SDL_assert(num_segments > 2);
+  const size_t final_segment_count =
+      num_segments < 2 ? CalculateSmoothCircleSegmentCount(center, radius, support_vector0, support_vector1)
+                       : num_segments;
 
   const Vector3 base_position = center + radius * support_vector1;
   Vector3 previous_position = base_position;
-  for (int i = 1; i < num_segments; ++i) {
-    const float angle = i * 2.0f * Pi<float>() / num_segments;
+  for (int i = 1; i < final_segment_count; ++i) {
+    const float angle = i * 2.0f * Pi<float>() / final_segment_count;
 
     const Vector3 new_position =
         center + radius * (std::sin(angle) * support_vector0 + std::cos(angle) * support_vector1);
@@ -278,6 +282,26 @@ void PrimitiveRenderer::Flush() {
   context()->Draw(draw_item);
 
   resources_->vertices.clear();
+}
+
+size_t PrimitiveRenderer::CalculateSmoothCircleSegmentCount(const Vector3& center, float radius,
+                                                            const Vector3& support_vector0,
+                                                            const Vector3& support_vector1) {
+  // To create a smooth circle we need enough segments. The number of segments depends on the pixels the circle covers.
+  // We approximately want one segment per pixel which can be approximated by the radius of the circle in screen space.
+  // However, the radius definition given here can be in an arbitrary space and cannot be converted to screen space.
+  // Thus, I approximate it by calculating the screen space distance along the two support vectors, which give me two
+  // pontenial radii and I will take the maximum of those two as the "screen space radius".
+  const Vector3& center_screen_space = TransformPosition(to_screen_space_, center);
+  const Vector3& p0_screen_space = TransformPosition(to_screen_space_, center + support_vector0 * radius);
+  const Vector3& p1_screen_space = TransformPosition(to_screen_space_, center + support_vector1 * radius);
+  const float squared_screen_space_radius0 = SquaredDistance(center_screen_space, p0_screen_space);
+  const float squared_screen_space_radius1 = SquaredDistance(center_screen_space, p1_screen_space);
+  const float approximate_screen_space_radius =
+      std::sqrt(std::max(squared_screen_space_radius0, squared_screen_space_radius1));
+
+  // Minimum and maximum is a little arbitrary but why shouldn't that be?
+  return std::clamp<size_t>(8, 512, std::ceil(TwoPi<float>() * approximate_screen_space_radius));
 }
 
 }  // namespace ovis

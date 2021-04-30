@@ -47,7 +47,7 @@ class PrimitiveRenderer : public RenderPass {
   void DrawLineStip(std::span<const Vector3> positions, const Color& color, float thickness = 3.0f);
   void DrawLoop(std::span<const Vector3> positions, const Color& color, float thickness = 3.0f);
   void DrawCircle(const Vector3& center, float radius, const Color& color, float thickness = 3.0f,
-                  size_t num_segments = 20, const Vector3& support_vector0 = Vector3::PositiveX(),
+                  size_t num_segments = 0, const Vector3& support_vector0 = Vector3::PositiveX(),
                   const Vector3& support_vector1 = Vector3::PositiveY());
 
   // 2D Arrow
@@ -56,7 +56,7 @@ class PrimitiveRenderer : public RenderPass {
 
   // Solid Drawing
   void DrawTriangle(const Vector3& v0, const Vector3& v1, const Vector3& v2, const Color& color);
-  void DrawDisc(const Vector3& center, float radius, const Color& color, size_t num_segments = 20,
+  void DrawDisc(const Vector3& center, float radius, const Color& color, size_t num_segments = 0,
                 const Vector3& support_vector0 = Vector3::PositiveX(),
                 const Vector3& support_vector1 = Vector3::PositiveY());
   void DrawConvexPolygon(const Vector3* positions, size_t num_positions, const Color& color);
@@ -84,6 +84,8 @@ class PrimitiveRenderer : public RenderPass {
   std::shared_ptr<Resources> resources_;
 
   void Flush();
+  size_t CalculateSmoothCircleSegmentCount(const Vector3& center, float radius, const Vector3& support_vector0,
+                                           const Vector3& support_vector1);
 };
 
 }  // namespace ovis
