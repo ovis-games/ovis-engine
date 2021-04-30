@@ -11,6 +11,12 @@
 
 namespace ovis {
 
+// The "perp-dot product".
+// See Graphics Gems IV chapter II.2, `The Pleasure of "Perp Dot" Products` by F.S. Hill, Jr.
+inline constexpr float PerpDot(const Vector2& lhs, const Vector2& rhs) {
+  return lhs.x * rhs.y - lhs.y * rhs.x;
+}
+
 inline constexpr Vector2 ConstructOrthogonalVectorCW(const Vector2& vector) {
   return {vector.y, -vector.x};
 }
