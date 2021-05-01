@@ -110,38 +110,45 @@ void PrimitiveRenderer::DrawPoint(const Vector3& position, float size, const Col
 }
 
 void PrimitiveRenderer::DrawLine(const Vector3& start, const Vector3& end, const Color& color, float thickness) {
-  std::array<Vertex, 6> vertices;
-
   const uint32_t converted_color = ConvertToRGBA8(color);
   const Vector3 p0 = TransformPosition(to_screen_space_, start);
   const Vector3 p1 = TransformPosition(to_screen_space_, end);
   const Vector3 orthogonal = Vector3::FromVector2(ConstructOrthogonalVectorCCW(Normalize<Vector2>(p1 - p0)));
   const float half_thickness = thickness * 0.5f;
 
-  const Vector3 p00 = p0 + half_thickness * orthogonal;
-  const Vector3 p01 = p0 - half_thickness * orthogonal;
-  const Vector3 p10 = p1 + half_thickness * orthogonal;
-  const Vector3 p11 = p1 - half_thickness * orthogonal;
+  DrawLineInternal(p0, p1, orthogonal, converted_color, half_thickness);
+}
 
-  memcpy(vertices[0].position, p00.data, sizeof(float) * 3);
-  vertices[0].color = converted_color;
+void PrimitiveRenderer::DrawDashedLine(const Vector3& start, const Vector3& end, const Color& color, float thickness,
+                                       float dash_length) {
+  const uint32_t converted_color = ConvertToRGBA8(color);
+  const float half_thickness = thickness * 0.5f;
 
-  memcpy(vertices[1].position, p11.data, sizeof(float) * 3);
-  vertices[1].color = converted_color;
+  const Vector3 p0 = TransformPosition(to_screen_space_, start);
+  const Vector3 p1 = TransformPosition(to_screen_space_, end);
+  const Vector3 orthogonal = Vector3::FromVector2(ConstructOrthogonalVectorCCW(Normalize<Vector2>(p1 - p0)));
 
-  memcpy(vertices[2].position, p10.data, sizeof(float) * 3);
-  vertices[2].color = converted_color;
+  const float line_length = Distance(p0, p1);
+  const Vector3 line_direction = (p1 - p0) / line_length;
 
-  memcpy(vertices[3].position, p00.data, sizeof(float) * 3);
-  vertices[3].color = converted_color;
+  // Length of a dash plus the length of the space afterwards
+  const float actual_dash_length = dash_length <= 0.0f ? 4 * thickness : dash_length;
+  const float dash_interval = 2 * actual_dash_length;
+  const float dash_count = line_length / dash_interval;
+  const int complete_dashes = static_cast<int>(dash_count);
 
-  memcpy(vertices[4].position, p01.data, sizeof(float) * 3);
-  vertices[4].color = converted_color;
+  for (int i = 0; i < complete_dashes; ++i) {
+    const Vector3 dash_start = p0 + line_direction * dash_interval * i;
+    const Vector3 dash_end = dash_start + line_direction * actual_dash_length;
+    DrawLineInternal(dash_start, dash_end, orthogonal, converted_color, half_thickness);
+  }
 
-  memcpy(vertices[5].position, p11.data, sizeof(float) * 3);
-  vertices[5].color = converted_color;
-
-  AddVertices(vertices);
+  {
+    const float remaining_dash_fraction = std::min(1.0f, 2.0f * (dash_count - complete_dashes));
+    const Vector3 final_dash_start = p0 + line_direction * dash_interval * complete_dashes;
+    const Vector3 final_dash_end = final_dash_start + line_direction * actual_dash_length * remaining_dash_fraction;
+    DrawLineInternal(final_dash_start, final_dash_end, orthogonal, converted_color, half_thickness);
+  }
 }
 
 void PrimitiveRenderer::DrawLineStip(std::span<const Vector3> positions, const Color& color, float thickness) {
@@ -282,6 +289,36 @@ void PrimitiveRenderer::Flush() {
   context()->Draw(draw_item);
 
   resources_->vertices.clear();
+}
+
+void PrimitiveRenderer::DrawLineInternal(const Vector3& p0, const Vector3& p1, const Vector3& orthogonal,
+                                         uint32_t converted_color, float half_thickness) {
+  const Vector3 p00 = p0 + half_thickness * orthogonal;
+  const Vector3 p01 = p0 - half_thickness * orthogonal;
+  const Vector3 p10 = p1 + half_thickness * orthogonal;
+  const Vector3 p11 = p1 - half_thickness * orthogonal;
+
+  std::array<Vertex, 6> vertices;
+
+  memcpy(vertices[0].position, p00.data, sizeof(float) * 3);
+  vertices[0].color = converted_color;
+
+  memcpy(vertices[1].position, p11.data, sizeof(float) * 3);
+  vertices[1].color = converted_color;
+
+  memcpy(vertices[2].position, p10.data, sizeof(float) * 3);
+  vertices[2].color = converted_color;
+
+  memcpy(vertices[3].position, p00.data, sizeof(float) * 3);
+  vertices[3].color = converted_color;
+
+  memcpy(vertices[4].position, p01.data, sizeof(float) * 3);
+  vertices[4].color = converted_color;
+
+  memcpy(vertices[5].position, p11.data, sizeof(float) * 3);
+  vertices[5].color = converted_color;
+
+  AddVertices(vertices);
 }
 
 size_t PrimitiveRenderer::CalculateSmoothCircleSegmentCount(const Vector3& center, float radius,
