@@ -85,7 +85,7 @@ void Physics2DShapeRenderer::Render(const RenderContext& render_context) {
 
       if (controller->one_sided_edge_) {
         DrawDashedLine(world_space_vertices[1], world_space_vertices[0], color_transparent);
-        DrawDashedLine(world_space_vertices[3], world_space_vertices[2], color_transparent);
+        DrawDashedLine(world_space_vertices[2], world_space_vertices[3], color_transparent);
 
         DrawPoint(world_space_vertices[0], 10.0f, controller->selection_ == 0 ? color_selected : color_opaque);
         DrawPoint(world_space_vertices[3], 10.0f, controller->selection_ == 3 ? color_selected : color_opaque);
@@ -97,7 +97,12 @@ void Physics2DShapeRenderer::Render(const RenderContext& render_context) {
     }
 
     case b2Shape::e_chain: {
-      DrawLineStip(world_space_vertices, color_transparent);
+      SDL_assert(world_space_vertices.size() >= 4);
+      DrawLineStip(std::span<Vector3>(world_space_vertices.data() + 1, world_space_vertices.size() - 2),
+                   color_transparent);
+      DrawDashedLine(world_space_vertices[1], world_space_vertices[0], color_transparent);
+      DrawDashedLine(world_space_vertices[world_space_vertices.size() - 2],
+                     world_space_vertices[world_space_vertices.size() - 1], color_transparent);
       for (const auto& vertex : IndexRange(world_space_vertices)) {
         const Color color = controller->selection_ == vertex.index() ? color_selected : color_opaque;
         DrawPoint(vertex.value(), 10.0f, color);

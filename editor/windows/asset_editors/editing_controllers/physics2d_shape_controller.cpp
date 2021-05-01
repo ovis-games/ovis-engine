@@ -48,7 +48,7 @@ void Physics2DShapeController::Update(std::chrono::microseconds) {
       case b2Shape::e_circle: {
         auto circle_shape = static_cast<const b2CircleShape*>(shape);
         radius_ = circle_shape->m_radius;
-        vertices_ = {Vector3::FromVector2(FromBox2DVec2(circle_shape->m_p))};
+        vertices_ = {FromBox2DVec2(circle_shape->m_p)};
         break;
       }
 
@@ -56,8 +56,7 @@ void Physics2DShapeController::Update(std::chrono::microseconds) {
         auto polygon_shape = static_cast<const b2PolygonShape*>(shape);
         vertices_.reserve(polygon_shape->m_count);
         std::transform(polygon_shape->m_vertices, polygon_shape->m_vertices + polygon_shape->m_count,
-                       std::back_inserter(vertices_),
-                       [&](const auto& point) { return Vector3::FromVector2(FromBox2DVec2(point)); });
+                       std::back_inserter(vertices_), FromBox2DVec2);
         break;
       }
 
@@ -65,19 +64,18 @@ void Physics2DShapeController::Update(std::chrono::microseconds) {
         auto edge_shape = static_cast<const b2EdgeShape*>(shape);
 
         one_sided_edge_ = edge_shape->m_oneSided;
-        vertices_ = {Vector3::FromVector2(FromBox2DVec2(edge_shape->m_vertex0)),
-                     Vector3::FromVector2(FromBox2DVec2(edge_shape->m_vertex1)),
-                     Vector3::FromVector2(FromBox2DVec2(edge_shape->m_vertex2)),
-                     Vector3::FromVector2(FromBox2DVec2(edge_shape->m_vertex3))};
+        vertices_ = {FromBox2DVec2(edge_shape->m_vertex0), FromBox2DVec2(edge_shape->m_vertex1),
+                     FromBox2DVec2(edge_shape->m_vertex2), FromBox2DVec2(edge_shape->m_vertex3)};
         break;
       }
 
       case b2Shape::e_chain: {
         auto chain_shape = static_cast<const b2ChainShape*>(shape);
-        vertices_.reserve(chain_shape->m_count);
+        vertices_.reserve(chain_shape->m_count + 2);
+        vertices_.push_back(FromBox2DVec2(chain_shape->m_prevVertex));
         std::transform(chain_shape->m_vertices, chain_shape->m_vertices + chain_shape->m_count,
-                       std::back_inserter(vertices_),
-                       [&](const auto& point) { return Vector3::FromVector2(FromBox2DVec2(point)); });
+                       std::back_inserter(vertices_), FromBox2DVec2);
+        vertices_.push_back(FromBox2DVec2(chain_shape->m_nextVertex));
         break;
       }
 
@@ -153,6 +151,14 @@ void Physics2DShapeController::ProcessEvent(Event* event) {
           edge_shape->m_vertex1 = points[1];
           edge_shape->m_vertex2 = points[2];
           edge_shape->m_vertex3 = points[3];
+        } else if (type_ == b2Shape::e_chain) {
+          auto chain_shape = static_cast<b2ChainShape*>(fixture_->shape());
+          SDL_assert(points.size() == chain_shape->m_count + 2);
+          chain_shape->m_prevVertex = points.front();
+          for (int i = 0; i < chain_shape->m_count; ++i) {
+            chain_shape->m_vertices[i] = points[i + 1];
+          }
+          chain_shape->m_nextVertex = points.back();
         }
       }
     }
@@ -172,62 +178,6 @@ void Physics2DShapeController::ProcessEvent(Event* event) {
     }
   }
 }
-
-// bool Physics2DShapeController::HasShapeChanged() const {
-//   if (fixture_ == nullptr) {
-//     return true;
-//   }
-
-//   const b2Shape* shape = fixture_->shape();
-//   SDL_assert(shape != nullptr);
-
-//   if (shape->GetType() != type_) {
-//     return true;
-//   }
-
-//   switch (type_) {
-//     case b2Shape::e_circle: {
-//       auto circle_shape = static_cast<const b2CircleShape*>(shape);
-//       return radius_ != circle_shape->m_radius;
-//     }
-
-//     case b2Shape::e_polygon: {
-//       auto polygon_shape = static_cast<const b2PolygonShape*>(shape);
-//       return vertices_.size()
-//       vertices_.reserve(polygon_shape->m_count);
-//       std::transform(polygon_shape->m_vertices, polygon_shape->m_vertices + polygon_shape->m_count,
-//                      std::back_inserter(vertices_),
-//                      [&](const auto& point) { return Vector3::FromVector2(FromBox2DVec2(point)); });
-//       break;
-//     }
-
-//     case b2Shape::e_edge: {
-//       auto edge_shape = static_cast<const b2EdgeShape*>(shape);
-
-//       vertices_ = {Vector3::FromVector2(FromBox2DVec2(edge_shape->m_vertex0)),
-//                    Vector3::FromVector2(FromBox2DVec2(edge_shape->m_vertex1)),
-//                    Vector3::FromVector2(FromBox2DVec2(edge_shape->m_vertex2)),
-//                    Vector3::FromVector2(FromBox2DVec2(edge_shape->m_vertex3))};
-//       break;
-//     }
-
-//     case b2Shape::e_chain: {
-//       auto chain_shape = static_cast<const b2ChainShape*>(shape);
-//       vertices_.reserve(chain_shape->m_count);
-//       std::transform(chain_shape->m_vertices, chain_shape->m_vertices + chain_shape->m_count,
-//                      std::back_inserter(vertices_),
-//                      [&](const auto& point) { return Vector3::FromVector2(FromBox2DVec2(point)); });
-//       break;
-//     }
-
-//     case b2Shape::e_typeCount:
-//       SDL_assert(false);
-//       break;
-//   }
-// }
-// else {
-// }
-// }
 
 }  // namespace editor
 }  // namespace ovis

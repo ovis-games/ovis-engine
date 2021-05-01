@@ -16,17 +16,6 @@ namespace ovis {
 const json RigidBody2DFixture::SCHEMA = {{"$ref", "physics2d#/$defs/rigid_body_2d_fixture"}};
 
 RigidBody2DFixture::RigidBody2DFixture(SceneObject* object) : SceneObjectComponent(object) {
-  // shape_ = std::make_unique<b2CircleShape>();
-  // shape_->m_radius = 10.0f;
-  // fixture_definition_.shape = shape_.get();
-  // fixture_definition_.userData.pointer = reinterpret_cast<uintptr_t>(this);
-  auto world = object->scene()->GetController<PhysicsWorld2D>();
-
-  if (world == nullptr) {
-    LogE("RigidBody2D requires the controller 'PhysicsWorld2D'");
-    return;
-  }
-
   b2CircleShape circle_shape;
   circle_shape.m_radius = 10;
   b2FixtureDef fixture_definition;
@@ -206,6 +195,44 @@ bool RigidBody2DFixture::DeserializeShape(b2FixtureDef* fixture_definition, cons
     }
 
     fixture_definition->shape = &edge_shape;
+    Reset(*fixture_definition);
+  } else if (type == "chain") {
+    b2ChainShape chain_shape;
+
+    std::vector<b2Vec2> chain_vertices = {{-1.0f, 0.0f}, {1.0f, 0.0f}};
+    b2Vec2 prev_vertex = {-2.0f, 0.0f};
+    b2Vec2 next_vertex = {2.0f, 0.0f};
+
+    if (data.contains("vertices")) {
+      const std::vector<Vector2> vertices = data.at("vertices");
+      if (vertices.size() > 2) {
+        chain_vertices.clear();
+        chain_vertices.reserve(vertices.size());
+        std::transform(vertices.begin(), vertices.end(), std::back_inserter(chain_vertices), ToBox2DVec2);
+      }
+    } else if (data.contains("radius")) {
+      const float radius = data.at("radius");
+      chain_vertices[0].x *= radius;
+      chain_vertices[1].x *= radius;
+    }
+
+    if (data.contains("previous_vertex")) {
+      prev_vertex = ToBox2DVec2(data.at("previous_vertex"));
+    } else {
+      SDL_assert(chain_vertices.size() >= 2);
+      prev_vertex = chain_vertices[0] - (chain_vertices[1] - chain_vertices[0]);
+    }
+
+    if (data.contains("next_vertex")) {
+      next_vertex = ToBox2DVec2(data.at("next_vertex"));
+    } else {
+      SDL_assert(chain_vertices.size() >= 2);
+      next_vertex = chain_vertices[chain_vertices.size() - 1] +
+                    (chain_vertices[chain_vertices.size() - 1] - chain_vertices[chain_vertices.size() - 2]);
+    }
+
+    chain_shape.CreateChain(chain_vertices.data(), chain_vertices.size(), prev_vertex, next_vertex);
+    fixture_definition->shape = &chain_shape;
     Reset(*fixture_definition);
   } else {
     b2CircleShape circle_shape;
