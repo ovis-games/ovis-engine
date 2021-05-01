@@ -147,4 +147,20 @@ inline constexpr std::optional<RayAABBIntersection> ComputeRayAABBIntersection(R
 
 std::optional<LineSegment2D> ClipLineSegment(const AxisAlignedBoundingBox2D& aabb, const LineSegment2D& line_segment);
 
+template <typename VectorType>
+VectorType ComputeClosestPointOnRay(Ray<VectorType> ray, VectorType point) {
+  const VectorType ray_origin_to_point = point - ray.origin;
+  const float t = max(0.0f, Dot(ray_origin_to_point, ray.direction) / Dot(ray.direction, ray.direction));
+  return ray.origin + ray.direction * t;
+}
+
+template <typename VectorType>
+VectorType ComputeClosestPointOnLineSegment(LineSegment<VectorType> line_segment, VectorType point) {
+  const VectorType line_start_to_end = line_segment.end - line_segment.start;
+  const VectorType line_start_to_point = point - line_segment.start;
+  const float t =
+      clamp(0.0f, 1.0f, Dot(line_start_to_end, line_start_to_point) / Dot(line_start_to_end, line_start_to_end));
+  return line_segment.start + line_start_to_end * t;
+}
+
 }  // namespace ovis

@@ -48,7 +48,7 @@ void RigidBody2DFixture::SetConvexPolygon(std::span<const Vector2> vertices) {
   b2PolygonShape& polygon_shape = fixture_definition->shape.emplace<b2PolygonShape>();
   polygon_shape.Set(box2d_vertices.data(), box2d_vertices.size());
   fixture_definition->definition.shape = &polygon_shape;
-  Reset(fixture_definition->definition);
+  CreateFixture();
 }
 
 bool RigidBody2DFixture::Deserialize(const json& data) {
@@ -306,6 +306,7 @@ void RigidBody2DFixture::Reset(const b2FixtureDef& definition) {
   }
 }
 
+// TODO: Change parameter to FixtureDefinition
 void RigidBody2DFixture::SetDefinition(const b2FixtureDef& definition) {
   SDL_assert(definition.userData.pointer == reinterpret_cast<uintptr_t>(this));
 

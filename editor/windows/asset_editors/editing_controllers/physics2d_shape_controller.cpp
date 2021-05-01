@@ -167,6 +167,16 @@ void Physics2DShapeController::ProcessEvent(Event* event) {
     auto mouse_button_event = static_cast<MouseButtonPressEvent*>(event);
     if (mouse_button_event->button() == MouseButton::Left()) {
       if (IsModifierPressed(KeyModifier::CONTROL)) {
+        auto screen_space_mouse_position = mouse_button_event->screen_space_position();
+        const Vector2 mouse_world_space_position = mouse_button_event->viewport()->ScreenSpacePositionToWorldSpace(
+            Vector3::FromVector2(screen_space_mouse_position));
+
+        const Vector2 new_vertex = TransformPosition(world_to_body_, Vector3::FromVector2(mouse_world_space_position));
+        const size_t insert_position = GetInsertPosition(vertices_, new_vertex);
+        vertices_.insert(vertices_.begin() + insert_position, new_vertex);
+        fixture_->SetConvexPolygon(vertices_);
+        SubmitChangesToScene();
+
         mouse_button_event->StopPropagation();
       } else if (IsModifierPressed(KeyModifier::ALT)) {
         if (selection_.has_value()) {
