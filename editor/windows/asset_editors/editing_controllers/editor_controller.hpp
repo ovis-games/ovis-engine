@@ -13,6 +13,7 @@ class EditorController : public SceneController {
   inline EditorController(std::string_view name) : SceneController(name) {}
 
   inline Scene* game_scene() const { return game_scene_; }
+  inline Scene* editing_scene() const { return scene(); }
   void SubmitChangesToScene();
 
  private:
