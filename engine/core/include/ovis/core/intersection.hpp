@@ -3,6 +3,7 @@
 #include <optional>
 #include <span>
 
+#include <ovis/utils/flags.hpp>
 #include <ovis/core/vector.hpp>
 
 namespace ovis {
@@ -19,6 +20,17 @@ struct Ray {
 
 using Ray2D = Ray<Vector2>;
 using Ray3D = Ray<Vector3>;
+
+template <typename VectorType>
+struct LineSegment {
+  static_assert(is_vector<VectorType>::value, "VectorType must be Vector2, Vector3 or Vector4");
+
+  VectorType start;
+  VectorType end;
+};
+
+using LineSegment2D = LineSegment<Vector2>;
+using LineSegment3D = LineSegment<Vector3>;
 
 struct Plane3D {
   Vector4 normal_distance;
@@ -132,5 +144,7 @@ inline constexpr std::optional<RayAABBIntersection> ComputeRayAABBIntersection(R
   return t_min <= t_max ? std::optional<RayAABBIntersection>(RayAABBIntersection{t_min, t_max})
                         : std::optional<RayAABBIntersection>{};
 }
+
+std::optional<LineSegment2D> ClipLineSegment(const AxisAlignedBoundingBox2D& aabb, const LineSegment2D& line_segment);
 
 }  // namespace ovis

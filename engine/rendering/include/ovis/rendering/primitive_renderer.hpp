@@ -7,6 +7,7 @@
 #include <span>
 
 #include <ovis/core/color.hpp>
+#include <ovis/core/intersection.hpp>
 #include <ovis/core/matrix.hpp>
 #include <ovis/core/vector.hpp>
 #include <ovis/graphics/graphics_context.hpp>
@@ -44,7 +45,8 @@ class PrimitiveRenderer : public RenderPass {
 
   // Line Drawing
   void DrawLine(const Vector3& start, const Vector3& end, const Color& color, float thickness = 3.0f);
-  void DrawDashedLine(const Vector3& start, const Vector3& end, const Color& color, float thickness = 3.0f, float dash_length = 0.0f);
+  void DrawDashedLine(const Vector3& start, const Vector3& end, const Color& color, float thickness = 3.0f,
+                      float dash_length = 0.0f);
   void DrawLineStip(std::span<const Vector3> positions, const Color& color, float thickness = 3.0f);
   void DrawLoop(std::span<const Vector3> positions, const Color& color, float thickness = 3.0f);
   void DrawCircle(const Vector3& center, float radius, const Color& color, float thickness = 3.0f,
@@ -71,6 +73,7 @@ class PrimitiveRenderer : public RenderPass {
 
  private:
   DrawSpace draw_space_ = DrawSpace::WORLD;
+  AxisAlignedBoundingBox2D screen_aabb_{Vector2::Zero(), Vector2::Zero()};
   Matrix4 to_screen_space_;
   bool is_drawing_ = false;
 
@@ -85,7 +88,8 @@ class PrimitiveRenderer : public RenderPass {
   std::shared_ptr<Resources> resources_;
 
   void Flush();
-  void DrawLineInternal(const Vector3& start, const Vector3& end, const Vector3& orthogonal, uint32_t color, float half_thickness);
+  void DrawLineInternal(const Vector3& start, const Vector3& end, const Vector3& orthogonal, uint32_t color,
+                        float half_thickness);
   size_t CalculateSmoothCircleSegmentCount(const Vector3& center, float radius, const Vector3& support_vector0,
                                            const Vector3& support_vector1);
 };

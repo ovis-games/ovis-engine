@@ -57,6 +57,8 @@ void PrimitiveRenderer::BeginDraw(const RenderContext& render_context) {
   resources_->vertices.clear();
 
   const Vector2 viewport_size = viewport()->GetDimensions();
+  screen_aabb_ = AxisAlignedBoundingBox2D::FromMinMax(Vector2::Zero(), viewport_size);
+
   const Matrix4 screen_to_clip_space =
       Matrix4::FromOrthographicProjection(0.0f, viewport_size.x, viewport_size.y, 0.0f, -1.0f, 1.0f);
 
@@ -124,8 +126,16 @@ void PrimitiveRenderer::DrawDashedLine(const Vector3& start, const Vector3& end,
   const uint32_t converted_color = ConvertToRGBA8(color);
   const float half_thickness = thickness * 0.5f;
 
-  const Vector3 p0 = TransformPosition(to_screen_space_, start);
-  const Vector3 p1 = TransformPosition(to_screen_space_, end);
+  const LineSegment2D line_segment = {TransformPosition(to_screen_space_, start),
+                                      TransformPosition(to_screen_space_, end)};
+
+  const std::optional<LineSegment2D> clipped_line_segment = ClipLineSegment(screen_aabb_, line_segment);
+  if (!clipped_line_segment.has_value()) {
+    return;
+  }
+
+  const Vector3 p0 = Vector3::FromVector2(clipped_line_segment->start);
+  const Vector3 p1 = Vector3::FromVector2(clipped_line_segment->end);
   const Vector3 orthogonal = Vector3::FromVector2(ConstructOrthogonalVectorCCW(Normalize<Vector2>(p1 - p0)));
 
   const float line_length = Distance(p0, p1);
