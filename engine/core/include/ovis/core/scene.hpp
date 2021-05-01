@@ -121,7 +121,7 @@ class Scene : public Serializable, public SafelyReferenceable {
   std::unordered_map<std::string, std::unique_ptr<SceneObject>> objects_;
   bool is_playing_ = false;
 
-  SceneViewport* main_viewport_;
+  SceneViewport* main_viewport_ = nullptr;
 
   static const json schema_;
 };
