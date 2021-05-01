@@ -106,25 +106,28 @@ void TransformationToolsController::ProcessEvent(Event* event) {
   if (event->type() == MouseMoveEvent::TYPE) {
     auto mouse_move_event = static_cast<MouseMoveEvent*>(event);
 
-    if (!GetMouseButtonState(MouseButton::Left())) {
+    if (!is_dragging_) {
       if (CheckMousePosition(mouse_move_event->screen_space_position())) {
         event->StopPropagation();
       }
     } else {
       if (selected_axes_ != AxesSelection::NONE) {
         HandleDragging(mouse_move_event);
+        event->StopPropagation();
       }
     }
   } else if (event->type() == MouseButtonPressEvent::TYPE) {
     auto button_press_event = static_cast<MouseButtonPressEvent*>(event);
     const Vector2 position = button_press_event->screen_space_position();
     if (CheckMousePosition(position)) {
+      is_dragging_ = true;
       event->StopPropagation();
     }
   } else if (event->type() == MouseButtonReleaseEvent::TYPE) {
     auto button_release_event = static_cast<MouseButtonReleaseEvent*>(event);
     current_tooltip_ = "";
-    if (selected_axes_ != AxesSelection::NONE) {
+    if (is_dragging_) {
+      is_dragging_ = false;
       SubmitChangesToScene();
       event->StopPropagation();
     }

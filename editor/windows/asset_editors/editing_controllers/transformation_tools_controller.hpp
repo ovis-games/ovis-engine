@@ -56,6 +56,7 @@ class TransformationToolsController : public EditorController {
 
   // TODO: safe reference to object
   bool object_selected_ = false;
+  bool is_dragging_ = false;
   AxesSelection selected_axes_;
 
   Vector3 object_position_screen_space_;
