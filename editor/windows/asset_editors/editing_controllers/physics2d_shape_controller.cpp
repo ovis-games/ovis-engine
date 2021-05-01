@@ -10,6 +10,7 @@
 
 #include <ovis/utils/log.hpp>
 #include <ovis/core/math.hpp>
+#include <ovis/input/key.hpp>
 #include <ovis/input/mouse_events.hpp>
 
 namespace ovis {
@@ -164,9 +165,20 @@ void Physics2DShapeController::ProcessEvent(Event* event) {
     }
   } else if (event->type() == MouseButtonPressEvent::TYPE) {
     auto mouse_button_event = static_cast<MouseButtonPressEvent*>(event);
-    if (mouse_button_event->button() == MouseButton::Left() && selection_.has_value()) {
-      is_dragging_ = true;
-      mouse_button_event->StopPropagation();
+    if (mouse_button_event->button() == MouseButton::Left()) {
+      if (IsModifierPressed(KeyModifier::CONTROL)) {
+        mouse_button_event->StopPropagation();
+      } else if (IsModifierPressed(KeyModifier::ALT)) {
+        if (selection_.has_value()) {
+          vertices_.erase(vertices_.begin() + *selection_);
+          fixture_->SetConvexPolygon(vertices_);
+          SubmitChangesToScene();
+          mouse_button_event->StopPropagation();
+        }
+      } else if (selection_.has_value()) {
+        is_dragging_ = true;
+        mouse_button_event->StopPropagation();
+      }
     }
   } else if (event->type() == MouseButtonReleaseEvent::TYPE) {
     auto mouse_button_event = static_cast<MouseButtonReleaseEvent*>(event);
