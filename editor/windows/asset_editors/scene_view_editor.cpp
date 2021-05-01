@@ -56,12 +56,19 @@ SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(s
 }
 
 void SceneViewEditor::Update(std::chrono::microseconds delta_time) {
-  AssetEditor::Update(delta_time);
   if (run_state() == RunState::RUNNING) {
     game_scene_.Update(delta_time);
     serialized_scene_editing_copy_ = game_scene_.Serialize();
   } else {
     editing_scene_.Update(delta_time);
+  }
+  AssetEditor::Update(delta_time);
+  for (const auto& controller : editing_scene_.controllers()) {
+    if (auto editor_controller = dynamic_cast<const EditorController*>(controller.get()); editor_controller != nullptr) {
+      if (editor_controller->has_tooltip()) {
+        ImGui::SetTooltip("%s", editor_controller->tooltip());
+      }
+    }
   }
 }
 

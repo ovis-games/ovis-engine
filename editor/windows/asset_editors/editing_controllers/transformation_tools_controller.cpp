@@ -92,10 +92,6 @@ void TransformationToolsController::Update(std::chrono::microseconds) {
       viewport->WorldSpacePositionToScreenSpace(object_position_world_space_ + y_axis_world_space_);
   z_axis_endpoint_screen_space_ =
       viewport->WorldSpacePositionToScreenSpace(object_position_world_space_ + z_axis_world_space_);
-
-  if (current_tooltip_.length() != 0) {
-    ImGui::SetTooltip("%s", current_tooltip_.c_str());
-  }
 }
 
 void TransformationToolsController::ProcessEvent(Event* event) {
@@ -125,7 +121,7 @@ void TransformationToolsController::ProcessEvent(Event* event) {
     }
   } else if (event->type() == MouseButtonReleaseEvent::TYPE) {
     auto button_release_event = static_cast<MouseButtonReleaseEvent*>(event);
-    current_tooltip_ = "";
+    ClearTooltip();
     if (is_dragging_) {
       is_dragging_ = false;
       SubmitChangesToScene();
@@ -229,7 +225,7 @@ void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_ev
       } else if (selected_axes_ != AxesSelection::NONE) {
         transform->Move(world_space_offset);
       }
-      current_tooltip_ = fmt::format("{}", transform->position());
+      SetTooltip(fmt::format("{}", transform->position()));
       break;
     }
 
@@ -266,8 +262,8 @@ void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_ev
 
       float yaw, pitch, roll;
       transform->GetYawPitchRoll(&yaw, &pitch, &roll);
-      current_tooltip_ = fmt::format("Yaw {}°, pitch {}°, roll {}°", yaw * RadiansToDegreesFactor<float>(),
-                                     pitch * RadiansToDegreesFactor<float>(), roll * RadiansToDegreesFactor<float>());
+      SetTooltip(fmt::format("Yaw {}°, pitch {}°, roll {}°", yaw * RadiansToDegreesFactor<float>(),
+                             pitch * RadiansToDegreesFactor<float>(), roll * RadiansToDegreesFactor<float>()));
       break;
     }
 
@@ -301,7 +297,7 @@ void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_ev
       }
       transform->SetScale(scale);
 
-      current_tooltip_ = fmt::format("{}", transform->scale());
+      SetTooltip(fmt::format("{}", transform->scale()));
       break;
   }
 }

@@ -52,8 +52,6 @@ class TransformationToolsController : public EditorController {
   TransformationType type_ = TransformationType::MOVE;
   CoordinateSystem coordinate_system_ = CoordinateSystem::OBJECT;
 
-  std::string current_tooltip_;
-
   // TODO: safe reference to object
   bool object_selected_ = false;
   bool is_dragging_ = false;
