@@ -40,6 +40,7 @@ add_executable(
   windows/inspector_window.hpp windows/inspector_window.cpp
   windows/dockspace_window.hpp windows/dockspace_window.cpp
   windows/toolbar.hpp windows/toolbar.cpp
+  windows/toast_window.hpp windows/toast_window.cpp
   
   windows/modal/modal_window.hpp windows/modal/modal_window.cpp
   windows/modal/loading_window.hpp windows/modal/loading_window.cpp

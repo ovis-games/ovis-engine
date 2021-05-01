@@ -12,6 +12,7 @@ std::vector<std::string> LogWindow::log_history;
 
 LogWindow::LogWindow() : ImGuiWindow("Log") {
   UpdateAfter("Dockspace Window");
+  UpdateBefore("Overlay");
 }
 
 void LogWindow::DrawContent() {

@@ -6,8 +6,9 @@
 #include "windows/dockspace_window.hpp"
 #include "windows/inspector_window.hpp"
 #include "windows/log_window.hpp"
-#include "windows/toolbar.hpp"
 #include "windows/modal/loading_window.hpp"
+#include "windows/toast_window.hpp"
+#include "windows/toolbar.hpp"
 
 #include <emscripten.h>
 #include <emscripten/html5.h>
@@ -72,6 +73,13 @@ const char* ImGuiGetClipbardText(void* user_data) {
 
 }  // namespace
 
+namespace {
+class Overlay : public SceneController {
+ public:
+  Overlay() : SceneController("Overlay") {}
+};
+}  // namespace
+
 EditorWindow* EditorWindow::instance_ = nullptr;
 
 EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
@@ -87,6 +95,8 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   scene()->AddController(std::make_unique<LogWindow>());
   scene()->AddController(std::make_unique<AssetViewerWindow>());
   scene()->AddController(std::make_unique<InspectorWindow>());
+  scene()->AddController(std::make_unique<Overlay>());
+  scene()->AddController(std::make_unique<ToastWindow>());
 
   AddRenderPass(std::make_unique<ImGuiRenderPass>());
 
@@ -97,21 +107,20 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   io.GetClipboardTextFn = &ImGuiGetClipbardText;
   io.ClipboardUserData = this;
 
-  scene()->GetController<ImGuiStartFrameController>()->LoadFont("FontAwesomeSolid", 28.0f, {
-    {0xf0c7, 0xf0c7},
-    {0xf0e2, 0xf0e2},
-    {0xf01e, 0xf01e},
-    {0xf466, 0xf466},
-    {0xf2d2, 0xf2d2},
-    {0xf04b, 0xf04d},
-    {0xf0b2, 0xf0b2},
-    {0xf2f1, 0xf2f1},
-    {0xf424, 0xf424},
-    {0xf1b2, 0xf1b2},
-    {0xf0ac, 0xf0ac},
-    {0xf06e, 0xf06e},
-    {0xf0fe, 0xf0fe}
-  });
+  scene()->GetController<ImGuiStartFrameController>()->LoadFont("FontAwesomeSolid", 28.0f,
+                                                                {{0xf0c7, 0xf0c7},
+                                                                 {0xf0e2, 0xf0e2},
+                                                                 {0xf01e, 0xf01e},
+                                                                 {0xf466, 0xf466},
+                                                                 {0xf2d2, 0xf2d2},
+                                                                 {0xf04b, 0xf04d},
+                                                                 {0xf0b2, 0xf0b2},
+                                                                 {0xf2f1, 0xf2f1},
+                                                                 {0xf424, 0xf424},
+                                                                 {0xf1b2, 0xf1b2},
+                                                                 {0xf0ac, 0xf0ac},
+                                                                 {0xf06e, 0xf06e},
+                                                                 {0xf0fe, 0xf0fe}});
 }
 
 void EditorWindow::Update(std::chrono::microseconds delta_time) {

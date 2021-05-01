@@ -1,5 +1,6 @@
 #include "physics2d_shape_controller.hpp"
 
+#include "../../../editor_window.hpp"
 #include "object_selection_controller.hpp"
 #include "transformation_tools_controller.hpp"
 
@@ -167,22 +168,33 @@ void Physics2DShapeController::ProcessEvent(Event* event) {
     auto mouse_button_event = static_cast<MouseButtonPressEvent*>(event);
     if (mouse_button_event->button() == MouseButton::Left()) {
       if (IsModifierPressed(KeyModifier::CONTROL)) {
-        auto screen_space_mouse_position = mouse_button_event->screen_space_position();
-        const Vector2 mouse_world_space_position = mouse_button_event->viewport()->ScreenSpacePositionToWorldSpace(
-            Vector3::FromVector2(screen_space_mouse_position));
+        if (vertices_.size() >= b2_maxPolygonVertices) {
+          EditorWindow::instance()->AddToastNotification(
+              ToastType::ERROR, "Cannot add more than {} vertices to a polygon shape.", b2_maxPolygonVertices);
+        } else {
+          auto screen_space_mouse_position = mouse_button_event->screen_space_position();
+          const Vector2 mouse_world_space_position = mouse_button_event->viewport()->ScreenSpacePositionToWorldSpace(
+              Vector3::FromVector2(screen_space_mouse_position));
 
-        const Vector2 new_vertex = TransformPosition(world_to_body_, Vector3::FromVector2(mouse_world_space_position));
-        const size_t insert_position = GetInsertPosition(vertices_, new_vertex);
-        vertices_.insert(vertices_.begin() + insert_position, new_vertex);
-        fixture_->SetConvexPolygon(vertices_);
-        SubmitChangesToScene();
+          const Vector2 new_vertex =
+              TransformPosition(world_to_body_, Vector3::FromVector2(mouse_world_space_position));
+          const size_t insert_position = GetInsertPosition(vertices_, new_vertex);
+          vertices_.insert(vertices_.begin() + insert_position, new_vertex);
+          fixture_->SetConvexPolygon(vertices_);
+          SubmitChangesToScene();
+        }
 
         mouse_button_event->StopPropagation();
       } else if (IsModifierPressed(KeyModifier::ALT)) {
         if (selection_.has_value()) {
-          vertices_.erase(vertices_.begin() + *selection_);
-          fixture_->SetConvexPolygon(vertices_);
-          SubmitChangesToScene();
+          if (vertices_.size() <= 3) {
+            EditorWindow::instance()->AddToastNotification(ToastType::ERROR,
+                                                           "A polygon shape needs at least 3 vertices.");
+          } else {
+            vertices_.erase(vertices_.begin() + *selection_);
+            fixture_->SetConvexPolygon(vertices_);
+            SubmitChangesToScene();
+          }
           mouse_button_event->StopPropagation();
         }
       } else if (selection_.has_value()) {

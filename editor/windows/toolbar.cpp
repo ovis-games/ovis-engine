@@ -26,6 +26,8 @@ Toolbar::Toolbar() : ImGuiWindow("Toolbar", "") {
            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings);
 
   SubscribeToEvent(KeyPressEvent::TYPE);
+
+  UpdateBefore("Overlay");
 }
 
 void Toolbar::ProcessEvent(Event* event) {

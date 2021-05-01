@@ -7,6 +7,7 @@ namespace editor {
 
 InspectorWindow::InspectorWindow() : ImGuiWindow("Inspector") {
   UpdateAfter("Dockspace Window");
+  UpdateBefore("Overlay");
 }
 
 void InspectorWindow::DrawContent() {

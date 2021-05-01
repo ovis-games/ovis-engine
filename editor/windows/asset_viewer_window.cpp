@@ -20,6 +20,7 @@ namespace editor {
 
 AssetViewerWindow::AssetViewerWindow() : ImGuiWindow("Assets"), current_path_("/") {
   UpdateAfter("Dockspace Window");
+  UpdateBefore("Overlay");
 
   SubscribeToEvent(LuaErrorEvent::TYPE);
 }

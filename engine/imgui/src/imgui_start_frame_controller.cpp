@@ -116,6 +116,7 @@ void ImGuiStartFrameController::Update(std::chrono::microseconds delta_time) {
     io.MouseDown[i] = mouse_button_pressed_[i] || GetMouseButtonState(GetMouseButtonFromImGuiIndex(i));
     mouse_button_pressed_[i] = false;
   }
+  io.DeltaTime = std::chrono::duration_cast<std::chrono::duration<double>>(delta_time).count(); 
 
   if (font_added_) {
     ImGui::GetIO().Fonts->GetTexDataAsRGBA32(&font_atlas_pixels_, &font_atlas_width_, &font_atlas_height_);
