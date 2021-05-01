@@ -1,10 +1,5 @@
 #include <iterator>
 
-#include <box2d/b2_chain_shape.h>
-#include <box2d/b2_circle_shape.h>
-#include <box2d/b2_edge_shape.h>
-#include <box2d/b2_polygon_shape.h>
-
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_object.hpp>
 #include <ovis/physics2d/physics_world2d.hpp>
@@ -44,6 +39,16 @@ json RigidBody2DFixture::Serialize() const {
   data["shape"] = SerializeShape();
 
   return data;
+}
+
+void RigidBody2DFixture::SetConvexPolygon(std::span<const Vector2> vertices) {
+  const std::vector<b2Vec2> box2d_vertices = ToBox2DVec2s(vertices.begin(), vertices.end());
+  DestroyFixture();
+  FixtureDefinition* fixture_definition = std::get<FixtureDefinitionPointer>(fixture_).get();
+  b2PolygonShape& polygon_shape = fixture_definition->shape.emplace<b2PolygonShape>();
+  polygon_shape.Set(box2d_vertices.data(), box2d_vertices.size());
+  fixture_definition->definition.shape = &polygon_shape;
+  Reset(fixture_definition->definition);
 }
 
 bool RigidBody2DFixture::Deserialize(const json& data) {
@@ -92,10 +97,8 @@ json RigidBody2DFixture::SerializeShape() const {
 
     case b2Shape::e_chain: {
       auto chain_shape = static_cast<const b2ChainShape*>(shape());
-      std::vector<Vector2> vertices;
-      vertices.reserve(chain_shape->m_count);
-      std::transform(chain_shape->m_vertices, chain_shape->m_vertices + chain_shape->m_count,
-                     std::back_inserter(vertices), FromBox2DVec2);
+      const std::vector<Vector2> vertices =
+          FromBox2DVec2s(chain_shape->m_vertices, chain_shape->m_vertices + chain_shape->m_count);
       data["vertices"] = vertices;
       data["previous_vertex"] = FromBox2DVec2(chain_shape->m_prevVertex);
       data["next_vertex"] = FromBox2DVec2(chain_shape->m_nextVertex);
@@ -266,9 +269,7 @@ void RigidBody2DFixture::FixtureDeleter::operator()(b2Fixture* fixture) const {
 }
 
 void RigidBody2DFixture::CreateFixture() {
-  auto& fixture_definition = std::get<FixtureDefinitionPointer>(fixture_);
-  fixture_definition->definition.shape = fixture_definition->shape.get();
-  Reset(fixture_definition->definition);
+  Reset(std::get<FixtureDefinitionPointer>(fixture_)->definition);
 }
 
 void RigidBody2DFixture::DestroyFixture() {
@@ -307,9 +308,23 @@ void RigidBody2DFixture::Reset(const b2FixtureDef& definition) {
 
 void RigidBody2DFixture::SetDefinition(const b2FixtureDef& definition) {
   SDL_assert(definition.userData.pointer == reinterpret_cast<uintptr_t>(this));
+
+  SDL_assert(!std::holds_alternative<FixtureDefinitionPointer>(fixture_) ||
+             &std::get<FixtureDefinitionPointer>(fixture_)->definition != &definition);
+  if (std::holds_alternative<FixtureDefinitionPointer>(fixture_) &&
+      &std::get<FixtureDefinitionPointer>(fixture_)->definition == &definition) {
+    // We are trying to set the definition that is already set.
+    LogD(
+        "This message is here to validate that the check is necessary, if you see this in the log remove this and "
+        "leave a comment that the check is not useless.");
+    return;
+  }
+
   FixtureDefinitionPointer fixture_definition = std::make_unique<FixtureDefinition>();
   fixture_definition->definition = definition;
-  fixture_definition->shape = CloneShape(definition.shape);
+  SetShapeInDefinition(fixture_definition.get(), definition.shape);
+  fixture_definition->definition.shape = GetShapeFromDefinition(fixture_definition.get());
+
   auto world = scene_object()->scene()->GetController<PhysicsWorld2D>();
   if (world != nullptr) {
     // Remove all existing entrys for this fixture in the create list
@@ -321,27 +336,30 @@ void RigidBody2DFixture::SetDefinition(const b2FixtureDef& definition) {
   fixture_.emplace<FixtureDefinitionPointer>(std::move(fixture_definition));
 }
 
-std::unique_ptr<b2Shape> RigidBody2DFixture::CloneShape(const b2Shape* shape) {
-  if (shape == nullptr) {
-    return nullptr;
-  }
+void RigidBody2DFixture::SetShapeInDefinition(FixtureDefinition* definition, const b2Shape* shape) {
+  SDL_assert(definition != nullptr);
+  SDL_assert(shape != nullptr);
 
   switch (shape->GetType()) {
     case b2Shape::e_circle:
-      return std::make_unique<b2CircleShape>(*static_cast<const b2CircleShape*>(shape));
+      definition->shape.emplace<b2CircleShape>(*static_cast<const b2CircleShape*>(shape));
+      break;
 
     case b2Shape::e_chain:
-      return std::make_unique<b2ChainShape>(*static_cast<const b2ChainShape*>(shape));
+      definition->shape.emplace<b2ChainShape>(*static_cast<const b2ChainShape*>(shape));
+      break;
 
     case b2Shape::e_edge:
-      return std::make_unique<b2EdgeShape>(*static_cast<const b2EdgeShape*>(shape));
+      definition->shape.emplace<b2EdgeShape>(*static_cast<const b2EdgeShape*>(shape));
+      break;
 
     case b2Shape::e_polygon:
-      return std::make_unique<b2PolygonShape>(*static_cast<const b2PolygonShape*>(shape));
+      definition->shape.emplace<b2PolygonShape>(*static_cast<const b2PolygonShape*>(shape));
+      break;
 
     case b2Shape::e_typeCount:
       SDL_assert(false);
-      return nullptr;
+      break;
   }
 }
 

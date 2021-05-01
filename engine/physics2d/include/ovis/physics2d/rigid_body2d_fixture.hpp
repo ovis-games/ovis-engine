@@ -1,6 +1,12 @@
 #pragma once
 
+#include <span>
+
+#include <box2d/b2_chain_shape.h>
+#include <box2d/b2_circle_shape.h>
+#include <box2d/b2_edge_shape.h>
 #include <box2d/b2_fixture.h>
+#include <box2d/b2_polygon_shape.h>
 
 #include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/serialize.hpp>
@@ -89,6 +95,7 @@ class RigidBody2DFixture : public SceneObjectComponent {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       return std::get<FixturePointer>(fixture_)->IsSensor();
     } else {
+      SDL_assert(std::get<FixtureDefinitionPointer>(fixture_)->definition.shape != nullptr);
       return std::get<FixtureDefinitionPointer>(fixture_)->definition.isSensor;
     }
   }
@@ -97,8 +104,8 @@ class RigidBody2DFixture : public SceneObjectComponent {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       return std::get<FixturePointer>(fixture_)->GetShape();
     } else {
-      SDL_assert(std::get<FixtureDefinitionPointer>(fixture_)->shape.get() != nullptr);
-      return std::get<FixtureDefinitionPointer>(fixture_)->shape.get();
+      SDL_assert(std::get<FixtureDefinitionPointer>(fixture_)->definition.shape != nullptr);
+      return GetShapeFromDefinition(std::get<FixtureDefinitionPointer>(fixture_).get());
     }
   }
 
@@ -106,10 +113,16 @@ class RigidBody2DFixture : public SceneObjectComponent {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       return std::get<FixturePointer>(fixture_)->GetShape();
     } else {
-      SDL_assert(std::get<FixtureDefinitionPointer>(fixture_)->shape.get() != nullptr);
-      return std::get<FixtureDefinitionPointer>(fixture_)->shape.get();
+      SDL_assert(std::get<FixtureDefinitionPointer>(fixture_)->definition.shape != nullptr);
+      return std::get<FixtureDefinitionPointer>(fixture_)->definition.shape;
     }
   }
+
+  void SetCircleShape(float radius);
+  void SetOneSidedEdge(Vector2 v0, Vector2 v1);
+  void SetTwoSidedEdge(Vector2 v0, Vector2 v1, Vector2 v2, Vector2 v3);
+  void SetChain(Vector2 previous_vertex, std::span<const Vector2> vertices, Vector2 next_vertex);
+  void SetConvexPolygon(std::span<const Vector2> vertices);
 
   json Serialize() const override;
   bool Deserialize(const json& data) override;
@@ -123,7 +136,7 @@ class RigidBody2DFixture : public SceneObjectComponent {
   };
 
   struct FixtureDefinition {
-    std::unique_ptr<b2Shape> shape;
+    std::variant<b2CircleShape, b2PolygonShape, b2EdgeShape, b2ChainShape> shape;
     b2FixtureDef definition;
   };
 
@@ -170,6 +183,15 @@ class RigidBody2DFixture : public SceneObjectComponent {
   void Reset(const b2FixtureDef& definition);
   void SetDefinition(const b2FixtureDef& definition);
   static std::unique_ptr<b2Shape> CloneShape(const b2Shape* shape);
+
+  inline b2Shape* GetShapeFromDefinition(FixtureDefinition* definition) {
+    SDL_assert(definition != nullptr);
+    b2Shape* shape;
+    std::visit([&](b2Shape& stored_shape) { shape = &stored_shape; }, definition->shape);
+    return shape;
+  }
+
+  void SetShapeInDefinition(FixtureDefinition* definition, const b2Shape* shape);
 };
 
 }  // namespace ovis
