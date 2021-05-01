@@ -25,10 +25,18 @@ class Physics2DShapeController : public EditorController {
  private:
   b2Shape::Type type_;
   safe_ptr<RigidBody2DFixture> fixture_;
-  std::vector<Vector3> vertices_;
+  std::vector<Vector2> vertices_;
+  std::optional<Vector2> error_vertex_;
   float radius_ = 0.0f;
+  bool one_sided_edge_ = false;
   std::optional<size_t> selection_;
   bool is_dragging_;
+
+  // The transformation matrices to convert from world space to the object space containing the RigidBody2D
+  Matrix3x4 body_to_world_;
+  Matrix3x4 world_to_body_;
+
+  bool HasTypeChanged() const;
 };
 
 }  // namespace editor

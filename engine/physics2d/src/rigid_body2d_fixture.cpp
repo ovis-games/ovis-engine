@@ -217,14 +217,6 @@ bool RigidBody2DFixture::DeserializeShape(b2FixtureDef* fixture_definition, cons
   return true;
 }
 
-void RigidBody2DFixture::FixtureDefinitionDeleter::operator()(b2FixtureDef* fixture_definition) const {
-  RigidBody2DFixture* fixture = reinterpret_cast<RigidBody2DFixture*>(fixture_definition->userData.pointer);
-  SDL_assert(fixture != nullptr);
-
-  delete fixture_definition->shape;
-  delete fixture_definition;
-}
-
 void RigidBody2DFixture::FixtureDeleter::operator()(b2Fixture* fixture) const {
   RigidBody2DFixture* body_fixture = reinterpret_cast<RigidBody2DFixture*>(fixture->GetUserData().pointer);
   SDL_assert(fixture != nullptr);
@@ -247,7 +239,9 @@ void RigidBody2DFixture::FixtureDeleter::operator()(b2Fixture* fixture) const {
 }
 
 void RigidBody2DFixture::CreateFixture() {
-  Reset(*std::get<FixtureDefinitionPointer>(fixture_));
+  auto& fixture_definition = std::get<FixtureDefinitionPointer>(fixture_);
+  fixture_definition->definition.shape = fixture_definition->shape.get();
+  Reset(fixture_definition->definition);
 }
 
 void RigidBody2DFixture::DestroyFixture() {
@@ -286,8 +280,9 @@ void RigidBody2DFixture::Reset(const b2FixtureDef& definition) {
 
 void RigidBody2DFixture::SetDefinition(const b2FixtureDef& definition) {
   SDL_assert(definition.userData.pointer == reinterpret_cast<uintptr_t>(this));
-  FixtureDefinitionPointer definition_pointer(new b2FixtureDef(definition));
-  definition_pointer->shape = CloneShape(definition.shape);
+  FixtureDefinitionPointer fixture_definition = std::make_unique<FixtureDefinition>();
+  fixture_definition->definition = definition;
+  fixture_definition->shape = CloneShape(definition.shape);
   auto world = scene_object()->scene()->GetController<PhysicsWorld2D>();
   if (world != nullptr) {
     // Remove all existing entrys for this fixture in the create list
@@ -296,26 +291,26 @@ void RigidBody2DFixture::SetDefinition(const b2FixtureDef& definition) {
         world->fixtures_to_create_.end());
     world->fixtures_to_create_.push_back(this);
   }
-  fixture_.emplace<FixtureDefinitionPointer>(std::move(definition_pointer));
+  fixture_.emplace<FixtureDefinitionPointer>(std::move(fixture_definition));
 }
 
-b2Shape* RigidBody2DFixture::CloneShape(const b2Shape* shape) {
+std::unique_ptr<b2Shape> RigidBody2DFixture::CloneShape(const b2Shape* shape) {
   if (shape == nullptr) {
     return nullptr;
   }
 
   switch (shape->GetType()) {
     case b2Shape::e_circle:
-      return new b2CircleShape(*static_cast<const b2CircleShape*>(shape));
+      return std::make_unique<b2CircleShape>(*static_cast<const b2CircleShape*>(shape));
 
     case b2Shape::e_chain:
-      return new b2ChainShape(*static_cast<const b2ChainShape*>(shape));
+      return std::make_unique<b2ChainShape>(*static_cast<const b2ChainShape*>(shape));
 
     case b2Shape::e_edge:
-      return new b2EdgeShape(*static_cast<const b2EdgeShape*>(shape));
+      return std::make_unique<b2EdgeShape>(*static_cast<const b2EdgeShape*>(shape));
 
     case b2Shape::e_polygon:
-      return new b2PolygonShape(*static_cast<const b2PolygonShape*>(shape));
+      return std::make_unique<b2PolygonShape>(*static_cast<const b2PolygonShape*>(shape));
 
     case b2Shape::e_typeCount:
       SDL_assert(false);

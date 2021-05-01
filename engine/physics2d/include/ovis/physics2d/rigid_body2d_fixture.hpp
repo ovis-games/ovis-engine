@@ -22,14 +22,14 @@ class RigidBody2DFixture : public SceneObjectComponent {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       std::get<FixturePointer>(fixture_)->SetDensity(density);
     } else {
-      std::get<FixtureDefinitionPointer>(fixture_)->density = density;
+      std::get<FixtureDefinitionPointer>(fixture_)->definition.density = density;
     }
   }
   inline float density() const {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       return std::get<FixturePointer>(fixture_)->GetDensity();
     } else {
-      return std::get<FixtureDefinitionPointer>(fixture_)->density;
+      return std::get<FixtureDefinitionPointer>(fixture_)->definition.density;
     }
   }
 
@@ -37,14 +37,14 @@ class RigidBody2DFixture : public SceneObjectComponent {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       std::get<FixturePointer>(fixture_)->SetFriction(friction);
     } else {
-      std::get<FixtureDefinitionPointer>(fixture_)->friction = friction;
+      std::get<FixtureDefinitionPointer>(fixture_)->definition.friction = friction;
     }
   }
   inline float friction() const {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       return std::get<FixturePointer>(fixture_)->GetFriction();
     } else {
-      return std::get<FixtureDefinitionPointer>(fixture_)->friction;
+      return std::get<FixtureDefinitionPointer>(fixture_)->definition.friction;
     }
   }
 
@@ -52,14 +52,14 @@ class RigidBody2DFixture : public SceneObjectComponent {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       std::get<FixturePointer>(fixture_)->SetRestitution(restitution);
     } else {
-      std::get<FixtureDefinitionPointer>(fixture_)->restitution = restitution;
+      std::get<FixtureDefinitionPointer>(fixture_)->definition.restitution = restitution;
     }
   }
   inline float restitution() const {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       return std::get<FixturePointer>(fixture_)->GetRestitution();
     } else {
-      return std::get<FixtureDefinitionPointer>(fixture_)->restitution;
+      return std::get<FixtureDefinitionPointer>(fixture_)->definition.restitution;
     }
   }
 
@@ -67,14 +67,14 @@ class RigidBody2DFixture : public SceneObjectComponent {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       std::get<FixturePointer>(fixture_)->SetRestitutionThreshold(restitution_threshold);
     } else {
-      std::get<FixtureDefinitionPointer>(fixture_)->restitutionThreshold = restitution_threshold;
+      std::get<FixtureDefinitionPointer>(fixture_)->definition.restitutionThreshold = restitution_threshold;
     }
   }
   inline float restitution_threshold() const {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       return std::get<FixturePointer>(fixture_)->GetRestitutionThreshold();
     } else {
-      return std::get<FixtureDefinitionPointer>(fixture_)->restitutionThreshold;
+      return std::get<FixtureDefinitionPointer>(fixture_)->definition.restitutionThreshold;
     }
   }
 
@@ -82,14 +82,23 @@ class RigidBody2DFixture : public SceneObjectComponent {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       std::get<FixturePointer>(fixture_)->SetSensor(is_sensor);
     } else {
-      std::get<FixtureDefinitionPointer>(fixture_)->isSensor = is_sensor;
+      std::get<FixtureDefinitionPointer>(fixture_)->definition.isSensor = is_sensor;
     }
   }
   inline bool is_sensor() const {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       return std::get<FixturePointer>(fixture_)->IsSensor();
     } else {
-      return std::get<FixtureDefinitionPointer>(fixture_)->isSensor;
+      return std::get<FixtureDefinitionPointer>(fixture_)->definition.isSensor;
+    }
+  }
+
+  inline b2Shape* shape() {
+    if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
+      return std::get<FixturePointer>(fixture_)->GetShape();
+    } else {
+      SDL_assert(std::get<FixtureDefinitionPointer>(fixture_)->shape.get() != nullptr);
+      return std::get<FixtureDefinitionPointer>(fixture_)->shape.get();
     }
   }
 
@@ -97,7 +106,8 @@ class RigidBody2DFixture : public SceneObjectComponent {
     if (std::holds_alternative<FixturePointer>(fixture_)) [[likely]] {
       return std::get<FixturePointer>(fixture_)->GetShape();
     } else {
-      return std::get<FixtureDefinitionPointer>(fixture_)->shape;
+      SDL_assert(std::get<FixtureDefinitionPointer>(fixture_)->shape.get() != nullptr);
+      return std::get<FixtureDefinitionPointer>(fixture_)->shape.get();
     }
   }
 
@@ -108,15 +118,17 @@ class RigidBody2DFixture : public SceneObjectComponent {
   static void RegisterType(sol::table* module);
 
  private:
-  struct FixtureDefinitionDeleter {
-    void operator()(b2FixtureDef* fixture_definition) const;
-  };
   struct FixtureDeleter {
     void operator()(b2Fixture* fixture) const;
   };
 
-  using FixtureDefinitionPointer = std::unique_ptr<b2FixtureDef, FixtureDefinitionDeleter>;
+  struct FixtureDefinition {
+    std::unique_ptr<b2Shape> shape;
+    b2FixtureDef definition;
+  };
+
   using FixturePointer = std::unique_ptr<b2Fixture, FixtureDeleter>;
+  using FixtureDefinitionPointer = std::unique_ptr<FixtureDefinition>;
   std::variant<FixtureDefinitionPointer, FixturePointer> fixture_;
 
   static const json SCHEMA;
@@ -157,7 +169,7 @@ class RigidBody2DFixture : public SceneObjectComponent {
   void DestroyFixture();
   void Reset(const b2FixtureDef& definition);
   void SetDefinition(const b2FixtureDef& definition);
-  static b2Shape* CloneShape(const b2Shape* shape);
+  static std::unique_ptr<b2Shape> CloneShape(const b2Shape* shape);
 };
 
 }  // namespace ovis
