@@ -193,10 +193,10 @@ void ImGuiStartFrameController::ProcessEvent(Event* event) {
     KeyPressEvent* key_event = down_cast<KeyPressEvent*>(event);
     SDL_assert(key_event->key().code < IM_ARRAYSIZE(io.KeysDown));
     io.KeysDown[key_event->key().code] = true;
-    io.KeyShift = GetKeyState(Key::ShiftLeft()) || GetKeyState(Key::ShiftRight());
-    io.KeyCtrl = GetKeyState(Key::ControlLeft()) || GetKeyState(Key::ControlRight());
-    io.KeyAlt = GetKeyState(Key::AltLeft()) || GetKeyState(Key::AltRight());
-    io.KeySuper = GetKeyState(Key::MetaLeft()) || GetKeyState(Key::MetaRight());
+    io.KeyShift = IsKeyPressed(Key::ShiftLeft()) || IsKeyPressed(Key::ShiftRight());
+    io.KeyCtrl = IsKeyPressed(Key::ControlLeft()) || IsKeyPressed(Key::ControlRight());
+    io.KeyAlt = IsKeyPressed(Key::AltLeft()) || IsKeyPressed(Key::AltRight());
+    io.KeySuper = IsKeyPressed(Key::MetaLeft()) || IsKeyPressed(Key::MetaRight());
     if (io.WantCaptureKeyboard && !io.WantTextInput) {
       event->StopPropagation();
     }
@@ -204,10 +204,10 @@ void ImGuiStartFrameController::ProcessEvent(Event* event) {
     KeyReleaseEvent* key_event = down_cast<KeyReleaseEvent*>(event);
     SDL_assert(key_event->key().code < IM_ARRAYSIZE(io.KeysDown));
     io.KeysDown[key_event->key().code] = false;
-    io.KeyShift = GetKeyState(Key::ShiftLeft()) || GetKeyState(Key::ShiftRight());
-    io.KeyCtrl = GetKeyState(Key::ControlLeft()) || GetKeyState(Key::ControlRight());
-    io.KeyAlt = GetKeyState(Key::AltLeft()) || GetKeyState(Key::AltRight());
-    io.KeySuper = GetKeyState(Key::MetaLeft()) || GetKeyState(Key::MetaRight());
+    io.KeyShift = IsKeyPressed(Key::ShiftLeft()) || IsKeyPressed(Key::ShiftRight());
+    io.KeyCtrl = IsKeyPressed(Key::ControlLeft()) || IsKeyPressed(Key::ControlRight());
+    io.KeyAlt = IsKeyPressed(Key::AltLeft()) || IsKeyPressed(Key::AltRight());
+    io.KeySuper = IsKeyPressed(Key::MetaLeft()) || IsKeyPressed(Key::MetaRight());
     if (io.WantCaptureKeyboard && !io.WantTextInput) {
       event->StopPropagation();
     }

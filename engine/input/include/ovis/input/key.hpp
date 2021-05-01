@@ -147,7 +147,10 @@ inline bool operator!=(Key lhs, Key rhs) {
   return lhs.code != rhs.code;
 }
 
-bool GetKeyState(Key key);
+bool IsKeyPressed(Key key);
 void SetKeyState(Key key, bool pressed);
+
+enum class KeyModifier { CONTROL, SHIFT, ALT, META };
+bool IsModifierPressed(KeyModifier modifier);
 
 }  // namespace ovis

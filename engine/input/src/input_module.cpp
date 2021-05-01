@@ -23,11 +23,11 @@ int LoadInputModule(lua_State* l) {
   KeyReleaseEvent::RegisterType(&input_module);
 
   /// Checks whether the given key is currently pressed.
-  // @function get_key_state
+  // @function is_key_pressed
   // @param[type=Key] key
   // @return[type=bool] True if the key is currently pressed, false otherwise.
-  // @usage input.get_key_state(input.Key.ARROW_LEFT) -- returns true if the left arrow key is pressed
-  input_module["get_key_state"] = &GetKeyState;
+  // @usage input.is_key_pressed(input.Key.ARROW_LEFT) -- returns true if the left arrow key is pressed
+  input_module["is_key_pressed"] = &IsKeyPressed;
 
   MouseButton::RegisterType(&input_module);
   MouseButtonPressEvent::RegisterType(&input_module);

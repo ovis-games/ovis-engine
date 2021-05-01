@@ -32,8 +32,8 @@ void Toolbar::ProcessEvent(Event* event) {
   if (event->type() == KeyPressEvent::TYPE) {
     auto* key_press_event = static_cast<KeyPressEvent*>(event);
     const bool ctrl_command_pressed = GetPlatform() == Platform::MACOS
-                                          ? GetKeyState(Key::MetaLeft()) || GetKeyState(Key::MetaRight())
-                                          : GetKeyState(Key::ControlLeft()) || GetKeyState(Key::ControlRight());
+                                          ? IsKeyPressed(Key::MetaLeft()) || IsKeyPressed(Key::MetaRight())
+                                          : IsKeyPressed(Key::ControlLeft()) || IsKeyPressed(Key::ControlRight());
     if (ctrl_command_pressed && key_press_event->key() == Key::S()) {
       Save();
       event->StopPropagation();

@@ -61,7 +61,7 @@ void AssetEditor::Redo() {
 void AssetEditor::ProcessEvent(Event* event) {
   if (event->type() == KeyPressEvent::TYPE) {
     auto key_press_event = static_cast<KeyPressEvent*>(event);
-    if (key_press_event->key() == Key::S() && (GetKeyState(Key::ControlLeft()) || GetKeyState(Key::ControlRight()))) {
+    if (key_press_event->key() == Key::S() && (IsKeyPressed(Key::ControlLeft()) || IsKeyPressed(Key::ControlRight()))) {
       Save();
       event->StopPropagation();
     }

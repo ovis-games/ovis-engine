@@ -760,7 +760,7 @@ namespace {
 bool key_states[SDL_NUM_SCANCODES] = {false};
 }
 
-bool GetKeyState(Key key) {
+bool IsKeyPressed(Key key) {
   SDL_assert(key.code < SDL_NUM_SCANCODES);
   return key_states[key.code];
 }
@@ -768,6 +768,19 @@ bool GetKeyState(Key key) {
 void SetKeyState(Key key, bool pressed) {
   SDL_assert(key.code < SDL_NUM_SCANCODES);
   key_states[key.code] = pressed;
+}
+
+bool IsModifierPressed(KeyModifier modifier) {
+  switch (modifier) {
+    case KeyModifier::SHIFT:
+      return IsKeyPressed(Key::ShiftLeft()) | IsKeyPressed(Key::ShiftRight());
+    case KeyModifier::ALT:
+      return IsKeyPressed(Key::AltLeft()) | IsKeyPressed(Key::AltRight());
+    case KeyModifier::CONTROL:
+      return IsKeyPressed(Key::ControlLeft()) | IsKeyPressed(Key::ControlRight());
+    case KeyModifier::META:
+      return IsKeyPressed(Key::MetaLeft()) | IsKeyPressed(Key::MetaRight());
+  }
 }
 
 }  // namespace ovis
