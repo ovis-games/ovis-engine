@@ -123,6 +123,7 @@ void Physics2DShapeController::ProcessEvent(Event* event) {
       is_dragging_ = false;
     } else {
       error_vertex_.reset();
+      ClearTooltip();
 
       if (type_ == b2Shape::e_circle) {
         SDL_assert(vertices_.size() == 1);
@@ -143,6 +144,7 @@ void Physics2DShapeController::ProcessEvent(Event* event) {
           if (IsConvex(vertices_)) {
             static_cast<b2PolygonShape*>(fixture_->shape())->Set(points.data(), points.size());
           } else {
+            SetTooltip("The polygon needs to be convex");
             error_vertex_ = vertices_[*selection_];
             vertices_[*selection_] = old_position;
           }
