@@ -51,6 +51,18 @@ void RigidBody2DFixture::SetConvexPolygon(std::span<const Vector2> vertices) {
   CreateFixture();
 }
 
+void RigidBody2DFixture::SetChain(Vector2 previous_vertex, std::span<const Vector2> vertices, Vector2 next_vertex) {
+  SDL_assert(vertices.size() >= 2);
+  const std::vector<b2Vec2> box2d_vertices = ToBox2DVec2s(vertices.begin(), vertices.end());
+  DestroyFixture();
+  FixtureDefinition* fixture_definition = std::get<FixtureDefinitionPointer>(fixture_).get();
+  b2ChainShape& chain_shape = fixture_definition->shape.emplace<b2ChainShape>();
+  chain_shape.CreateChain(box2d_vertices.data(), box2d_vertices.size(), ToBox2DVec2(previous_vertex),
+                          ToBox2DVec2(next_vertex));
+  fixture_definition->definition.shape = &chain_shape;
+  CreateFixture();
+}
+
 bool RigidBody2DFixture::Deserialize(const json& data) {
   b2FixtureDef fixture_definition;
   fixture_definition.userData.pointer = reinterpret_cast<uintptr_t>(this);

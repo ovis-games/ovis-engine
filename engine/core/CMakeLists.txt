@@ -51,6 +51,8 @@ if (OVIS_BUILD_TESTS)
     ovis-core-test
 
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_math.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_intersection.cpp
   )
 
   target_add_ldoc_test(

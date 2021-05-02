@@ -159,7 +159,7 @@ VectorType ComputeClosestPointOnLineSegment(LineSegment<VectorType> line_segment
   const VectorType line_start_to_end = line_segment.end - line_segment.start;
   const VectorType line_start_to_point = point - line_segment.start;
   const float t =
-      clamp(0.0f, 1.0f, Dot(line_start_to_end, line_start_to_point) / Dot(line_start_to_end, line_start_to_end));
+      clamp(Dot(line_start_to_end, line_start_to_point) / Dot(line_start_to_end, line_start_to_end), 0.0f, 1.0f);
   return line_segment.start + line_start_to_end * t;
 }
 

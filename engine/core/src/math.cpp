@@ -33,13 +33,40 @@ bool IsConvex(std::span<const Vector2> vertices) {
   return true;
 }
 
-size_t GetInsertPosition(std::span<const Vector2> convex_polygon, Vector2 new_position) {
-  SDL_assert(convex_polygon.size() >= 3);
+size_t GetLineStripInsertPosition(std::span<const Vector2> strip, Vector2 new_position) {
+  SDL_assert(strip.size() >= 2);
+
+  float shortest_distance_squared = SquaredDistance(strip.front(), new_position);
+  size_t best_position = 0;
+
+  {
+    const float squared_distance_to_last = SquaredDistance(strip.back(), new_position);
+    if (squared_distance_to_last < shortest_distance_squared) {
+      shortest_distance_squared = squared_distance_to_last;
+      best_position = strip.size();
+    }
+  }
+
+  for (size_t i = 1; i < strip.size(); ++i) {
+    const LineSegment2D edge = {strip[i - 1], strip[i]};
+    const Vector2 closest_point_on_edge = ComputeClosestPointOnLineSegment(edge, new_position);
+    const float squared_distance = SquaredDistance(closest_point_on_edge, new_position);
+    if (squared_distance < shortest_distance_squared * (1.0f - EPSILON)) {
+      best_position = i;
+      shortest_distance_squared = squared_distance;
+    }
+  }
+
+  return best_position;
+}
+
+size_t GetLineLoopInsertPosition(std::span<const Vector2> loop, Vector2 new_position) {
+  SDL_assert(loop.size() >= 3);
 
   float shortest_distance_squared = std::numeric_limits<float>::infinity();
   size_t best_position;
-  Vector2 previous_vertex = convex_polygon.back();
-  for (const auto& current_vertex : IndexRange(convex_polygon)) {
+  Vector2 previous_vertex = loop.back();
+  for (const auto& current_vertex : IndexRange(loop)) {
     const LineSegment2D edge = {previous_vertex, current_vertex.value()};
     const Vector2 closest_point_on_edge = ComputeClosestPointOnLineSegment(edge, new_position);
     const float squared_distance = SquaredDistance(closest_point_on_edge, new_position);
