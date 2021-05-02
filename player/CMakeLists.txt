@@ -30,9 +30,7 @@ target_link_options(
 target_link_libraries(
   ovis-player
   PUBLIC
-    ovis::engine
-    ovis::base
-    ovis::rendering2d
+    ovis::application
     microtar
 )
 

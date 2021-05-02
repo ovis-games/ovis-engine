@@ -2,14 +2,13 @@
 
 #include <emscripten.h>
 #include <emscripten/val.h>
-#include <ovis/base/base_module.hpp>
-
-#include <ovis/core/asset_library.hpp>
-#include <ovis/core/log.hpp>
-#include <ovis/engine/engine.hpp>
-#include <ovis/engine/window.hpp>
-#include <ovis/rendering2d/rendering2d_module.hpp>
 #include <ovis/player/loading_controller.hpp>
+
+#include <ovis/utils/log.hpp>
+#include <ovis/core/asset_library.hpp>
+#include <ovis/rendering2d/rendering2d_module.hpp>
+#include <ovis/application/application.hpp>
+#include <ovis/application/window.hpp>
 
 extern "C" {
 
@@ -18,7 +17,6 @@ void EMSCRIPTEN_KEEPALIVE QuitGame() {
   sdl_event.type = SDL_QUIT;
   SDL_PushEvent(&sdl_event);
 }
-
 }
 
 // Usage: ovis-player backend_url project_id
@@ -37,8 +35,6 @@ int main(int argc, char* argv[]) {
 
   Init();
   SetEngineAssetsDirectory("/ovis_assets");
-  LoadModule<BaseModule>();
-  LoadModule<Rendering2DModule>();
 
   Window window(WindowDescription{});
 

@@ -5,7 +5,7 @@
 
 #include <microtar.h>
 
-#include <ovis/engine/scene_controller.hpp>
+#include <ovis/core/scene_controller.hpp>
 
 namespace ovis {
 namespace player {
@@ -16,8 +16,7 @@ class LoadingController : public SceneController {
  public:
   LoadingController(bool preview = false);
 
-  void Update(std::chrono::microseconds ms) override;
-  void DrawImGui() override;
+  void Update(std::chrono::microseconds delta_time) override;
 
  private:
   float progress_ = 0.0f;

@@ -3,12 +3,12 @@
 #include <imgui.h>
 #include <ovis/player/loading_controller.hpp>
 
-#include <ovis/core/file.hpp>
-#include <ovis/core/log.hpp>
-#include <ovis/engine/fetch.hpp>
-#include <ovis/engine/game_settings.hpp>
+#include <ovis/utils/file.hpp>
+#include <ovis/utils/log.hpp>
 #include <ovis/core/asset_library.hpp>
-#include <ovis/engine/scene.hpp>
+#include <ovis/core/scene.hpp>
+#include <ovis/networking/fetch.hpp>
+#include <ovis/application/game_settings.hpp>
 
 namespace ovis {
 namespace player {
@@ -112,29 +112,6 @@ void LoadingController::Update(std::chrono::microseconds ms) {
       // Remove(); (not needed, the deserialize above will remove the controller automatically)
     }
   }
-}
-
-void LoadingController::DrawImGui() {
-  ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-  ImGuiViewport* viewport = ImGui::GetMainViewport();
-  ImGui::SetNextWindowPos(viewport->Pos);
-  ImGui::SetNextWindowSize(viewport->Size);
-  ImGui::SetNextWindowViewport(viewport->ID);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-  window_flags |=
-      ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-  window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-  ImGui::Begin("Loading Window", nullptr, window_flags);
-  ImGui::PopStyleVar();
-
-  ImGui::PopStyleVar(2);
-
-  ImGui::ProgressBar(progress_);
-
-  ImGui::End();
 }
 
 }  // namespace player
