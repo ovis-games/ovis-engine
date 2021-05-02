@@ -49,6 +49,7 @@ class Scene : public Serializable, public SafelyReferenceable {
   SceneController* AddController(const std::string& id);
   SceneController* AddController(const std::string& id, const json& serialized_controller);
   // SceneController* AddController(const std::string& id, const sol::table& properties);
+  std::string CreateControllerName(std::string_view base_name);
   void RemoveController(const std::string& id);
   void ClearControllers();
   bool HasController(const std::string& id) const;

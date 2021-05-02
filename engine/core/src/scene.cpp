@@ -90,6 +90,18 @@ SceneController* Scene::AddController(const std::string& id, const json& seriali
 //   return controller;
 // }
 
+std::string Scene::CreateControllerName(std::string_view base_name) {
+  std::string name(base_name);
+  
+  uint64_t number = 2;
+  while (controllers_.contains(name)) {
+    name = std::string(base_name) + std::to_string(number);
+    number++;
+  }
+
+  return name;
+}
+
 void Scene::RemoveController(const std::string& id) {
   const auto scene_controller = controllers_.find(id);
   if (scene_controller == controllers_.end()) {
