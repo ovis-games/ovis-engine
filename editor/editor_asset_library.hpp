@@ -21,6 +21,9 @@ class EditorAssetLibrary : public DirectoryAssetLibrary {
 
   bool SaveAssetFile(const std::string& asset_id, const std::string& file_type,
                      std::variant<std::string, Blob> content) override;
+
+  bool DeleteAsset(const std::string& asset_id) override;
+
   std::optional<Blob> Package();
 
   void UploadFile(const std::string& filename);

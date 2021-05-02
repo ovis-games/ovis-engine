@@ -1,5 +1,6 @@
 #include "editor_asset_library.hpp"
 
+#include "editor_window.hpp"
 #include "global.hpp"
 #include <filesystem>
 #include <fstream>
@@ -9,9 +10,9 @@
 
 #include <ovis/utils/file.hpp>
 #include <ovis/utils/log.hpp>
-#include <ovis/application/application.hpp>
-#include <ovis/networking/fetch.hpp>
 #include <ovis/core/lua.hpp>
+#include <ovis/networking/fetch.hpp>
+#include <ovis/application/application.hpp>
 
 namespace ovis {
 namespace editor {
@@ -49,6 +50,29 @@ bool EditorAssetLibrary::SaveAssetFile(const std::string& asset_id, const std::s
   } else {
     return false;
   }
+}
+
+bool EditorAssetLibrary::DeleteAsset(const std::string& asset_id) {
+  const auto asset_types = GetAssetFileTypes(asset_id);
+  for (const auto& file_type : asset_types) {
+    const std::optional<std::string> filename = GetAssetFilename(asset_id, file_type);
+    SDL_assert(filename.has_value());
+    if (!filename.has_value()) {
+      continue;
+    }
+    const std::string relative_filename = std::filesystem::relative(*filename, directory());
+    const std::string url = fmt::format("{}/v1/games/{}/assetFiles/{}", backend_url, project_id, relative_filename);
+
+    FetchOptions options;
+    options.method = RequestMethod::DELETE;
+    options.with_credentials = true;
+    options.on_error = [asset_id](const FetchResponse& response) {
+      EditorWindow::instance()->AddToastNotification(
+          ToastType::ERROR, "Failed to delete asset on server: {} (status code: {})", asset_id, response.status_code);
+    };
+    Fetch(url, options);
+  }
+  return DirectoryAssetLibrary::DeleteAsset(asset_id);
 }
 
 std::optional<Blob> EditorAssetLibrary::Package() {
@@ -178,8 +202,7 @@ void EditorAssetLibrary::UploadNextFile() {
       LogI("Uploading {} ({} bytes)", filename, file_data->size());
 
       std::string relative_filename = std::filesystem::relative(filename, directory());
-      std::string url =
-          fmt::format("{}/v1/games/{}/assetFiles/{}", backend_url, project_id, relative_filename);
+      std::string url = fmt::format("{}/v1/games/{}/assetFiles/{}", backend_url, project_id, relative_filename);
       FetchOptions options;
       options.method = RequestMethod::PUT;
       options.headers["Content-Type"] = "application/octet-stream";
