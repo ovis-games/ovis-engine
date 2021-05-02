@@ -27,6 +27,9 @@ class EditorWindow : public Window {
     scene()->GetController<ToastWindow>("ToastWindow")->AddNotification(type, formatted_message);
   }
 
+  void ShowMessageBox(std::string_view title, std::string_view message, std::vector<std::string_view> buttons,
+                      std::function<void(std::string_view)> callback);
+
  private:
   static EditorWindow* instance_;
 

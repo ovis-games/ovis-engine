@@ -1,5 +1,6 @@
 #include "asset_viewer_window.hpp"
 
+#include "../editor_window.hpp"
 #include "asset_editors/scene_editor.hpp"
 #include "asset_editors/script_editor.hpp"
 #include "asset_editors/settings_editor.hpp"
@@ -57,7 +58,15 @@ void AssetViewerWindow::DrawContent() {
 
     if (ImGui::BeginPopupContextItem()) {
       if (ImGui::Selectable("Delete")) {
-        GetApplicationAssetLibrary()->DeleteAsset(asset_id);
+        EditorWindow::instance()->ShowMessageBox(
+            fmt::format("Delete {}?", asset_id),
+            fmt::format("Are you sure you want to delete the asset {}? This action cannot be undone!", asset_id),
+            {"Delete Permanently", "Cancel"}, [asset_id, this](std::string_view pressed_button) {
+              if (pressed_button == "Delete Permanently") {
+                CloseAssetEditor(asset_id);
+                GetApplicationAssetLibrary()->DeleteAsset(asset_id);
+              }
+            });
       }
       ImGui::EndPopup();
     }

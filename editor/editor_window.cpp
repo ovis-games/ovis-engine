@@ -7,6 +7,7 @@
 #include "windows/inspector_window.hpp"
 #include "windows/log_window.hpp"
 #include "windows/modal/loading_window.hpp"
+#include "windows/modal/message_box_window.hpp"
 #include "windows/toast_window.hpp"
 #include "windows/toolbar.hpp"
 
@@ -139,6 +140,11 @@ void EditorWindow::Update(std::chrono::microseconds delta_time) {
   }
 
   Window::Update(delta_time);
+}
+
+void EditorWindow::ShowMessageBox(std::string_view title, std::string_view message, std::vector<std::string_view> buttons,
+                                  std::function<void(std::string_view)> callback) {
+  scene()->AddController(std::make_unique<MessageBoxWindow>(scene()->CreateControllerName("MessageBox"), title, message, buttons, std::move(callback)));
 }
 
 void EditorWindow::SetUIStyle() {
