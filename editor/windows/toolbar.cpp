@@ -6,6 +6,7 @@
 #include "asset_viewer_window.hpp"
 #include "inspector_window.hpp"
 #include "log_window.hpp"
+#include "modal/packaging_window.hpp"
 
 #include <imgui_internal.h>
 
@@ -46,7 +47,7 @@ void Toolbar::ProcessEvent(Event* event) {
 void Toolbar::BeforeBegin() {
   ImGuiViewport* viewport = ImGui::GetMainViewport();
   ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y));
-  ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, 28 + 10)); // y: icon size + padding
+  ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, 28 + 10));  // y: icon size + padding
   ImGui::SetNextWindowViewport(viewport->ID);
 }
 
@@ -99,7 +100,7 @@ void Toolbar::DrawContent() {
   ImGui::SameLine();
   ImGui::PushFont(font_awesome);
   if (ImGui::Button("\uf466")) {
-    scene()->AddController("PackagingWindow");
+    scene()->AddController<PackagingWindow>();
   }
   ImGui::PopFont();
   if (ImGui::IsItemHovered()) {
