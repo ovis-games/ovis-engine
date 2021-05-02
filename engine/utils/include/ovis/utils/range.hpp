@@ -103,6 +103,7 @@ class IndexedRange {
     inline auto& value() const { return *m_iterator; }
 
     inline auto operator->() const { return &value(); }
+    inline auto& operator*() const { return *m_iterator; }
 
    private:
     T m_iterator;
