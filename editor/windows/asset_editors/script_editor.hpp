@@ -24,6 +24,7 @@ class ScriptEditor : public AssetEditor {
   void Undo() override { editor_.Undo(); }
   bool CanRedo() const override { return editor_.CanRedo(); }
   void Redo() override { editor_.Redo(); }
+  inline bool HasUnsavedChanges() const override { return text_changed_; }
 
   void ClearErrors() { SetErrors({}); }
   void SetErrors(const std::vector<LuaError>& errors);
@@ -32,6 +33,10 @@ class ScriptEditor : public AssetEditor {
 
  private:
   TextEditor editor_;
+  bool text_changed_ = false;
+  // Indicates whether the text was just loaded and passed to the TextEditor. This is used to avoid a false positive for
+  // the text_changed_ variable.
+  bool text_just_loaded_ = false;
 };
 
 }  // namespace editor

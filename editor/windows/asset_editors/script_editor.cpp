@@ -38,6 +38,7 @@ ScriptEditor::ScriptEditor(const std::string& script_id) : AssetEditor(script_id
   std::optional<std::string> lua_code = LoadTextFile("lua");
   if (lua_code) {
     editor_.SetText(*lua_code);
+    text_just_loaded_ = true;
   }
 }
 
@@ -46,6 +47,8 @@ void ScriptEditor::DrawContent() {
   SDL_assert(start_frame_controller != nullptr);
 
   ImGui::PushFont(start_frame_controller->GetFont("Inconsolata-Regular"));
+  text_changed_ = text_changed_ || (editor_.IsTextChanged() && !text_just_loaded_);
+  text_just_loaded_ = false;
   editor_.Render("ScriptEditor");
   ImGui::PopFont();
 
@@ -61,6 +64,7 @@ void ScriptEditor::DrawContent() {
 void ScriptEditor::Save() {
   const std::string code = editor_.GetText();
   SaveFile("lua", code);
+  text_changed_ = false;
 
   sol::protected_function_result result = lua.do_string(code, "=" + asset_id());
 

@@ -16,6 +16,8 @@ class ImGuiWindow : public SceneController {
 
   void Update(std::chrono::microseconds delta_time) override;
 
+  inline virtual void Close() { Remove(); }
+
   inline void Focus() { should_focus_ = true; }
   inline bool has_focus() const { return has_focus_; }
 
@@ -27,7 +29,10 @@ class ImGuiWindow : public SceneController {
 
   using ImGuiStyleValue = std::variant<float, ImVec2>;
   void SetStyleVar(ImGuiStyleVar style_id, ImGuiStyleValue value);
-  void SetFlags(ImGuiWindowFlags window_flags);
+  inline void SetFlags(ImGuiWindowFlags window_flags) { window_flags_ = window_flags; }
+  inline void AddFlags(ImGuiWindowFlags flags) { window_flags_ |= flags; }
+  inline void RemoveFlags(ImGuiWindowFlags flags) { window_flags_ &= (~flags); }
+  inline ImGuiWindowFlags flags() const { return window_flags_; }
 
  protected:
   bool HasFrameStarted() const;

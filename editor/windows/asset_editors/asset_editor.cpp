@@ -1,5 +1,7 @@
 #include "asset_editor.hpp"
 
+#include "../../editor_window.hpp"
+
 #include <ovis/core/asset_library.hpp>
 #include <ovis/input/key_events.hpp>
 
@@ -25,6 +27,8 @@ AssetEditor::~AssetEditor() {
 void AssetEditor::SaveFile(const std::string& type, const std::variant<std::string, Blob>& content) {
   if (!GetApplicationAssetLibrary()->SaveAssetFile(asset_id(), type, content)) {
     LogE("Failed to save file '{}' for asset '{}'", type, asset_id());
+  } else if (json_files_.contains(type)) {
+    json_files_[type].unsaved_changes = false;
   }
 }
 
@@ -41,7 +45,8 @@ void AssetEditor::Undo() {
     --current_undo_redo_position_;
     if (std::holds_alternative<JsonFileChange>(*current_undo_redo_position_)) {
       const JsonFileChange& json_change = std::get<JsonFileChange>(*current_undo_redo_position_);
-      json& data = json_files_[json_change.file_type];
+      json& data = json_files_[json_change.file_type].data;
+      json_files_[json_change.file_type].unsaved_changes = true;
       JsonFileChanged(data = data.patch(json_change.undo_patch), json_change.file_type);
     }
   }
@@ -51,10 +56,43 @@ void AssetEditor::Redo() {
   if (current_undo_redo_position_ != changes_.end()) {
     if (std::holds_alternative<JsonFileChange>(*current_undo_redo_position_)) {
       const JsonFileChange& json_change = std::get<JsonFileChange>(*current_undo_redo_position_);
-      json& data = json_files_[json_change.file_type];
+      json& data = json_files_[json_change.file_type].data;
+      json_files_[json_change.file_type].unsaved_changes = true;
       JsonFileChanged(data = data.patch(json_change.redo_patch), json_change.file_type);
     }
     ++current_undo_redo_position_;
+  }
+}
+
+bool AssetEditor::HasUnsavedChanges() const {
+  for (const auto& json_file : json_files_) {
+    if (json_file.second.unsaved_changes) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void AssetEditor::Close() {
+  if (HasUnsavedChanges()) {
+    EditorWindow::instance()->ShowMessageBox(
+        fmt::format("Unsaved changes in {}", asset_id()),
+        fmt::format("There are unsaved changes in {}. If you close the editor, these changes will be lost.",
+                    asset_id()),
+        {"Discard changes and close", "Save and close", "Cancel"},
+        [asset_editor = safe_ptr(this)](std::string_view button) {
+          if (asset_editor == nullptr) {
+            return;
+          }
+          if (button == "Discard changes and close") {
+            asset_editor->Remove();
+          } else if (button == "Save and close") {
+            asset_editor->Save();
+            asset_editor->Remove();
+          }
+        });
+  } else {
+    Remove();
   }
 }
 
@@ -79,19 +117,28 @@ const std::string AssetEditor::GetAssetEditorId(const std::string& asset_id) {
   return "AssetEditor - " + asset_id;
 }
 
+void AssetEditor::BeforeBegin() {
+  if (HasUnsavedChanges()) {
+    AddFlags(ImGuiWindowFlags_UnsavedDocument);
+  } else {
+    RemoveFlags(ImGuiWindowFlags_UnsavedDocument);
+  }
+}
+
 void AssetEditor::SetupJsonFile(const json& default_data, const std::string& file_type) {
   std::optional<std::string> json_text = GetApplicationAssetLibrary()->LoadAssetTextFile(asset_id(), file_type);
-  JsonFileChanged(json_files_[file_type] = json_text ? json::parse(*json_text) : default_data, file_type);
+  JsonFileChanged(json_files_[file_type].data = json_text ? json::parse(*json_text) : default_data, file_type);
 }
 
 void AssetEditor::SubmitJsonFile(const json& data, const std::string& file_type) {
-  json& current_data = json_files_[file_type];
+  json& current_data = json_files_[file_type].data;
   const json redo_patch = json::diff(current_data, data);
   const json undo_patch = json::diff(data, current_data);
 
   if (redo_patch.size() == 0 && undo_patch.size() == 0) {
     LogD("No changes detected!");
   } else {
+    json_files_[file_type].unsaved_changes = true;
     changes_.erase(current_undo_redo_position_, changes_.end());
     changes_.push_back(JsonFileChange{file_type, undo_patch, redo_patch});
     current_undo_redo_position_ = changes_.end();
@@ -102,7 +149,7 @@ void AssetEditor::SubmitJsonFile(const json& data, const std::string& file_type)
 }
 
 json AssetEditor::GetCurrentJsonFileState(const std::string& file_type) {
-  return json_files_[file_type];
+  return json_files_[file_type].data;
 }
 
 }  // namespace editor

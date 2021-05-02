@@ -21,7 +21,9 @@ namespace ovis {
 
 class Scene;
 
-class SceneController : public Serializable, public StaticFactory<SceneController, std::unique_ptr<SceneController>()> {
+class SceneController : public Serializable,
+                        public SafelyReferenceable,
+                        public StaticFactory<SceneController, std::unique_ptr<SceneController>()> {
   MAKE_NON_COPY_OR_MOVABLE(SceneController);
   friend class Scene;
 

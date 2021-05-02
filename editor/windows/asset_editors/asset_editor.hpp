@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../../action_history.hpp"
-#include <ovis/imgui/imgui_window.hpp>
 #include <memory>
 #include <string>
 #include <variant>
@@ -12,6 +11,7 @@
 
 #include <ovis/utils/file.hpp>
 #include <ovis/utils/log.hpp>
+#include <ovis/imgui/imgui_window.hpp>
 
 namespace ovis {
 namespace editor {
@@ -37,6 +37,8 @@ class AssetEditor : public ImGuiWindow {
     ;
   }
   virtual void Redo();
+  virtual bool HasUnsavedChanges() const;
+  void Close() override;
 
   void ProcessEvent(Event* event) override;
   void Update(std::chrono::microseconds) override;
@@ -45,6 +47,8 @@ class AssetEditor : public ImGuiWindow {
   static const std::string GetAssetEditorId(const std::string& asset_id);
 
  protected:
+  void BeforeBegin() final;
+
   void SetupJsonFile(const json& default_data, const std::string& file_type = "json");
   void SubmitJsonFile(const json& data, const std::string& file_type = "json");
   json GetCurrentJsonFileState(const std::string& file_type = "json");
@@ -61,7 +65,12 @@ class AssetEditor : public ImGuiWindow {
   using FileChange = std::variant<JsonFileChange>;
   std::vector<FileChange> changes_;
   std::vector<FileChange>::iterator current_undo_redo_position_;
-  std::map<std::string, json> json_files_;
+
+  struct JsonFile {
+    json data;
+    bool unsaved_changes;
+  };
+  std::map<std::string, JsonFile> json_files_;
 };
 
 }  // namespace editor

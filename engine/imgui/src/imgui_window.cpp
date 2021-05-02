@@ -47,16 +47,12 @@ void ImGuiWindow::Update(std::chrono::microseconds delta_time) {
   ImGui::End();
 
   if (!keep_open) {
-    Remove();
+    Close();
   }
 }
 
 void ImGuiWindow::SetStyleVar(ImGuiStyleVar style_id, ImGuiStyleValue value) {
   style_vars_.push_back(std::make_tuple(style_id, value));
-}
-
-void ImGuiWindow::SetFlags(ImGuiWindowFlags window_flags) {
-  window_flags_ = window_flags;
 }
 
 bool ImGuiWindow::HasFrameStarted() const {

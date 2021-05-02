@@ -61,9 +61,9 @@ void AssetViewerWindow::DrawContent() {
         EditorWindow::instance()->ShowMessageBox(
             fmt::format("Delete {}?", asset_id),
             fmt::format("Are you sure you want to delete the asset {}? This action cannot be undone!", asset_id),
-            {"Delete Permanently", "Cancel"}, [asset_id, this](std::string_view pressed_button) {
-              if (pressed_button == "Delete Permanently") {
-                CloseAssetEditor(asset_id);
+            {"Delete Permanently", "Cancel"}, [asset_id, asset_viewer_window = safe_ptr(this)](std::string_view pressed_button) {
+              if (pressed_button == "Delete Permanently" && asset_viewer_window != nullptr) {
+                asset_viewer_window->CloseAssetEditor(asset_id);
                 GetApplicationAssetLibrary()->DeleteAsset(asset_id);
               }
             });
