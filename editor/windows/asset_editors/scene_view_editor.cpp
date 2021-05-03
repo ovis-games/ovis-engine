@@ -604,10 +604,19 @@ void SceneViewEditor::DrawSceneObjectProperties() {
             SubmitChangesToScene();
           } else {
             component->Deserialize(serialized_component);
+            if (!ImGui::IsItemActive()) {
+              // Only submit the changes if the item is currently not active.
+              // Items are active, e.g., while "dragging" a DragFloat(). We do
+              // not want to have undo steps each frame but only after the
+              // dragging is finished. I.e., when the item is deactivated (see
+              // below).
+              SubmitChangesToScene();
+            }
           }
         }
         if (ImGui::IsItemDeactivated()) {
           // After editing is finished reserialize the component so the input gets "validated"
+          // and an undo step is created.
           SubmitChangesToScene();
         }
       }
