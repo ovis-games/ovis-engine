@@ -98,6 +98,7 @@ class safe_ptr : public safe_ptr_base {
   }
   inline T& operator*() const { return *get_throw(); }
   inline T* operator->() const { return get_throw(); }
+  inline operator bool() const { return get() != nullptr; }
 
   inline void reset(T* new_value = nullptr) { safe_ptr_base::reset(new_value); }
 };
