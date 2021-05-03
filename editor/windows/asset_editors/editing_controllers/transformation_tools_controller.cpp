@@ -53,7 +53,7 @@ void TransformationToolsController::Update(std::chrono::microseconds) {
   }
   object_selected_ = true;
 
-  auto viewport = game_scene()->main_viewport();
+  auto viewport = editing_scene()->main_viewport();
   object_position_world_space_ = transform->position();
   object_position_screen_space_ = viewport->WorldSpacePositionToScreenSpace(object_position_world_space_);
 

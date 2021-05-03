@@ -55,7 +55,7 @@ class SceneViewEditor : public AssetEditor {
   void DrawSceneProperties();
   void DrawSceneObjectProperties();
 
-  void CreateSceneViewport(ImVec2 size);
+  void CreateSceneViewports(ImVec2 size);
 
   SceneObject* CreateObject(const std::string& base_name, bool initiate_rename = false);
   json::json_pointer GetComponentPath(const std::string& object_name, const std::string& component_id) {
@@ -65,7 +65,8 @@ class SceneViewEditor : public AssetEditor {
     return json::json_pointer("/controllers/" + controller_id);
   }
 
-  std::unique_ptr<RenderTargetViewport> scene_viewport_;
+  std::unique_ptr<RenderTargetViewport> editor_viewport_;
+  std::unique_ptr<RenderTargetViewport> game_viewport_;
 
   Vector2 latest_mouse_position_ = Vector2::NotANumber();
 

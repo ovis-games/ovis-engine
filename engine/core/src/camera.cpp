@@ -33,7 +33,9 @@ json Camera::Serialize() const {
   // clang-format off
   return {
     {"projectionType", projection_type()},
-    {"verticalFieldOfView", vertical_field_of_view() * RadiansToDegreesFactor<float>()},
+    {"verticalFieldOfView", projection_type() == ProjectionType::ORTHOGRAPHIC ?
+                              vertical_field_of_view() :
+                              vertical_field_of_view() * RadiansToDegreesFactor<float>()},
     {"aspectRatio", aspect_ratio()},
     {"nearClipPlane", near_clip_plane()},
     {"farClipPlane", far_clip_plane()}
@@ -43,7 +45,9 @@ json Camera::Serialize() const {
 
 bool Camera::Deserialize(const json& data) {
   SetProjectionType(data.at("projectionType"));
-  SetVerticalFieldOfView(static_cast<float>(data.at("verticalFieldOfView")) * DegreesToRadiansFactor<float>());
+  SetVerticalFieldOfView(projection_type() == ProjectionType::ORTHOGRAPHIC
+                             ? static_cast<float>(data.at("verticalFieldOfView"))
+                             : static_cast<float>(data.at("verticalFieldOfView")) * DegreesToRadiansFactor<float>());
   SetAspectRatio(data.at("aspectRatio"));
   SetNearClipPlane(data.at("nearClipPlane"));
   SetFarClipPlane(data.at("farClipPlane"));

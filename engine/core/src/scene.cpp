@@ -11,6 +11,7 @@
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_controller.hpp>
 #include <ovis/core/scene_object.hpp>
+#include <ovis/core/scene_viewport.hpp>
 #include <ovis/core/script_scene_controller.hpp>
 
 namespace ovis {
@@ -92,7 +93,7 @@ SceneController* Scene::AddController(const std::string& id, const json& seriali
 
 std::string Scene::CreateControllerName(std::string_view base_name) {
   std::string name(base_name);
-  
+
   uint64_t number = 2;
   while (controllers_.contains(name)) {
     name = std::string(base_name) + std::to_string(number);
@@ -286,6 +287,15 @@ json Scene::Serialize() const {
     objects[object.first] = object.second->Serialize();
   }
 
+  Camera* camera = main_viewport() ? main_viewport()->camera() : nullptr;
+  if (camera != nullptr) {
+    SDL_assert(camera->scene_object() != nullptr);
+    serialized_object["camera"] = camera->scene_object()->name();
+  }
+  // if (camera_object_.size() > 0) {
+  //   serialized_object["camera"] = camera_object_;
+  // }
+
   return serialized_object;
 }
 
@@ -307,6 +317,20 @@ bool Scene::Deserialize(const json& serialized_object) {
   if (serialized_object.contains("objects") && serialized_object["objects"].is_object()) {
     for (const auto& object : serialized_object["objects"].items()) {
       CreateObject(object.key(), object.value());
+    }
+  }
+
+  if (serialized_object.contains("camera")) {
+    // camera_object_ = serialized_object.at("camera");
+    if (main_viewport() != nullptr) {
+      SceneObject* object = GetObject(serialized_object.at("camera"));
+      if (object != nullptr && object->HasComponent("Camera")) {
+        main_viewport()->SetCamera(object->GetComponent<Camera>("Camera"));
+        LogD("Setting Camera");
+      } else {
+        main_viewport()->SetCamera(nullptr);
+        LogD("Setting Camera to null");
+      }
     }
   }
 

@@ -53,6 +53,7 @@ SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(s
   AddEditorController<Physics2DShapeController>();
 
   SubscribeToEvent(LuaErrorEvent::TYPE);
+  CreateSceneViewports({1, 1});
 }
 
 void SceneViewEditor::Update(std::chrono::microseconds delta_time) {
@@ -320,17 +321,24 @@ void SceneViewEditor::DrawViewport() {
   available_space.x -= 2;
   available_space.y -= 2;
 
-  if (!scene_viewport_ ||
-      (Vector2{available_space.x, available_space.y}) != scene_viewport_->GetDimensions() &&
-       !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {  // TODO: this check should be optimizied. Dragging can mean a
+  if (!game_viewport_ || !editor_viewport_ ||
+      ((Vector2{available_space.x, available_space.y} != game_viewport_->GetDimensions() ||
+        Vector2{available_space.x, available_space.y} != editor_viewport_->GetDimensions())&&
+       !ImGui::IsMouseDown(ImGuiMouseButton_Left))) {  // TODO: this check should be optimizied. Dragging can mean a
                                                        // lot of things not necessarily resizing the window
     LogI("Creating viewport");
-    CreateSceneViewport(available_space);
+    CreateSceneViewports(available_space);
   }
-  scene_viewport_->Render();
+  RenderTargetViewport* viewport;
+  if (run_state() == RunState::RUNNING) {
+    viewport = game_viewport_.get();
+  } else {
+    viewport = editor_viewport_.get();
+  }
+  viewport->Render();
 
   const Vector2 top_left = static_cast<Vector2>(ImGui::GetWindowPos()) + static_cast<Vector2>(ImGui::GetCursorPos());
-  ImGui::Image(scene_viewport_->color_texture()->texture()->id(), available_space, ImVec2(0, 1), ImVec2(1, 0),
+  ImGui::Image(viewport->color_texture()->texture()->id(), available_space, ImVec2(0, 1), ImVec2(1, 0),
                ImVec4(1, 1, 1, 1), border_color);
   ImGui::SetItemDefaultFocus();
   const Vector2 mouse_position = Vector2(ImGui::GetMousePos()) - top_left;
@@ -343,9 +351,9 @@ void SceneViewEditor::DrawViewport() {
     if (object && object->HasComponent("Transform")) {
       Transform* transform = object->GetComponent<Transform>("Transform");
       SDL_assert(transform != nullptr);
-      const Vector3 screen_space_position = scene_viewport_->WorldSpacePositionToScreenSpace(transform->position());
+      const Vector3 screen_space_position = viewport->WorldSpacePositionToScreenSpace(transform->position());
       const Vector3 new_screen_space_position = Vector3::FromVector2(mouse_position, screen_space_position.z);
-      const Vector3 new_world_space_position = scene_viewport_->ScreenSpacePositionToWorldSpace(new_screen_space_position);
+      const Vector3 new_world_space_position = viewport->ScreenSpacePositionToWorldSpace(new_screen_space_position);
       transform->SetPosition(new_world_space_position);
       SubmitChangesToScene();
     }
@@ -364,17 +372,17 @@ void SceneViewEditor::DrawViewport() {
     if (mouse_position != latest_mouse_position_) {
       const Vector2 relative_position =
           std::isnan(latest_mouse_position_.x) || std::isnan(latest_mouse_position_.y) ? Vector2::Zero() : mouse_position - latest_mouse_position_;
-      MouseMoveEvent mouse_move_event(scene_viewport_.get(), mouse_position, relative_position);
+      MouseMoveEvent mouse_move_event(viewport, mouse_position, relative_position);
       ProcessViewportInputEvent(&mouse_move_event);
       latest_mouse_position_ = mouse_position;
     }
     for (int i = 0; i < 5; ++i) {
       if (ImGui::IsMouseClicked(i)) {
-        MouseButtonPressEvent mouse_button_event(scene_viewport_.get(), mouse_position, GetMouseButtonFromImGuiIndex(i));
+        MouseButtonPressEvent mouse_button_event(viewport, mouse_position, GetMouseButtonFromImGuiIndex(i));
         ProcessViewportInputEvent(&mouse_button_event);
       }
       if (ImGui::IsMouseReleased(i)) {
-        MouseButtonReleaseEvent mouse_button_event(scene_viewport_.get(), mouse_position, GetMouseButtonFromImGuiIndex(i));
+        MouseButtonReleaseEvent mouse_button_event(viewport, mouse_position, GetMouseButtonFromImGuiIndex(i));
         ProcessViewportInputEvent(&mouse_button_event);
       }
     }
@@ -611,6 +619,13 @@ void SceneViewEditor::DrawSceneObjectProperties() {
 void SceneViewEditor::DrawSceneProperties() {
   ImFont* font_awesome = scene()->GetController<ImGuiStartFrameController>()->GetFont("FontAwesomeSolid");
 
+  std::string camera = serialized_scene_editing_copy_.contains("camera") ? serialized_scene_editing_copy_.at("camera") : "";
+  if (ImGui::InputText("Camera", &camera, ImGuiInputTextFlags_EnterReturnsTrue)) {
+    serialized_scene_editing_copy_["camera"] = camera;
+    game_scene()->Deserialize(serialized_scene_editing_copy_);
+    SubmitChangesToScene();
+  }
+
   ImGui::Text("Scene controllers");
   ImGui::SameLine();
 
@@ -691,35 +706,49 @@ void SceneViewEditor::SubmitChangesToScene() {
   }
 }
 
-void SceneViewEditor::CreateSceneViewport(ImVec2 size) {
-  if (!scene_viewport_) {
-    RenderTargetViewportDescription scene_viewport_description;
-    scene_viewport_description.color_description.texture_description.width = static_cast<size_t>(size.x);
-    scene_viewport_description.color_description.texture_description.height = static_cast<size_t>(size.y);
-    scene_viewport_description.color_description.texture_description.format = TextureFormat::RGB_UINT8;
-    scene_viewport_description.color_description.texture_description.filter = TextureFilter::POINT;
-    scene_viewport_description.color_description.texture_description.mip_map_count = 0;
-    scene_viewport_ = std::make_unique<RenderTargetViewport>(
-        EditorWindow::instance()->context(), scene_viewport_description);
+void SceneViewEditor::CreateSceneViewports(ImVec2 size) {
+  if (!editor_viewport_) {
+    RenderTargetViewportDescription editor_viewport_description;
+    editor_viewport_description.color_description.texture_description.width = static_cast<size_t>(size.x);
+    editor_viewport_description.color_description.texture_description.height = static_cast<size_t>(size.y);
+    editor_viewport_description.color_description.texture_description.format = TextureFormat::RGB_UINT8;
+    editor_viewport_description.color_description.texture_description.filter = TextureFilter::POINT;
+    editor_viewport_description.color_description.texture_description.mip_map_count = 0;
+    editor_viewport_ = std::make_unique<RenderTargetViewport>(
+        EditorWindow::instance()->context(), editor_viewport_description);
 
-    scene_viewport_->AddRenderPass("ClearPass");
-    scene_viewport_->AddRenderPass("SpriteRenderer");
-    // scene_viewport_->AddRenderPass("Physics2DDebugLayer");
-    scene_viewport_->AddRenderPass(std::make_unique<SelectedObjectBoundingBox>(editing_scene()));
-    scene_viewport_->AddRenderPass(std::make_unique<TransformationToolsRenderer>(editing_scene()));
-    scene_viewport_->AddRenderPass(std::make_unique<Physics2DShapeRenderer>(editing_scene()));
-    // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "Physics2DDebugLayer");
-    scene_viewport_->AddRenderPassDependency("SpriteRenderer", SelectedObjectBoundingBox::Name());
-    scene_viewport_->AddRenderPassDependency(SelectedObjectBoundingBox::Name(), TransformationToolsRenderer::Name());
-    scene_viewport_->AddRenderPassDependency(SelectedObjectBoundingBox::Name(), Physics2DShapeRenderer::Name());
-    // scene_viewport_->AddRenderPassDependency("SelectedObjectBoundingBox", "GizmoRenderer");
-    // scene_viewport_->AddRenderPassDependency("SpriteRenderer", "GizmoRenderer");
-    scene_viewport_->SetScene(game_scene());
-    game_scene()->SetMainViewport(scene_viewport_.get());
-    editing_scene()->SetMainViewport(scene_viewport_.get());
+    editor_viewport_->AddRenderPass("ClearPass");
+    editor_viewport_->AddRenderPass("SpriteRenderer");
+    // editor_viewport_->AddRenderPass("Physics2DDebugLayer");
+    editor_viewport_->AddRenderPass(std::make_unique<SelectedObjectBoundingBox>(editing_scene()));
+    editor_viewport_->AddRenderPass(std::make_unique<TransformationToolsRenderer>(editing_scene()));
+    editor_viewport_->AddRenderPass(std::make_unique<Physics2DShapeRenderer>(editing_scene()));
+    // editor_viewport_->AddRenderPassDependency("SpriteRenderer", "Physics2DDebugLayer");
+    editor_viewport_->AddRenderPassDependency("SpriteRenderer", SelectedObjectBoundingBox::Name());
+    editor_viewport_->AddRenderPassDependency(SelectedObjectBoundingBox::Name(), TransformationToolsRenderer::Name());
+    editor_viewport_->AddRenderPassDependency(SelectedObjectBoundingBox::Name(), Physics2DShapeRenderer::Name());
+    // editor_viewport_->AddRenderPassDependency("SelectedObjectBoundingBox", "GizmoRenderer");
+    // editor_viewport_->AddRenderPassDependency("SpriteRenderer", "GizmoRenderer");
+    editor_viewport_->SetScene(game_scene());
+    editing_scene()->SetMainViewport(editor_viewport_.get());
+
+    RenderTargetViewportDescription game_viewport_description;
+    game_viewport_description.color_description.texture_description.width = static_cast<size_t>(size.x);
+    game_viewport_description.color_description.texture_description.height = static_cast<size_t>(size.y);
+    game_viewport_description.color_description.texture_description.format = TextureFormat::RGB_UINT8;
+    game_viewport_description.color_description.texture_description.filter = TextureFilter::POINT;
+    game_viewport_description.color_description.texture_description.mip_map_count = 0;
+    game_viewport_ = std::make_unique<RenderTargetViewport>(
+        EditorWindow::instance()->context(), game_viewport_description);
+
+    game_viewport_->AddRenderPass("ClearPass");
+    game_viewport_->AddRenderPass("SpriteRenderer");
+    game_viewport_->SetScene(game_scene());
+    game_scene()->SetMainViewport(game_viewport_.get());
   } else {
     if (size.x > 0 && size.y > 0) {
-      scene_viewport_->Resize(size.x, size.y);
+      editor_viewport_->Resize(size.x, size.y);
+      game_viewport_->Resize(size.x, size.y);
     }
   }
 }

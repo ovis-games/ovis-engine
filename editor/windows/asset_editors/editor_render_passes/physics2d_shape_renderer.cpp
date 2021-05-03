@@ -23,10 +23,6 @@ Physics2DShapeRenderer::Physics2DShapeRenderer(Scene* editing_scene)
 }
 
 void Physics2DShapeRenderer::Render(const RenderContext& render_context) {
-  if (viewport()->scene()->is_playing()) {
-    return;
-  }
-
   auto* object_selection_controller = editing_scene_->GetController<ObjectSelectionController>();
   SceneObject* object = object_selection_controller->selected_object();
   if (object == nullptr) {

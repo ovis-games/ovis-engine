@@ -12,10 +12,6 @@ SelectedObjectBoundingBox::SelectedObjectBoundingBox(Scene* editing_scene)
     : PrimitiveRenderer(Name()), editing_scene_(editing_scene) {}
 
 void SelectedObjectBoundingBox::Render(const RenderContext& render_context) {
-  if (viewport()->scene()->is_playing()) {
-    return;
-  }
-
   auto* object_selection_controller = editing_scene_->GetController<ObjectSelectionController>();
   SceneObject* object = object_selection_controller->selected_object();
   AxisAlignedBoundingBox3D aabb = object_selection_controller->selected_object_aabb();

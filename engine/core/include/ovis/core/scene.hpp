@@ -123,6 +123,7 @@ class Scene : public Serializable, public SafelyReferenceable {
   bool is_playing_ = false;
 
   SceneViewport* main_viewport_ = nullptr;
+  std::string camera_object_;
 
   static const json schema_;
 };

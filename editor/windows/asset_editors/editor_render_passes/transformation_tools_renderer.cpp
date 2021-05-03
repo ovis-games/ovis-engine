@@ -16,10 +16,6 @@ TransformationToolsRenderer::TransformationToolsRenderer(Scene* editing_scene)
 }
 
 void TransformationToolsRenderer::Render(const RenderContext& render_context) {
-  if (viewport()->scene()->is_playing()) {
-    return;
-  }
-
   auto* controller = editing_scene_->GetController<TransformationToolsController>();
   SDL_assert(controller != nullptr);
 

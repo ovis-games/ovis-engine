@@ -28,7 +28,7 @@ class SceneViewport {
   inline Scene* scene() const { return scene_; }
   inline void SetScene(Scene* scene) { scene_ = scene; }
 
-  inline Camera* camera() const { return camera_; }
+  inline Camera* camera() const { return camera_.get(); }
   inline void SetCamera(Camera* camera) {
     SDL_assert(camera == nullptr || scene_ == camera->scene_object()->scene());
     camera_ = camera;
@@ -132,7 +132,7 @@ class SceneViewport {
 
  private:
   Scene* scene_ = nullptr;
-  Camera* camera_ = nullptr;
+  safe_ptr<Camera> camera_ = nullptr;
 };
 
 }  // namespace ovis

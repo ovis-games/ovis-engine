@@ -18,9 +18,9 @@ EditorCameraController::EditorCameraController() : EditorController("EditorCamer
 }
 
 void EditorCameraController::Update(std::chrono::microseconds delta_time) {
-  SDL_assert(game_scene() != nullptr);
+  SDL_assert(editing_scene() != nullptr);
 
-  auto viewport = game_scene()->main_viewport();
+  auto viewport = editing_scene()->main_viewport();
   if (!viewport) {
     return;
   }

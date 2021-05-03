@@ -10,7 +10,24 @@ void RenderingViewport::Render() {
 
   RenderContext render_context;
   if (camera()) {
-    SDL_assert(false && "Not yet implemented!");
+    const float aspect_ratio = GetAspectRatio();
+    if (camera()->aspect_ratio() != aspect_ratio) {
+      camera()->SetAspectRatio(aspect_ratio);
+    }
+
+    SceneObject* scene_object = camera()->scene_object();
+    SDL_assert(scene_object != nullptr);
+
+    Transform* transform = scene_object->GetComponent<Transform>("Transform");
+
+    render_context.view_to_clip_space = camera()->projection_matrix();
+    render_context.clip_to_view_space = camera()->inverse_projection_matrix();
+    render_context.world_to_view_space =
+        transform != nullptr ? transform->world_to_local_matrix() : Matrix3x4::IdentityTransformation();
+    render_context.view_to_world_space =
+        transform != nullptr ? transform->local_to_world_matrix() : Matrix3x4::IdentityTransformation();
+    render_context.world_to_clip_space =
+        AffineCombine(render_context.view_to_clip_space, render_context.world_to_view_space);
   } else {
     render_context.view_to_clip_space = custom_view_to_clip_space_;
     render_context.clip_to_view_space = custom_clip_to_view_space_;

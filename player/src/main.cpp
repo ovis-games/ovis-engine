@@ -37,6 +37,8 @@ int main(int argc, char* argv[]) {
   SetEngineAssetsDirectory("/ovis_assets");
 
   Window window(WindowDescription{});
+  window.AddRenderPass("ClearPass");
+  window.AddRenderPass("SpriteRenderer");
 
   window.scene()->AddController<player::LoadingController>(true);
 

@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft/2019-09/schema#",
-
   "$defs": {
     "vector2": {
       "title": "Vector2",
@@ -65,6 +64,47 @@
           "$ref": "core#/$defs/vector3",
           "title": "Scale",
           "description": "The scaling of the object."
+        }
+      }
+    },
+    "camera": {
+      "title": "Camera",
+      "type": "object",
+      "description": "A camera defines how the scene is rendered.",
+      "properties": {
+        "projectionType": {
+          "title": "Projection Type",
+          "type": "string",
+          "enum": [
+            "Orthographic",
+            "Perspective"
+          ],
+          "default": "Perspective"
+        },
+        "verticalFieldOfView": {
+          "title": "Vertical Field of View",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "exclusiveMaximum": 180,
+          "default": 90
+        },
+        "aspectRatio": {
+          "title": "Aspect Ratio",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1.77777777777777777
+        },
+        "nearClipPlane": {
+          "title": "Near Clipping Plane",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 0.1
+        },
+        "farClipPlane": {
+          "title": "Far Clipping Plane",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 1000.0
         }
       }
     }
