@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string_view>
 #include <vector>
 
 #include <microtar.h>
@@ -14,7 +15,7 @@ class LoadingController : public SceneController {
   enum class State { DOWNLOADING_PACKAGE, EXTRACTING, ERROR };
 
  public:
-  LoadingController(bool preview = false);
+  LoadingController(std::string_view backend_prefix, std::string_view game_id, std::string_view package_type);
 
   void Update(std::chrono::microseconds delta_time) override;
 

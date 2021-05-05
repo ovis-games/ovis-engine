@@ -25,13 +25,14 @@ int main(int argc, char* argv[]) {
 
   Log::AddListener(ConsoleLogger);
 
-  if (argc != 3) {
+  if (argc != 4) {
     LogE("Invalid number of arguments to player");
     return -1;
   }
 
-  // backend_url = argv[1];
-  // project_id = argv[2];
+  std::string_view backend_prefix = argv[1];
+  std::string_view project_id = argv[2];
+  std::string_view package_type = argv[3];
 
   Init();
   SetEngineAssetsDirectory("/ovis_assets");
@@ -40,7 +41,7 @@ int main(int argc, char* argv[]) {
   window.AddRenderPass("ClearPass");
   window.AddRenderPass("SpriteRenderer");
 
-  window.scene()->AddController<player::LoadingController>(true);
+  window.scene()->AddController<player::LoadingController>(backend_prefix, project_id, package_type);
 
   Run();
 
