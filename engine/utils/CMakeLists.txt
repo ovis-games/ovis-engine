@@ -49,11 +49,21 @@ if (OVIS_EMSCRIPTEN)
   )
 else ()
   find_package(SDL2 REQUIRED)
+  target_include_directories(
+    ovis-utils
+    PUBLIC
+      ${SDL2_INCLUDE_DIRS}
+  )
   target_link_libraries(
     ovis-utils
     PUBLIC
-      SDL2::SDL2-static
+      ${SDL2_LIBRARIES}
   )
+  # target_link_libraries(
+  #   ovis-utils
+  #   PUBLIC
+  #     SDL2::SDL2-static
+  # )
 endif ()
 
 target_compile_features(

@@ -172,7 +172,7 @@ inline constexpr Matrix4 Matrix4::FromOrthographicProjection(float left, float r
 
 inline constexpr Matrix4 Matrix4::FromPerspectiveProjection(float vertical_field_of_view, float aspect_ratio,
                                                             float near_clip_plane, float far_clip_plane) {
-  const float tan_half_fov = tan(0.5f * vertical_field_of_view);
+  const float tan_half_fov = std::tan(0.5f * vertical_field_of_view);
 
   const float m00 = 1.0f / (aspect_ratio * tan_half_fov);
   const float m11 = 1.0f / (tan_half_fov);

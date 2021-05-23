@@ -4,6 +4,7 @@
 #include <iterator>
 #include <unordered_map>
 
+#if OVIS_EMSCRIPTEN
 #include <emscripten.h>
 
 namespace {
@@ -57,25 +58,53 @@ void EMSCRIPTEN_KEEPALIVE OvisClipboard_EndPaste() {
 }
 
 }
+#endif 
 
 namespace ovis {
 namespace editor {
 
 bool ClipboardContainsData(const std::string& type) {
+#if OVIS_EMSCRIPTEN
   return clipboard_data.count(type) > 0;
+#else
+  return type == "text/plain" && SDL_HasClipboardText();
+#endif
 }
 
 std::optional<std::string> GetClipboardData(const std::string& type) {
+#if OVIS_EMSCRIPTEN
   const auto it = clipboard_data.find(type);
   if (it != clipboard_data.end()) {
     return it->second;
   } else {
     return {};
   }
+#else
+  if (type != "text/plain") {
+    return {};
+  }
+
+  char* clipboard_text = SDL_GetClipboardText();
+  if (clipboard_text != nullptr) {
+    const std::string clipboard_data = clipboard_text;
+    SDL_free(clipboard_text);
+    return clipboard_data;
+  } else {
+    return {};
+  }
+#endif
 }
 
 void SetClipboardData(const std::string& value, const std::string& type) {
+#if OVIS_EMSCRIPTEN
   clipboard_data[type] = value;
+#else
+  if (type != "text/plain") {
+    return;
+  }
+
+  SDL_SetClipboardText(value.c_str());
+#endif
 }
 
 }  // namespace editor

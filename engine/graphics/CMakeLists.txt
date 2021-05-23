@@ -56,7 +56,7 @@ if (NOT OVIS_EMSCRIPTEN)
   target_link_libraries(
     ovis-graphics
     PUBLIC
-      OpenGL::GL
+      OpenGL::OpenGL
   )
 endif (NOT OVIS_EMSCRIPTEN)
 

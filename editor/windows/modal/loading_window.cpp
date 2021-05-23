@@ -10,6 +10,7 @@
 #include <ovis/utils/json.hpp>
 #include <ovis/utils/log.hpp>
 #include <ovis/core/scene.hpp>
+#include <ovis/networking/fetch.hpp>
 
 namespace ovis {
 namespace editor {
@@ -19,16 +20,23 @@ LoadingWindow::LoadingWindow() : ModalWindow("LoadingWindow", "Loading game asse
     std::filesystem::create_directory("/assets");
   }
 
-  emscripten_fetch_attr_t attr;
-  emscripten_fetch_attr_init(&attr);
-  strcpy(attr.requestMethod, "GET");
-  attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-  attr.onsuccess = &LoadingWindow::FileListDownloadSucceded;
-  attr.onerror = &LoadingWindow::DownloadFailed;
-  attr.userData = this;
+  FetchOptions options;
+  options.method = RequestMethod::GET;
+  options.on_success = [this](const FetchResponse& response) {
+    std::string_view data(reinterpret_cast<const char*>(response.body), response.content_length);
+    try {
+      json files = json::parse(data);
 
-  const std::string url = backend_url + "/v1/games/" + project_id + "/assetFiles";
-  emscripten_fetch(&attr, url.c_str());
+      files_to_download_ = files.get<std::vector<std::string>>();
+      DownloadNextFile();
+    } catch (const json::parse_error& error) {
+      LogE("Invalid json: {}", error.what());
+    }
+  };
+  options.on_error = [](const FetchResponse& response) {
+    LogE("Failed downloading assets list!");
+  };
+  Fetch(fmt::format("{}/v1/games/{}/assetFiles", backend_url, project_id), options);
 }
 
 void LoadingWindow::DrawContent() {
@@ -36,63 +44,41 @@ void LoadingWindow::DrawContent() {
   ImGui::ProgressBar(progress, ImVec2(250, 0));
 }
 
-void LoadingWindow::FileListDownloadSucceded(emscripten_fetch_t* fetch) {
-  std::string_view data(fetch->data, fetch->numBytes);
-  try {
-    json files = json::parse(data);
-
-    auto controller = reinterpret_cast<LoadingWindow*>(fetch->userData);
-    controller->files_to_download_ = files.get<std::vector<std::string>>();
-    controller->DownloadNextFile();
-  } catch (const json::parse_error& error) {
-    LogE("Invalid json: {}", error.what());
-  }
-}
-
-void LoadingWindow::FileDownloadSucceded(emscripten_fetch_t* fetch) {
-  auto controller = reinterpret_cast<LoadingWindow*>(fetch->userData);
-  LogD("Successfully downloaded '{}'", controller->current_file_);
-
-  std::ofstream file(fmt::format("/assets/{}", controller->current_file_));
-  SDL_assert(file.is_open());
-  file.write(fetch->data, fetch->numBytes);
-  file.close();
-
-  controller->DownloadNextFile();
-}
-
-void LoadingWindow::DownloadFailed(emscripten_fetch_t* fetch) {
-  const std::string error(fetch->data, fetch->data + fetch->numBytes);
-  LogE("Failed to download {}:\n{}", fetch->url, error);
-}
-
 void LoadingWindow::DownloadNextFile() {
   if (current_file_ != "") {
     downloaded_files_.insert(current_file_);
   }
+
   if (files_to_download_.size() > 0) {
     current_file_ = files_to_download_.back();
     files_to_download_.pop_back();
 
-    emscripten_fetch_attr_t attr;
-    emscripten_fetch_attr_init(&attr);
-    strcpy(attr.requestMethod, "GET");
-    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.onsuccess = &LoadingWindow::FileDownloadSucceded;
-    attr.onerror = &LoadingWindow::DownloadFailed;
-    attr.userData = this;
+    FetchOptions options;
+    options.method = RequestMethod::GET;
+    options.on_success = [this](const FetchResponse& response) {
+      LogD("Successfully downloaded '{}'", current_file_);
 
-    const std::string url = backend_url + "/v1/games/" + project_id + "/assetFiles/" + current_file_;
-    emscripten_fetch(&attr, url.c_str());
+      std::ofstream file(fmt::format("/assets/{}", current_file_));
+      SDL_assert(file.is_open());
+      file.write(reinterpret_cast<const char*>(response.body), response.content_length);
+      file.close();
+
+      DownloadNextFile();
+    };
+    options.on_error = [this](const FetchResponse& response) {
+      LogE("Failed downloading asset file {}!", current_file_);
+    };
+    Fetch(fmt::format("{}/v1/games/{}/assetFiles/{}", backend_url, project_id, current_file_), options);
 
     LogD("Downloading '{}'", current_file_);
   } else {
     current_file_.clear();
     LogD("No more files to download");
 
+    static_cast<EditorAssetLibrary*>(GetApplicationAssetLibrary())->Rescan();
+
     // This is okay as the callbacks are called from the main thread
     Remove();
-    static_cast<EditorAssetLibrary*>(GetApplicationAssetLibrary())->Rescan();
   }
 }
 

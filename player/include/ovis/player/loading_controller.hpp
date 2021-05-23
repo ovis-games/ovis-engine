@@ -1,5 +1,7 @@
 #pragma once
 
+#if OVIS_EMSCRIPTEN
+
 #include <cstddef>
 #include <string_view>
 #include <vector>
@@ -29,3 +31,5 @@ class LoadingController : public SceneController {
 
 }  // namespace player
 }  // namespace ovis
+#endif
+

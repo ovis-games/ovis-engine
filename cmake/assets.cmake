@@ -22,10 +22,12 @@ function(target_add_assets target)
   )
 
   # TODO: make it configurable whether to use --embed-file or --preload-file
-  target_link_options(
-    ${target}
-    PUBLIC
-      "SHELL:--preload-file ${CMAKE_CURRENT_BINARY_DIR}/assets/@/ovis_assets"
-  )
+  if (OVIS_EMSCRIPTEN)
+    target_link_options(
+      ${target}
+      PUBLIC
+        "SHELL:--preload-file ${CMAKE_CURRENT_BINARY_DIR}/assets/@/ovis_assets"
+    )
+  endif (OVIS_EMSCRIPTEN)
 
 endfunction()

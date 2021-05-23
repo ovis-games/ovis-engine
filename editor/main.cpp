@@ -6,9 +6,6 @@
 #include "windows/log_window.hpp"
 #include <cstring>
 
-#include <emscripten.h>
-#include <emscripten/val.h>
-
 #include <ovis/utils/log.hpp>
 #include <ovis/core/asset_library.hpp>
 #include <ovis/application/application.hpp>

@@ -1,5 +1,4 @@
-set(CMAKE_CXX_STANDARD 17)
-add_definitions("-DOVIS_EMSCRIPTEN=1")
+if (OVIS_EMSCRIPTEN)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR NOT DEFINED CMAKE_BUILD_TYPE)
   message(STATUS "Ovis Editor: Building in debug mode, disable optimziations.")
@@ -23,6 +22,8 @@ else ()
     -O3
   )
 endif ()
+
+endif (OVIS_EMSCRIPTEN)
 
 add_executable(
   ovis-editor
@@ -70,6 +71,7 @@ add_executable(
   windows/asset_importers/asset_importer.hpp windows/asset_importers/asset_importer.cpp
 )
 
+if (OVIS_EMSCRIPTEN)
 target_compile_options(
   ovis-editor
   PUBLIC
@@ -85,6 +87,7 @@ target_link_options(
     "SHELL:-s EXPORT_NAME=createEditorModule"
     "SHELL:-s EXTRA_EXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap']"
 )
+endif (OVIS_EMSCRIPTEN)
 
 target_add_assets(
   ovis-editor
