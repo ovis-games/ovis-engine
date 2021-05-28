@@ -13,8 +13,8 @@
 namespace ovis {
 namespace player {
 
-LoadingController::LoadingController(std::string_view backend_prefix, std::string_view game_id,
-                                     std::string_view package_type)
+LoadingController::LoadingController(std::string_view backend_prefix, std::string_view user_name,
+                                     std::string_view game_name, std::string_view package_type)
     : SceneController("LoadingController") {
   if (!std::filesystem::exists("/assets")) {
     std::filesystem::create_directory("/assets");
@@ -23,7 +23,7 @@ LoadingController::LoadingController(std::string_view backend_prefix, std::strin
     std::filesystem::create_directory("/tmp");
   }
 
-  const std::string url = fmt::format("{}/v1/games/{}/packages/{}", backend_prefix, game_id, package_type);
+  const std::string url = fmt::format("{}/v1/games/{}/{}/packages/{}", backend_prefix, user_name, game_name, package_type);
 
   FetchOptions options;
   options.method = RequestMethod::GET;
