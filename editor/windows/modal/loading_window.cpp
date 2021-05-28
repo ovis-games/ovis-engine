@@ -27,7 +27,7 @@ LoadingWindow::LoadingWindow() : ModalWindow("LoadingWindow", "Loading game asse
   attr.onerror = &LoadingWindow::DownloadFailed;
   attr.userData = this;
 
-  const std::string url = backend_url + "/v1/games/" + project_id + "/assetFiles";
+  const std::string url = fmt::format("{}/v1/games/{}/{}/assets/", backend_url, user_name, game_name);
   emscripten_fetch(&attr, url.c_str());
 }
 
@@ -82,7 +82,7 @@ void LoadingWindow::DownloadNextFile() {
     attr.onerror = &LoadingWindow::DownloadFailed;
     attr.userData = this;
 
-    const std::string url = backend_url + "/v1/games/" + project_id + "/assetFiles/" + current_file_;
+    const std::string url = fmt::format("{}/v1/games/{}/{}/assets/{}", backend_url, user_name, game_name, current_file_);
     emscripten_fetch(&attr, url.c_str());
 
     LogD("Downloading '{}'", current_file_);

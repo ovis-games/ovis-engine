@@ -6,8 +6,8 @@ namespace ovis {
 namespace editor {
 
 inline std::string backend_url;
-inline std::string project_id;
-inline std::string authentication_token;
+inline std::string user_name;
+inline std::string game_name;
 
 }  // namespace editor
 }  // namespace ovis

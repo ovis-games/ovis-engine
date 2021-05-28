@@ -61,7 +61,7 @@ bool EditorAssetLibrary::DeleteAsset(const std::string& asset_id) {
       continue;
     }
     const std::string relative_filename = std::filesystem::relative(*filename, directory());
-    const std::string url = fmt::format("{}/v1/games/{}/assetFiles/{}", backend_url, project_id, relative_filename);
+    const std::string url = fmt::format("{}/v1/games/{}/{}/assets/{}", backend_url, user_name, game_name, relative_filename);
 
     FetchOptions options;
     options.method = RequestMethod::DELETE;
@@ -202,7 +202,7 @@ void EditorAssetLibrary::UploadNextFile() {
       LogI("Uploading {} ({} bytes)", filename, file_data->size());
 
       std::string relative_filename = std::filesystem::relative(filename, directory());
-      std::string url = fmt::format("{}/v1/games/{}/assetFiles/{}", backend_url, project_id, relative_filename);
+      std::string url = fmt::format("{}/v1/games/{}/{}/assets/{}", backend_url, user_name, game_name, relative_filename);
       FetchOptions options;
       options.method = RequestMethod::PUT;
       options.headers["Content-Type"] = "application/octet-stream";

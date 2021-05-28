@@ -32,8 +32,8 @@ int main(int argc, char* argv[]) {
     }
 
     backend_url = argv[1];
-    project_id = argv[2];
-    authentication_token = argv[3];
+    user_name = argv[2];
+    game_name = argv[3];
 
     Init();
     SetEngineAssetsDirectory("/ovis_assets");

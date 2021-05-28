@@ -40,7 +40,7 @@ void PackagingWindow::DrawConfiguration() {
     progress_ = 0.5;
 
     if (package) {
-      std::string url = fmt::format("{}/v1/games/{}/packages/{}", backend_url, project_id, version_);
+      std::string url = fmt::format("{}/v1/games/{}/{}/packages/{}", backend_url, user_name, game_name, version_);
       FetchOptions options;
       options.method = RequestMethod::PUT;
       options.headers["Content-Type"] = "application/octet-stream";
