@@ -11,8 +11,6 @@ class EditorWindow : public Window {
  public:
   EditorWindow();
 
-  void LoadGameWithId(const std::string& game_id);
-
   void Update(std::chrono::microseconds delta_time) override;
 
   static inline EditorWindow* instance() { return instance_; }
