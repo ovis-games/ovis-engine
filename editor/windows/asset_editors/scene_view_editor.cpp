@@ -420,14 +420,15 @@ void SceneViewEditor::DrawInspectorContent() {
 void SceneViewEditor::DrawObjectTree() {
   ImGuiIO& io = ImGui::GetIO();
   const bool control_or_command = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;
-
   auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
 
   ImVec2 available_content_region = ImGui::GetContentRegionAvail();
   if (ImGui::BeginChild("ObjectView", ImVec2(0, available_content_region.y / 2), false)) {
     if (ImGui::BeginPopupContextWindow()) {
       if (ImGui::Selectable("Create Object")) {
-        CreateObject("New Object", true);
+        object_selection_controller->SelectObject(game_scene()->CreateObject("New Object"));
+        SubmitChangesToScene();
+        renaming_state_ = RenamingState::IS_RENAMING;
       }
       ImGui::EndPopup();
     }
@@ -438,7 +439,6 @@ void SceneViewEditor::DrawObjectTree() {
 
     ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
                                          ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
-
     ImGuiTreeNodeFlags scene_node_flags = tree_node_flags | ImGuiTreeNodeFlags_AllowItemOverlap;
     if (!object_selection_controller->has_selected_object()) {
       // If there is no selected object, the scene is selected
@@ -447,7 +447,9 @@ void SceneViewEditor::DrawObjectTree() {
     if (ImGui::TreeNodeEx(asset_id().c_str(), scene_node_flags)) {
       if (ImGui::BeginPopupContextItem()) {
         if (ImGui::Selectable("Create Object")) {
-          CreateObject("New Object", true);
+          object_selection_controller->SelectObject(game_scene()->CreateObject("New Object"));
+          SubmitChangesToScene();
+          renaming_state_ = RenamingState::IS_RENAMING;
         }
         ImGui::EndPopup();
       }
@@ -459,79 +461,100 @@ void SceneViewEditor::DrawObjectTree() {
       for (SceneObject* object : cached_scene_objects_) {
         SDL_assert(object != nullptr);
         SDL_assert(game_scene()->ContainsObject(object->name()));
-
-        const bool is_object_selected = object_selection_controller->selected_object_name() == object->name();
-
-        ImGuiTreeNodeFlags scene_object_flags = tree_node_flags | ImGuiTreeNodeFlags_Leaf;
-        if (is_object_selected) {
-          scene_object_flags |= ImGuiTreeNodeFlags_Selected;
-        }
-
-        if (renaming_state_ == RenamingState::IS_NOT_RENAMING || !is_object_selected) {
-          // This object is currently not beeing renamed
-          if (ImGui::TreeNodeEx(object->name().c_str(), scene_object_flags)) {
-            if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-              object_selection_controller->SelectObject(object);
-              SDL_assert(object_selection_controller->selected_object_name() == object->name());
-            }
-            if (ImGui::IsItemFocused() && control_or_command && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C))) {
-              CopySelectedObjectToClipboard();
-            }
-            if (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete))) {
-              game_scene()->DeleteObject(GetSelectedObject());
-              SubmitChangesToScene();
-            }
-
-            if (ImGui::BeginPopupContextItem()) {
-              if (ImGui::Selectable("Rename")) {
-                renaming_state_ = RenamingState::STARTED_RENAMING;
-              }
-              if (ImGui::Selectable("Duplicate")) {
-                game_scene()->CreateObject(object->name(), object->Serialize());
-                SubmitChangesToScene();
-              }
-              if (ImGui::Selectable("Remove")) {
-                game_scene()->DeleteObject(object->name());
-                SubmitChangesToScene();
-              }
-              ImGui::EndPopup();
-            }
-            ImGui::TreePop();
-          }
-        } else {
-          // This object is currently beeing renamed
-          std::string new_object_name = object->name();
-          ImGui::TreePush(object->name().c_str());
-          ImGui::PushItemWidth(-1);
-          if (ImGui::InputText("Renaming", &new_object_name,
-                               ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
-            if (new_object_name != object->name()) {
-              // TODO: check for validity: alphanumeric+underscore+space
-              if (game_scene()->ContainsObject(new_object_name)) {
-                // TODO: Show message box
-              } else {
-                game_scene()->CreateObject(new_object_name, object->Serialize());
-                game_scene()->DeleteObject(object->name());
-                SubmitChangesToScene();
-              }
-            }
-            renaming_state_ = RenamingState::IS_NOT_RENAMING;
-          }
-          if (renaming_state_ == RenamingState::STARTED_RENAMING) {
-            ImGui::SetKeyboardFocusHere();
-            renaming_state_ = RenamingState::IS_RENAMING;
-          } else if (!ImGui::IsItemActive()) {
-            renaming_state_ = RenamingState::IS_NOT_RENAMING;
-          }
-          ImGui::PopItemWidth();
-          ImGui::TreePop();
-        }
+        DrawObjectHierarchy(object);
       }
 
       ImGui::TreePop();
     }
   }
   ImGui::EndChild();
+}
+
+void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
+  ImGuiIO& io = ImGui::GetIO();
+  const bool control_or_command = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;
+  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
+  const bool is_object_selected = object_selection_controller->selected_object()->GetPath() == object->GetPath();
+
+  ImGuiTreeNodeFlags scene_object_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
+                                          ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
+  if (!object->HasChildren()) {
+    scene_object_flags |= ImGuiTreeNodeFlags_Leaf;
+  }
+  if (is_object_selected) {
+    scene_object_flags |= ImGuiTreeNodeFlags_Selected;
+  }
+
+  if (renaming_state_ == RenamingState::IS_NOT_RENAMING || !is_object_selected) {
+    // This object is currently not beeing renamed
+    if (ImGui::TreeNodeEx(object->name().c_str(), scene_object_flags)) {
+      if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
+        object_selection_controller->SelectObject(object);
+        SDL_assert(object_selection_controller->selected_object()->GetPath() == object->GetPath());
+      }
+      if (ImGui::IsItemFocused() && control_or_command && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C))) {
+        CopySelectedObjectToClipboard();
+      }
+      if (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete))) {
+        game_scene()->DeleteObject(GetSelectedObject());
+        SubmitChangesToScene();
+      }
+
+      if (ImGui::BeginPopupContextItem()) {
+        if (ImGui::Selectable("Create Child Object")) {
+          object->CreateChildObject("New Object");
+          SubmitChangesToScene();
+        }
+        if (ImGui::Selectable("Rename")) {
+          renaming_state_ = RenamingState::STARTED_RENAMING;
+        }
+        if (ImGui::Selectable("Duplicate")) {
+          game_scene()->CreateObject(object->name(), object->Serialize());
+          SubmitChangesToScene();
+        }
+        if (ImGui::Selectable("Remove")) {
+          game_scene()->DeleteObject(object->name());
+          SubmitChangesToScene();
+        }
+        ImGui::EndPopup();
+
+      }
+      for (SceneObject& child : object->children()) {
+        DrawObjectHierarchy(&child);
+      }
+      ImGui::TreePop();
+    }
+  } else {
+    // This object is currently beeing renamed
+    std::string new_object_name = object->name();
+    ImGui::TreePush(object->name().c_str());
+    ImGui::PushItemWidth(-1);
+    if (ImGui::InputText("Renaming", &new_object_name,
+                         ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
+      if (new_object_name != object->name()) {
+        // TODO: check for validity: alphanumeric+underscore+space
+        if (game_scene()->ContainsObject(new_object_name)) {
+          // TODO: Show message box
+        } else {
+          game_scene()->CreateObject(new_object_name, object->Serialize());
+          game_scene()->DeleteObject(object->name());
+          SubmitChangesToScene();
+        }
+      }
+      renaming_state_ = RenamingState::IS_NOT_RENAMING;
+    }
+    if (renaming_state_ == RenamingState::STARTED_RENAMING) {
+      ImGui::SetKeyboardFocusHere();
+      renaming_state_ = RenamingState::IS_RENAMING;
+    } else if (!ImGui::IsItemActive()) {
+      renaming_state_ = RenamingState::IS_NOT_RENAMING;
+    }
+    ImGui::PopItemWidth();
+    for (SceneObject& child : object->children()) {
+      DrawObjectHierarchy(&child);
+    }
+    ImGui::TreePop();
+  }
 }
 
 void SceneViewEditor::DrawSelectionProperties() {
@@ -591,7 +614,7 @@ void SceneViewEditor::DrawSceneObjectProperties() {
       Serializable* component = selected_object->GetComponent(component_id);
 
       // Get component path
-      const json::json_pointer component_path = GetComponentPath(object_selection_controller->selected_object_name(), component_id);
+      const json::json_pointer component_path = GetComponentPath(object_selection_controller->selected_object()->GetPath(), component_id);
       if (serialized_scene_editing_copy_.contains(component_path)) {
         json& serialized_component = serialized_scene_editing_copy_[component_path];
         const ovis::json* component_schema = component->GetSchema();
@@ -762,19 +785,20 @@ void SceneViewEditor::CreateSceneViewports(ImVec2 size) {
   }
 }
 
-SceneObject* SceneViewEditor::CreateObject(const std::string& base_name, bool initiate_rename) {
-  std::string object_name = base_name;
-  int counter = 1;
-  while (game_scene()->ContainsObject(object_name)) {
-    counter++;
-    object_name = base_name + std::to_string(counter);
-  }
-  editing_scene()->GetController<ObjectSelectionController>()->SelectObject(object_name);
-  if (initiate_rename) {
-    renaming_state_ = RenamingState::STARTED_RENAMING;
-  }
-  return game_scene()->CreateObject(object_name);
-}
+// SceneObject* SceneViewEditor::CreateObject(const std::string& base_name, bool initiate_rename) {
+//   std::string object_name = base_name;
+//   int counter = 1;
+//   while (game_scene()->ContainsObject(object_name)) {
+//     counter++;
+//     object_name = base_name + std::to_string(counter);
+//   }
+//   SceneObject* object = game_scene()->CreateObject(object_name);
+//   editing_scene()->GetController<ObjectSelectionController>()->SelectObject(object);
+//   if (initiate_rename) {
+//     renaming_state_ = RenamingState::STARTED_RENAMING;
+//   }
+//   return object;
+// }
 
 }  // namespace editor
 }  // namespace ovis

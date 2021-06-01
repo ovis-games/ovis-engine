@@ -1,7 +1,10 @@
 #pragma once
 
+#include <string_view>
+
 #include "editor_controller.hpp"
 
+#include <ovis/utils/safe_pointer.hpp>
 #include <ovis/core/intersection.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_controller.hpp>
@@ -18,20 +21,17 @@ class ObjectSelectionController : public EditorController {
   void Update(std::chrono::microseconds) override;
   void ProcessEvent(Event* event) override;
 
-  void SelectObject(const std::string& object_name);
-  void SelectObject(SceneObject* object);
-  void ClearSelection();
+  void SelectObject(std::string_view object_path) { selected_object_.reset(game_scene()->GetObject(object_path)); }
+  inline void SelectObject(SceneObject* object) { selected_object_.reset(object); }
+  inline void ClearSelection() { selected_object_.reset(); }
 
-  bool has_selected_object() const;
-  const std::string& selected_object_name() const;
-  SceneObject* selected_object() const;
+  inline bool has_selected_object() const { return selected_object_; }
+  inline SceneObject* selected_object() const { return selected_object_.get(); }
   AxisAlignedBoundingBox3D selected_object_aabb() const { return selected_object_aabb_; }
 
  private:
-  mutable std::string selected_object_name_;
+  safe_ptr<SceneObject> selected_object_;
   AxisAlignedBoundingBox3D selected_object_aabb_;
-
-  void CheckSelectionValidity() const;
 };
 
 SceneObject* GetSelectedObject(Scene* editing_scene);

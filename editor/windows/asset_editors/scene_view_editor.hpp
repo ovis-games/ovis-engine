@@ -51,13 +51,14 @@ class SceneViewEditor : public AssetEditor {
 
   void DrawInspectorContent() override;
   void DrawObjectTree();
+  void DrawObjectHierarchy(SceneObject* object);
   void DrawSelectionProperties();
   void DrawSceneProperties();
   void DrawSceneObjectProperties();
 
   void CreateSceneViewports(ImVec2 size);
 
-  SceneObject* CreateObject(const std::string& base_name, bool initiate_rename = false);
+  // SceneObject* CreateObject(const std::string& base_name, bool initiate_rename = false);
   json::json_pointer GetComponentPath(const std::string& object_name, const std::string& component_id) {
     return json::json_pointer("/objects/" + object_name + "/components/" + component_id);
   }
