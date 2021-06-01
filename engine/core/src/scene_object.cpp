@@ -7,8 +7,9 @@
 
 namespace ovis {
 
-SceneObject::SceneObject(Scene* scene, const std::string& name) : scene_(scene), name_(name) {
+SceneObject::SceneObject(Scene* scene, const std::string& name, SceneObject* parent) : scene_(scene), parent_(parent), name_(name) {
   SDL_assert(scene_ != nullptr);
+  SDL_assert(IsValidName(name_));
 }
 
 SceneObject::~SceneObject() {
@@ -17,6 +18,83 @@ SceneObject::~SceneObject() {
     RemoveComponent(component_id);
   }
   SDL_assert(components_.size() == 0);
+}
+
+bool SceneObject::IsValidName(std::string_view name) {
+  for (const char c : name) {
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == ' ' || (c >= '0' && c <= '9') || c == '.' || c == '-') {
+      // Character is allowed
+      continue;
+    }
+    // Character is not allowed
+    return false;
+  }
+  return true;
+}
+
+SceneObject* SceneObject::CreateChildObject(std::string_view object_name) {
+  if (!IsValidName(object_name)) {
+    LogE("Invalid object name: {}", object_name);
+    return nullptr;
+  }
+
+  std::string candidate_name(object_name);
+  int number = 1;
+  while (ContainsChildObject(candidate_name)) {
+    ++number;
+    candidate_name = fmt::format("{}{}", object_name, number);
+  }
+  children_.emplace_back(scene(), candidate_name, this);
+  SDL_assert(children_.back().name() == candidate_name);
+  SDL_assert(children_.back().parent() == this);
+  return &children_.back();
+}
+
+SceneObject* SceneObject::CreateChildObject(std::string_view object_name, const json& serialized_object) {
+  auto object = CreateChildObject(object_name);
+  if (object) {
+    object->Deserialize(serialized_object);
+  }
+  return object;
+}
+
+SceneObject* SceneObject::CreateChildObject(std::string_view object_name, const sol::table& component_properties) {
+  auto object = CreateChildObject(object_name);
+
+  if (object) {
+    for (const auto& [key, value] : component_properties) {
+      object->AddComponent(key.as<std::string>(), value.as<sol::table>());
+    }
+  }
+
+  return object;
+}
+
+void SceneObject::DeleteChildObject(std::string_view object_name) {
+  auto child_iterator = FindChild(object_name);
+  if (child_iterator != children_.end()) {
+    std::iter_swap(child_iterator, children_.rbegin());
+    children_.pop_back();
+  }
+}
+
+void SceneObject::DeleteChildObject(SceneObject* object) {
+  if (object != nullptr && object->parent() == this) {
+    DeleteChildObject(object->name());
+  }
+}
+
+void SceneObject::ClearChildObjects() {
+  children_.clear();
+}
+
+SceneObject* SceneObject::GetChildObject(std::string_view object_name) {
+  const auto child_iterator = FindChild(object_name);
+  return &(*child_iterator);
+}
+
+bool SceneObject::ContainsChildObject(std::string_view object_name) {
+  return FindChild(object_name) != children_.end();
 }
 
 SceneObjectComponent* SceneObject::AddComponent(const std::string& component_id) {
@@ -95,6 +173,18 @@ bool SceneObject::Deserialize(const json& serialized_object) {
     LogV("SceneObject deserialization: no 'components' property available!");
   }
   return true;
+}
+
+std::vector<SceneObject>::const_iterator SceneObject::FindChild(std::string_view name) const {
+  return std::find_if(children_.cbegin(), children_.cend(), [name](const SceneObject& object) {
+    return object.name() == name;
+  });
+}
+
+std::vector<SceneObject>::iterator SceneObject::FindChild(std::string_view name) {
+  return std::find_if(children_.begin(), children_.end(), [name](const SceneObject& object) {
+    return object.name() == name;
+  });
 }
 
 void SceneObject::RegisterType(sol::table* module) {

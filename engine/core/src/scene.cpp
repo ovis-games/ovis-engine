@@ -174,13 +174,30 @@ void Scene::ClearObjects() {
   objects_.clear();
 }
 
-SceneObject* Scene::GetObject(const std::string& object_name) {
-  auto object = objects_.find(object_name);
-  return object->second.get();
+SceneObject* Scene::GetObject(std::string_view object_reference) {
+  const auto first_object_separator_position = object_reference.find('/');
+  const std::string_view object_name = object_reference.substr(0, first_object_separator_position);
+  auto object = objects_.find(std::string(object_name));
+  if (object == objects_.end()) {
+    return nullptr;
+  } else if (first_object_separator_position == object_reference.npos) {
+    return object->second.get();
+  } else {
+    return object->second->GetChildObject(object_reference.substr(first_object_separator_position));
+  }
 }
 
-bool Scene::ContainsObject(const std::string& object_name) {
-  return objects_.count(object_name) == 1;
+bool Scene::ContainsObject(std::string_view object_reference) {
+  const auto first_object_separator_position = object_reference.find('/');
+  const std::string_view object_name = object_reference.substr(0, first_object_separator_position);
+  auto object = objects_.find(std::string(object_name));
+  if (object == objects_.end()) {
+    return false;
+  } else if (first_object_separator_position == object_reference.npos) {
+    return true;
+  } else {
+    return object->second->ContainsChildObject(object_reference.substr(first_object_separator_position));
+  }
 }
 
 void Scene::GetObjects(std::vector<SceneObject*>* scene_objects, bool sort_by_name) const {
@@ -323,7 +340,10 @@ bool Scene::Deserialize(const json& serialized_object) {
   if (serialized_object.contains("camera")) {
     // camera_object_ = serialized_object.at("camera");
     if (main_viewport() != nullptr) {
-      SceneObject* object = GetObject(serialized_object.at("camera"));
+      // Need to copy out variable here as nlohmann json currently does not support direct
+      // conversion to std::string_view
+      const std::string camera_object_reference = serialized_object.at("camera");
+      SceneObject* object = GetObject(camera_object_reference);
       if (object != nullptr && object->HasComponent("Camera")) {
         main_viewport()->SetCamera(object->GetComponent<Camera>("Camera"));
         LogD("Setting Camera");

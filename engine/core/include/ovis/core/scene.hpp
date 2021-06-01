@@ -74,8 +74,8 @@ class Scene : public Serializable, public SafelyReferenceable {
   void DeleteObject(const std::string& object_name);
   void DeleteObject(SceneObject* object);
   void ClearObjects();
-  SceneObject* GetObject(const std::string& object_name);
-  bool ContainsObject(const std::string& object_name);
+  SceneObject* GetObject(std::string_view object_reference);
+  bool ContainsObject(std::string_view object_reference);
 
   void GetObjects(std::vector<SceneObject*>* scene_objects, bool sort_by_name = false) const;
   inline std::vector<SceneObject*> GetObjects(bool sort_by_name = false) const {
