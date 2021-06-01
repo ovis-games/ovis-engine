@@ -55,6 +55,17 @@ class safe_ptr_base {
   }
   inline ~safe_ptr_base() { reset(); }
 
+  inline constexpr safe_ptr_base& operator=(const safe_ptr_base& other) {
+    reset(other.pointer_);
+    return *this;
+  }
+
+  inline constexpr safe_ptr_base& operator=(safe_ptr_base&& other) {
+    reset(other.pointer_);
+    other.reset();
+    return *this;
+  }
+
   inline void reset(SafelyReferenceable* new_value = nullptr) {
     if (pointer_) {
       auto& references = pointer_->references_;
@@ -76,8 +87,13 @@ class safe_ptr_base {
 
 template <typename T>
 class safe_ptr : public safe_ptr_base {
-  static_assert(std::is_base_of_v<SafelyReferenceable, T>,
-                "The pointer type must derive from ovis::SafelyReferenceable");
+  // T must derive from SafelyReferenceable, however, the static_assert below
+  // prevents the use of safe_ptr<T> as a member variable of T, because
+  // std::is_base_of_v requires that the type T is fully defined which it is
+  // not in that case. Without the assert it works properly but you will get
+  // a more cryptic error message when using this class with the wrong type.
+  // static_assert(std::is_base_of_v<SafelyReferenceable, T>,
+  //               "The pointer type must derive from ovis::SafelyReferenceable");
 
  public:
   inline constexpr safe_ptr() noexcept {}
