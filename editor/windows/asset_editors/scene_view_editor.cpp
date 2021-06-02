@@ -428,7 +428,7 @@ void SceneViewEditor::DrawObjectTree() {
       if (ImGui::Selectable("Create Object")) {
         object_selection_controller->SelectObject(game_scene()->CreateObject("New Object"));
         SubmitChangesToScene();
-        renaming_state_ = RenamingState::IS_RENAMING;
+        renaming_state_ = RenamingState::STARTED_RENAMING;
       }
       ImGui::EndPopup();
     }
@@ -449,7 +449,7 @@ void SceneViewEditor::DrawObjectTree() {
         if (ImGui::Selectable("Create Object")) {
           object_selection_controller->SelectObject(game_scene()->CreateObject("New Object"));
           SubmitChangesToScene();
-          renaming_state_ = RenamingState::IS_RENAMING;
+          renaming_state_ = RenamingState::STARTED_RENAMING;
         }
         ImGui::EndPopup();
       }
@@ -474,7 +474,7 @@ void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
   ImGuiIO& io = ImGui::GetIO();
   const bool control_or_command = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;
   auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
-  const bool is_object_selected = object_selection_controller->selected_object()->GetPath() == object->GetPath();
+  const bool is_object_selected = object_selection_controller->selected_object() == object;
 
   ImGuiTreeNodeFlags scene_object_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
                                           ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
@@ -490,6 +490,8 @@ void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
     if (ImGui::TreeNodeEx(object->name().c_str(), scene_object_flags)) {
       if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
         object_selection_controller->SelectObject(object);
+        SDL_assert(object_selection_controller->selected_object());
+        SDL_assert(object_selection_controller->selected_object() == object);
         SDL_assert(object_selection_controller->selected_object()->GetPath() == object->GetPath());
       }
       if (ImGui::IsItemFocused() && control_or_command && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_C))) {
@@ -502,8 +504,9 @@ void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
 
       if (ImGui::BeginPopupContextItem()) {
         if (ImGui::Selectable("Create Child Object")) {
-          object->CreateChildObject("New Object");
+          object_selection_controller->SelectObject(object->CreateChildObject("New Object"));
           SubmitChangesToScene();
+          renaming_state_ = RenamingState::STARTED_RENAMING;
         }
         if (ImGui::Selectable("Rename")) {
           renaming_state_ = RenamingState::STARTED_RENAMING;
@@ -532,16 +535,21 @@ void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
     if (ImGui::InputText("Renaming", &new_object_name,
                          ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
       if (new_object_name != object->name()) {
-        // TODO: check for validity: alphanumeric+underscore+space
-        if (game_scene()->ContainsObject(new_object_name)) {
-          // TODO: Show message box
+        if (!SceneObject::IsValidName(new_object_name)) {
+          EditorWindow::instance()->AddToastNotification(ToastType::ERROR, "Object names may only contain letters, numbers, underscores(_), dashes(-) and periods(.)");
+          renaming_state_ = RenamingState::STARTED_RENAMING;
+        } else if (game_scene()->ContainsObject(new_object_name)) {
+          EditorWindow::instance()->AddToastNotification(ToastType::ERROR, "The object already exists.");
+          renaming_state_ = RenamingState::STARTED_RENAMING;
         } else {
-          game_scene()->CreateObject(new_object_name, object->Serialize());
+          object_selection_controller->SelectObject(game_scene()->CreateObject(new_object_name, object->Serialize()));
           game_scene()->DeleteObject(object->name());
           SubmitChangesToScene();
+          renaming_state_ = RenamingState::IS_NOT_RENAMING;
         }
+      } else {
+        renaming_state_ = RenamingState::IS_NOT_RENAMING;
       }
-      renaming_state_ = RenamingState::IS_NOT_RENAMING;
     }
     if (renaming_state_ == RenamingState::STARTED_RENAMING) {
       ImGui::SetKeyboardFocusHere();
@@ -614,6 +622,7 @@ void SceneViewEditor::DrawSceneObjectProperties() {
       Serializable* component = selected_object->GetComponent(component_id);
 
       // Get component path
+      SDL_assert(object_selection_controller->selected_object());
       const json::json_pointer component_path = GetComponentPath(object_selection_controller->selected_object()->GetPath(), component_id);
       if (serialized_scene_editing_copy_.contains(component_path)) {
         json& serialized_component = serialized_scene_editing_copy_[component_path];
