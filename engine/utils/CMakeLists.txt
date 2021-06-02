@@ -72,6 +72,7 @@ if (OVIS_BUILD_TESTS)
     ovis-utils-test
 
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/sparse_vector.cpp
   )
 
   target_link_libraries(
