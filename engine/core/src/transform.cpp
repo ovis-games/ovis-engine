@@ -1,7 +1,9 @@
+#include "ovis/core/matrix.hpp"
 #include <tuple>
 
 #include <ovis/utils/log.hpp>
 #include <ovis/core/transform.hpp>
+#include <ovis/core/scene_object.hpp>
 
 namespace ovis {
 
@@ -165,8 +167,30 @@ void Transform::RegisterType(sol::table* module) {
 
 void Transform::CalculateMatrices() const {
   local_to_world_ = Matrix3x4::FromTransformation(position_, scale_, rotation_);
+
+  SceneObject* parent = scene_object()->parent();
+  while (parent) {
+    Transform* parent_transform = parent->GetComponent<Transform>("Transform");
+    if (parent_transform) {
+      local_to_world_ = ovis::AffineCombine(parent_transform->local_to_world_matrix(), local_to_world_);
+      break;
+    } else {
+      parent = parent->parent();
+    }
+  }
   world_to_local_ = InvertAffine(local_to_world_);
-  dirty = false;
+  dirty_ = false;
+}
+
+void Transform::FlagAsDirty() {
+  dirty_ = true;
+  scene_object()->ForEachChild(true, static_cast<void(*)(SceneObject*)>(FlagAsDirty));
+}
+
+void Transform::FlagAsDirty(SceneObject* object) {
+  if (object->HasComponent("Transform")) {
+    object->GetComponent<Transform>("Transform")->dirty_ = true;
+  }
 }
 
 }  // namespace ovis

@@ -19,47 +19,47 @@ class Transform : public SceneObjectComponent {
   inline const Vector3& position() const { return position_; }
   inline void SetPosition(const Vector3& new_position) {
     position_ = new_position;
-    dirty = true;
+    FlagAsDirty();
   }
   inline void Move(const Vector3& offset) {
     position_ += offset;
-    dirty = true;
+    FlagAsDirty();
   }
 
   inline Vector3 scale() const { return scale_; }
   inline void SetScale(Vector3 new_scale) {
     scale_ = new_scale;
-    dirty = true;
+    FlagAsDirty();
   }
   inline void SetScale(float new_uniform_scale) {
     scale_ = {new_uniform_scale, new_uniform_scale, new_uniform_scale};
-    dirty = true;
+    FlagAsDirty();
   }
   inline void Scale(Vector3 scale) {
     scale_ *= scale;
-    dirty = true;
+    FlagAsDirty();
   }
   inline void Scale(float uniform_scale) {
     scale_ *= uniform_scale;
-    dirty = true;
+    FlagAsDirty();
   }
 
   inline Quaternion rotation() const { return rotation_; }
   inline void SetRotation(Quaternion new_rotation) {
     rotation_ = new_rotation;
-    dirty = true;
+    FlagAsDirty();
   }
   inline void Rotate(Quaternion rotation_offset) {
     rotation_ = rotation_offset * rotation_;
-    dirty = true;
+    FlagAsDirty();
   }
   inline void Rotate(Vector3 axis, float angle_in_radians) {
     Rotate(Quaternion::FromAxisAndAngle(axis, angle_in_radians));
-    dirty = true;
+    FlagAsDirty();
   }
   inline void SetYawPitchRoll(float yaw, float pitch, float roll) {
     rotation_ = Quaternion::FromEulerAngles(yaw, pitch, roll);
-    dirty = true;
+    FlagAsDirty();
   }
   inline void GetYawPitchRoll(float* yaw, float* pitch, float* roll) const {
     if (yaw) *yaw = ExtractYaw(rotation_);
@@ -84,14 +84,14 @@ class Transform : public SceneObjectComponent {
   }
 
   inline Matrix3x4 local_to_world_matrix() const {
-    if (dirty) {
+    if (dirty_) {
       CalculateMatrices();
     }
     return local_to_world_;
   }
 
   Matrix3x4 world_to_local_matrix() const {
-    if (dirty) {
+    if (dirty_) {
       CalculateMatrices();
     }
     return world_to_local_;
@@ -112,10 +112,14 @@ class Transform : public SceneObjectComponent {
   mutable Matrix3x4 world_to_local_;
 
   // Indicates whether the transformation matrices need to be re-calculated
-  mutable bool dirty = true;
+  mutable bool dirty_ = true;
 
   // This method is const as the matrices are calculated "on-demand" in the getter functions
   void CalculateMatrices() const;
+
+  // Set the dirty flag to the transform component and all tansform components of its children
+  void FlagAsDirty();
+  static void FlagAsDirty(SceneObject* object);
 };
 
 void to_json(json& data, const Transform& transform);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <type_traits>
 #include <typeindex>
 #include <unordered_map>
 #include <string_view>
@@ -47,6 +48,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   bool HasChildren() const { return children_.size() > 0; }
   bool ContainsChildObject(std::string_view object_name);
   std::vector<safe_ptr<SceneObject>>& children() { return children_; }
+  template <typename T> void ForEachChild(bool recursive, T&& functor);
 
   template <typename ComponentType = SceneObjectComponent>
   inline ComponentType* AddComponent(const std::string& component_id) {
@@ -102,6 +104,18 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   std::vector<safe_ptr<SceneObject>>::const_iterator FindChild(std::string_view name) const;
   std::vector<safe_ptr<SceneObject>>::iterator FindChild(std::string_view name);
 };
+
+
+template <typename T>
+void SceneObject::ForEachChild(bool recursive, T&& functor) {
+  static_assert(std::is_invocable_v<T, SceneObject*>);
+  for (const auto& child : children()) {
+    functor(child.get_throw());
+    if (recursive) {
+      child->ForEachChild(true, functor);
+    }
+  }
+}
 
 }  // namespace ovis
 
