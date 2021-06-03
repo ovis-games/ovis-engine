@@ -10,6 +10,7 @@
 #include "windows/modal/message_box_window.hpp"
 #include "windows/toast_window.hpp"
 #include "windows/toolbar.hpp"
+#include "windows/profiling_window.hpp"
 
 #include <emscripten.h>
 #include <emscripten/html5.h>
@@ -98,6 +99,7 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   scene()->AddController(std::make_unique<InspectorWindow>());
   scene()->AddController(std::make_unique<Overlay>());
   scene()->AddController(std::make_unique<ToastWindow>());
+  scene()->AddController(std::make_unique<ProfilingWindow>());
 
   AddRenderPass(std::make_unique<ImGuiRenderPass>());
 

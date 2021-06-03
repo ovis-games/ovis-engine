@@ -14,7 +14,7 @@ SceneController::SceneController(std::string_view name)
     : name_(name)
 #if OVIS_ENABLE_BUILT_IN_PROFILING
       ,
-      update_profiler_(name + "Update")
+      update_profiler_(fmt::format("{}::Update", name))
 #endif
 {
 }
