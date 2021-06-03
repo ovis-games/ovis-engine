@@ -53,6 +53,7 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_math.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_intersection.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scene_object.cpp
   )
 
   target_add_ldoc_test(

@@ -73,6 +73,7 @@ if (OVIS_BUILD_TESTS)
 
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/sparse_vector.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/string.cpp
   )
 
   target_link_libraries(

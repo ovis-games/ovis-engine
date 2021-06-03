@@ -59,9 +59,7 @@ class SceneViewEditor : public AssetEditor {
   void CreateSceneViewports(ImVec2 size);
 
   // SceneObject* CreateObject(const std::string& base_name, bool initiate_rename = false);
-  json::json_pointer GetComponentPath(const std::string& object_name, const std::string& component_id) {
-    return json::json_pointer("/objects/" + object_name + "/components/" + component_id);
-  }
+  json::json_pointer GetComponentPath(std::string_view object_path, std::string_view component_id);
   json::json_pointer GetControllerPath(const std::string& controller_id) {
     return json::json_pointer("/controllers/" + controller_id);
   }
@@ -79,6 +77,11 @@ class SceneViewEditor : public AssetEditor {
   json serialized_scene_editing_copy_;
   Scene game_scene_;
   Scene editing_scene_;
+
+  inline void DoOnceAfterDraw(const std::function<void()>& function) {
+    do_once_after_draw_.push_back(function);
+  }
+  std::vector<std::function<void()>> do_once_after_draw_;
 };
 
 }  // namespace editor

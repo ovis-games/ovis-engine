@@ -6,9 +6,9 @@
 namespace ovis {
 namespace editor {
 
-bool ClipboardContainsData(const std::string& type = "text/plain");
-std::optional<std::string> GetClipboardData(const std::string& type = "text/plain");
-void SetClipboardData(const std::string& value, const std::string& type = "text/plain");
+bool ClipboardContainsData(std::string_view type = "text/plain");
+std::optional<std::string_view> GetClipboardData(std::string_view type = "text/plain");
+void SetClipboardData(std::string_view value, std::string_view type = "text/plain");
 
 }  // namespace editor
 }  // namespace ovis

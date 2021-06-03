@@ -20,16 +20,21 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   MAKE_NON_COPYABLE(SceneObject);
 
  public:
-  SceneObject(Scene* scene, const std::string& name, SceneObject* parent = nullptr);
+  SceneObject(Scene* scene, std::string_view name, SceneObject* parent = nullptr);
   SceneObject(SceneObject&&) = default;
   ~SceneObject();
 
   SceneObject& operator=(SceneObject&&) = default;
 
   static bool IsValidName(std::string_view name);
+  static std::pair<std::string_view, std::optional<unsigned int>> ParseName(std::string_view name);
+  static std::string BuildPath(std::string_view object_name, SceneObject* parent) {
+    return parent != nullptr ? fmt::format("{}/{}", parent->path(), object_name) : std::string(object_name);
+  }
 
   inline Scene* scene() const { return scene_; }
-  inline std::string name() const { return name_; }
+  inline std::string_view name() const { return name_; }
+  inline std::string_view path() const { return path_; }
   inline SceneObject* parent() const { return parent_.get(); }
 
   SceneObject* CreateChildObject(std::string_view object_name);
@@ -41,8 +46,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   SceneObject* GetChildObject(std::string_view object_name);
   bool HasChildren() const { return children_.size() > 0; }
   bool ContainsChildObject(std::string_view object_name);
-  std::vector<SceneObject>& children() { return children_; }
-  std::string GetPath() const { return parent_ ? fmt::format("{}/{}", parent_->GetPath(), name()) : name(); }
+  std::vector<safe_ptr<SceneObject>>& children() { return children_; }
 
   template <typename ComponentType = SceneObjectComponent>
   inline ComponentType* AddComponent(const std::string& component_id) {
@@ -80,6 +84,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
     return component_ids;
   }
   void RemoveComponent(const std::string& component_id);
+  void ClearComponents();
 
   json Serialize() const override;
   bool Deserialize(const json& serialized_object) override;
@@ -87,14 +92,25 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   static void RegisterType(sol::table* module);
 
  private:
-  Scene* scene_;
+  Scene* scene_; // No safe_ptr needed, scene is guaranteed to live longer and will (should?) not be moved
   safe_ptr<SceneObject> parent_;
+  std::string path_;
   std::string name_;
-  std::vector<SceneObject> children_;
+  std::vector<safe_ptr<SceneObject>> children_;
   std::unordered_map<std::string, std::unique_ptr<SceneObjectComponent>> components_;
 
-  std::vector<SceneObject>::const_iterator FindChild(std::string_view name) const;
-  std::vector<SceneObject>::iterator FindChild(std::string_view name);
+  std::vector<safe_ptr<SceneObject>>::const_iterator FindChild(std::string_view name) const;
+  std::vector<safe_ptr<SceneObject>>::iterator FindChild(std::string_view name);
 };
 
 }  // namespace ovis
+
+namespace std {
+  template <> struct hash<ovis::SceneObject>
+  {
+    size_t operator()(const ovis::SceneObject& object) const
+    {
+      return hash<std::string_view>()(object.path());
+    }
+  };
+}

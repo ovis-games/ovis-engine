@@ -2,13 +2,25 @@
 
 #include "editor_window.hpp"
 #include <iterator>
-#include <unordered_map>
+#include <vector>
 
 #include <emscripten.h>
 
 namespace {
 
-static std::unordered_map<std::string, std::string> clipboard_data;
+struct ClipboardData {
+  std::string type;
+  std::string content;
+
+  ClipboardData(std::string_view type, std::string_view content) : type(type), content(content) {}
+};
+static std::vector<ClipboardData> clipboard_data;
+
+auto FindClipboardEntry(std::string_view type) {
+  return std::find_if(clipboard_data.begin(), clipboard_data.end(), [type](const auto& clipboard_entry) {
+        return clipboard_entry.type == type;
+      });
+}
 
 }  // namespace
 
@@ -30,7 +42,7 @@ int EMSCRIPTEN_KEEPALIVE OvisClipboard_Cut() {
 
 const char* EMSCRIPTEN_KEEPALIVE OvisClipboard_GetCopiedDataFormat(int index) {
   if (index < clipboard_data.size()) {
-    return std::next(clipboard_data.begin(), index)->first.c_str();
+    return clipboard_data[index].type.c_str();
   } else {
     return nullptr;
   }
@@ -38,7 +50,7 @@ const char* EMSCRIPTEN_KEEPALIVE OvisClipboard_GetCopiedDataFormat(int index) {
 
 const char* EMSCRIPTEN_KEEPALIVE OvisClipboard_GetCopiedData(int index) {
   if (index < clipboard_data.size()) {
-    return std::next(clipboard_data.begin(), index)->second.c_str();
+    return clipboard_data[index].content.c_str();
   } else {
     return nullptr;
   }
@@ -49,7 +61,7 @@ void EMSCRIPTEN_KEEPALIVE OvisClipboard_BeginPaste() {
 }
 
 void EMSCRIPTEN_KEEPALIVE OvisClipboard_Paste(const char* type, const char* data) {
-  clipboard_data.insert(std::make_pair(type, data));
+  ovis::editor::SetClipboardData(type, data);
 }
 
 void EMSCRIPTEN_KEEPALIVE OvisClipboard_EndPaste() {
@@ -61,21 +73,28 @@ void EMSCRIPTEN_KEEPALIVE OvisClipboard_EndPaste() {
 namespace ovis {
 namespace editor {
 
-bool ClipboardContainsData(const std::string& type) {
-  return clipboard_data.count(type) > 0;
+bool ClipboardContainsData(std::string_view type) {
+  return FindClipboardEntry(type) == clipboard_data.end();
 }
 
-std::optional<std::string> GetClipboardData(const std::string& type) {
-  const auto it = clipboard_data.find(type);
+std::optional<std::string_view> GetClipboardData(std::string_view type) {
+  const auto it = FindClipboardEntry(type);
+
   if (it != clipboard_data.end()) {
-    return it->second;
+    return it->content;
   } else {
     return {};
   }
 }
 
-void SetClipboardData(const std::string& value, const std::string& type) {
-  clipboard_data[type] = value;
+void SetClipboardData(std::string_view value, std::string_view type) {
+  const auto it = FindClipboardEntry(type);
+
+  if (it != clipboard_data.end()) {
+    it->content = value;
+  } else {
+    clipboard_data.emplace_back(type, value);
+  }
 }
 
 }  // namespace editor

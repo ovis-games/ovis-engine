@@ -68,10 +68,10 @@ class Scene : public Serializable, public SafelyReferenceable {
     return down_cast<ControllerType*>(GetControllerInternal(ControllerType::Name()));
   }
 
-  SceneObject* CreateObject(const std::string& object_name);
-  SceneObject* CreateObject(const std::string& object_name, const json& serialized_object);
-  SceneObject* CreateObject(const std::string& object_name, const sol::table& properties);
-  void DeleteObject(const std::string& object_name);
+  SceneObject* CreateObject(std::string_view object_name, SceneObject* parent = nullptr);
+  SceneObject* CreateObject(std::string_view object_name, const json& serialized_object, SceneObject* parent = nullptr);
+  SceneObject* CreateObject(std::string_view object_name, const sol::table& properties, SceneObject* parent = nullptr);
+  void DeleteObject(std::string_view object_path);
   void DeleteObject(SceneObject* object);
   void ClearObjects();
   SceneObject* GetObject(std::string_view object_reference);

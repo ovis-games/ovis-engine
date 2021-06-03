@@ -22,7 +22,11 @@ Scene::Scene() {}
 
 Scene::~Scene() {
   // Explicitly clear owning containers because the destructor of their objects may need to still access the scene.
-  objects_.clear();
+  while (objects_.size() > 0) {
+    // Destroy one at a time because parent objects will explicitly destory their children
+    // TODO: maybe set a special flag in the scene that we are already destructing?
+    objects_.erase(objects_.begin());
+  }
   controllers_.clear();
   removed_controllers_.clear();
 }
@@ -130,26 +134,40 @@ bool Scene::HasController(const std::string& id) const {
   return controllers_.contains(id);
 }
 
-SceneObject* Scene::CreateObject(const std::string& object_name) {
-  std::string candidate_name = object_name;
-  int number = 1;
-  while (ContainsObject(candidate_name)) {
-    ++number;
-    candidate_name = object_name + std::to_string(number);
+SceneObject* Scene::CreateObject(std::string_view base_name, SceneObject* parent) {
+  if (!SceneObject::IsValidName(base_name)) {
+    LogE("Invalid object name: {}", base_name);
+    return nullptr;
   }
-  auto result = objects_.insert(std::make_pair(candidate_name, std::make_unique<SceneObject>(this, candidate_name)));
-  SDL_assert(result.second);
-  return result.first->second.get();
+
+  std::string object_name(base_name);
+  std::string object_path = SceneObject::BuildPath(object_name, parent);
+  if (ContainsObject(object_path)) {
+    // If the name already exists append a number to the end. If there is already a number
+    // at the end, increment it.
+    auto parse_result = SceneObject::ParseName(object_name);
+    unsigned int number = parse_result.second.has_value() ? *parse_result.second : 1;
+    do {
+      ++number;
+      object_name = fmt::format("{}{}", parse_result.first, number);
+      object_path = SceneObject::BuildPath(object_name, parent);
+    } while (ContainsObject(object_path));
+  }
+
+  auto insert_result = objects_.insert(std::make_pair(object_path, std::make_unique<SceneObject>(this, object_name, parent)));
+  SDL_assert(insert_result.second);
+  SDL_assert(object_path == insert_result.first->second->path());
+  return insert_result.first->second.get();
 }
 
-SceneObject* Scene::CreateObject(const std::string& object_name, const json& serialized_object) {
-  auto object = CreateObject(object_name);
+SceneObject* Scene::CreateObject(std::string_view object_name, const json& serialized_object, SceneObject* parent) {
+  auto object = CreateObject(object_name, parent);
   object->Deserialize(serialized_object);
   return object;
 }
 
-SceneObject* Scene::CreateObject(const std::string& object_name, const sol::table& component_properties) {
-  auto object = CreateObject(object_name);
+SceneObject* Scene::CreateObject(std::string_view object_name, const sol::table& component_properties, SceneObject* parent) {
+  auto object = CreateObject(object_name, parent);
 
   for (const auto& [key, value] : component_properties) {
     object->AddComponent(key.as<std::string>(), value.as<sol::table>());
@@ -158,15 +176,15 @@ SceneObject* Scene::CreateObject(const std::string& object_name, const sol::tabl
   return object;
 }
 
-void Scene::DeleteObject(const std::string& object_name) {
-  SDL_assert(objects_.count(object_name) == 1);
-  objects_.erase(object_name);
+void Scene::DeleteObject(std::string_view object_path) {
+  SDL_assert(objects_.count(std::string(object_path)) == 1);
+  objects_.erase(std::string(object_path));
 }
 
 void Scene::DeleteObject(SceneObject* object) {
   if (object != nullptr) {
     SDL_assert(object->scene() == this);
-    DeleteObject(object->name());
+    DeleteObject(object->path());
   }
 }
 
@@ -174,41 +192,30 @@ void Scene::ClearObjects() {
   objects_.clear();
 }
 
-SceneObject* Scene::GetObject(std::string_view object_reference) {
-  const auto first_object_separator_position = object_reference.find('/');
-  const std::string_view object_name = object_reference.substr(0, first_object_separator_position);
-  auto object = objects_.find(std::string(object_name));
+SceneObject* Scene::GetObject(std::string_view object_path) {
+  auto object = objects_.find(std::string(object_path));
   if (object == objects_.end()) {
     return nullptr;
-  } else if (first_object_separator_position == object_reference.npos) {
+  } {
     return object->second.get();
-  } else {
-    return object->second->GetChildObject(object_reference.substr(first_object_separator_position));
   }
 }
 
 bool Scene::ContainsObject(std::string_view object_reference) {
-  const auto first_object_separator_position = object_reference.find('/');
-  const std::string_view object_name = object_reference.substr(0, first_object_separator_position);
-  auto object = objects_.find(std::string(object_name));
-  if (object == objects_.end()) {
-    return false;
-  } else if (first_object_separator_position == object_reference.npos) {
-    return true;
-  } else {
-    return object->second->ContainsChildObject(object_reference.substr(first_object_separator_position));
-  }
+  return objects_.count(std::string(object_reference));
 }
 
 void Scene::GetObjects(std::vector<SceneObject*>* scene_objects, bool sort_by_name) const {
   scene_objects->clear();
   scene_objects->reserve(objects_.size());
   for (auto& name_object_pair : objects_) {
-    scene_objects->push_back(name_object_pair.second.get());
+    if (name_object_pair.second->parent() == nullptr) {
+      scene_objects->push_back(name_object_pair.second.get());
+    }
   }
   if (sort_by_name) {
     std::sort(scene_objects->begin(), scene_objects->end(),
-              [](SceneObject* left, SceneObject* right) { return to_lower(left->name()) < to_lower(right->name()); });
+              [](SceneObject* left, SceneObject* right) { return left->name() < right->name(); });
   }
 }
 
@@ -301,7 +308,9 @@ json Scene::Serialize() const {
 
   auto& objects = serialized_object["objects"] = json::object();
   for (const auto& object : objects_) {
-    objects[object.first] = object.second->Serialize();
+    if (object.second->parent() == nullptr) {
+      objects[object.first] = object.second->Serialize();
+    }
   }
 
   Camera* camera = main_viewport() ? main_viewport()->camera() : nullptr;
@@ -491,7 +500,7 @@ void Scene::RegisterType(sol::table* module) {
   // assert(obj == nil)
   scene_type["remove_object"] =
   sol::overload(
-    sol::resolve<void(const std::string&)>(&Scene::DeleteObject),
+    sol::resolve<void(std::string_view)>(&Scene::DeleteObject),
     sol::resolve<void(SceneObject*)>(&Scene::DeleteObject)
   );
 
