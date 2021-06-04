@@ -12,23 +12,23 @@ static const json SCHEMA = {{"$ref", "core#/$defs/transform"}};
 }
 
 json Transform::Serialize() const {
-  return {{"position", position()},
-          {"rotation", ExtractEulerAngles(rotation()) * RadiansToDegreesFactor<float>()},
-          {"scale", scale()}};
+  return {{"position", local_position()},
+          {"rotation", ExtractEulerAngles(local_rotation()) * RadiansToDegreesFactor<float>()},
+          {"scale", local_scale()}};
 }
 
 bool Transform::Deserialize(const json& data) {
   if (data.contains("position")) {
     const Vector3 position = data.at("position");
-    SetPosition(position);
+    SetLocalPosition(position);
   }
   if (data.contains("rotation")) {
     const Vector3 euler_angles = Vector3(data.at("rotation")) * DegreesToRadiansFactor<float>();
-    SetRotation(Quaternion::FromEulerAngles(euler_angles.y, euler_angles.x, euler_angles.z));
+    SetLocalRotation(Quaternion::FromEulerAngles(euler_angles.y, euler_angles.x, euler_angles.z));
   }
   if (data.contains("scale")) {
     const Vector3 scale = data.at("scale");
-    SetScale(scale);
+    SetLocalScale(scale);
   }
   // TODO: calculate matrices
   return true;
@@ -47,21 +47,38 @@ void Transform::RegisterType(sol::table* module) {
   sol::usertype<Transform> transform_type =
       module->new_usertype<Transform>("Transform", sol::no_constructor);
 
-  /// The position of the transformation.
-  // @field[type=Vector3] position
-  transform_type["position"] = sol::property(&Transform::position, &Transform::SetPosition);
+  /// The position of the transform in local space.
+  // @field[type=Vector3] local_position
+  transform_type["local_position"] = sol::property(&Transform::local_position, &Transform::SetLocalPosition);
 
-  /// The scale of the transformation.
-  // @field[type=Vector3] scale
-  transform_type["scale"] = sol::property(&Transform::scale, sol::resolve<void(Vector3)>(&Transform::SetScale));
+  /// The position of the transform in world space.
+  // @field[type=Vector3] world_position
+  transform_type["world_position"] = sol::property(&Transform::world_position, &Transform::SetWorldPosition);
 
-  /// The rotation of the transformation.
-  // @field[type=Quaternion] rotation
-  transform_type["rotation"] = sol::property(&Transform::rotation, &Transform::SetRotation);
+  /// The local scale of the transform.
+  // @field[type=Vector3] local_scale
+  transform_type["local_scale"] = sol::property(&Transform::local_scale, sol::resolve<void(Vector3)>(&Transform::SetLocalScale));
 
-  /// Moves the transformation.
+  /// The local rotation of the transform.
+  // @field[type=Quaternion] local_rotation
+  transform_type["local_rotation"] = sol::property(&Transform::local_rotation, &Transform::SetLocalRotation);
+
+  /// Moves the transform using an offset on local space.
   // @function move
-  // @param[type=Vector3] offset
+  // @see move
+  // @param[type=Vector3] world_space_offset
+  // @usage local transform = Transform.new()
+  // assert(transform.position == core.Vector3.ZERO)
+  // transform:move(core.Vector3.POSITIVE_X)
+  // assert(transform.position == core.Vector3.POSITIVE_X)
+  // transform:move(core.Vector3.POSITIVE_X)
+  // assert(transform.position == 2 * core.Vector3.POSITIVE_X)
+  transform_type["move_locally"] = &Transform::MoveLocally;
+
+  /// Moves the transform using an offset on world space.
+  // @function move
+  // @see move_locally
+  // @param[type=Vector3] world_space_offset
   // @usage local transform = Transform.new()
   // assert(transform.position == core.Vector3.ZERO)
   // transform:move(core.Vector3.POSITIVE_X)
@@ -74,45 +91,45 @@ void Transform::RegisterType(sol::table* module) {
   // @function rotate
   // @param[type=Quaternion] rotation_offset
 
-  /// Rotates the object by rotating it around an axis.
+  /// Rotates the object by rotating it around an in local space axis.
   // The angle is given in degrees.
   // @function rotate
   // @param[type=Vector3] axis
   // @param[type=number] angle
-  transform_type["rotate"] = sol::overload(sol::resolve<void(Quaternion)>(&Transform::Rotate),
-                                           sol::resolve<void(Vector3, float)>(&Transform::Rotate));
+  transform_type["rotate_locally"] = sol::overload(sol::resolve<void(Quaternion)>(&Transform::RotateLocally),
+                                                   sol::resolve<void(Vector3, float)>(&Transform::RotateLocally));
 
-  /// Sets the rotation to the given yaw, pitch and roll.
+  /// Sets the rotation to the given yaw, pitch and roll in local space.
   // All angles are given in degrees.
-  // @function set_yaw_pitch_roll
+  // @function set_local_yaw_pitch_roll
   // @tparam number yaw
   // @tparam number pitch
   // @tparam number roll
   // @usage local transform = Transform.new()
-  // transform:set_yaw_pitch_roll(45, 90, 0)
-  transform_type["set_yaw_pitch_roll"] = &Transform::SetYawPitchRoll;
+  // transform:set_local_yaw_pitch_roll(45, 90, 0)
+  transform_type["set_yaw_pitch_roll"] = &Transform::SetLocalYawPitchRoll;
 
-  /// Returns the yaw, pitch and roll of the rotation.
+  /// Returns the yaw, pitch and roll of the rotation in local space.
   // All angles are given in degrees.
-  // @function get_yaw_pitch_roll
+  // @function get_local_yaw_pitch_roll
   // @treturn number yaw
   // @treturn number pitch
   // @treturn number roll
   // @usage local transform = Transform.new()
-  // local yaw, pitch, roll = transform:get_yaw_pitch_roll()
+  // local yaw, pitch, roll = transform:get_local_yaw_pitch_roll()
   // assert(yaw == 0)
   // assert(pitch == 0)
   // assert(roll == 0)
-  transform_type["get_yaw_pitch_roll"] = [](const Transform* transform) {
+  transform_type["get_local_yaw_pitch_roll"] = [](const Transform* transform) {
     std::tuple<float, float, float> yaw_pitch_roll;
-    transform->GetYawPitchRoll(&std::get<0>(yaw_pitch_roll), &std::get<1>(yaw_pitch_roll),
-                               &std::get<2>(yaw_pitch_roll));
+    transform->GetLocalYawPitchRoll(&std::get<0>(yaw_pitch_roll), &std::get<1>(yaw_pitch_roll),
+                                    &std::get<2>(yaw_pitch_roll));
     return yaw_pitch_roll;
   };
 
   /// Transforms a direcion from object to world space.
   // If the transform contains any scaling the magnitude of the vector will likely change.
-  // @function object_space_direction_to_world_space
+  // @function local_direction_to_world
   // @param[type=Vector3] direction
   // @treturn Vector3
   // @see 03-spaces.md
@@ -120,13 +137,13 @@ void Transform::RegisterType(sol::table* module) {
   // @usage Vector3 = core.Vector3
   // local transform = Transform.new()
   // transform:rotate(Vector3.POSITIVE_Y, 90)
-  // local transformed_direction = transform:object_space_direction_to_world_space(Vector3.POSITIVE_X)
+  // local transformed_direction = transform:local_direction_to_world(Vector3.POSITIVE_X)
   // assert(Vector3.length(transformed_direction - Vector3.POSITIVE_Z) < 0.1)
-  transform_type["object_space_direction_to_world_space"] = &Transform::ObjectSpaceDirectionToWorldSpace;
+  transform_type["local_direction_to_world"] = &Transform::LocalDirectionToWorld;
 
-  /// Transforms a direcion from world to object space.
+  /// Transforms a direcion from world to local space.
   // If the transform contains any scaling the magnitude of the vector will likely change.
-  // @function world_space_direction_to_object_space
+  // @function world_direction_to_local
   // @param[type=Vector3] direction
   // @treturn Vector3
   // @see 03-spaces.md
@@ -134,12 +151,12 @@ void Transform::RegisterType(sol::table* module) {
   // @usage Vector3 = core.Vector3
   // local transform = Transform.new()
   // transform:rotate(Vector3.POSITIVE_Y, 90)
-  // local transformed_direction = transform:world_space_direction_to_object_space(Vector3.POSITIVE_Z)
+  // local transformed_direction = transform:world_direction_to_local(Vector3.POSITIVE_Z)
   // assert(Vector3.length(transformed_direction - Vector3.POSITIVE_X) < 0.1)
-  transform_type["world_space_direction_to_object_space"] = &Transform::WorldSpaceDirectionToObjectSpace;
+  transform_type["world_direction_to_local"] = &Transform::WorldDirectionToLocal;
 
   /// Transforms a position in local space to world space.
-  // @function object_space_position_to_world_space
+  // @function local_position_to_world
   // @param[type=Vector3] object_space_coordinates
   // @treturn Vector3
   // @see 03-spaces.md
@@ -147,12 +164,12 @@ void Transform::RegisterType(sol::table* module) {
   // @usage Vector3 = core.Vector3
   // local transform = Transform.new()
   // transform:move(Vector3.new(0, 1, 0))
-  // local transformed_position = transform:object_space_position_to_world_space(Vector3.new(1, 0, 0))
+  // local transformed_position = transform:local_position_to_world(Vector3.new(1, 0, 0))
   // assert(transformed_position == Vector3.new(1, 1, 0))
-  transform_type["object_space_position_to_world_space"] = &Transform::ObjectSpacePositionToWorldSpace;
+  transform_type["local_position_to_world"] = &Transform::LocalPositionToWorld;
 
   /// Transforms a position in  world space to local space.
-  // @function world_space_position_to_object_space
+  // @function world_position_to_local
   // @param[type=Vector3] world_space_coordinates
   // @treturn Vector3
   // @see 03-spaces.md
@@ -160,9 +177,9 @@ void Transform::RegisterType(sol::table* module) {
   // @usage Vector3 = core.Vector3
   // local transform = Transform.new()
   // transform:move(Vector3.new(0, 1, 0))
-  // local transformed_position = transform:world_space_position_to_object_space(Vector3.new(1, 1, 0))
+  // local transformed_position = transform:world_position_to_local(Vector3.new(1, 1, 0))
   // assert(transformed_position == Vector3.new(1, 0, 0))
-  transform_type["world_space_position_to_object_space"] = &Transform::WorldSpacePositionToObjectSpace;
+  transform_type["world_position_to_local"] = &Transform::WorldPositionToLocal;
 }
 
 void Transform::CalculateMatrices() const {

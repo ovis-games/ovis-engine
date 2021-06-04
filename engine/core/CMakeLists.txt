@@ -12,7 +12,6 @@ add_library(
   include/ovis/core/scene_object_component.hpp src/scene_object_component.cpp
   include/ovis/core/camera.hpp src/camera.cpp
   include/ovis/core/transform.hpp src/transform.cpp
-  include/ovis/core/transform_controller.hpp src/transform_controller.cpp
   include/ovis/core/asset_library.hpp src/asset_library.cpp
   include/ovis/core/lua.hpp src/lua.cpp
   include/ovis/core/vector_types.hpp src/vector_types.cpp

@@ -357,10 +357,10 @@ void SceneViewEditor::DrawViewport() {
     if (object && object->HasComponent("Transform")) {
       Transform* transform = object->GetComponent<Transform>("Transform");
       SDL_assert(transform != nullptr);
-      const Vector3 screen_space_position = viewport->WorldSpacePositionToScreenSpace(transform->position());
+      const Vector3 screen_space_position = viewport->WorldSpacePositionToScreenSpace(transform->world_position());
       const Vector3 new_screen_space_position = Vector3::FromVector2(mouse_position, screen_space_position.z);
       const Vector3 new_world_space_position = viewport->ScreenSpacePositionToWorldSpace(new_screen_space_position);
-      transform->SetPosition(new_world_space_position);
+      transform->SetWorldPosition(new_world_space_position);
       SubmitChangesToScene();
     }
   }

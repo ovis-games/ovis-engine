@@ -16,71 +16,79 @@ class Transform : public SceneObjectComponent {
  public:
   explicit inline Transform(SceneObject* object) : SceneObjectComponent(object) {}
 
-  inline const Vector3& position() const { return position_; }
-  inline void SetPosition(const Vector3& new_position) {
+  inline Vector3 local_position() const { return position_; }
+  inline void SetLocalPosition(Vector3 new_position) {
     position_ = new_position;
     FlagAsDirty();
   }
-  inline void Move(const Vector3& offset) {
+  inline void MoveLocally(Vector3 offset) {
     position_ += offset;
     FlagAsDirty();
   }
 
-  inline Vector3 scale() const { return scale_; }
-  inline void SetScale(Vector3 new_scale) {
+  inline Vector3 world_position() const { return ExtractColumn(local_to_world_matrix(), 3); }
+  inline void SetWorldPosition(const Vector3 position) {
+    SetLocalPosition(TransformPosition(world_to_local_matrix(), position));
+  }
+  inline void Move(Vector3 offset) {
+    MoveLocally(TransformDirection(world_to_local_matrix(), offset));
+  }
+
+  inline Vector3 local_scale() const { return scale_; }
+  inline void SetLocalScale(Vector3 new_scale) {
     scale_ = new_scale;
     FlagAsDirty();
   }
-  inline void SetScale(float new_uniform_scale) {
+  inline void SetLocalScale(float new_uniform_scale) {
     scale_ = {new_uniform_scale, new_uniform_scale, new_uniform_scale};
     FlagAsDirty();
   }
-  inline void Scale(Vector3 scale) {
+  inline void ScaleLocally(Vector3 scale) {
     scale_ *= scale;
     FlagAsDirty();
   }
-  inline void Scale(float uniform_scale) {
+  inline void ScaleLocally(float uniform_scale) {
     scale_ *= uniform_scale;
     FlagAsDirty();
   }
 
-  inline Quaternion rotation() const { return rotation_; }
-  inline void SetRotation(Quaternion new_rotation) {
+  inline Quaternion local_rotation() const { return rotation_; }
+  inline void SetLocalRotation(Quaternion new_rotation) {
     rotation_ = new_rotation;
     FlagAsDirty();
   }
-  inline void Rotate(Quaternion rotation_offset) {
+  inline void RotateLocally(Quaternion rotation_offset) {
     rotation_ = rotation_offset * rotation_;
     FlagAsDirty();
   }
-  inline void Rotate(Vector3 axis, float angle_in_radians) {
-    Rotate(Quaternion::FromAxisAndAngle(axis, angle_in_radians));
+  inline void RotateLocally(Vector3 axis, float angle_in_radians) {
+    RotateLocally(Quaternion::FromAxisAndAngle(axis, angle_in_radians));
     FlagAsDirty();
   }
-  inline void SetYawPitchRoll(float yaw, float pitch, float roll) {
+  inline void SetLocalYawPitchRoll(float yaw, float pitch, float roll) {
     rotation_ = Quaternion::FromEulerAngles(yaw, pitch, roll);
     FlagAsDirty();
   }
-  inline void GetYawPitchRoll(float* yaw, float* pitch, float* roll) const {
+  inline void GetLocalYawPitchRoll(float* yaw, float* pitch, float* roll) const {
     if (yaw) *yaw = ExtractYaw(rotation_);
     if (pitch) *pitch = ExtractPitch(rotation_);
     if (roll) *roll = ExtractRoll(rotation_);
   }
 
-  inline Vector3 ObjectSpaceDirectionToWorldSpace(Vector3 object_space_direction) const {
-    return TransformDirection(local_to_world_matrix(), object_space_direction);
+  inline Vector3 LocalDirectionToWorld(Vector3 local_space_direction) const {
+    return TransformDirection(local_to_world_matrix(), local_space_direction);
   }
 
-  inline Vector3 WorldSpaceDirectionToObjectSpace(Vector3 world_space_direction) const {
+  inline Vector3 WorldDirectionToLocal(Vector3 world_space_direction) const {
     return TransformDirection(world_to_local_matrix(), world_space_direction);
   }
 
-  inline Vector3 ObjectSpacePositionToWorldSpace(Vector3 object_space_coordinates) const {
-    return TransformPosition(local_to_world_matrix(), object_space_coordinates);
+  inline Vector3 LocalPositionToWorld(Vector3 local_space_position) const {
+    return TransformPosition(local_to_world_matrix(), local_space_position);
   }
 
-  inline Vector3 WorldSpacePositionToObjectSpace(Vector3 world_space_coordinates) const {
-    return TransformPosition(world_to_local_matrix(), world_space_coordinates);
+  inline Vector3 WorldPositionToLocal(Vector3 world_space_position) const {
+    return TransformPosition(world_to_local_matrix(), world_space_position);
   }
 
   inline Matrix3x4 local_to_world_matrix() const {

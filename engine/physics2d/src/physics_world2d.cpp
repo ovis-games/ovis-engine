@@ -37,8 +37,8 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
 
     if (transform) {
       float roll;
-      transform->GetYawPitchRoll(nullptr, nullptr, &roll);
-      std::get<b2Body*>(body->body_)->SetTransform(ToBox2DVec2(transform->position()), roll);
+      transform->GetLocalYawPitchRoll(nullptr, nullptr, &roll);
+      std::get<b2Body*>(body->body_)->SetTransform(ToBox2DVec2(transform->world_position()), roll);
     } else {
       std::get<b2Body*>(body->body_)->SetTransform({0, 0}, 0);
 
@@ -91,11 +91,11 @@ void PhysicsWorld2D::Update(std::chrono::microseconds delta_time) {
     if (transform != nullptr) {
       b2Body* box2d_body = std::get<b2Body*>(body->body_);
       b2Vec2 position = box2d_body->GetPosition();
-      transform->SetPosition({position.x, position.y, transform->position().z});
+      transform->SetWorldPosition({position.x, position.y, transform->world_position().z});
 
       float yaw, pitch, roll;
-      transform->GetYawPitchRoll(&yaw, &pitch, &roll);
-      transform->SetYawPitchRoll(yaw, pitch, box2d_body->GetAngle());
+      transform->GetLocalYawPitchRoll(&yaw, &pitch, &roll);
+      transform->SetLocalYawPitchRoll(yaw, pitch, box2d_body->GetAngle());
     }
   }
 }

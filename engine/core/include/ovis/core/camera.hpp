@@ -79,12 +79,12 @@ class Camera : public SceneObjectComponent {
 
   inline Vector3 WorldSpacePositionToViewSpace(Vector3 world_space_coordinates) const {
     const Transform* transform = scene_object()->GetComponent<Transform>("Transform");
-    return transform ? transform->WorldSpacePositionToObjectSpace(world_space_coordinates) : world_space_coordinates;
+    return transform ? transform->WorldDirectionToLocal(world_space_coordinates) : world_space_coordinates;
   }
 
   inline Vector3 ViewSpacePositionToWorldSpace(Vector3 view_space_coordinates) const {
     const Transform* transform = scene_object()->GetComponent<Transform>("Transform");
-    return transform ? transform->ObjectSpacePositionToWorldSpace(view_space_coordinates) : view_space_coordinates;
+    return transform ? transform->LocalDirectionToWorld(view_space_coordinates) : view_space_coordinates;
   }
 
   inline Vector3 WorldSpacePositionToClipSpace(Vector3 world_space_coordinates) const {
@@ -97,12 +97,12 @@ class Camera : public SceneObjectComponent {
 
   inline Vector3 WorldSpaceDirectionToViewSpace(Vector3 world_space_direction) const {
     const Transform* transform = scene_object()->GetComponent<Transform>("Transform");
-    return transform ? transform->WorldSpaceDirectionToObjectSpace(world_space_direction) : world_space_direction;
+    return transform ? transform->WorldDirectionToLocal(world_space_direction) : world_space_direction;
   }
 
   inline Vector3 ViewSpaceDirectionToWorldSpace(Vector3 view_space_direction) const {
     const Transform* transform = scene_object()->GetComponent<Transform>("Transform");
-    return transform ? transform->ObjectSpaceDirectionToWorldSpace(view_space_direction) : view_space_direction;
+    return transform ? transform->LocalDirectionToWorld(view_space_direction) : view_space_direction;
   }
 
   json Serialize() const override;

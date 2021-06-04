@@ -56,13 +56,13 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
     Vector3 lhs_position;
     Transform* lhs_transform = lhs->GetComponent<Transform>("Transform");
     if (lhs_transform != nullptr) {
-      lhs_position = lhs_transform->position();
+      lhs_position = lhs_transform->world_position();
     }
 
     Vector3 rhs_position;
     Transform* rhs_transform = rhs->GetComponent<Transform>("Transform");
     if (rhs_transform != nullptr) {
-      rhs_position = rhs_transform->position();
+      rhs_position = rhs_transform->world_position();
     }
 
     // TODO: project into camera view axis instead of using the z coordinates

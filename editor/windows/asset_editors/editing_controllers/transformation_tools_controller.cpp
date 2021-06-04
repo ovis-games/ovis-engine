@@ -54,14 +54,14 @@ void TransformationToolsController::Update(std::chrono::microseconds) {
   object_selected_ = true;
 
   auto viewport = editing_scene()->main_viewport();
-  object_position_world_space_ = transform->position();
+  object_position_world_space_ = transform->world_position();
   object_position_screen_space_ = viewport->WorldSpacePositionToScreenSpace(object_position_world_space_);
 
   Vector2 position2d = object_position_screen_space_;
 
-  const Quaternion rotation = transform->rotation();
+  const Quaternion rotation = transform->local_rotation();
 
-  const Vector3 unit_offset = viewport->WorldSpacePositionToScreenSpace(transform->position() + Vector3::PositiveX());
+  const Vector3 unit_offset = viewport->WorldSpacePositionToScreenSpace(transform->world_position() + Vector3::PositiveX());
   world_to_screen_space_factor_ = Distance(unit_offset, object_position_screen_space_);
 
   // Scaling in world space is not possible
@@ -225,7 +225,7 @@ void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_ev
       } else if (selected_axes_ != AxesSelection::NONE) {
         transform->Move(world_space_offset);
       }
-      SetTooltip(fmt::format("{}", transform->position()));
+      SetTooltip(fmt::format("{}", transform->world_position()));
       break;
     }
 
@@ -256,12 +256,12 @@ void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_ev
       if (!std::isnan(absolute_angle)) {
         const float sign = Dot(Cross(previous_intersection_direction, current_intersection_direction), rotation_axis);
         const float angle = std::copysign(absolute_angle, sign);
-        transform->Rotate(Normalize(rotation_axis), angle);
+        transform->RotateLocally(Normalize(rotation_axis), angle);
         const auto q = Quaternion::FromAxisAndAngle(Normalize(rotation_axis), angle);
       }
 
       float yaw, pitch, roll;
-      transform->GetYawPitchRoll(&yaw, &pitch, &roll);
+      transform->GetLocalYawPitchRoll(&yaw, &pitch, &roll);
       SetTooltip(fmt::format("Yaw {}°, pitch {}°, roll {}°", yaw * RadiansToDegreesFactor<float>(),
                              pitch * RadiansToDegreesFactor<float>(), roll * RadiansToDegreesFactor<float>()));
       break;
@@ -285,7 +285,7 @@ void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_ev
           Dot(scale_direction_screen_space, mouse_move_event->relative_screen_space_position());
       const float scale_factor = std::powf(1.01, distance_in_scale_direction);
 
-      Vector3 scale = transform->scale();
+      Vector3 scale = transform->local_scale();
       if (selected_axes_ == AxesSelection::X) {
         scale.x *= scale_factor;
       } else if (selected_axes_ == AxesSelection::Y) {
@@ -295,9 +295,9 @@ void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_ev
       } else if (selected_axes_ == AxesSelection::XYZ) {
         scale *= scale_factor;
       }
-      transform->SetScale(scale);
+      transform->SetLocalScale(scale);
 
-      SetTooltip(fmt::format("{}", transform->scale()));
+      SetTooltip(fmt::format("{}", transform->local_scale()));
       break;
   }
 }
