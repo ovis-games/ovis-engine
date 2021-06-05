@@ -22,11 +22,7 @@ Scene::Scene() {}
 
 Scene::~Scene() {
   // Explicitly clear owning containers because the destructor of their objects may need to still access the scene.
-  while (objects_.size() > 0) {
-    // Destroy one at a time because parent objects will explicitly destory their children
-    // TODO: maybe set a special flag in the scene that we are already destructing?
-    objects_.erase(objects_.begin());
-  }
+  ClearObjects();
   controllers_.clear();
   removed_controllers_.clear();
 }
@@ -189,7 +185,11 @@ void Scene::DeleteObject(SceneObject* object) {
 }
 
 void Scene::ClearObjects() {
-  objects_.clear();
+  while (objects_.size() > 0) {
+    // Destroy one at a time because parent objects will explicitly destory their children
+    // TODO: maybe set a special flag in the scene that we are already destructing?
+    objects_.erase(objects_.begin());
+  }
 }
 
 SceneObject* Scene::GetObject(std::string_view object_path) {

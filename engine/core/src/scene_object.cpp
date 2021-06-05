@@ -17,10 +17,7 @@ SceneObject::SceneObject(Scene* scene, std::string_view name, SceneObject* paren
 }
 
 SceneObject::~SceneObject() {
-  auto component_ids = GetComponentIds();
-  for (const auto& component_id : component_ids) {
-    RemoveComponent(component_id);
-  }
+  ClearComponents();
   SDL_assert(components_.size() == 0);
   if (parent_) {
     parent()->children_.erase(parent()->FindChild(name()));
