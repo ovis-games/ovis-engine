@@ -29,7 +29,7 @@ bool Sprite::Deserialize(const json& data) {
 
 void Sprite::RegisterType(sol::table* module) {
   /// A 2D graphic.
-  // @classmod ovis.rendering2d.sprite
+  // @classmod ovis.rendering2d.Sprite
   sol::usertype<Sprite> sprite_type = module->new_usertype<Sprite>("Sprite", sol::no_constructor);
 
   /// The texture that is displayed.
