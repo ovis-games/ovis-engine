@@ -37,6 +37,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   inline std::string_view name() const { return name_; }
   inline std::string_view path() const { return path_; }
   inline SceneObject* parent() const { return parent_.get(); }
+  inline bool has_parent() const { return parent_ != nullptr; }
 
   SceneObject* CreateChildObject(std::string_view object_name);
   SceneObject* CreateChildObject(std::string_view object_name, const json& serialized_object);

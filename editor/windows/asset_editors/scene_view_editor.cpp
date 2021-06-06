@@ -463,8 +463,7 @@ void SceneViewEditor::DrawObjectTree() {
         object_selection_controller->ClearSelection();
       }
 
-      game_scene()->GetObjects(&cached_scene_objects_, true);
-      for (SceneObject* object : cached_scene_objects_) {
+      for (SceneObject* object : game_scene()->root_objects()) {
         SDL_assert(object != nullptr);
         SDL_assert(game_scene()->ContainsObject(object->name()));
         DrawObjectHierarchy(object);

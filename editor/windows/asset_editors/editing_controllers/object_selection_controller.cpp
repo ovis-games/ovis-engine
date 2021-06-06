@@ -48,7 +48,7 @@ void ObjectSelectionController::ProcessEvent(Event* event) {
     float closest_distance = Infinity<float>();
     SceneObject* closest_object = nullptr;
 
-    for (SceneObject* object : game_scene()->GetObjects()) {
+    for (SceneObject* object : game_scene()->objects()) {
       const Transform* transform = object->GetComponent<Transform>("Transform");
       const Matrix3x4 world_to_object_space =
           transform ? transform->world_to_local_matrix() : Matrix3x4::IdentityTransformation();

@@ -205,20 +205,6 @@ bool Scene::ContainsObject(std::string_view object_reference) {
   return objects_.count(std::string(object_reference));
 }
 
-void Scene::GetObjects(std::vector<SceneObject*>* scene_objects, bool sort_by_name) const {
-  scene_objects->clear();
-  scene_objects->reserve(objects_.size());
-  for (auto& name_object_pair : objects_) {
-    if (name_object_pair.second->parent() == nullptr) {
-      scene_objects->push_back(name_object_pair.second.get());
-    }
-  }
-  if (sort_by_name) {
-    std::sort(scene_objects->begin(), scene_objects->end(),
-              [](SceneObject* left, SceneObject* right) { return left->name() < right->name(); });
-  }
-}
-
 void Scene::GetSceneObjectsWithComponent(const std::string& component_id,
                                          std::vector<SceneObject*>* scene_objects) const {
   SDL_assert(scene_objects != nullptr);

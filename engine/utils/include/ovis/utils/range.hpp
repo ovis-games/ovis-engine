@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -171,6 +172,147 @@ IndexedRange<T, I> IndexRange(C&& container) {
   return {container.begin(), container.end()};
 }
 
+template <typename IteratorType, typename Functor>
+class RangeFilter {
+  static_assert(std::is_invocable_v<Functor, decltype(*std::declval<IteratorType>())>);
+  static_assert(std::is_same_v<bool, decltype(std::declval<Functor>()(*std::declval<IteratorType>()))>);
+
+ public:
+  class Iterator {
+   public:
+    Iterator(const Iterator&) = default;
+    ~Iterator() = default;
+
+    inline Iterator(Functor& functor, IteratorType iterator, IteratorType end) : functor_(functor), iterator_(iterator), end_(end) {
+      // Find first element that passes the filter
+      while (iterator_ != end_ && !functor_(*iterator_)) {
+        ++iterator_;
+      }
+    }
+
+    Iterator& operator=(const Iterator&) = default;
+
+    inline bool operator==(const Iterator& rhs) const { return iterator_ == rhs.iterator_; }
+
+    inline bool operator!=(const Iterator& rhs) const { return iterator_ != rhs.iterator_; }
+
+    inline const auto& operator*() const { return *iterator_; }
+
+    inline auto* operator->() const { return &*iterator_; }
+
+    inline Iterator& operator++() {
+      do {
+        ++iterator_;
+      } while (iterator_ != end_ && !functor_(*iterator_));
+      return *this;
+    }
+
+    inline Iterator operator++(int) {
+      Iterator old = *this;
+      do {
+        ++iterator_;
+      } while (iterator_ != end_ && !functor_(*iterator_));
+      return old;
+    }
+
+   private:
+    Functor& functor_;
+    IteratorType iterator_;
+    IteratorType end_;
+  };
+
+ public:
+  inline RangeFilter(const IteratorType& begin, const IteratorType& end, Functor functor) : begin_(begin), end_(end), functor_(functor) {}
+
+  inline Iterator begin() const { return {functor_, begin_, end_}; }
+
+  inline Iterator end() const { return {functor_, end_, end_}; }
+
+ private:
+  [[no_unique_address]] mutable Functor functor_;
+  IteratorType begin_;
+  IteratorType end_;
+};
+
+template <typename Iterator, typename Functor>
+RangeFilter(Iterator begin, Iterator end, Functor functor) -> RangeFilter<Iterator, Functor>;
+
+template <typename Range, typename Functor>
+auto FilterRange(const Range& range, Functor f) {
+  return RangeFilter(range.begin(), range.end(), f);
+}
+
+template <typename IteratorType, typename Functor>
+class RangeAdapter {
+  static_assert(std::is_invocable_v<Functor, decltype(*std::declval<IteratorType>())>);
+  using value_type = decltype(std::declval<Functor>()(*std::declval<IteratorType>()));
+
+ public:
+  class Iterator {
+   public:
+    Iterator(const Iterator&) = default;
+    ~Iterator() = default;
+
+    inline Iterator(Functor& functor, IteratorType iterator) : functor_(functor), iterator_(iterator) {}
+
+    Iterator& operator=(const Iterator&) = default;
+
+    inline bool operator==(const Iterator& rhs) const { return iterator_ == rhs.iterator_; }
+
+    inline bool operator!=(const Iterator& rhs) const { return iterator_ != rhs.iterator_; }
+
+    inline const auto& operator*() const {
+      if (!transformed_value_.has_value()) {
+        transformed_value_.emplace(functor_(*iterator_));
+      }
+      return *transformed_value_;
+    }
+
+    inline auto* operator->() const {
+      if (!transformed_value_.has_value()) {
+        transformed_value_.emplace(functor_(*iterator_));
+      }
+      return &*transformed_value_;
+    }
+
+    inline Iterator& operator++() {
+      transformed_value_.reset();
+      ++iterator_;
+      return *this;
+    }
+
+    inline Iterator operator++(int) {
+      transformed_value_.reset();
+      return Iterator{iterator_++};
+    }
+
+   private:
+    Functor& functor_;
+    IteratorType iterator_;
+    mutable std::optional<value_type> transformed_value_;
+  };
+
+ public:
+  inline RangeAdapter(const IteratorType& begin, const IteratorType& end, Functor functor) : begin_(begin), end_(end), functor_(functor) {}
+
+  inline Iterator begin() const { return {functor_, begin_}; }
+
+  inline Iterator end() const { return {functor_, end_}; }
+
+ private:
+  [[no_unique_address]] mutable Functor functor_;
+  IteratorType begin_;
+  IteratorType end_;
+};
+
+template <typename Iterator, typename Functor>
+RangeAdapter(Iterator begin, Iterator end, Functor functor) -> RangeAdapter<Iterator, Functor>;
+
+template <typename Range, typename Functor>
+auto TransformRange(const Range& range, Functor f) {
+  return RangeAdapter(range.begin(), range.end(), f);
+}
+
 template <size_t ELEMENT_INDEX, typename IteratorType>
 class TupleElementRange {
  public:
@@ -205,9 +347,9 @@ class TupleElementRange {
  public:
   inline TupleElementRange(const IteratorType& begin, const IteratorType& end) : begin_(begin), end_(end) {}
 
-  inline IteratorAdapter begin() { return {begin_}; }
+  inline IteratorAdapter begin() const { return {begin_}; }
 
-  inline IteratorAdapter end() { return {end_}; }
+  inline IteratorAdapter end() const { return {end_}; }
 
  private:
   IteratorType begin_;

@@ -76,13 +76,8 @@ class Scene : public Serializable, public SafelyReferenceable {
   void ClearObjects();
   SceneObject* GetObject(std::string_view object_reference);
   bool ContainsObject(std::string_view object_reference);
-
-  void GetObjects(std::vector<SceneObject*>* scene_objects, bool sort_by_name = false) const;
-  inline std::vector<SceneObject*> GetObjects(bool sort_by_name = false) const {
-    std::vector<SceneObject*> objects;
-    GetObjects(&objects, sort_by_name);
-    return objects;
-  }
+  inline auto objects() const { return TransformRange(objects_, [](const auto& name_object) { return name_object.second.get(); }); }
+  inline auto root_objects() const { return FilterRange(objects(), [](const SceneObject* object) { return !object->has_parent(); }); }
 
   // TODO: create proper iterator here
   void GetSceneObjectsWithComponent(const std::string& component_id, std::vector<SceneObject*>* scene_objects) const;
