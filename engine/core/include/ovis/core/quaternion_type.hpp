@@ -11,6 +11,8 @@
 
 namespace ovis {
 
+union Matrix3;
+
 union alignas(sizeof(float) * 4) Quaternion {
   struct {
     float w;
@@ -29,6 +31,8 @@ union alignas(sizeof(float) * 4) Quaternion {
 
   inline static constexpr Quaternion FromAxisAndAngle(const Vector3& axis, float angle);
   inline static constexpr Quaternion FromEulerAngles(float yaw, float pitch, float roll);
+  // The matrix may noy contain any scaling (uniform scaling may be fine, TODO: check that)
+  inline static constexpr Quaternion FromRotationMatrix(const Matrix3& rotation_matrix);
 };
 static_assert(sizeof(Quaternion) == 16);
 static_assert(std::is_trivially_copyable<Quaternion>());

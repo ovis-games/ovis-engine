@@ -48,6 +48,16 @@ inline constexpr Quaternion Quaternion::FromEulerAngles(float yaw, float pitch, 
   };
 }
 
+inline constexpr Quaternion Quaternion::FromRotationMatrix(const Matrix3& r) {
+  // Implementation from here: https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
+  return {
+    std::sqrt(std::max(0.0f, 1.0f + r[0][0] + r[1][1] + r[2][2])) * 0.5f,
+    std::copysign(std::sqrt(std::max(0.0f, 1.0f + r[0][0] - r[1][1] - r[2][2])) * 0.5f, r[2][1] - r[1][2]),
+    std::copysign(std::sqrt(std::max(0.0f, 1.0f - r[0][0] + r[1][1] - r[2][2])) * 0.5f, r[0][2] - r[2][0]),
+    std::copysign(std::sqrt(std::max(0.0f, 1.0f - r[0][0] - r[1][1] + r[2][2])) * 0.5f, r[1][0] - r[0][1])
+  };
+}
+
 inline Quaternion Conjugate(const Quaternion& quaternion) {
   return {quaternion.w, -quaternion.x, -quaternion.y, -quaternion.z};
 }
