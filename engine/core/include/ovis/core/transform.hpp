@@ -4,6 +4,7 @@
 
 #include <ovis/core/matrix.hpp>
 #include <ovis/core/quaternion.hpp>
+#include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_object_component.hpp>
 #include <ovis/core/vector.hpp>
 
@@ -28,10 +29,10 @@ class Transform : public SceneObjectComponent {
 
   inline Vector3 world_position() const { return ExtractColumn(local_to_world_matrix(), 3); }
   inline void SetWorldPosition(const Vector3 position) {
-    SetLocalPosition(TransformPosition(world_to_local_matrix(), position));
+    SetLocalPosition(TransformPosition(FindWorldToParentMatrix(), position));
   }
   inline void Move(Vector3 offset) {
-    MoveLocally(TransformDirection(world_to_local_matrix(), offset));
+    MoveLocally(TransformDirection(FindWorldToParentMatrix(), offset));
   }
 
   inline Vector3 local_scale() const { return scale_; }
@@ -73,6 +74,13 @@ class Transform : public SceneObjectComponent {
     if (yaw) *yaw = ExtractYaw(rotation_);
     if (pitch) *pitch = ExtractPitch(rotation_);
     if (roll) *roll = ExtractRoll(rotation_);
+  }
+
+  inline Quaternion world_rotation() const {
+    const Transform* parent = FindParentTransform();
+    return parent != nullptr ? parent->world_rotation() * local_rotation() : local_rotation();
+    // TODO: make FromTransformation work with scaling!
+    // return Quaternion::FromTransformation(local_to_world_matrix());
   }
 
   inline Vector3 LocalDirectionToWorld(Vector3 local_space_direction) const {
@@ -119,6 +127,10 @@ class Transform : public SceneObjectComponent {
   mutable Matrix3x4 local_to_world_;
   mutable Matrix3x4 world_to_local_;
 
+  inline const Transform* FindParentTransform() const;
+  inline Matrix3x4 FindParentToWorldMatrix() const;
+  inline Matrix3x4 FindWorldToParentMatrix() const;
+
   // Indicates whether the transformation matrices need to be re-calculated
   mutable bool dirty_ = true;
 
@@ -129,6 +141,29 @@ class Transform : public SceneObjectComponent {
   void FlagAsDirty();
   static void FlagAsDirty(SceneObject* object);
 };
+
+const Transform* Transform::FindParentTransform() const {
+  const SceneObject* parent = scene_object()->parent();
+  while (parent) {
+    const Transform* parent_transform = parent->GetComponent<Transform>("Transform");
+    if (parent_transform) {
+      return parent_transform;
+    } else {
+      parent = parent->parent();
+    }
+  }
+  return nullptr;
+}
+
+Matrix3x4 Transform::FindParentToWorldMatrix() const {
+  const Transform* parent_transform = FindParentTransform();
+  return parent_transform != nullptr ? parent_transform->local_to_world_matrix() : Matrix3x4::IdentityTransformation();
+}
+
+Matrix3x4 Transform::FindWorldToParentMatrix() const {
+  const Transform* parent_transform = FindParentTransform();
+  return parent_transform != nullptr ? parent_transform->world_to_local_matrix() : Matrix3x4::IdentityTransformation();
+}
 
 void to_json(json& data, const Transform& transform);
 void from_json(const json& data, Transform& transform);

@@ -59,7 +59,7 @@ void TransformationToolsController::Update(std::chrono::microseconds) {
 
   Vector2 position2d = object_position_screen_space_;
 
-  const Quaternion rotation = transform->local_rotation();
+  const Quaternion rotation = transform->world_rotation();
 
   const Vector3 unit_offset = viewport->WorldSpacePositionToScreenSpace(transform->world_position() + Vector3::PositiveX());
   world_to_screen_space_factor_ = Distance(unit_offset, object_position_screen_space_);
