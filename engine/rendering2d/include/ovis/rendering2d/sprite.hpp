@@ -31,7 +31,7 @@ class Sprite : public SceneObjectComponent {
 
  private:
   std::string texture_asset_;
-  Vector2 size_;
+  Vector2 size_ = {10.0f, 10.0f};
   Color color_ = {1.0, 1.0, 1.0, 1.0};
 
   static const json schema;
