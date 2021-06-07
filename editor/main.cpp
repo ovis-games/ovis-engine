@@ -33,8 +33,13 @@ int main(int argc, char* argv[]) {
     authentication_token = argv[3];
 
     Init();
+#if OVIS_EMSCRIPTEN
     SetEngineAssetsDirectory("/ovis_assets");
     CreateApplicationAssetLibrary<EditorAssetLibrary>("/assets/");
+#else
+    SetEngineAssetsDirectory(argv[1]);
+    CreateApplicationAssetLibrary<EditorAssetLibrary>(argv[2]);
+#endif
     // LoadModule<BaseModule>();
     // LoadModule<Rendering2DModule>();
     // LoadModule<Physics2DModule>();

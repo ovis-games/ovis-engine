@@ -87,7 +87,7 @@ target_link_options(
     "SHELL:-s EXPORT_NAME=createEditorModule"
     "SHELL:-s EXTRA_EXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap']"
 )
-endif (OVIS_EMSCRIPTEN)
+endif ()
 
 target_add_assets(
   ovis-editor
@@ -114,6 +114,7 @@ target_link_libraries(
     stb
     microtar
 )
+target_include_assets(ovis-editor)
 
 install(
   TARGETS ovis-editor
