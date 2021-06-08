@@ -10,7 +10,7 @@
 
 namespace ovis {
 
-inline constexpr float Determinant(const Matrix2& matrix) {
+inline float Determinant(const Matrix2& matrix) {
   return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
 }
 
@@ -170,9 +170,9 @@ inline constexpr Matrix4 Matrix4::FromOrthographicProjection(float left, float r
   }};
 }
 
-inline constexpr Matrix4 Matrix4::FromPerspectiveProjection(float vertical_field_of_view, float aspect_ratio,
-                                                            float near_clip_plane, float far_clip_plane) {
-  const float tan_half_fov = tan(0.5f * vertical_field_of_view);
+inline Matrix4 Matrix4::FromPerspectiveProjection(float vertical_field_of_view, float aspect_ratio,
+                                                  float near_clip_plane, float far_clip_plane) {
+  const float tan_half_fov = std::tan(0.5f * vertical_field_of_view);
 
   const float m00 = 1.0f / (aspect_ratio * tan_half_fov);
   const float m11 = 1.0f / (tan_half_fov);
@@ -188,7 +188,7 @@ inline constexpr Matrix4 Matrix4::FromPerspectiveProjection(float vertical_field
 }
 
 template <typename T, std::enable_if_t<is_matrix<T>::value, bool> = true>
-inline constexpr auto ExtractColumn(const T& matrix, int column_index) {
+inline auto ExtractColumn(const T& matrix, int column_index) {
   Vector<T::ROW_COUNT> vector;
   for (int i = 0; i < T::ROW_COUNT; ++i) {
     vector[i] = matrix[i][column_index];
@@ -197,7 +197,7 @@ inline constexpr auto ExtractColumn(const T& matrix, int column_index) {
 }
 
 template <typename T, std::enable_if_t<is_matrix<T>::value, bool> = true>
-inline constexpr auto Transpose(const T& matrix) {
+inline auto Transpose(const T& matrix) {
   Matrix<T::COLUMN_COUNT, T::ROW_COUNT> result;
   for (int i = 0; i < T::ROW_COUNT; ++i) {
     for (int j = 0; j < T::COLUMN_COUNT; ++j) {
@@ -209,7 +209,7 @@ inline constexpr auto Transpose(const T& matrix) {
 
 template <typename T, typename U,
           std::enable_if_t<is_matrix<T>::value && is_matrix<U>::value && U::COLUMN_COUNT == T::ROW_COUNT, bool> = true>
-inline constexpr Matrix<U::ROW_COUNT, T::COLUMN_COUNT> operator*(const T& lhs, const U& rhs) {
+inline Matrix<U::ROW_COUNT, T::COLUMN_COUNT> operator*(const T& lhs, const U& rhs) {
   Matrix<U::ROW_COUNT, T::COLUMN_COUNT> result;
   for (int i = 0; i < T::ROW_COUNT; ++i) {
     for (int j = 0; j < T::COLUMN_COUNT; ++j) {
@@ -223,7 +223,7 @@ inline constexpr Matrix<U::ROW_COUNT, T::COLUMN_COUNT> operator*(const T& lhs, c
 // that the 3x4 matrix on the right is actually a 4x4 matrix with the last row set to (0, 0, 0, 1). This allows
 // combining several transformations stored in 3x4 matrices.
 template <typename T, std::enable_if_t<is_matrix<T>::value && T::COLUMN_COUNT == 4, bool> = true>
-inline constexpr auto AffineCombine(const T& lhs, const Matrix3x4& rhs) {
+inline auto AffineCombine(const T& lhs, const Matrix3x4& rhs) {
   Matrix<T::ROW_COUNT, 4> result;
   for (int i = 0; i < T::ROW_COUNT; ++i) {
     for (int j = 0; j < 3; ++j) {
@@ -235,7 +235,7 @@ inline constexpr auto AffineCombine(const T& lhs, const Matrix3x4& rhs) {
 }
 
 template <typename T, std::enable_if_t<is_matrix<T>::value, bool> = true>
-inline constexpr T operator*=(T& lhs, const T& rhs) {
+inline T operator*=(T& lhs, const T& rhs) {
   return lhs = lhs * rhs;
 }
 
@@ -243,7 +243,7 @@ template <typename MatrixType, typename VectorType,
           std::enable_if_t<is_matrix<MatrixType>::value && is_vector<VectorType>::value &&
                                MatrixType::COLUMN_COUNT == VectorType::ELEMENT_COUNT,
                            bool> = true>
-inline constexpr Vector<MatrixType::ROW_COUNT> operator*(const MatrixType& matrix, const VectorType& vector) {
+inline Vector<MatrixType::ROW_COUNT> operator*(const MatrixType& matrix, const VectorType& vector) {
   Vector<MatrixType::ROW_COUNT> result;
   for (int i = 0; i < MatrixType::ROW_COUNT; ++i) {
     result[i] = Dot(matrix[i], vector);
@@ -255,7 +255,7 @@ template <typename MatrixType, typename VectorType,
           std::enable_if_t<is_matrix<MatrixType>::value && is_vector<VectorType>::value &&
                                MatrixType::ROW_COUNT == VectorType::ELEMENT_COUNT,
                            bool> = true>
-inline constexpr Vector<MatrixType::COLUMN_COUNT> operator*(const VectorType& vector, const MatrixType& matrix) {
+inline Vector<MatrixType::COLUMN_COUNT> operator*(const VectorType& vector, const MatrixType& matrix) {
   Vector<MatrixType::COLUMN_COUNT> result;
   for (int i = 0; i < MatrixType::COLUMN_COUNT; ++i) {
     result[i] = Dot(vector, ExtractColumn(matrix, i));
@@ -263,23 +263,23 @@ inline constexpr Vector<MatrixType::COLUMN_COUNT> operator*(const VectorType& ve
   return result;
 }
 
-inline constexpr Vector3 TransformDirection(const Matrix3x4& transform_matrix, const Vector3& vector) {
+inline Vector3 TransformDirection(const Matrix3x4& transform_matrix, const Vector3& vector) {
   const Vector4 direction_vector = {vector.x, vector.y, vector.z, 0.0f};
   return transform_matrix * direction_vector;
 }
 
-inline constexpr Vector3 TransformPosition(const Matrix3x4& transform_matrix, const Vector3& vector) {
+inline Vector3 TransformPosition(const Matrix3x4& transform_matrix, const Vector3& vector) {
   const Vector4 position_vector = {vector.x, vector.y, vector.z, 1.0f};
   return transform_matrix * position_vector;
 }
 
-inline constexpr Vector3 TransformPosition(const Matrix4& transform_matrix, const Vector3& vector) {
+inline Vector3 TransformPosition(const Matrix4& transform_matrix, const Vector3& vector) {
   const Vector4 position_vector = {vector.x, vector.y, vector.z, 1.0f};
   const Vector4 transformed_vector = transform_matrix * position_vector;
   return Vector3{transformed_vector.x, transformed_vector.y, transformed_vector.z} / transformed_vector.w;
 }
 
-inline constexpr Matrix3x4 InvertAffineNoScale(const Matrix3x4& matrix) {
+inline Matrix3x4 InvertAffineNoScale(const Matrix3x4& matrix) {
   // See https://lxjk.github.io/2017/09/03/Fast-4x4-Matrix-Inverse-with-SSE-SIMD-Explained.html for an explanation.
   // Note here the translation is in the last column, not the last row!.
   Matrix3x4 result;
@@ -293,7 +293,7 @@ inline constexpr Matrix3x4 InvertAffineNoScale(const Matrix3x4& matrix) {
   return result;
 }
 
-inline constexpr Matrix3x4 InvertAffine(const Matrix3x4& matrix) {
+inline Matrix3x4 InvertAffine(const Matrix3x4& matrix) {
   // Same as above, but we'll take the scaling into account.
   Matrix3x4 result;
 
@@ -306,7 +306,7 @@ inline constexpr Matrix3x4 InvertAffine(const Matrix3x4& matrix) {
   return result;
 }
 
-inline constexpr Matrix4 Invert(const Matrix4& matrix) {
+inline Matrix4 Invert(const Matrix4& matrix) {
   // TODO: implement the method explained here:
   // https://lxjk.github.io/2017/09/03/Fast-4x4-Matrix-Inverse-with-SSE-SIMD-Explained.html
 

@@ -12,8 +12,10 @@
 #include "windows/toolbar.hpp"
 #include "windows/profiling_window.hpp"
 
+#if OVIS_EMSCRIPTEN
 #include <emscripten.h>
 #include <emscripten/html5.h>
+#endif
 #include <imgui.h>
 #include <imgui_internal.h>
 
@@ -25,6 +27,7 @@
 #include <ovis/imgui/imgui_start_frame_controller.hpp>
 #include <ovis/application/window.hpp>
 
+#if OVIS_EMSCRIPTEN
 extern "C" {
 
 void EMSCRIPTEN_KEEPALIVE DropFile(const char* filename) {
@@ -37,6 +40,7 @@ void EMSCRIPTEN_KEEPALIVE QuitEditor() {
   SDL_PushEvent(&sdl_event);
 }
 }
+#endif
 
 namespace ovis {
 namespace editor {
@@ -48,12 +52,14 @@ WindowDescription CreateWindowDescription() {
 
   window_description.title = "Ovis Editor";
 
+#if OVIS_EMSCRIPTEN
   double canvas_css_width;
   double canvas_css_height;
   if (emscripten_get_element_css_size("canvas", &canvas_css_width, &canvas_css_height) == EMSCRIPTEN_RESULT_SUCCESS) {
     window_description.width = static_cast<int>(canvas_css_width);
     window_description.height = static_cast<int>(canvas_css_height);
   }
+#endif
 
   return window_description;
 }
@@ -89,7 +95,9 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   instance_ = this;
 
   // Add them here, so the instance variable is set
+#if OVIS_EMSCRIPTEN
   scene()->AddController(std::make_unique<LoadingWindow>());
+#endif
   scene()->AddController(std::make_unique<ImGuiStartFrameController>());
   scene()->AddController(std::make_unique<ImGuiEndFrameController>());
   scene()->AddController(std::make_unique<Toolbar>());
@@ -127,6 +135,7 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
 }
 
 void EditorWindow::Update(std::chrono::microseconds delta_time) {
+#if OVIS_EMSCRIPTEN
   double canvas_css_width;
   double canvas_css_height;
   int canvas_width;
@@ -140,6 +149,7 @@ void EditorWindow::Update(std::chrono::microseconds delta_time) {
     // static_cast<int>(canvas_css_height));
     Resize(static_cast<int>(canvas_css_width), static_cast<int>(canvas_css_height));
   }
+#endif
 
   Window::Update(delta_time);
 }

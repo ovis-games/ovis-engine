@@ -51,14 +51,21 @@ target_link_libraries(
     ovis::core
 )
 
-if (NOT OVIS_EMSCRIPTEN)
+if (APPLE)
   find_package(OpenGL REQUIRED)
   target_link_libraries(
     ovis-graphics
     PUBLIC
       OpenGL::GL
   )
-endif (NOT OVIS_EMSCRIPTEN)
+elseif (NOT OVIS_EMSCRIPTEN)
+  find_package(OpenGL REQUIRED)
+  target_link_libraries(
+    ovis-graphics
+    PUBLIC
+      OpenGL::OpenGL
+  )
+endif ()
 
 if (WIN32)
   find_package(GLEW REQUIRED)

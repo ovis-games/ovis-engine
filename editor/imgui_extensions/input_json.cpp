@@ -37,7 +37,7 @@ bool InputJson(const char* label, ovis::json* value, bool* keep, const ovis::jso
     if (custom_functions.count(reference) == 1) {
       json_changed = custom_functions[reference](label, value, schema, flags);
     } else {
-      const unsigned hashtag_position = reference.find('#');
+      const auto hashtag_position = reference.find('#');
       if (hashtag_position == std::string::npos) {
         ovis::LogE("Invalid JSON reference: {}", reference);
         return false;

@@ -10,22 +10,24 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_compile_options(
-  ovis-player
-  PUBLIC
-  "SHELL:-s FETCH=1"
-  "SHELL:-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0"
-)
-target_link_options(
-  ovis-player
-  PUBLIC
+if (OVIS_EMSCRIPTEN)
+  target_compile_options(
+    ovis-player
+    PUBLIC
     "SHELL:-s FETCH=1"
-    "SHELL:-s FORCE_FILESYSTEM=1"
-    "SHELL:-s MODULARIZE=1"
-    "SHELL:-s ALLOW_MEMORY_GROWTH=1"
-    "SHELL:-s EXPORT_NAME=createPlayerModule"
-    "SHELL:-s EXTRA_EXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap']"
-)
+    "SHELL:-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0"
+  )
+  target_link_options(
+    ovis-player
+    PUBLIC
+      "SHELL:-s FETCH=1"
+      "SHELL:-s FORCE_FILESYSTEM=1"
+      "SHELL:-s MODULARIZE=1"
+      "SHELL:-s ALLOW_MEMORY_GROWTH=1"
+      "SHELL:-s EXPORT_NAME=createPlayerModule"
+      "SHELL:-s EXTRA_EXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap']"
+  )
+endif (OVIS_EMSCRIPTEN)
 
 target_link_libraries(
   ovis-player
@@ -33,6 +35,8 @@ target_link_libraries(
     ovis::application
     microtar
 )
+
+target_include_assets(ovis-player)
 
 install(
   TARGETS ovis-player

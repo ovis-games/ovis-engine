@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 
-#include <emscripten/fetch.h>
-
 namespace ovis {
 namespace editor {
 

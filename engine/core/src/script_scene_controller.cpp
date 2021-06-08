@@ -1,3 +1,5 @@
+#include <sol/sol.hpp>
+
 #include <ovis/utils/log.hpp>
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/scene.hpp>
@@ -132,7 +134,6 @@ void ScriptSceneController::RegisterType(sol::table* module) {
 
   scene_controller_type["initialize"] = [](sol::table scene_controller) { GetSubscribedEventsTable(scene_controller); };
   (*module)["ScriptSceneController"] = scene_controller_type;
-
 
   sol::usertype<ScriptSceneController> script_scene_controller_type =
       module->new_usertype<ScriptSceneController>("ScriptSceneControllerWrapper");

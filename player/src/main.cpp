@@ -1,8 +1,10 @@
 #include <cstring>
 
+#if OVIS_EMSCRIPTEN
 #include <emscripten.h>
 #include <emscripten/val.h>
 #include <ovis/player/loading_controller.hpp>
+#endif
 
 #include <ovis/utils/log.hpp>
 #include <ovis/core/asset_library.hpp>
@@ -10,6 +12,7 @@
 #include <ovis/application/application.hpp>
 #include <ovis/application/window.hpp>
 
+#if OVIS_EMSCRIPTEN
 extern "C" {
 
 void EMSCRIPTEN_KEEPALIVE QuitGame() {
@@ -18,6 +21,7 @@ void EMSCRIPTEN_KEEPALIVE QuitGame() {
   SDL_PushEvent(&sdl_event);
 }
 }
+#endif
 
 // Usage: ovis-player backend_url project_id
 int main(int argc, char* argv[]) {
@@ -36,16 +40,16 @@ int main(int argc, char* argv[]) {
   std::string_view package_type = argv[4];
 
   Init();
+
+#if OVIS_EMSCRIPTEN
   SetEngineAssetsDirectory("/ovis_assets");
+#endif
 
   Window window(WindowDescription{});
   window.AddRenderPass("ClearPass");
   window.AddRenderPass("SpriteRenderer");
 
+#if OVIS_EMSCRIPTEN
   window.scene()->AddController<player::LoadingController>(backend_prefix, user_name, game_name, package_type);
-
-  Run();
-
-  Quit();
-  return 0;
+#endif
 }

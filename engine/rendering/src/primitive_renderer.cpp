@@ -3,6 +3,7 @@
 #include <ovis/rendering/rendering_viewport.hpp>
 
 namespace ovis {
+std::map<GraphicsContext*, std::weak_ptr<PrimitiveRenderer::Resources>> PrimitiveRenderer::resources;
 
 PrimitiveRenderer::PrimitiveRenderer(std::string_view name) : RenderPass(name) {}
 
