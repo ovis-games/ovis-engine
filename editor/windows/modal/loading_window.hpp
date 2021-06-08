@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include <emscripten/fetch.h>
+#include <ovis/networking/fetch.hpp>
 
 namespace ovis {
 namespace editor {
@@ -20,10 +20,6 @@ class LoadingWindow : public ModalWindow {
   std::vector<std::string> files_to_download_;
   std::set<std::string> downloaded_files_;
   std::string current_file_;
-
-  static void FileListDownloadSucceded(emscripten_fetch_t* fetch);
-  static void FileDownloadSucceded(emscripten_fetch_t* fetch);
-  static void DownloadFailed(emscripten_fetch_t* fetch);
   void DownloadNextFile();
 };
 

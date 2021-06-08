@@ -171,7 +171,7 @@ IndexedRange<T, I> IndexRange(C&& container) {
   return {container.begin(), container.end()};
 }
 
-template <size_t ELEMENT_INDEX, typename IteratorType>
+template <std::size_t ELEMENT_INDEX, typename IteratorType>
 class TupleElementRange {
  public:
   class IteratorAdapter {

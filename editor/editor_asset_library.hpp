@@ -3,8 +3,6 @@
 #include <optional>
 #include <set>
 
-#include <emscripten/fetch.h>
-
 #include <ovis/core/asset_library.hpp>
 #include <ovis/utils/file.hpp>
 #include <ovis/utils/json.hpp>

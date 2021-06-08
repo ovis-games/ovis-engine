@@ -27,8 +27,8 @@ union alignas(sizeof(float) * 4) Quaternion {
 
   inline static constexpr Quaternion Identity();
 
-  inline static constexpr Quaternion FromAxisAndAngle(const Vector3& axis, float angle);
-  inline static constexpr Quaternion FromEulerAngles(float yaw, float pitch, float roll);
+  inline static Quaternion FromAxisAndAngle(const Vector3& axis, float angle);
+  inline static Quaternion FromEulerAngles(float yaw, float pitch, float roll);
 };
 static_assert(sizeof(Quaternion) == 16);
 static_assert(std::is_trivially_copyable<Quaternion>());

@@ -1,3 +1,5 @@
+#if OVIS_EMSCRIPTEN
+
 #include <filesystem>
 
 #include <imgui.h>
@@ -119,3 +121,5 @@ void LoadingController::Update(std::chrono::microseconds ms) {
 }  // namespace player
 
 }  // namespace ovis
+
+#endif

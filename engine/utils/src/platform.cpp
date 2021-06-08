@@ -1,6 +1,8 @@
 #include <string>
 
+#if OVIS_EMSCRIPTEN
 #include <emscripten/val.h>
+#endif
 
 #include <ovis/utils/platform.hpp>
 

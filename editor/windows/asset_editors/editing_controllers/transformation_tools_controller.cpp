@@ -283,7 +283,7 @@ void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_ev
       const Vector2 scale_direction_screen_space = Normalize(screen_offset - object_position_screen_space_);
       const float distance_in_scale_direction =
           Dot(scale_direction_screen_space, mouse_move_event->relative_screen_space_position());
-      const float scale_factor = std::powf(1.01, distance_in_scale_direction);
+      const float scale_factor = std::pow(1.01, distance_in_scale_direction);
 
       Vector3 scale = transform->scale();
       if (selected_axes_ == AxesSelection::X) {
