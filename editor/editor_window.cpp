@@ -94,7 +94,9 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   instance_ = this;
 
   // Add them here, so the instance variable is set
+#if OVIS_EMSCRIPTEN
   scene()->AddController(std::make_unique<LoadingWindow>());
+#endif
   scene()->AddController(std::make_unique<ImGuiStartFrameController>());
   scene()->AddController(std::make_unique<ImGuiEndFrameController>());
   scene()->AddController(std::make_unique<Toolbar>());
