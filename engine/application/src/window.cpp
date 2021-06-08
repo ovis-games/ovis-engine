@@ -93,6 +93,15 @@ bool Window::SendEvent(const SDL_Event& event) {
     }
   }
 
+  const auto sdl_button_to_mouse_button = [](uint8_t sdl_button) {
+    switch (sdl_button) {
+      case SDL_BUTTON_LEFT: return MouseButton::Left();
+      case SDL_BUTTON_MIDDLE: return MouseButton::Middle();
+      case SDL_BUTTON_RIGHT: return MouseButton::Right();
+      default: SDL_assert(false); return MouseButton::Left();
+    }
+  };
+
 #if !OVIS_EMSCRIPTEN
   switch (event.type) {
     case SDL_MOUSEWHEEL: {
@@ -101,28 +110,28 @@ bool Window::SendEvent(const SDL_Event& event) {
       return !mouse_wheel_event.is_propagating();
     }
 
-    // case SDL_MOUSEMOTION: {
-    //   MouseMoveEvent mouse_move_event(this, {static_cast<float>(event.motion.x), static_cast<float>(event.motion.y)},
-    //                                   {static_cast<float>(event.motion.xrel), static_cast<float>(event.motion.yrel)});
-    //   scene_.ProcessEvent(&mouse_move_event);
-    //   return !mouse_move_event.is_propagating();
-    // }
+    case SDL_MOUSEMOTION: {
+      MouseMoveEvent mouse_move_event(this, {static_cast<float>(event.motion.x), static_cast<float>(event.motion.y)},
+                                      {static_cast<float>(event.motion.xrel), static_cast<float>(event.motion.yrel)});
+      scene_.ProcessEvent(&mouse_move_event);
+      return !mouse_move_event.is_propagating();
+    }
 
-    // case SDL_MOUSEBUTTONDOWN: {
-    //   MouseButtonPressEvent mouse_button_event(this,
-    //                                            {static_cast<float>(event.button.x), static_cast<float>(event.button.y)},
-    //                                            static_cast<MouseButton>(event.button.button));
-    //   scene_.ProcessEvent(&mouse_button_event);
-    //   return !mouse_button_event.is_propagating();
-    // }
+    case SDL_MOUSEBUTTONDOWN: {
+      MouseButtonPressEvent mouse_button_event(this,
+                                               {static_cast<float>(event.button.x), static_cast<float>(event.button.y)},
+                                               sdl_button_to_mouse_button(event.button.button));
+      scene_.ProcessEvent(&mouse_button_event);
+      return !mouse_button_event.is_propagating();
+    }
 
-    // case SDL_MOUSEBUTTONUP: {
-    //   MouseButtonReleaseEvent mouse_button_event(
-    //       this, {static_cast<float>(event.button.x), static_cast<float>(event.button.y)},
-    //       static_cast<MouseButton>(event.button.button));
-    //   scene_.ProcessEvent(&mouse_button_event);
-    //   return !mouse_button_event.is_propagating();
-    // }
+    case SDL_MOUSEBUTTONUP: {
+      MouseButtonReleaseEvent mouse_button_event(
+          this, {static_cast<float>(event.button.x), static_cast<float>(event.button.y)},
+          sdl_button_to_mouse_button(event.button.button));
+      scene_.ProcessEvent(&mouse_button_event);
+      return !mouse_button_event.is_propagating();
+    }
 
     case SDL_TEXTINPUT: {
       TextInputEvent text_input_event(event.text.text);
@@ -131,13 +140,13 @@ bool Window::SendEvent(const SDL_Event& event) {
     }
 
     case SDL_KEYDOWN: {
-      KeyPressEvent key_press_event({static_cast<uint16_t>(event.key.keysym.scancode)});
+      KeyPressEvent key_press_event(Key{static_cast<uint16_t>(event.key.keysym.scancode)});
       scene_.ProcessEvent(&key_press_event);
       return !key_press_event.is_propagating();
     }
 
     case SDL_KEYUP: {
-      KeyReleaseEvent key_release_event({static_cast<uint16_t>(event.key.keysym.scancode)});
+      KeyPressEvent key_release_event(Key{static_cast<uint16_t>(event.key.keysym.scancode)});
       scene_.ProcessEvent(&key_release_event);
       return !key_release_event.is_propagating();
     }
