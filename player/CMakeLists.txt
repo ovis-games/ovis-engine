@@ -36,6 +36,8 @@ target_link_libraries(
     microtar
 )
 
+target_include_assets(ovis-player)
+
 install(
   TARGETS ovis-player
   RUNTIME DESTINATION .
