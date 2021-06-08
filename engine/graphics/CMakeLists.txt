@@ -65,7 +65,7 @@ elseif (NOT OVIS_EMSCRIPTEN)
     PUBLIC
       OpenGL::OpenGL
   )
-endif (NOT OVIS_EMSCRIPTEN)
+endif ()
 
 if (WIN32)
   find_package(GLEW REQUIRED)
