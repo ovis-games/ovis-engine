@@ -19,7 +19,7 @@ class EditorCameraController : public EditorController {
 
  private:
   Camera camera_;
-  Transform transform_;
+  Vector3 camera_position_;
 };
 
 }  // namespace editor
