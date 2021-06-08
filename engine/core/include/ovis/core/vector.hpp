@@ -13,19 +13,19 @@ namespace ovis {
 
 // The "perp-dot product".
 // See Graphics Gems IV chapter II.2, `The Pleasure of "Perp Dot" Products` by F.S. Hill, Jr.
-inline constexpr float PerpDot(const Vector2& lhs, const Vector2& rhs) {
+inline float PerpDot(const Vector2& lhs, const Vector2& rhs) {
   return lhs.x * rhs.y - lhs.y * rhs.x;
 }
 
-inline constexpr Vector2 ConstructOrthogonalVectorCW(const Vector2& vector) {
+inline Vector2 ConstructOrthogonalVectorCW(const Vector2& vector) {
   return {vector.y, -vector.x};
 }
 
-inline constexpr Vector2 ConstructOrthogonalVectorCCW(const Vector2& vector) {
+inline Vector2 ConstructOrthogonalVectorCCW(const Vector2& vector) {
   return {-vector.y, vector.x};
 }
 
-inline constexpr Vector3 ConstructOrthogonalVector(const Vector3& vector) {
+inline Vector3 ConstructOrthogonalVector(const Vector3& vector) {
   if (std::abs(vector.x) > std::abs(vector.y)) {
     return Vector3{-vector.z, 0.0f, vector.x} / std::sqrt(vector.x * vector.x + vector.z * vector.z);
   } else {
@@ -33,7 +33,7 @@ inline constexpr Vector3 ConstructOrthogonalVector(const Vector3& vector) {
   }
 }
 
-inline constexpr Vector3 Cross(const Vector3& lhs, const Vector3& rhs) {
+inline Vector3 Cross(const Vector3& lhs, const Vector3& rhs) {
   // clang-format off
   return {
     lhs.y * rhs.z - rhs.y * lhs.z,
@@ -44,7 +44,7 @@ inline constexpr Vector3 Cross(const Vector3& lhs, const Vector3& rhs) {
 }
 
 template <int VECTOR1_INDEX0, int VECTOR1_INDEX1, int VECTOR2_INDEX0, int VECTOR2_INDEX1>
-inline constexpr Vector4 Shuffle(const Vector4& vector1, const Vector4& Vector2) {
+inline Vector4 Shuffle(const Vector4& vector1, const Vector4& Vector2) {
   return {
       vector1[VECTOR1_INDEX0],
       vector1[VECTOR1_INDEX1],
