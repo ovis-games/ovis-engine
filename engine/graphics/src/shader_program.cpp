@@ -82,10 +82,11 @@ void ShaderProgram::AttachShader(const std::string& source, GLenum shader_type) 
     // } else if (shader_type == GL_FRAGMENT_SHADER) {
     //   final_shader_source += "#define in varying\n";
     // }
-    // if (shader_type == GL_FRAGMENT_SHADER) {
-    //    final_shader_source += "layout(location = 0) out vec4
-    //    gl_FragColor;\n";
-    //  }
+    if (shader_type == GL_FRAGMENT_SHADER) {
+       final_shader_source += "layout(location = 0) out vec4 color;\n";
+       final_shader_source += "#define gl_FragColor color\n";
+       final_shader_source += "#define texture2D texture\n";
+     }
 #endif
     final_shader_source += source;
 
