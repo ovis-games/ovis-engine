@@ -462,6 +462,20 @@ void SceneViewEditor::DrawObjectTree() {
       if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
         object_selection_controller->ClearSelection();
       }
+      if (ImGui::BeginDragDropTarget()) {
+        const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("scene_object");
+        if (payload) {
+          SceneObject* dragged_object = *reinterpret_cast<SceneObject**>(payload->Data);
+          if (dragged_object->scene() != game_scene() || dragged_object->parent() != nullptr) {
+            DoOnceAfterDraw([this, dragged_object]() {
+              game_scene()->CreateObject(dragged_object->name(), dragged_object->Serialize());
+              dragged_object->scene()->DeleteObject(dragged_object);
+              SubmitChangesToScene();
+            });
+          }
+        }
+        ImGui::EndDragDropTarget();
+      }
 
       for (SceneObject* object : game_scene()->root_objects()) {
         SDL_assert(object != nullptr);
@@ -501,6 +515,28 @@ void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
     if (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete))) {
       game_scene()->DeleteObject(GetSelectedObject());
       SubmitChangesToScene();
+    }
+
+    if (ImGui::BeginDragDropSource()) {
+      static_assert(std::is_same_v<typeof(object), SceneObject*>);
+      ImGui::SetDragDropPayload("scene_object", &object, sizeof(object), ImGuiCond_Always);
+      ImGui::Text("%s", object_name.c_str());
+      ImGui::EndDragDropSource();
+    }
+
+    if (ImGui::BeginDragDropTarget()) {
+      const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("scene_object");
+      if (payload) {
+        SceneObject* dragged_object = *reinterpret_cast<SceneObject**>(payload->Data);
+        if (dragged_object->parent() != object) {
+          DoOnceAfterDraw([this, dragged_object, object]() {
+            object->CreateChildObject(dragged_object->name(), dragged_object->Serialize());
+            dragged_object->scene()->DeleteObject(dragged_object);
+            SubmitChangesToScene();
+          });
+        }
+      }
+      ImGui::EndDragDropTarget();
     }
 
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
