@@ -4,8 +4,6 @@
 #include <iterator>
 #include <vector>
 
-#include <emscripten.h>
-
 namespace {
 
 struct ClipboardData {
@@ -23,6 +21,9 @@ auto FindClipboardEntry(std::string_view type) {
 }
 
 }  // namespace
+
+#if OVIS_EMSCRIPTEN
+#include <emscripten.h>
 
 extern "C" {
 
@@ -69,15 +70,21 @@ void EMSCRIPTEN_KEEPALIVE OvisClipboard_EndPaste() {
 }
 
 }
+#endif 
 
 namespace ovis {
 namespace editor {
 
 bool ClipboardContainsData(std::string_view type) {
+#if OVIS_EMSCRIPEN
   return FindClipboardEntry(type) == clipboard_data.end();
+#else
+  return type == "text/plain" && SDL_HasClipboardText();
+#endif
 }
 
 std::optional<std::string_view> GetClipboardData(std::string_view type) {
+#if OVIS_EMSCRIPTEN
   const auto it = FindClipboardEntry(type);
 
   if (it != clipboard_data.end()) {
@@ -85,6 +92,21 @@ std::optional<std::string_view> GetClipboardData(std::string_view type) {
   } else {
     return {};
   }
+#else
+  if (type != "text/plain") {
+    return {};
+  }
+
+  char* clipboard_text = SDL_GetClipboardText();
+  if (clipboard_text != nullptr) {
+    clipboard_data.clear();
+    clipboard_data.emplace_back("text/plain", clipboard_text);
+    SDL_free(clipboard_text);
+    return clipboard_data.back().content;
+  } else {
+    return {};
+  }
+#endif
 }
 
 void SetClipboardData(std::string_view value, std::string_view type) {
@@ -92,8 +114,18 @@ void SetClipboardData(std::string_view value, std::string_view type) {
 
   if (it != clipboard_data.end()) {
     it->content = value;
+#if !OVIS_EMSCRIPTEN
+    if (type == "text/plain") {
+      SDL_SetClipboardText(it->content.c_str());
+    }
+#endif
   } else {
     clipboard_data.emplace_back(type, value);
+#if !OVIS_EMSCRIPTEN
+    if (type == "text/plain") {
+      SDL_SetClipboardText(clipboard_data.back().content.c_str());
+    }
+#endif
   }
 }
 

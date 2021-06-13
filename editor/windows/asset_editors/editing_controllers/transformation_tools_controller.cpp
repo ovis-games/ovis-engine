@@ -158,7 +158,7 @@ bool TransformationToolsController::CheckMousePosition(Vector2 position) {
       }
 
     case TransformationType::ROTATE:
-      auto viewport = game_scene()->main_viewport();
+      auto viewport = editing_scene()->main_viewport();
       const Ray3D view_ray = viewport->CalculateViewRay(position);
       auto hitting_rotate_gizmo = [this, view_ray, viewport](Vector3 rotation_axis) -> bool {
         const Plane3D plane = Plane3D::FromPointAndNormal(object_position_world_space_, rotation_axis);
@@ -283,7 +283,7 @@ void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_ev
       const Vector2 scale_direction_screen_space = Normalize(screen_offset - object_position_screen_space_);
       const float distance_in_scale_direction =
           Dot(scale_direction_screen_space, mouse_move_event->relative_screen_space_position());
-      const float scale_factor = std::powf(1.01, distance_in_scale_direction);
+      const float scale_factor = std::pow(1.01, distance_in_scale_direction);
 
       Vector3 scale = transform->local_scale();
       if (selected_axes_ == AxesSelection::X) {

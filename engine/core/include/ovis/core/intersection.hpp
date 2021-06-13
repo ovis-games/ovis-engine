@@ -43,7 +43,7 @@ struct Plane3D {
     return {Vector4::FromVector3(normalized_normal, Dot(point, normalized_normal))};
   }
 
-  static inline constexpr Plane3D FromPointAndSpanningVectors(Vector3 point, Vector3 v, Vector3 w) {
+  static inline Plane3D FromPointAndSpanningVectors(Vector3 point, Vector3 v, Vector3 w) {
     return FromPointAndNormal(point, Cross(v, w));
   }
 };
@@ -86,7 +86,7 @@ struct AxisAlignedBoundingBox {
 using AxisAlignedBoundingBox2D = AxisAlignedBoundingBox<Vector2>;
 using AxisAlignedBoundingBox3D = AxisAlignedBoundingBox<Vector3>;
 
-inline constexpr std::optional<Vector3> ComputeRayPlaneIntersection(Ray3D ray, Plane3D plane) {
+inline std::optional<Vector3> ComputeRayPlaneIntersection(Ray3D ray, Plane3D plane) {
   const Vector3 plane_normal = plane.normal();
 
   const float denominator = Dot(ray.direction, plane_normal);

@@ -57,7 +57,7 @@ void RenderTargetConfiguration::ClearColor(size_t color_attachment_index, const 
   glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
   glClear(GL_COLOR_BUFFER_BIT);
 #else
-  glClearBufferfv(GL_COLOR, color_attachment_index, glm::value_ptr(clear_color));
+  glClearBufferfv(GL_COLOR, color_attachment_index, clear_color);
 #endif
 }
 

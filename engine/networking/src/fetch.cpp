@@ -1,15 +1,16 @@
-#if OVIS_EMSCRIPTEN
-
 #include <array>
 #include <vector>
 
 #include <SDL2/SDL_assert.h>
+#if OVIS_EMSCRIPTEN
 #include <emscripten/fetch.h>
+#endif
 
 #include <ovis/networking/fetch.hpp>
 
 namespace ovis {
 
+#if OVIS_EMSCRIPTEN
 namespace {
 
 const std::array<const char*, 9> MethodStrings = {"GET",     "HEAD",    "POST",  "PUT",  "DELETE",
@@ -107,7 +108,13 @@ void Fetch(const std::string& url, const FetchOptions& options, Blob body) {
 
   emscripten_fetch(&attr, url.c_str());
 }
+#else
+void Fetch(const std::string& url, const FetchOptions& options, Blob body) {
+  FetchResponse response;
+  response.status_code = 501;
+  options.on_error(response);
+}
+#endif
 
 }  // namespace ovis
 
-#endif

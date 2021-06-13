@@ -26,7 +26,7 @@ union Matrix2 {
   static constexpr int ROW_COUNT = 2;
   static constexpr int COLUMN_COUNT = 2;
 
-  inline static constexpr Matrix2 FromVector(const Vector4& vector);
+  inline static Matrix2 FromVector(const Vector4& vector);
 };
 static_assert(sizeof(Matrix2) == 16);
 static_assert(std::is_trivially_copyable<Matrix2>());
@@ -39,8 +39,8 @@ struct MatrixTypes<2, 2> {
 union Matrix3 {
   Vector3 rows[3];
 
-  inline Vector3& operator[](int row_index) { return rows[row_index]; }
-  inline Vector3 operator[](int row_index) const { return rows[row_index]; }
+  inline constexpr Vector3& operator[](int row_index) { return rows[row_index]; }
+  inline constexpr Vector3 operator[](int row_index) const { return rows[row_index]; }
 
   static constexpr int ELEMENT_COUNT = 3;
   static constexpr int ROW_COUNT = 3;
@@ -58,8 +58,8 @@ union Matrix3x4 {
   Vector4 rows[3];
   float data[12];
 
-  inline Vector4& operator[](int row_index) { return rows[row_index]; }
-  inline Vector4 operator[](int row_index) const { return rows[row_index]; }
+  inline constexpr Vector4& operator[](int row_index) { return rows[row_index]; }
+  inline constexpr Vector4 operator[](int row_index) const { return rows[row_index]; }
 
   static constexpr int ELEMENT_COUNT = 3;
   static constexpr int ROW_COUNT = 3;
@@ -94,8 +94,8 @@ union Matrix4 {
   Vector4 rows[4];
   float data[16];
 
-  inline Vector4& operator[](int row_index) { return rows[row_index]; }
-  inline Vector4 operator[](int row_index) const { return rows[row_index]; }
+  inline constexpr Vector4& operator[](int row_index) { return rows[row_index]; }
+  inline constexpr Vector4 operator[](int row_index) const { return rows[row_index]; }
 
   static constexpr int ELEMENT_COUNT = 4;
   static constexpr int ROW_COUNT = 4;
@@ -118,8 +118,8 @@ union Matrix4 {
   inline static constexpr Matrix4 FromRotation(const Quaternion& rotation);
   inline static constexpr Matrix4 FromOrthographicProjection(float left, float right, float bottom, float top,
                                                              float near_clip_plane, float far_clip_plane);
-  inline static constexpr Matrix4 FromPerspectiveProjection(float vertical_field_of_view, float aspect_ratio,
-                                                            float near_clip_plane, float far_clip_plane);
+  inline static Matrix4 FromPerspectiveProjection(float vertical_field_of_view, float aspect_ratio,
+                                                  float near_clip_plane, float far_clip_plane);
 };
 static_assert(sizeof(Matrix4) == 64);
 static_assert(std::is_trivially_copyable<Matrix4>());

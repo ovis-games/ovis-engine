@@ -7,7 +7,7 @@
 namespace ovis {
 namespace editor {
 
-EditorCameraController::EditorCameraController() : EditorController("EditorCameraController"), camera_(nullptr), transform_(nullptr) {
+EditorCameraController::EditorCameraController() : EditorController("EditorCameraController"), camera_(nullptr) {
   SubscribeToEvent(MouseMoveEvent::TYPE);
   SubscribeToEvent(MouseButtonPressEvent::TYPE);
   SubscribeToEvent(MouseWheelEvent::TYPE);
@@ -15,6 +15,7 @@ EditorCameraController::EditorCameraController() : EditorController("EditorCamer
   camera_.SetProjectionType(ProjectionType::ORTHOGRAPHIC);
   camera_.SetVerticalFieldOfView(100.0f);
   camera_.SetNearClipPlane(0.0f);
+  camera_position_ = Vector3::Zero();
 }
 
 void EditorCameraController::Update(std::chrono::microseconds delta_time) {
@@ -26,7 +27,7 @@ void EditorCameraController::Update(std::chrono::microseconds delta_time) {
   }
 
   camera_.SetAspectRatio(viewport->GetAspectRatio());
-  viewport->SetCustomCameraMatrices(transform_.world_to_local_matrix(), camera_.projection_matrix());
+  viewport->SetCustomCameraMatrices(Matrix3x4::FromTranslation(-camera_position_), camera_.projection_matrix());
 }
 
 void EditorCameraController::ProcessEvent(Event* event) {
@@ -48,12 +49,12 @@ void EditorCameraController::ProcessEvent(Event* event) {
 
       const Vector3 camera_offset = previous_world_space_position - new_world_space_position;
 
-      transform_.Move(camera_offset);
+      camera_position_ += camera_offset;
       event->StopPropagation();
     }
   } else if (event->type() == MouseWheelEvent::TYPE) {
     MouseWheelEvent* mouse_wheel_event = static_cast<MouseWheelEvent*>(event);
-    camera_.SetVerticalFieldOfView(camera_.vertical_field_of_view() * std::powf(2.0, -mouse_wheel_event->delta().y));
+    camera_.SetVerticalFieldOfView(camera_.vertical_field_of_view() * std::pow(2.0, -mouse_wheel_event->delta().y));
     event->StopPropagation();
   }
 }

@@ -1,7 +1,5 @@
 #pragma once
 
-#if OVIS_EMSCRIPTEN
-
 #include <string>
 #include <functional>
 #include <map>
@@ -44,5 +42,3 @@ struct FetchOptions {
 void Fetch(const std::string& url, const FetchOptions& options, Blob body = {});
 
 }  // namespace ovis
-
-#endif

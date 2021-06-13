@@ -313,7 +313,7 @@ auto TransformRange(const Range& range, Functor f) {
   return RangeAdapter(range.begin(), range.end(), f);
 }
 
-template <size_t ELEMENT_INDEX, typename IteratorType>
+template <std::size_t ELEMENT_INDEX, typename IteratorType>
 class TupleElementRange {
  public:
   class IteratorAdapter {

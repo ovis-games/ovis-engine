@@ -18,7 +18,7 @@ inline constexpr Quaternion Quaternion::Identity() {
   return {1.0f, 0.0f, 0.0f, 0.0f};
 }
 
-inline constexpr Quaternion Quaternion::FromAxisAndAngle(const Vector3& axis, float angle) {
+inline Quaternion Quaternion::FromAxisAndAngle(const Vector3& axis, float angle) {
   const float half_angle = 0.5f * angle;
   const float sin_half_angle = std::sin(half_angle);
   const float cos_half_angle = std::cos(half_angle);
@@ -31,7 +31,7 @@ inline constexpr Quaternion Quaternion::FromAxisAndAngle(const Vector3& axis, fl
   };
 }
 
-inline constexpr Quaternion Quaternion::FromEulerAngles(float yaw, float pitch, float roll) {
+inline Quaternion Quaternion::FromEulerAngles(float yaw, float pitch, float roll) {
   const float cy = std::cos(yaw * 0.5);
   const float sy = std::sin(yaw * 0.5);
   const float cp = std::cos(pitch * 0.5);
@@ -48,7 +48,7 @@ inline constexpr Quaternion Quaternion::FromEulerAngles(float yaw, float pitch, 
   };
 }
 
-inline constexpr Quaternion Quaternion::FromRotationMatrix(const Matrix3& r) {
+inline Quaternion Quaternion::FromRotationMatrix(const Matrix3& r) {
   // Implementation from here: https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
   return {
     std::sqrt(std::max(0.0f, 1.0f + r[0][0] + r[1][1] + r[2][2])) * 0.5f,
