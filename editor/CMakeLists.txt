@@ -55,6 +55,7 @@ add_executable(
   windows/asset_editors/texture_editor.hpp windows/asset_editors/texture_editor.cpp
   windows/asset_editors/scene_view_editor.hpp windows/asset_editors/scene_view_editor.cpp
   windows/asset_editors/scene_editor.hpp windows/asset_editors/scene_editor.cpp
+  windows/asset_editors/scene_object_editor.hpp windows/asset_editors/scene_object_editor.cpp
 
   windows/asset_editors/scene_editor/scene_editor_render_pass.hpp windows/asset_editors/scene_editor/scene_editor_render_pass.cpp
 
