@@ -124,7 +124,7 @@ void TransformationToolsController::ProcessEvent(Event* event) {
     ClearTooltip();
     if (is_dragging_) {
       is_dragging_ = false;
-      SubmitChangesToScene();
+      SubmitChanges();
       event->StopPropagation();
     }
     // We may hover another gizmo now, so recheck it

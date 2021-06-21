@@ -27,11 +27,20 @@ class SceneViewEditor : public AssetEditor {
   inline Scene* game_scene() { return &game_scene_; }
   inline Scene* editing_scene() { return &editing_scene_; }
 
+  void SelectObject(SceneObject* object);
   SceneObject* GetSelectedObject();
 
  protected:
-  void SetSerializedScene(const json& data);
-  void SubmitChangesToScene();
+  // This method updates the "working copy" of the scene that is used for visualizing
+  // its properties.
+  void UpdateSceneEditingCopy();
+
+  // This method will/should be called whenever something in the scene has changed
+  // and an "undo entry" should be created. The implementation should do the necessary
+  // serialization and call SubmitJsonFile() / SubmitBinaryFile().
+  virtual void SubmitChanges() = 0;
+
+  void RenameSelectedObject() { renaming_state_ = RenamingState::STARTED_RENAMING; }
 
   template <typename T>
   void AddEditorController() {
@@ -44,13 +53,12 @@ class SceneViewEditor : public AssetEditor {
   void CopySelectedObjectToClipboard();
   SceneObject* PasteObjectFromClipboard();
 
- private:
   void DrawContent() override;
   void DrawToolbar();
   void DrawViewport();
 
   void DrawInspectorContent() override;
-  void DrawObjectTree();
+  virtual void DrawObjectTree() = 0;
   void DrawObjectHierarchy(SceneObject* object);
   void DrawSelectionProperties();
   void DrawSceneProperties();
@@ -58,6 +66,7 @@ class SceneViewEditor : public AssetEditor {
 
   void CreateSceneViewports(ImVec2 size);
 
+ private:
   // SceneObject* CreateObject(const std::string& base_name, bool initiate_rename = false);
   json::json_pointer GetComponentPath(std::string_view object_path, std::string_view component_id);
   json::json_pointer GetControllerPath(const std::string& controller_id) {
@@ -77,11 +86,6 @@ class SceneViewEditor : public AssetEditor {
   json serialized_scene_editing_copy_;
   Scene game_scene_;
   Scene editing_scene_;
-
-  inline void DoOnceAfterDraw(const std::function<void()>& function) {
-    do_once_after_draw_.push_back(function);
-  }
-  std::vector<std::function<void()>> do_once_after_draw_;
 };
 
 }  // namespace editor

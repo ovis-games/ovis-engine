@@ -19,7 +19,9 @@ class SceneObjectEditor : public SceneViewEditor {
   static void CreateNew(const std::string& asset_id);
 
  protected:
+  void SubmitChanges() override;
   void JsonFileChanged(const json& data, const std::string& file_type) override;
+  void DrawObjectTree() override;
 
   safe_ptr<SceneObject> object_;
 };

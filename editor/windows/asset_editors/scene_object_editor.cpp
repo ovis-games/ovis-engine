@@ -14,6 +14,7 @@ namespace editor {
 
 SceneObjectEditor::SceneObjectEditor(const std::string& scene_object_asset) : SceneViewEditor(scene_object_asset) {
   object_ = game_scene()->CreateObject(scene_object_asset);
+  SelectObject(object_.get());
   SetupJsonFile(object_->Serialize());
 }
 
@@ -21,9 +22,19 @@ void SceneObjectEditor::Save() {
   SaveFile("json", object_->Serialize().dump());
 }
 
+void SceneObjectEditor::SubmitChanges() {
+  UpdateSceneEditingCopy();
+  SubmitJsonFile(object_->Serialize());
+}
+
 void SceneObjectEditor::JsonFileChanged(const json& data, const std::string& file_type) {
   SDL_assert(file_type == "json");
   object_->Deserialize(data);
+  UpdateSceneEditingCopy();
+}
+
+void SceneObjectEditor::DrawObjectTree() {
+  DrawObjectHierarchy(object_.get());
 }
 
 }  // namespace editor
