@@ -14,7 +14,7 @@ class SceneViewEditor : public AssetEditor {
   friend class EditorController;
 
  public:
-  SceneViewEditor(const std::string& asset_id);
+  SceneViewEditor(const std::string& asset_id, bool allow_adding_objects);
 
   void Update(std::chrono::microseconds delta_time) override;
   void ProcessEvent(Event* event) override;
@@ -86,6 +86,7 @@ class SceneViewEditor : public AssetEditor {
   json serialized_scene_editing_copy_;
   Scene game_scene_;
   Scene editing_scene_;
+  bool allow_adding_objects_;
 };
 
 }  // namespace editor

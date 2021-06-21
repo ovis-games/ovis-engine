@@ -13,8 +13,8 @@
 #include "editor_render_passes/selected_object_bounding_box.hpp"
 #include "editor_render_passes/transformation_tools_renderer.hpp"
 
-#include <imgui_stdlib.h>
 #include <imgui_internal.h>
+#include <imgui_stdlib.h>
 
 #include <ovis/utils/utf8.hpp>
 #include <ovis/utils/utils.hpp>
@@ -26,6 +26,7 @@
 #include <ovis/input/mouse_button.hpp>
 #include <ovis/input/mouse_events.hpp>
 #include <ovis/imgui/imgui_start_frame_controller.hpp>
+#include <ovis/rendering2d/sprite.hpp>
 
 namespace ovis {
 namespace editor {
@@ -47,7 +48,8 @@ MouseButton GetMouseButtonFromImGuiIndex(int button) {
 
 }  // namespace
 
-SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(scene_asset) {
+SceneViewEditor::SceneViewEditor(const std::string& scene_asset, bool allow_adding_objects)
+  : AssetEditor(scene_asset), allow_adding_objects_(allow_adding_objects) {
   editing_scene()->Play();
   AddEditorController<ObjectSelectionController>();
   AddEditorController<TransformationToolsController>();
@@ -401,25 +403,39 @@ void SceneViewEditor::DrawViewport() {
     latest_mouse_position_ = Vector2::NotANumber();
   }
 
-  // if (ImGui::BeginDragDropTarget()) {
-  //   std::string dropped_asset_id;
+  if (allow_adding_objects_ && ImGui::BeginDragDropTarget()) {
+    if (std::string dropped_asset_id; run_state() != RunState::RUNNING && ImGui::AcceptDragDropAsset("texture2d", &dropped_asset_id)) {
+      SceneObject* object = game_scene()->CreateObject(dropped_asset_id);
 
-  //   if (run_state() != RunState::RUNNING && ImGui::AcceptDragDropAsset("texture2d", &dropped_asset_id)) {
-  //       SceneObject* object = CreateObject(dropped_asset_id, false);
-  //       auto texture_description = LoadTexture2DDescription(GetApplicationAssetLibrary(), dropped_asset_id);
+      auto* transform = object->AddComponent<Transform>("Transform");
+      const Vector2 mouse_position = ImGui::GetMousePos();
+      transform->SetWorldPosition(editor_viewport_->ScreenSpacePositionToWorldSpace(Vector3::FromVector2(mouse_position - top_left)));
 
-  //       auto* transform = object->AddComponent<TransformComponent>("Transform");
-  //       const Vector2 mouse_position = ImGui::GetMousePos();
-  //       transform->SetPosition(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
+      auto* sprite = object->AddComponent<Sprite>("Sprite");
+      sprite->SetTexture(dropped_asset_id);
+      sprite->SetSize({ 1.0f, 1.0f });
 
-  //       auto* sprite = object->AddComponent<SpriteComponent>("Sprite");
-  //       sprite->SetTexture(dropped_asset_id);
-  //       sprite->SetSize({static_cast<float>(texture_description->width), static_cast<float>(texture_description->height)});
+      SubmitChanges();
+    }
+    if (std::string dropped_asset_id; run_state() != RunState::RUNNING && ImGui::AcceptDragDropAsset("scene_object", &dropped_asset_id)) {
+      auto asset_content = GetApplicationAssetLibrary()->LoadAssetTextFile(dropped_asset_id, "json");
+      if (asset_content.has_value()) {
+        SceneObject* object = game_scene()->CreateObject(dropped_asset_id);
+        object->Deserialize(json::parse(*asset_content));
+      
+        if (auto* transform = object->GetComponent<Transform>("Transform"); transform != nullptr) {
+          const Vector2 mouse_position = ImGui::GetMousePos();
+          transform->SetWorldPosition(editor_viewport_->ScreenSpacePositionToWorldSpace(Vector3::FromVector2(mouse_position - top_left)));
+        }
 
-  //       SubmitChanges();
-  //   }
-  //   ImGui::EndDragDropTarget();
-  // }
+        SubmitChanges();
+      } else {
+        LogE("Failed to create object, could not load scene object asset: {}", dropped_asset_id);
+      }
+    }
+
+    ImGui::EndDragDropTarget();
+  }
 }
 
 void SceneViewEditor::DrawInspectorContent() {

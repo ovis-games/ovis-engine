@@ -13,7 +13,7 @@
 namespace ovis {
 namespace editor {
 
-SceneEditor::SceneEditor(const std::string& scene_asset) : SceneViewEditor(scene_asset) {
+SceneEditor::SceneEditor(const std::string& scene_asset) : SceneViewEditor(scene_asset, true) {
   SetupJsonFile(game_scene()->Serialize());
 }
 
