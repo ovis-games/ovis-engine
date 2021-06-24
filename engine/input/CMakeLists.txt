@@ -48,8 +48,12 @@ if (OVIS_BUILD_TESTS)
       ovis::input
   )
 
-  add_test(
-    ovis-input-test
-    ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-input-test.js
-  )
+  if (OVIS_EMSCRIPTEN)
+    add_test(
+      ovis-input-test
+      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-input-test.js
+    )
+  else ()
+    add_test(ovis-input-test ovis-input-test)
+  endif ()
 endif ()

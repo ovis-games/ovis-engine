@@ -99,8 +99,12 @@ if (OVIS_BUILD_TESTS)
       ovis::utils
   )
 
-  add_test(
-    ovis-utils-test
-    ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-utils-test.js
-  )
+  if (OVIS_EMSCRIPTEN)
+    add_test(
+      ovis-utils-test
+      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-utils-test.js
+    )
+  else ()
+    add_test(ovis-utils-test ovis-utils-test)
+  endif ()
 endif ()
