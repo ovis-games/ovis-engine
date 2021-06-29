@@ -439,7 +439,11 @@ void SceneViewEditor::DrawViewport() {
 }
 
 void SceneViewEditor::DrawInspectorContent() {
-  DrawObjectTree();
+  ImVec2 available_content_region = ImGui::GetContentRegionAvail();
+  if (ImGui::BeginChild("ObjectView", ImVec2(0, available_content_region.y / 2), false)) {
+    DrawObjectTree();
+  }
+  ImGui::EndChild();
   ImGui::Separator();
   DrawSelectionProperties();
 }

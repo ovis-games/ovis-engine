@@ -44,9 +44,28 @@ void SceneEditor::DrawObjectTree() {
   const bool control_or_command = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;
   auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
 
-  ImVec2 available_content_region = ImGui::GetContentRegionAvail();
-  if (ImGui::BeginChild("ObjectView", ImVec2(0, available_content_region.y / 2), false)) {
-    if (ImGui::BeginPopupContextWindow()) {
+  if (ImGui::BeginPopupContextWindow()) {
+    if (ImGui::Selectable("Create Object")) {
+      object_selection_controller->SelectObject(game_scene()->CreateObject("New Object"));
+      SubmitChanges();
+      RenameSelectedObject();
+    }
+    ImGui::EndPopup();
+  }
+
+  if (ImGui::IsWindowFocused() && control_or_command && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_V))) {
+    PasteObjectFromClipboard();
+  }
+
+  ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
+                                       ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
+  ImGuiTreeNodeFlags scene_node_flags = tree_node_flags | ImGuiTreeNodeFlags_AllowItemOverlap;
+  if (!object_selection_controller->has_selected_object()) {
+    // If there is no selected object, the scene is selected
+    scene_node_flags |= ImGuiTreeNodeFlags_Selected;
+  }
+  if (ImGui::TreeNodeEx(asset_id().c_str(), scene_node_flags)) {
+    if (ImGui::BeginPopupContextItem()) {
       if (ImGui::Selectable("Create Object")) {
         object_selection_controller->SelectObject(game_scene()->CreateObject("New Object"));
         SubmitChanges();
@@ -54,55 +73,32 @@ void SceneEditor::DrawObjectTree() {
       }
       ImGui::EndPopup();
     }
-  
-    if (ImGui::IsWindowFocused() && control_or_command && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_V))) {
-      PasteObjectFromClipboard();
+    if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+      object_selection_controller->ClearSelection();
     }
-
-    ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
-                                         ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
-    ImGuiTreeNodeFlags scene_node_flags = tree_node_flags | ImGuiTreeNodeFlags_AllowItemOverlap;
-    if (!object_selection_controller->has_selected_object()) {
-      // If there is no selected object, the scene is selected
-      scene_node_flags |= ImGuiTreeNodeFlags_Selected;
-    }
-    if (ImGui::TreeNodeEx(asset_id().c_str(), scene_node_flags)) {
-      if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::Selectable("Create Object")) {
-          object_selection_controller->SelectObject(game_scene()->CreateObject("New Object"));
-          SubmitChanges();
-          RenameSelectedObject();
+    if (ImGui::BeginDragDropTarget()) {
+      const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("scene_object");
+      if (payload) {
+        SceneObject* dragged_object = *reinterpret_cast<SceneObject**>(payload->Data);
+        if (dragged_object->scene() != game_scene() || dragged_object->parent() != nullptr) {
+          DoOnceAfterUpdate([this, dragged_object]() {
+            game_scene()->CreateObject(dragged_object->name(), dragged_object->Serialize());
+            dragged_object->scene()->DeleteObject(dragged_object);
+            SubmitChanges();
+          });
         }
-        ImGui::EndPopup();
       }
-      if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-        object_selection_controller->ClearSelection();
-      }
-      if (ImGui::BeginDragDropTarget()) {
-        const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("scene_object");
-        if (payload) {
-          SceneObject* dragged_object = *reinterpret_cast<SceneObject**>(payload->Data);
-          if (dragged_object->scene() != game_scene() || dragged_object->parent() != nullptr) {
-            DoOnceAfterUpdate([this, dragged_object]() {
-              game_scene()->CreateObject(dragged_object->name(), dragged_object->Serialize());
-              dragged_object->scene()->DeleteObject(dragged_object);
-              SubmitChanges();
-            });
-          }
-        }
-        ImGui::EndDragDropTarget();
-      }
-
-      for (SceneObject* object : game_scene()->root_objects()) {
-        SDL_assert(object != nullptr);
-        SDL_assert(game_scene()->ContainsObject(object->name()));
-        DrawObjectHierarchy(object);
-      }
-
-      ImGui::TreePop();
+      ImGui::EndDragDropTarget();
     }
+
+    for (SceneObject* object : game_scene()->root_objects()) {
+      SDL_assert(object != nullptr);
+      SDL_assert(game_scene()->ContainsObject(object->name()));
+      DrawObjectHierarchy(object);
+    }
+
+    ImGui::TreePop();
   }
-  ImGui::EndChild();
 }
 
 }  // namespace editor
