@@ -79,8 +79,12 @@ if (OVIS_BUILD_TESTS)
       ovis::core
   )
 
-  add_test(
-    ovis-core-test
-    ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-core-test.js
-  )
+  if (OVIS_EMSCRIPTEN)
+    add_test(
+      ovis-core-test
+      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-core-test.js
+    )
+  else ()
+    add_test(ovis-core-test ovis-core-test)
+  endif ()
 endif ()
