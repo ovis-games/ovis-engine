@@ -12,19 +12,19 @@ namespace editor {
 
 class EditorAssetLibrary : public DirectoryAssetLibrary {
  public:
-  EditorAssetLibrary(const std::string& directory);
+  EditorAssetLibrary(std::string_view directory);
 
-  bool CreateAsset(const std::string& asset_id, const std::string& type,
+  bool CreateAsset(std::string_view asset_id, std::string_view type,
                    const std::vector<std::pair<std::string, std::variant<std::string, Blob>>>& files) override;
 
-  bool SaveAssetFile(const std::string& asset_id, const std::string& file_type,
+  bool SaveAssetFile(std::string_view asset_id, std::string_view file_type,
                      std::variant<std::string, Blob> content) override;
 
-  bool DeleteAsset(const std::string& asset_id) override;
+  bool DeleteAsset(std::string_view asset_id) override;
 
   std::optional<Blob> Package();
 
-  void UploadFile(const std::string& filename);
+  void UploadFile(std::string_view filename);
 
  private:
   std::set<std::string> files_to_upload_;

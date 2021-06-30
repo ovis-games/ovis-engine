@@ -32,7 +32,7 @@ void ImportImage(const std::string& filename) {
     std::memcpy(blob.data(), data, channels * width * height);
 
     if (GetApplicationAssetLibrary()->CreateAsset(
-            std::filesystem::path(filename).stem(),  // TODO: do '.' have to be replaces with e.g., '_'?
+            std::filesystem::path(filename).stem().string(),  // TODO: do '.' have to be replaces with e.g., '_'?
             "texture2d", {{"json", parameters.dump()}, {"0", blob}})) {
       LogI("Successfully imported {}", std::filesystem::path(filename).filename().string());
     }
