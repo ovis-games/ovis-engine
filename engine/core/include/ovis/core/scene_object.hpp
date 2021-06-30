@@ -39,6 +39,10 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   inline SceneObject* parent() const { return parent_.get(); }
   inline bool has_parent() const { return parent_ != nullptr; }
 
+  // Setup the scene object with a specific template. This will completely reset the object and all 
+  // previously added components and child objects will be removed.
+  bool SetupTemplate(std::string_view template_asset_id);
+
   SceneObject* CreateChildObject(std::string_view object_name);
   SceneObject* CreateChildObject(std::string_view object_name, const json& serialized_object);
   SceneObject* CreateChildObject(std::string_view object_name, const sol::table& properties);
@@ -91,6 +95,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
 
   json Serialize() const override;
   bool Deserialize(const json& serialized_object) override;
+  bool Update(const json& serialized_object) override;
 
   static void RegisterType(sol::table* module);
 
@@ -99,6 +104,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   safe_ptr<SceneObject> parent_;
   std::string path_;
   std::string name_;
+  std::string template_;
   std::vector<safe_ptr<SceneObject>> children_;
   std::unordered_map<std::string, std::unique_ptr<SceneObjectComponent>> components_;
 

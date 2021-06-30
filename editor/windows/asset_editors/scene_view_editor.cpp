@@ -418,19 +418,16 @@ void SceneViewEditor::DrawViewport() {
       SubmitChanges();
     }
     if (std::string dropped_asset_id; run_state() != RunState::RUNNING && ImGui::AcceptDragDropAsset("scene_object", &dropped_asset_id)) {
-      auto asset_content = GetApplicationAssetLibrary()->LoadAssetTextFile(dropped_asset_id, "json");
-      if (asset_content.has_value()) {
-        SceneObject* object = game_scene()->CreateObject(dropped_asset_id);
-        object->Deserialize(json::parse(*asset_content));
-      
+      SceneObject* object = game_scene()->CreateObject(dropped_asset_id);
+      if (!object->SetupTemplate(dropped_asset_id)) {
+        LogE("Failed to setup template `{}`", dropped_asset_id);
+      } else {
         if (auto* transform = object->GetComponent<Transform>("Transform"); transform != nullptr) {
           const Vector2 mouse_position = ImGui::GetMousePos();
           transform->SetWorldPosition(editor_viewport_->ScreenSpacePositionToWorldSpace(Vector3::FromVector2(mouse_position - top_left)));
         }
 
         SubmitChanges();
-      } else {
-        LogE("Failed to create object, could not load scene object asset: {}", dropped_asset_id);
       }
     }
 

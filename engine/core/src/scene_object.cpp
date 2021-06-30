@@ -3,6 +3,7 @@
 
 #include <ovis/utils/log.hpp>
 #include <ovis/core/lua.hpp>
+#include <ovis/core/asset_library.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_object.hpp>
 
@@ -54,6 +55,10 @@ std::pair<std::string_view, std::optional<unsigned int>> SceneObject::ParseName(
     number = value;
   }
   return { name, number };
+}
+
+bool SceneObject::SetupTemplate(std::string_view template_asset_id) {
+  return Deserialize({ {"template", std::string(template_asset_id)} });
 }
 
 SceneObject* SceneObject::CreateChildObject(std::string_view object_name) {
@@ -145,6 +150,9 @@ void SceneObject::ClearComponents() {
 
 json SceneObject::Serialize() const {
   json serialized_object = json::object();
+  if (template_.length() > 0) {
+    serialized_object["template"] = template_;
+  }
   auto& components = serialized_object["components"] = json::object();
   for (const auto& component : components_) {
     components[component.first] = component.second->Serialize();
@@ -157,21 +165,67 @@ json SceneObject::Serialize() const {
 }
 
 bool SceneObject::Deserialize(const json& serialized_object) {
-  if (!serialized_object.is_object()) {
-    return false;
-  }
   ClearComponents();
   ClearChildObjects();
 
+
+  if (serialized_object.contains("template")) {
+    template_ = serialized_object.at("template");
+  } else {
+    template_ = "";
+  }
+
+  return Update(serialized_object);
+}
+
+bool SceneObject::Update(const json& serialized_object) {
+  if (!serialized_object.is_object()) {
+    return false;
+  }
+
+  if (serialized_object.contains("template")) {
+    const std::string template_asset = serialized_object.at("template");
+    auto asset_library = GetAssetLibraryForAsset(template_asset);
+    if (!asset_library) {
+      LogE("Invalid scene object template `{}`: asset does not exist", template_asset);
+      return false;
+    }
+    if (auto asset_type = asset_library->GetAssetType(template_asset); asset_type != "scene_object") {
+      LogE("Invalid scene object template `{}`: asset has invalid type `{}`", template_asset, asset_type);
+      return false;
+    }
+
+    const auto object_template = asset_library->LoadAssetTextFile(template_asset, "json");
+    if (!object_template.has_value()) {
+      LogE("Invalid scene object template `{}`: asset does not contain json file", template_asset);
+      return false;
+    }
+
+    // TODO: detect circular references?
+    Update(json::parse(*object_template));
+  }
+
   if (serialized_object.contains("components")) {
     if (!serialized_object["components"].is_object()) {
+      LogE("Invalid scene object: components must be an object");
       return false;
     }
     for (const auto& component : serialized_object["components"].items()) {
       if (!SceneObjectComponent::IsRegistered(component.key())) {
+        LogE("Scene object deserialization failed: cannot add component `{}` to object. This type has not been registered.", component.key());
         return false;
       }
-      AddComponent(component.key())->Deserialize(component.value());
+      if (auto object_component = GetComponent(component.key()); object_component != nullptr) {
+        if (!GetComponent(component.key())->Update(component.value())) {
+          LogE("Failed to deserialize scene object, could not update component `{}`", component.key());
+          return false;
+        }
+      } else {
+        if (auto object_component = AddComponent(component.key()); object_component == nullptr || !object_component->Deserialize(component.value())) {
+          LogE("Failed to deserialize scene object, could not add component `{}`", component.key());
+          return false;
+        }
+      }
     }
   } else {
     LogV("SceneObject deserialization: no 'components' property available!");
@@ -179,14 +233,26 @@ bool SceneObject::Deserialize(const json& serialized_object) {
 
   if (serialized_object.contains("children")) {
     if (!serialized_object["children"].is_object()) {
+      LogE("Invalid scene object: children must be an object");
       return false;
     }
     for (const auto& child : serialized_object["children"].items()) {
-      CreateChildObject(child.key(), child.value());
+      if (auto child_object = GetChildObject(child.key()); child_object != nullptr) {
+        if (!child_object->Update(child.value())) {
+          LogE("Failed to deserialize scene object, could not update child object `{}`", child.key());
+          return false;
+        }
+      } else {
+        if (CreateChildObject(child.key(), child.value()) == nullptr) {
+          LogE("Failed to deserialize scene object, could not add child object `{}`", child.key());
+          return false;
+        }
+      }
     }
   } else {
     LogV("SceneObject deserialization: no 'children' property available!");
   }
+
   return true;
 }
 
