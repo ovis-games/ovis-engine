@@ -99,6 +99,13 @@ void RenderingViewport::SetGraphicsContext(GraphicsContext* graphics_context) {
   }
 }
 
+void RenderingViewport::ClearResources() {
+  render_pass_dependencies_.clear();
+  render_passes_.clear();
+  render_pass_order_.clear();
+  render_targets_.clear();
+}
+
 RenderTargetTexture2D* RenderingViewport::CreateRenderTarget2D(const std::string& id,
                                                                const RenderTargetTexture2DDescription& description) {
   if (render_targets_.count(id) == 0) {

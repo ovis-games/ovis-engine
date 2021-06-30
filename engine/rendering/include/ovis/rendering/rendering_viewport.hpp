@@ -46,6 +46,7 @@ class RenderingViewport : public SceneViewport {
 
  protected:
   void SetGraphicsContext(GraphicsContext* graphics_context);
+  void ClearResources();
 
  private:
   void SortRenderPasses();
