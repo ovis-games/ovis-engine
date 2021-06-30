@@ -39,17 +39,10 @@ void Vector2::RegisterType(sol::table* module) {
   // assert(p1 == Vector2.new(8,1))
   // assert(p2 == Vector2.new(12,1))
   sol::usertype<Vector2> vector2_type = module->new_usertype<Vector2>(
-    "Vector2", sol::factories(
-      []() { return Vector2(0, 0); },
-      [](float x, float y) { return Vector2(x, y); },
-      [](const sol::table& t) {
-        return Vector2(
-          t.get_or("x", t.get_or(1, 0.0f)),
-          t.get_or("y", t.get_or(2, 0.0f))
-        );
-      }
-    )
-  );
+      "Vector2", sol::factories([]() { return Vector2(0, 0); }, [](float x, float y) { return Vector2(x, y); },
+                                [](const sol::table& t) {
+                                  return Vector2(t.get_or("x", t.get_or(1, 0.0f)), t.get_or("y", t.get_or(2, 0.0f)));
+                                }));
 
   /// The x component of the vector.
   // @field[type=number] x
@@ -285,8 +278,8 @@ void Vector2::RegisterType(sol::table* module) {
   // local v2 = Vector2.new(4, 5)
   // assert(Vector2.dot(v1, v2) == 14)
   vector2_type["dot"] = &Dot<Vector2>;
-  
+
   // clang-format on
 }
 
-}
+}  // namespace ovis

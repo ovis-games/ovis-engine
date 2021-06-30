@@ -1,10 +1,9 @@
 #pragma once
 
-#include <ovis/imgui/imgui_window.hpp>
-
 #include <imgui.h>
 
 #include <ovis/graphics/texture2d.hpp>
+#include <ovis/imgui/imgui_window.hpp>
 
 namespace ovis {
 namespace editor {

@@ -8,8 +8,8 @@
 
 #include <ovis/utils/json.hpp>
 #include <ovis/core/math_constants.hpp>
-#include <ovis/core/quaternion_type.hpp>
 #include <ovis/core/math_operations.hpp>
+#include <ovis/core/quaternion_type.hpp>
 #include <ovis/core/vector.hpp>
 
 namespace ovis {
@@ -50,12 +50,10 @@ inline Quaternion Quaternion::FromEulerAngles(float yaw, float pitch, float roll
 
 inline Quaternion Quaternion::FromRotationMatrix(const Matrix3& r) {
   // Implementation from here: https://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/
-  return {
-    std::sqrt(std::max(0.0f, 1.0f + r[0][0] + r[1][1] + r[2][2])) * 0.5f,
-    std::copysign(std::sqrt(std::max(0.0f, 1.0f + r[0][0] - r[1][1] - r[2][2])) * 0.5f, r[2][1] - r[1][2]),
-    std::copysign(std::sqrt(std::max(0.0f, 1.0f - r[0][0] + r[1][1] - r[2][2])) * 0.5f, r[0][2] - r[2][0]),
-    std::copysign(std::sqrt(std::max(0.0f, 1.0f - r[0][0] - r[1][1] + r[2][2])) * 0.5f, r[1][0] - r[0][1])
-  };
+  return {std::sqrt(std::max(0.0f, 1.0f + r[0][0] + r[1][1] + r[2][2])) * 0.5f,
+          std::copysign(std::sqrt(std::max(0.0f, 1.0f + r[0][0] - r[1][1] - r[2][2])) * 0.5f, r[2][1] - r[1][2]),
+          std::copysign(std::sqrt(std::max(0.0f, 1.0f - r[0][0] + r[1][1] - r[2][2])) * 0.5f, r[0][2] - r[2][0]),
+          std::copysign(std::sqrt(std::max(0.0f, 1.0f - r[0][0] - r[1][1] + r[2][2])) * 0.5f, r[1][0] - r[0][1])};
 }
 
 inline Quaternion Conjugate(const Quaternion& quaternion) {
@@ -88,12 +86,12 @@ inline Vector3 ExtractEulerAngles(const Quaternion& quaternion) {
 
 inline Quaternion operator*(const Quaternion& lhs, const Quaternion& rhs) {
   return {
-    // clang-format off
+      // clang-format off
     lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z,
     lhs.w * rhs.x + lhs.x * rhs.w + lhs.y * rhs.z - lhs.z * rhs.y,
     lhs.w * rhs.y + lhs.y * rhs.w + lhs.z * rhs.x - lhs.x * rhs.z,
     lhs.w * rhs.z + lhs.z * rhs.w + lhs.x * rhs.y - lhs.y * rhs.x
-    // clang-format on
+      // clang-format on
   };
 }
 

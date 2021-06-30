@@ -63,7 +63,8 @@ void AssetViewerWindow::DrawContent() {
         EditorWindow::instance()->ShowMessageBox(
             fmt::format("Delete {}?", asset_id),
             fmt::format("Are you sure you want to delete the asset {}? This action cannot be undone!", asset_id),
-            {"Delete Permanently", "Cancel"}, [asset_id, asset_viewer_window = safe_ptr(this)](std::string_view pressed_button) {
+            {"Delete Permanently", "Cancel"},
+            [asset_id, asset_viewer_window = safe_ptr(this)](std::string_view pressed_button) {
               if (pressed_button == "Delete Permanently" && asset_viewer_window != nullptr) {
                 asset_viewer_window->CloseAssetEditor(asset_id);
                 GetApplicationAssetLibrary()->DeleteAsset(asset_id);
@@ -85,9 +86,8 @@ void AssetViewerWindow::DrawContent() {
     if (payload) {
       SceneObject* dragged_object = *reinterpret_cast<SceneObject**>(payload->Data);
       const std::string asset_name = GetNewAssetName(std::string(dragged_object->name()));
-      GetApplicationAssetLibrary()->CreateAsset(asset_name, "scene_object", {
-        {"json", dragged_object->Serialize().dump()}
-      });
+      GetApplicationAssetLibrary()->CreateAsset(asset_name, "scene_object",
+                                                {{"json", dragged_object->Serialize().dump()}});
     }
     ImGui::EndDragDropTarget();
   }

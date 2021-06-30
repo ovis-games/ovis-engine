@@ -8,8 +8,8 @@ void MouseMoveEvent::RegisterType(sol::table* module) {
   // @base ovis.core.Event
   // @usage local input = require "ovis.input"
   // local MouseMoveEvent = input.MouseMoveEvent
-  sol::usertype<MouseMoveEvent> mouse_move_event =
-      module->new_usertype<MouseMoveEvent>("MouseMoveEvent", sol::no_constructor, sol::base_classes, sol::bases<Event>());
+  sol::usertype<MouseMoveEvent> mouse_move_event = module->new_usertype<MouseMoveEvent>(
+      "MouseMoveEvent", sol::no_constructor, sol::base_classes, sol::bases<Event>());
 
   /// The viewport the mouse event occured on.
   // @field[type=ovis.core.SceneViewport] viewport

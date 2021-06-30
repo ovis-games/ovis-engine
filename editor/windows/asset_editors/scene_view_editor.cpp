@@ -23,10 +23,10 @@
 #include <ovis/core/scene_controller.hpp>
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/transform.hpp>
+#include <ovis/rendering2d/sprite.hpp>
 #include <ovis/input/mouse_button.hpp>
 #include <ovis/input/mouse_events.hpp>
 #include <ovis/imgui/imgui_start_frame_controller.hpp>
-#include <ovis/rendering2d/sprite.hpp>
 
 namespace ovis {
 namespace editor {

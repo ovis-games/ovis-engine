@@ -33,9 +33,7 @@ class AssetLibrary {
     return false;
   }
 
-  virtual bool DeleteAsset(const std::string& asset_id) {
-    return false;
-  }
+  virtual bool DeleteAsset(const std::string& asset_id) { return false; }
 };
 
 class DirectoryAssetLibrary : public AssetLibrary {

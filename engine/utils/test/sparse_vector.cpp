@@ -1,4 +1,5 @@
 #include <catch2/catch.hpp>
+
 #include <ovis/utils/sparse_vector.hpp>
 
 TEST_CASE("sparse_vector", "[ovis][utils]") {

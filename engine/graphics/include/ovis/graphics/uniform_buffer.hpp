@@ -10,8 +10,8 @@
 #include <ovis/utils/log.hpp>
 #include <ovis/graphics/cubemap.hpp>
 #include <ovis/graphics/graphics_resource.hpp>
-#include <ovis/graphics/texture2d.hpp>
 #include <ovis/graphics/graphics_types.hpp>
+#include <ovis/graphics/texture2d.hpp>
 
 namespace ovis {
 

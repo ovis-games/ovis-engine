@@ -1,15 +1,17 @@
 #include <charconv>
+
 #include <SDL2/SDL_assert.h>
 
 #include <ovis/utils/log.hpp>
-#include <ovis/core/lua.hpp>
 #include <ovis/core/asset_library.hpp>
+#include <ovis/core/lua.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_object.hpp>
 
 namespace ovis {
 
-SceneObject::SceneObject(Scene* scene, std::string_view name, SceneObject* parent) : scene_(scene), parent_(parent), name_(name), path_(BuildPath(name, parent)) {
+SceneObject::SceneObject(Scene* scene, std::string_view name, SceneObject* parent)
+    : scene_(scene), parent_(parent), name_(name), path_(BuildPath(name, parent)) {
   SDL_assert(scene_ != nullptr);
   SDL_assert(IsValidName(name_));
   if (parent) {
@@ -28,7 +30,8 @@ SceneObject::~SceneObject() {
 
 bool SceneObject::IsValidName(std::string_view name) {
   for (const char c : name) {
-    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == ' ' || (c >= '0' && c <= '9') || c == '.' || c == '-') {
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == ' ' || (c >= '0' && c <= '9') || c == '.' ||
+        c == '-') {
       // Character is allowed
       continue;
     }
@@ -41,9 +44,8 @@ bool SceneObject::IsValidName(std::string_view name) {
 std::pair<std::string_view, std::optional<unsigned int>> SceneObject::ParseName(std::string_view full_name) {
   using std::operator""sv;
   const auto position_of_last_non_digit = full_name.find_last_not_of("1234567890"sv);
-  const auto substr_length = position_of_last_non_digit != std::string_view::npos ?
-    position_of_last_non_digit + 1 :
-    full_name.size();
+  const auto substr_length =
+      position_of_last_non_digit != std::string_view::npos ? position_of_last_non_digit + 1 : full_name.size();
 
   const std::string_view name = full_name.substr(0, substr_length);
   std::optional<unsigned int> number;
@@ -51,14 +53,14 @@ std::pair<std::string_view, std::optional<unsigned int>> SceneObject::ParseName(
     const std::string_view number_string = full_name.substr(substr_length);
     unsigned int value;
     auto result = std::from_chars(number_string.data(), number_string.data() + number_string.size(), value);
-    SDL_assert(result.ec == std::errc()); // There should be no possibility that there is an error
+    SDL_assert(result.ec == std::errc());  // There should be no possibility that there is an error
     number = value;
   }
-  return { name, number };
+  return {name, number};
 }
 
 bool SceneObject::SetupTemplate(std::string_view template_asset_id) {
-  return Deserialize({ {"template", std::string(template_asset_id)} });
+  return Deserialize({{"template", std::string(template_asset_id)}});
 }
 
 SceneObject* SceneObject::CreateChildObject(std::string_view object_name) {
@@ -148,6 +150,8 @@ void SceneObject::ClearComponents() {
   components_.clear();
 }
 
+namespace {}  // namespace
+
 json SceneObject::Serialize() const {
   json serialized_object = json::object();
   if (template_.length() > 0) {
@@ -167,7 +171,6 @@ json SceneObject::Serialize() const {
 bool SceneObject::Deserialize(const json& serialized_object) {
   ClearComponents();
   ClearChildObjects();
-
 
   if (serialized_object.contains("template")) {
     template_ = serialized_object.at("template");
@@ -212,7 +215,10 @@ bool SceneObject::Update(const json& serialized_object) {
     }
     for (const auto& component : serialized_object["components"].items()) {
       if (!SceneObjectComponent::IsRegistered(component.key())) {
-        LogE("Scene object deserialization failed: cannot add component `{}` to object. This type has not been registered.", component.key());
+        LogE(
+            "Scene object deserialization failed: cannot add component `{}` to object. This type has not been "
+            "registered.",
+            component.key());
         return false;
       }
       if (auto object_component = GetComponent(component.key()); object_component != nullptr) {
@@ -221,7 +227,8 @@ bool SceneObject::Update(const json& serialized_object) {
           return false;
         }
       } else {
-        if (auto object_component = AddComponent(component.key()); object_component == nullptr || !object_component->Deserialize(component.value())) {
+        if (auto object_component = AddComponent(component.key());
+            object_component == nullptr || !object_component->Deserialize(component.value())) {
           LogE("Failed to deserialize scene object, could not add component `{}`", component.key());
           return false;
         }
@@ -257,15 +264,13 @@ bool SceneObject::Update(const json& serialized_object) {
 }
 
 std::vector<safe_ptr<SceneObject>>::const_iterator SceneObject::FindChild(std::string_view name) const {
-  return std::find_if(children_.cbegin(), children_.cend(), [name](const safe_ptr<SceneObject>& object) {
-    return object->name() == name;
-  });
+  return std::find_if(children_.cbegin(), children_.cend(),
+                      [name](const safe_ptr<SceneObject>& object) { return object->name() == name; });
 }
 
 std::vector<safe_ptr<SceneObject>>::iterator SceneObject::FindChild(std::string_view name) {
-  return std::find_if(children_.begin(), children_.end(), [name](const safe_ptr<SceneObject>& object) {
-    return object->name() == name;
-  });
+  return std::find_if(children_.begin(), children_.end(),
+                      [name](const safe_ptr<SceneObject>& object) { return object->name() == name; });
 }
 
 void SceneObject::RegisterType(sol::table* module) {

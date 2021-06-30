@@ -1,4 +1,5 @@
 #include "profiling_window.hpp"
+
 #include "imgui.h"
 
 #include <ovis/utils/profiling.hpp>
@@ -24,5 +25,5 @@ void ProfilingWindow::DrawContent() {
   }
 }
 
-}
-}
+}  // namespace editor
+}  // namespace ovis

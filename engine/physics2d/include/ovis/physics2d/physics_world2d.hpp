@@ -23,9 +23,9 @@ class PhysicsWorld2D : public SceneController, public b2ContactListener {
 
   void Update(std::chrono::microseconds delta_time) override;
 
-  const json *GetSchema() const override;
+  const json* GetSchema() const override;
   json Serialize() const override;
-  bool Deserialize(const json &data) override;
+  bool Deserialize(const json& data) override;
 
   // b2ContactListener methods
   void BeginContact(b2Contact* contact) override;

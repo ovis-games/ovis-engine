@@ -61,7 +61,7 @@ void SceneController::RegisterType(sol::table* module) {
   /// The scene, the controller is attached to.
   // @field[type=Scene] scene
   scene_controller_type["scene"] = sol::property(&SceneController::scene);
-  
+
   /// The name of the controller.
   // @field[type=string] name
   scene_controller_type["name"] = sol::property(&SceneController::name);

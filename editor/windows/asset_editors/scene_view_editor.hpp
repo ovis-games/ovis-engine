@@ -4,8 +4,8 @@
 #include "asset_editor.hpp"
 #include "editing_controllers/editor_controller.hpp"
 
-#include <ovis/rendering/render_target_viewport.hpp>
 #include <ovis/core/scene.hpp>
+#include <ovis/rendering/render_target_viewport.hpp>
 
 namespace ovis {
 namespace editor {

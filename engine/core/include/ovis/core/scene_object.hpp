@@ -1,10 +1,10 @@
 #pragma once
 
 #include <memory>
+#include <string_view>
 #include <type_traits>
 #include <typeindex>
 #include <unordered_map>
-#include <string_view>
 
 #include <ovis/utils/class.hpp>
 #include <ovis/utils/down_cast.hpp>
@@ -39,7 +39,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   inline SceneObject* parent() const { return parent_.get(); }
   inline bool has_parent() const { return parent_ != nullptr; }
 
-  // Setup the scene object with a specific template. This will completely reset the object and all 
+  // Setup the scene object with a specific template. This will completely reset the object and all
   // previously added components and child objects will be removed.
   bool SetupTemplate(std::string_view template_asset_id);
 
@@ -53,7 +53,8 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   bool HasChildren() const { return children_.size() > 0; }
   bool ContainsChildObject(std::string_view object_name);
   std::vector<safe_ptr<SceneObject>>& children() { return children_; }
-  template <typename T> void ForEachChild(bool recursive, T&& functor);
+  template <typename T>
+  void ForEachChild(bool recursive, T&& functor);
 
   template <typename ComponentType = SceneObjectComponent>
   inline ComponentType* AddComponent(const std::string& component_id) {
@@ -100,7 +101,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   static void RegisterType(sol::table* module);
 
  private:
-  Scene* scene_; // No safe_ptr needed, scene is guaranteed to live longer and will (should?) not be moved
+  Scene* scene_;  // No safe_ptr needed, scene is guaranteed to live longer and will (should?) not be moved
   safe_ptr<SceneObject> parent_;
   std::string path_;
   std::string name_;
@@ -111,7 +112,6 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   std::vector<safe_ptr<SceneObject>>::const_iterator FindChild(std::string_view name) const;
   std::vector<safe_ptr<SceneObject>>::iterator FindChild(std::string_view name);
 };
-
 
 template <typename T>
 void SceneObject::ForEachChild(bool recursive, T&& functor) {
@@ -127,11 +127,8 @@ void SceneObject::ForEachChild(bool recursive, T&& functor) {
 }  // namespace ovis
 
 namespace std {
-  template <> struct hash<ovis::SceneObject>
-  {
-    size_t operator()(const ovis::SceneObject& object) const
-    {
-      return hash<std::string_view>()(object.path());
-    }
-  };
-}
+template <>
+struct hash<ovis::SceneObject> {
+  size_t operator()(const ovis::SceneObject& object) const { return hash<std::string_view>()(object.path()); }
+};
+}  // namespace std

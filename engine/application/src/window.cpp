@@ -96,10 +96,15 @@ bool Window::SendEvent(const SDL_Event& event) {
 
   const auto sdl_button_to_mouse_button = [](uint8_t sdl_button) {
     switch (sdl_button) {
-      case SDL_BUTTON_LEFT: return MouseButton::Left();
-      case SDL_BUTTON_MIDDLE: return MouseButton::Middle();
-      case SDL_BUTTON_RIGHT: return MouseButton::Right();
-      default: SDL_assert(false); return MouseButton::Left();
+      case SDL_BUTTON_LEFT:
+        return MouseButton::Left();
+      case SDL_BUTTON_MIDDLE:
+        return MouseButton::Middle();
+      case SDL_BUTTON_RIGHT:
+        return MouseButton::Right();
+      default:
+        SDL_assert(false);
+        return MouseButton::Left();
     }
   };
 
@@ -120,9 +125,8 @@ bool Window::SendEvent(const SDL_Event& event) {
 
     case SDL_MOUSEBUTTONDOWN: {
       const auto button = sdl_button_to_mouse_button(event.button.button);
-      MouseButtonPressEvent mouse_button_event(this,
-                                               {static_cast<float>(event.button.x), static_cast<float>(event.button.y)},
-                                               button);
+      MouseButtonPressEvent mouse_button_event(
+          this, {static_cast<float>(event.button.x), static_cast<float>(event.button.y)}, button);
       SetMouseButtonState(button, true);
       scene_.ProcessEvent(&mouse_button_event);
       return !mouse_button_event.is_propagating();
@@ -131,8 +135,7 @@ bool Window::SendEvent(const SDL_Event& event) {
     case SDL_MOUSEBUTTONUP: {
       const auto button = sdl_button_to_mouse_button(event.button.button);
       MouseButtonReleaseEvent mouse_button_event(
-          this, {static_cast<float>(event.button.x), static_cast<float>(event.button.y)},
-          button);
+          this, {static_cast<float>(event.button.x), static_cast<float>(event.button.y)}, button);
       SetMouseButtonState(button, false);
       scene_.ProcessEvent(&mouse_button_event);
       return !mouse_button_event.is_propagating();

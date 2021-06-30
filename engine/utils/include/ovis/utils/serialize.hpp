@@ -18,7 +18,7 @@ class Serializable {
   // deserialization.
   virtual bool Deserialize(const json& data) = 0;
 
-  // Partially updates an object with serialized data. The difference to Deserialize() 
+  // Partially updates an object with serialized data. The difference to Deserialize()
   // is that the object gets "updated" not "recreated".
   virtual bool Update(const json& data) { return false; }
 

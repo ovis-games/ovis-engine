@@ -8,13 +8,13 @@ namespace ovis {
 
 namespace {
 static const std::unordered_map<std::string_view, uint8_t> BUTTON_NAME_TO_BUTTON = {
-  // clang-format off
+    // clang-format off
   {"Left Mouse Button", 0},
   {"Middle Mouse Button", 1},
   {"Right Mouse Button", 2},
   {"Mouse Button 4", 3},
   {"Mouse Button 5", 4},
-  // clang-format on
+    // clang-format on
 };
 }
 

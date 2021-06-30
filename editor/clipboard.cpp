@@ -15,9 +15,8 @@ struct ClipboardData {
 static std::vector<ClipboardData> clipboard_data;
 
 auto FindClipboardEntry(std::string_view type) {
-  return std::find_if(clipboard_data.begin(), clipboard_data.end(), [type](const auto& clipboard_entry) {
-        return clipboard_entry.type == type;
-      });
+  return std::find_if(clipboard_data.begin(), clipboard_data.end(),
+                      [type](const auto& clipboard_entry) { return clipboard_entry.type == type; });
 }
 
 }  // namespace
@@ -68,9 +67,8 @@ void EMSCRIPTEN_KEEPALIVE OvisClipboard_Paste(const char* type, const char* data
 void EMSCRIPTEN_KEEPALIVE OvisClipboard_EndPaste() {
   // TODO: Callback here?
 }
-
 }
-#endif 
+#endif
 
 namespace ovis {
 namespace editor {

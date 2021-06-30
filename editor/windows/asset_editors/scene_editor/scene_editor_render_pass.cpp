@@ -31,8 +31,7 @@
 //       {*line_shader_->GetAttributeLocation("Position"), 0, 0, VertexAttributeType::FLOAT32_VECTOR3},
 //       {*line_shader_->GetAttributeLocation("Color"), 12, 0, VertexAttributeType::UINT8_NORM_VECTOR4}};
 //   line_vertex_input = std::make_unique<VertexInput>(context(), vertex_input_desc);
-  
-  
+
 //   SetFlags(e_shapeBit | e_jointBit | e_jointBit | e_aabbBit | e_pairBit | e_centerOfMassBit);
 // }
 
@@ -43,7 +42,6 @@
 // void SceneEditorRenderPass::Render(const RenderContext& render_context) {
 //   is_rendering_ = true;
 //   line_vertices_.clear();
-
 
 //   auto objects_with_cameras = render_context.scene->GetSceneObjectsWithComponent("Camera");
 
@@ -88,9 +86,8 @@
 //   size_t line_vertex_offset = 0;
 //   while (line_vertex_offset < line_vertices_.size()) {
 //     const size_t vertices_to_render = std::min(line_vertices_.size() - line_vertex_offset, vertex_buffer_size);
-//     line_vertex_buffer_->Write(0, vertices_to_render * sizeof(LineVertex), line_vertices_.data() + line_vertex_offset);
-//     draw_item.count = vertices_to_render;
-//     context()->Draw(draw_item);
+//     line_vertex_buffer_->Write(0, vertices_to_render * sizeof(LineVertex), line_vertices_.data() +
+//     line_vertex_offset); draw_item.count = vertices_to_render; context()->Draw(draw_item);
 
 //     line_vertex_offset += vertices_to_render;
 //   }

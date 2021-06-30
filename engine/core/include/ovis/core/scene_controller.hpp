@@ -68,9 +68,7 @@ class SceneController : public Serializable,
     UpdateAfter(T::Name());
   }
 
-  void DoOnceAfterUpdate(const std::function<void()>& function) {
-    after_update_callbacks_.push_back(function);
-  }
+  void DoOnceAfterUpdate(const std::function<void()>& function) { after_update_callbacks_.push_back(function); }
 
  private:
   Scene* scene_;

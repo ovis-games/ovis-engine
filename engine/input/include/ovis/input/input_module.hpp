@@ -1,8 +1,7 @@
 #pragma once
 
-namespace ovis
-{
+namespace ovis {
 
 bool LoadInputModule();
 
-} // namespace ovis
+}  // namespace ovis

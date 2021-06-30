@@ -20,10 +20,12 @@ void SelectedObjectBoundingBox::Render(const RenderContext& render_context) {
     BeginDraw(render_context);
 
     Transform* transform = object->GetComponent<Transform>("Transform");
-    const Matrix3x4 local_to_world = transform ? transform->local_to_world_matrix() : Matrix3x4::IdentityTransformation();
+    const Matrix3x4 local_to_world =
+        transform ? transform->local_to_world_matrix() : Matrix3x4::IdentityTransformation();
     std::array<Vector3, 8> aabb_vertices;
     for (int i = 0; i < 8; ++i) {
-      aabb_vertices[i] = TransformPosition(local_to_world, aabb.center + 2.0f * Vector3::UnitCube()[i] * aabb.half_extend);
+      aabb_vertices[i] =
+          TransformPosition(local_to_world, aabb.center + 2.0f * Vector3::UnitCube()[i] * aabb.half_extend);
     }
 
     DrawLine(aabb_vertices[4], aabb_vertices[5], Color::White());
