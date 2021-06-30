@@ -90,7 +90,7 @@ void SceneObject::ClearChildObjects() {
 
 SceneObject* SceneObject::GetChildObject(std::string_view object_name) {
   const auto child_iterator = FindChild(object_name);
-  return child_iterator->get();
+  return child_iterator != children_.end() ? child_iterator->get() : nullptr;
 }
 
 bool SceneObject::ContainsChildObject(std::string_view object_name) {
@@ -150,16 +150,75 @@ void SceneObject::ClearComponents() {
   components_.clear();
 }
 
-namespace {}  // namespace
+namespace {
+
+std::optional<json> ConstructObjectFromTemplate(std::string_view template_asset) {
+  auto asset_library = GetAssetLibraryForAsset(template_asset);
+
+  if (!asset_library) {
+    LogE("Invalid scene object template `{}`: asset does not exist", template_asset);
+    return {};
+  }
+  if (auto asset_type = asset_library->GetAssetType(template_asset); asset_type != "scene_object") {
+    LogE("Invalid scene object template `{}`: asset has invalid type `{}`", template_asset, asset_type);
+    return {};
+  }
+
+  const auto object_template_data = asset_library->LoadAssetTextFile(template_asset, "json");
+  if (!object_template_data.has_value()) {
+    LogE("Invalid scene object template `{}`: asset does not contain json file", template_asset);
+    return {};
+  }
+
+  const auto object_template = json::parse(*object_template_data);
+
+  if (object_template.contains("template")) {
+    const std::string parent_template_asset = object_template.at("template");
+
+    // TODO: detect circular references?
+    auto parent_template = ConstructObjectFromTemplate(parent_template_asset);
+    if (!parent_template.has_value()) {
+      return {};
+    }
+
+    parent_template->merge_patch(object_template);
+    return *parent_template;
+  } else {
+    return object_template;
+  }
+}
+
+}  // namespace
 
 json SceneObject::Serialize() const {
   json serialized_object = json::object();
+  json object_template = json::object();
+
   if (template_.length() > 0) {
     serialized_object["template"] = template_;
+    object_template = *ConstructObjectFromTemplate(template_);
   }
+
   auto& components = serialized_object["components"] = json::object();
   for (const auto& component : components_) {
-    components[component.first] = component.second->Serialize();
+    const auto serialized_component = component.second->Serialize();
+
+    json::json_pointer component_pointer(fmt::format("/components/{}", component.first));
+    if (object_template.contains(component_pointer)) {
+      const auto& component_template = object_template[component_pointer];
+      json changed_attributes = json::object();
+
+      // TODO: iterate over merged set of template and real object
+      for (const auto& attribute : serialized_component.items()) {
+        if (attribute.value() != component_template[attribute.key()]) {
+          changed_attributes[attribute.key()] = attribute.value();
+        }
+      }
+
+      components[component.first] = changed_attributes;
+    } else {
+      components[component.first] = component.second->Serialize();
+    }
   }
   auto& children = serialized_object["children"] = json::object();
   for (const auto& child : children_) {
@@ -174,38 +233,21 @@ bool SceneObject::Deserialize(const json& serialized_object) {
 
   if (serialized_object.contains("template")) {
     template_ = serialized_object.at("template");
+    auto object_template = ConstructObjectFromTemplate(template_);
+    if (!object_template.has_value()) {
+      return false;
+    }
+    object_template->merge_patch(serialized_object);
+    return Update(*object_template);
   } else {
     template_ = "";
+    return Update(serialized_object);
   }
-
-  return Update(serialized_object);
 }
 
 bool SceneObject::Update(const json& serialized_object) {
   if (!serialized_object.is_object()) {
     return false;
-  }
-
-  if (serialized_object.contains("template")) {
-    const std::string template_asset = serialized_object.at("template");
-    auto asset_library = GetAssetLibraryForAsset(template_asset);
-    if (!asset_library) {
-      LogE("Invalid scene object template `{}`: asset does not exist", template_asset);
-      return false;
-    }
-    if (auto asset_type = asset_library->GetAssetType(template_asset); asset_type != "scene_object") {
-      LogE("Invalid scene object template `{}`: asset has invalid type `{}`", template_asset, asset_type);
-      return false;
-    }
-
-    const auto object_template = asset_library->LoadAssetTextFile(template_asset, "json");
-    if (!object_template.has_value()) {
-      LogE("Invalid scene object template `{}`: asset does not contain json file", template_asset);
-      return false;
-    }
-
-    // TODO: detect circular references?
-    Update(json::parse(*object_template));
   }
 
   if (serialized_object.contains("components")) {
