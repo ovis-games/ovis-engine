@@ -66,6 +66,7 @@ Window::~Window() {
   std::swap(*it, all_windows_.back());
   all_windows_.pop_back();
 
+  ClearResources();
   SDL_DestroyWindow(sdl_window_);
 }
 
