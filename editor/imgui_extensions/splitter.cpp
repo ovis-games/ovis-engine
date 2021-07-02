@@ -58,4 +58,57 @@ bool HorizontalSplitter(const char* label, float* top_height, float* bottom_heig
   return return_value;
 }
 
+bool VerticalSplitter(const char* label, float* left_width, float* right_width, float left_weight,
+                        float right_weight, ImVec2 size, float left_min_width, float right_min_width,
+                        float thickness) {
+  ImGuiContext& g = *GImGui;
+  ImGuiWindow* window = g.CurrentWindow;
+  ImGuiID id = window->GetID("##Splitter");
+
+  IM_ASSERT(left_weight > 0);
+  IM_ASSERT(right_weight > 0);
+
+  const auto available_content = GetContentRegionAvail();
+
+  const float content_width = size.x > 0.0f ? size.x : available_content.x - size.x;
+  const float default_left_width = content_width * (left_weight / (left_weight + right_weight)) - thickness * 0.5f;
+  const float default_right_width = content_width * (right_weight / (left_weight + right_weight)) - thickness * 0.5f;
+
+  const float content_height = size.y > 0.0f ? size.y : available_content.y - size.y;
+
+  ImGuiStorage* storage = ImGui::GetStateStorage();
+
+  ImGui::PushID(ImGui::GetID(label));
+  auto left_window_width_id = ImGui::GetID("TopWindowSize");
+  auto right_window_width_id = ImGui::GetID("BottomWindowSize");
+  auto content_width_id = ImGui::GetID("ContentWidth");
+  ImGui::PopID();
+
+  *left_width = storage->GetFloat(left_window_width_id, default_left_width);
+  *right_width = storage->GetFloat(right_window_width_id, default_right_width);
+  const float previous_content_width = storage->GetFloat(content_width_id, content_width);
+  storage->SetFloat(content_width_id, content_width);
+
+  if (previous_content_width != content_width) {
+    const float factor = content_width / previous_content_width;
+    *left_width = std::round(*left_width * factor); // TODO: is the round necessary? are non-integer values okay for sizes?
+    *right_width = content_width - thickness - *left_width;
+  }
+
+  ImRect bb;
+  bb.Min.x = window->DC.CursorPos.x + *left_width;
+  bb.Min.y = window->DC.CursorPos.y;
+
+  const auto item_size = CalcItemSize(ImVec2(thickness, content_height), 0.0f, 0.0f);
+  bb.Max.x = bb.Min.x + item_size.x;
+  bb.Max.y = bb.Min.y + item_size.y;
+
+  auto return_value =
+      SplitterBehavior(bb, id, ImGuiAxis_X, left_width, right_width, left_min_width, right_min_width, 0.0f);
+
+  storage->SetFloat(left_window_width_id, *left_width);
+  storage->SetFloat(right_window_width_id, *right_width);
+
+  return return_value;
+}
 }  // namespace ImGui

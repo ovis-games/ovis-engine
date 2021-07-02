@@ -60,7 +60,10 @@ void SceneObjectEditor::DrawObjectTree() {
 
 void SceneObjectEditor::DrawAnimationPane() {
   ImGui::Text("Animation");
-  if (ImGui::BeginChild("AnimationPane", ImVec2(0, 0), ImGuiWindowFlags_HorizontalScrollbar)) {
+  float tree_width;
+  float timeline_width;
+  ImGui::VerticalSplitter("AnimationPaneSplit", &tree_width, &timeline_width);
+  if (ImGui::BeginChild("AnimationPane", ImVec2(tree_width, 0), ImGuiWindowFlags_HorizontalScrollbar)) {
     DrawAnimationPaneObjectHierarchy(object_.get());
   }
   ImGui::EndChild();
