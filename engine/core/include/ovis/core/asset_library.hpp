@@ -19,8 +19,8 @@ class AssetLibrary {
   virtual std::string GetAssetType(std::string_view asset_id) const = 0;
   virtual std::vector<std::string> GetAssetFileTypes(std::string_view asset_id) const = 0;
   virtual std::optional<std::string> LoadAssetTextFile(std::string_view asset_id,
-                                                       std::string_view file_type) const = 0;
-  virtual std::optional<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view file_type) const = 0;
+                                                       std::string_view filename) const = 0;
+  virtual std::optional<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view filename) const = 0;
   virtual std::vector<std::string> GetAssetsWithType(std::string_view type) const = 0;
 
   virtual bool CreateAsset(std::string_view asset_id, std::string_view type,
@@ -28,7 +28,7 @@ class AssetLibrary {
     return false;
   }
 
-  virtual bool SaveAssetFile(std::string_view asset_id, std::string_view file_type,
+  virtual bool SaveAssetFile(std::string_view asset_id, std::string_view filename,
                              std::variant<std::string, Blob> content) {
     return false;
   }
@@ -45,14 +45,14 @@ class DirectoryAssetLibrary : public AssetLibrary {
   std::string GetAssetType(std::string_view asset_id) const override;
   std::vector<std::string> GetAssetFileTypes(std::string_view asset_id) const override;
   std::optional<std::string> LoadAssetTextFile(std::string_view asset_id,
-                                               std::string_view file_type) const override;
-  std::optional<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view file_type) const override;
+                                               std::string_view filename) const override;
+  std::optional<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view filename) const override;
   std::vector<std::string> GetAssetsWithType(std::string_view type) const override;
 
   bool CreateAsset(std::string_view asset_id, std::string_view type,
                    const std::vector<std::pair<std::string, std::variant<std::string, Blob>>>& files) override;
 
-  bool SaveAssetFile(std::string_view asset_id, std::string_view file_type,
+  bool SaveAssetFile(std::string_view asset_id, std::string_view filename,
                      std::variant<std::string, Blob> content) override;
 
   bool DeleteAsset(std::string_view asset_id) override;
@@ -61,7 +61,7 @@ class DirectoryAssetLibrary : public AssetLibrary {
   inline std::string directory() const { return directory_; }
 
  protected:
-  std::optional<std::string> GetAssetFilename(std::string_view asset_id, std::string_view file_type) const;
+  std::optional<std::string> GetAssetFilename(std::string_view asset_id, std::string_view filename) const;
 
  private:
   std::filesystem::path directory_;
@@ -69,7 +69,7 @@ class DirectoryAssetLibrary : public AssetLibrary {
   struct AssetData {
     std::filesystem::path directory;
     std::string type;
-    std::vector<std::string> file_types;
+    std::vector<std::string> filenames;
   };
 
   std::unordered_map<std::string, AssetData> assets_;
