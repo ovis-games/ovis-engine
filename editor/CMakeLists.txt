@@ -35,6 +35,7 @@ add_executable(
   imgui_extensions/input_json.hpp imgui_extensions/input_json.cpp
   imgui_extensions/input_math.hpp imgui_extensions/input_math.cpp
   imgui_extensions/input_asset.hpp imgui_extensions/input_asset.cpp
+  imgui_extensions/splitter.hpp imgui_extensions/splitter.cpp
 
   windows/log_window.hpp windows/log_window.cpp
   windows/asset_viewer_window.hpp windows/asset_viewer_window.cpp

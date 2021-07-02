@@ -14,6 +14,7 @@ class SceneObjectEditor : public SceneViewEditor {
  public:
   SceneObjectEditor(const std::string& scene_object_asset);
 
+  void DrawContent() override;
   void Save() override;
 
   static void CreateNew(const std::string& asset_id);
@@ -22,6 +23,8 @@ class SceneObjectEditor : public SceneViewEditor {
   void SubmitChanges() override;
   void JsonFileChanged(const json& data, const std::string& file_type) override;
   void DrawObjectTree() override;
+  void DrawAnimationPane();
+  void DrawAnimationPaneObjectHierarchy(SceneObject* object);
 
   safe_ptr<SceneObject> object_;
 };
