@@ -5,6 +5,7 @@
 #include "../../imgui_extensions/input_asset.hpp"
 #include "../../imgui_extensions/input_serializable.hpp"
 #include "../../imgui_extensions/texture_button.hpp"
+#include "../../imgui_extensions/splitter.hpp"
 #include "editing_controllers/editor_camera_controller.hpp"
 #include "editing_controllers/object_selection_controller.hpp"
 #include "editing_controllers/physics2d_shape_controller.hpp"
@@ -436,12 +437,13 @@ void SceneViewEditor::DrawViewport() {
 }
 
 void SceneViewEditor::DrawInspectorContent() {
-  ImVec2 available_content_region = ImGui::GetContentRegionAvail();
-  if (ImGui::BeginChild("ObjectView", ImVec2(0, available_content_region.y / 2), false)) {
+  float object_view_height;
+  float selection_properties_height;
+  ImGui::HorizontalSplitter("InspectorContentSplit", &object_view_height, &selection_properties_height);
+  if (ImGui::BeginChild("ObjectView", ImVec2(0, object_view_height), false)) {
     DrawObjectTree();
   }
   ImGui::EndChild();
-  ImGui::Separator();
   DrawSelectionProperties();
 }
 
