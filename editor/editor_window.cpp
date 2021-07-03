@@ -11,6 +11,7 @@
 #include "windows/toast_window.hpp"
 #include "windows/toolbar.hpp"
 #include "windows/profiling_window.hpp"
+#include "windows/asset_editors/script_library_editor.hpp"
 
 #if OVIS_EMSCRIPTEN
 #include <emscripten.h>
@@ -107,7 +108,10 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   scene()->AddController(std::make_unique<InspectorWindow>());
   scene()->AddController(std::make_unique<Overlay>());
   scene()->AddController(std::make_unique<ToastWindow>());
+#if OVIS_ENABLE_BUILTIN_PROFILING
   scene()->AddController(std::make_unique<ProfilingWindow>());
+#endif
+  scene()->AddController<ScriptLibraryEditor>("test");
 
   AddRenderPass(std::make_unique<ImGuiRenderPass>());
 
