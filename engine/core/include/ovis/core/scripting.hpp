@@ -11,6 +11,9 @@
 
 namespace ovis {
 
+struct ScriptType {
+};
+
 struct ScriptVariable {
   std::string type;
   std::any value;
@@ -22,8 +25,8 @@ using ScriptFunctionPointer = void (*)(std::span<ScriptVariable> input, std::spa
 
 struct ScriptFunction {
   ScriptFunctionPointer function;
-  int input_count;
-  int output_count;
+  std::vector<ScriptType> inputs;
+  std::vector<ScriptType> outputs;
 };
 
 struct ScriptError {};
@@ -32,11 +35,15 @@ class ScriptChunk;
 
 class ScriptContext {
  public:
-  void RegisterFunction(std::string_view identifier, ScriptFunctionPointer function, int input_count = 0,
-                        int output_count = 0);
+  ScriptContext();
+
+  void RegisterFunction(std::string_view identifier, ScriptFunctionPointer function, std::vector<ScriptType> inputs,
+                        std::vector<ScriptType> outputs);
 
   template <typename T, T FUNCTION>
   void RegisterFunction(std::string_view identifier);
+
+  const ScriptFunction* GetFunction(std::string_view identifier);
 
   std::variant<ScriptError, std::vector<ScriptVariable>> Execute(std::string_view function_identifier,
                                                                  std::span<ScriptVariable> arguments);
@@ -46,6 +53,8 @@ class ScriptContext {
   std::map<std::string, ScriptFunction, std::less<>> functions_;
   std::vector<ScriptVariable> stack_;
 };
+
+static ScriptContext global_script_context;
 
 class ScriptEnvironment {
  public:
@@ -72,10 +81,12 @@ template <typename FunctionType>
 struct FunctionWrapper;
 
 template <typename ReturnType, typename... ArgumentTypes>
-struct FunctionWrapper<ReturnType(*)(ArgumentTypes...)> {
+struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
   using FunctionType = ReturnType(*)(ArgumentTypes...);
   static constexpr auto INPUT_COUNT = sizeof...(ArgumentTypes);
+  static const std::vector<ScriptType> INPUT_TYPES;
   static constexpr auto OUTPUT_COUNT = std::is_same_v<ReturnType, void> ? 0 : 1;
+  static const std::vector<ScriptType> OUTPUT_TYPES;
 
   template <FunctionType FUNCTION>
   static void Execute(std::span<ScriptVariable> inputs, std::span<ScriptVariable> outputs) {
@@ -100,10 +111,16 @@ struct FunctionWrapper<ReturnType(*)(ArgumentTypes...)> {
   }
 };
 
+template <typename ReturnType, typename... ArgumentTypes>
+const std::vector<ScriptType> FunctionWrapper<ReturnType(ArgumentTypes...)>::INPUT_TYPES(sizeof...(ArgumentTypes));
+
+template <typename ReturnType, typename... ArgumentTypes>
+const std::vector<ScriptType> FunctionWrapper<ReturnType(ArgumentTypes...)>::OUTPUT_TYPES(FunctionWrapper<ReturnType(ArgumentTypes...)>::OUTPUT_COUNT);
+
 template <typename FunctionType, FunctionType FUNCTION>
 void ScriptContext::RegisterFunction(std::string_view identifier) {
   using Wrapper = FunctionWrapper<FunctionType>;
-  RegisterFunction(identifier, &Wrapper::template Execute<FUNCTION>, Wrapper::INPUT_COUNT, Wrapper::OUTPUT_COUNT);
+  RegisterFunction(identifier, &Wrapper::template Execute<FUNCTION>, Wrapper::INPUT_TYPES, Wrapper::OUTPUT_TYPES);
 }
 
 }  // namespace ovis
