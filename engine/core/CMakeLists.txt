@@ -23,6 +23,7 @@ add_library(
   include/ovis/core/math_operations.hpp src/math_operations.cpp
   include/ovis/core/intersection.hpp src/intersection.cpp
   include/ovis/core/math.hpp src/math.cpp
+  include/ovis/core/scripting.hpp src/scripting.cpp
 )
 add_library(ovis::core ALIAS ovis-core)
 
@@ -53,6 +54,7 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_math.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_intersection.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scene_object.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
   )
 
   target_add_ldoc_test(
