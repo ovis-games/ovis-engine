@@ -2,8 +2,7 @@
 
 namespace ovis {
 
-std::optional<LineSegment2D> ClipLineSegment(const AxisAlignedBoundingBox2D& aabb,
-                                                    const LineSegment2D& line_segment) {
+std::optional<LineSegment2D> ClipLineSegment(const AxisAlignedBoundingBox2D& aabb, const LineSegment2D& line_segment) {
   // https://en.wikipedia.org/wiki/Cohen%E2%80%93Sutherland_algorithm
 
   enum class OutCode { INSIDE = 0, LEFT = 1, RIGHT = 2, BOTTOM = 4, TOP = 8 };

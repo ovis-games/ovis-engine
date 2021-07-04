@@ -2,6 +2,7 @@
 
 #include "../editor_window.hpp"
 #include "asset_editors/scene_editor.hpp"
+#include "asset_editors/scene_object_editor.hpp"
 #include "asset_editors/script_editor.hpp"
 #include "asset_editors/settings_editor.hpp"
 #include "asset_editors/texture_editor.hpp"
@@ -28,6 +29,7 @@ AssetViewerWindow::AssetViewerWindow() : ImGuiWindow("Assets"), current_path_("/
 
 void AssetViewerWindow::DrawContent() {
   ImGui::BeginChild("AssetView", ImVec2(0, 0), false);
+
   if (ImGui::BeginPopupContextWindow()) {
     if (ImGui::BeginMenu("Create")) {
       if (ImGui::Selectable("Scene")) {
@@ -61,7 +63,8 @@ void AssetViewerWindow::DrawContent() {
         EditorWindow::instance()->ShowMessageBox(
             fmt::format("Delete {}?", asset_id),
             fmt::format("Are you sure you want to delete the asset {}? This action cannot be undone!", asset_id),
-            {"Delete Permanently", "Cancel"}, [asset_id, asset_viewer_window = safe_ptr(this)](std::string_view pressed_button) {
+            {"Delete Permanently", "Cancel"},
+            [asset_id, asset_viewer_window = safe_ptr(this)](std::string_view pressed_button) {
               if (pressed_button == "Delete Permanently" && asset_viewer_window != nullptr) {
                 asset_viewer_window->CloseAssetEditor(asset_id);
                 GetApplicationAssetLibrary()->DeleteAsset(asset_id);
@@ -77,6 +80,17 @@ void AssetViewerWindow::DrawContent() {
   }
 
   ImGui::EndChild();
+
+  if (ImGui::BeginDragDropTarget()) {
+    const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("scene_object");
+    if (payload) {
+      SceneObject* dragged_object = *reinterpret_cast<SceneObject**>(payload->Data);
+      const std::string asset_name = GetNewAssetName(std::string(dragged_object->name()));
+      GetApplicationAssetLibrary()->CreateAsset(asset_name, "scene_object",
+                                                {{"json", dragged_object->Serialize().dump()}});
+    }
+    ImGui::EndDragDropTarget();
+  }
 }
 
 void AssetViewerWindow::ProcessEvent(Event* event) {
@@ -101,6 +115,8 @@ AssetEditor* AssetViewerWindow::OpenAssetEditor(const std::string& asset_id) {
   AssetEditor* asset_editor = nullptr;
   if (asset_type == "scene") {
     asset_editor = scene()->AddController<SceneEditor>(asset_id);
+  } else if (asset_type == "scene_object") {
+    asset_editor = scene()->AddController<SceneObjectEditor>(asset_id);
   } else if (asset_type == "scene_controller") {
     asset_editor = scene()->AddController<ScriptEditor>(asset_id);
   } else if (asset_type == "texture2d") {

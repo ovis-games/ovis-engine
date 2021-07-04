@@ -3,8 +3,9 @@
 #include <cassert>
 #include <vector>
 
-#include <ovis/core/array_view.hpp>
 #include <ovis/math/vector.hpp>
+
+#include <ovis/core/array_view.hpp>
 
 namespace ovis {
 

@@ -4,9 +4,9 @@
 
 namespace ovis::editor {
 
-void EditorController::SubmitChangesToScene() {
+void EditorController::SubmitChanges() {
   SDL_assert(editor_ != nullptr);
-  editor_->SubmitChangesToScene();
+  editor_->SubmitChanges();
 }
 
 }  // namespace ovis::editor

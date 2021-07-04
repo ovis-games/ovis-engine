@@ -2,9 +2,9 @@
 
 #include "editor_controller.hpp"
 
-#include <ovis/core/transform.hpp>
 #include <ovis/core/camera.hpp>
 #include <ovis/core/scene_controller.hpp>
+#include <ovis/core/transform.hpp>
 #include <ovis/rendering/rendering_viewport.hpp>
 
 namespace ovis {

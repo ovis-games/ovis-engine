@@ -2,8 +2,7 @@
 
 #include <ovis/core/scene_controller.hpp>
 
-namespace ovis
-{
+namespace ovis {
 
 class ImGuiEndFrameController : public SceneController {
  public:
@@ -14,7 +13,6 @@ class ImGuiEndFrameController : public SceneController {
   void Update(std::chrono::microseconds delta_time) override;
 
  private:
-
 };
 
-} // namespace ovis
+}  // namespace ovis

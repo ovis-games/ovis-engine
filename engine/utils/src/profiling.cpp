@@ -1,8 +1,8 @@
 #include <algorithm>
+#include <cstring>
 #include <ctime>
 #include <iomanip>
 #include <sstream>
-#include <cstring>
 
 #include <ovis/utils/profiling.hpp>
 

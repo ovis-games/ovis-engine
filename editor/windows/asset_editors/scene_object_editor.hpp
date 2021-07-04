@@ -10,10 +10,11 @@
 namespace ovis {
 namespace editor {
 
-class SceneEditor : public SceneViewEditor {
+class SceneObjectEditor : public SceneViewEditor {
  public:
-  SceneEditor(const std::string& scene_asset);
+  SceneObjectEditor(const std::string& scene_object_asset);
 
+  void DrawContent() override;
   void Save() override;
 
   static void CreateNew(const std::string& asset_id);
@@ -22,6 +23,10 @@ class SceneEditor : public SceneViewEditor {
   void SubmitChanges() override;
   void JsonFileChanged(const json& data, const std::string& file_type) override;
   void DrawObjectTree() override;
+  void DrawAnimationPane();
+  void DrawAnimationPaneObjectHierarchy(SceneObject* object);
+
+  safe_ptr<SceneObject> object_;
 };
 
 }  // namespace editor

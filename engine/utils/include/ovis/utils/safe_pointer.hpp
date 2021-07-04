@@ -66,7 +66,7 @@ class safe_ptr_base {
     return *this;
   }
 
-  inline void reset(SafelyReferenceable* new_value = nullptr) {
+  inline constexpr void reset(SafelyReferenceable* new_value = nullptr) {
     if (pointer_) {
       auto& references = pointer_->references_;
       auto reference_iterator = std::find(references.begin(), references.end(), this);

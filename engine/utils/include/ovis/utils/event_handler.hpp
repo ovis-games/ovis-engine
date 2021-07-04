@@ -28,9 +28,7 @@ class EventHandlerSubscription {
   friend class EventHandler;
 
  public:
-  inline void Unsubscribe() {
-    event_->Unsubscribe(subscription_index_);
-  }
+  inline void Unsubscribe() { event_->Unsubscribe(subscription_index_); }
 
  private:
   inline EventHandlerSubscription(EventHandlerBase* event, std::size_t subscription_index)

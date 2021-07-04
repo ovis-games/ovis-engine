@@ -33,9 +33,7 @@ LoadingWindow::LoadingWindow() : ModalWindow("LoadingWindow", "Loading game asse
       LogE("Invalid json: {}", error.what());
     }
   };
-  options.on_error = [](const FetchResponse& response) {
-    LogE("Failed downloading assets list!");
-  };
+  options.on_error = [](const FetchResponse& response) { LogE("Failed downloading assets list!"); };
   Fetch(fmt::format("{}/v1/games/{}/{}/assets/", backend_url, user_name, game_name), options);
 }
 
