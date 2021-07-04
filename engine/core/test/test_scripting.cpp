@@ -11,13 +11,13 @@ float add(float x, float y) {
 TEST_CASE("Simple functions", "[ovis][core][Scripting]") {
   ScriptContext context;
   SECTION("Register function") {
-    context.RegisterFunction(
-        "test",
-        [](std::span<ScriptVariable> inputs, std::span<ScriptVariable> outputs) {
-          REQUIRE(outputs.size() == 1);
-          outputs[0].type = "test";
-        },
-        0, 1);
+    // context.RegisterFunction(
+    //     "test",
+    //     [](std::span<ScriptVariable> inputs, std::span<ScriptVariable> outputs) {
+    //       REQUIRE(outputs.size() == 1);
+    //       outputs[0].type = "test";
+    //     },
+    //     0, 1);
 
     const auto result = context.Execute("test", {});
     REQUIRE(std::holds_alternative<std::vector<ScriptVariable>>(result));
@@ -28,7 +28,7 @@ TEST_CASE("Simple functions", "[ovis][core][Scripting]") {
 
 
   SECTION("Register with templates") {
-    context.RegisterFunction<float(*)(float, float), add>("add");
+    context.RegisterFunction<float(float, float), add>("add");
     std::vector<ScriptVariable> inputs { ScriptVariable{"", 1.0f}, ScriptVariable{"", 2.0f} };
 
     const auto result = context.Execute("add", inputs);

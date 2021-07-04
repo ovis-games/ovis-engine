@@ -10,6 +10,7 @@ double subtract(double x, double y) { return x - y; }
 double multiply(double x, double y) { return x * y; }
 double divide(double x, double y) { return x / y; }
 double negate(double x) { return -x; }
+void print(double x) { LogI("{}", x); }
 
 }
 
@@ -22,6 +23,9 @@ ScriptContext::ScriptContext() {
   OVIS_REGISTER_FUNCTION(multiply);
   OVIS_REGISTER_FUNCTION(divide);
   OVIS_REGISTER_FUNCTION(negate);
+  OVIS_REGISTER_FUNCTION(print);
+
+  stack_.reserve(1000);
 }
 
 void ScriptContext::RegisterFunction(std::string_view identifier, ScriptFunctionPointer function,
@@ -60,9 +64,11 @@ std::variant<ScriptError, std::vector<ScriptVariable>> ScriptContext::Execute(st
 }
 
 bool ScriptChunk::Deserialize(const json& serialized_chunk) {
+  instructions_.clear();
   const json actions = serialized_chunk["actions"];
 
   std::vector<size_t> action_stack_offsets = { 0 };
+  size_t current_offset = 0;
   for (const json& action : actions) {
     Instruction instruction;
     auto function = context_->GetFunction(static_cast<std::string>(action["function"]));
@@ -70,6 +76,9 @@ bool ScriptChunk::Deserialize(const json& serialized_chunk) {
       LogE("Invalid function name: {}", action["function"]);
       return false;
     }
+
+    current_offset += function->outputs.size();
+    action_stack_offsets.push_back(current_offset);
 
     instruction.function = *function;
     instruction.inputs.resize(function->inputs.size());
@@ -79,12 +88,16 @@ bool ScriptChunk::Deserialize(const json& serialized_chunk) {
       auto& value = instruction.inputs[function->GetInputIndex(input.key())];
       const std::string def = input.value();
       if (def[0] == '$') {
+        const auto colon_pos = def.find(':');
+        const int action_index = std::stoi(colon_pos != std::string::npos ? def.substr(1, colon_pos - 1) : def.substr(1));
+        // const std::string output_name = colon_pos != std::string::npos ? def.substr(1, colon_pos - 1) : 
+        value = int(current_offset - action_stack_offsets[action_index] + function->inputs.size() - 1);
       } else {
-        value = ScriptVariable{ "", std::stof(def.c_str())};
+        value = ScriptVariable{ "", double(std::stof(def))};
       }
     }
 
-    action_stack_offsets.push_back(function->outputs.size());
+    instructions_.push_back(instruction);
   }
 
   return true;

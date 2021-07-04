@@ -56,9 +56,9 @@ bool ScriptLibraryEditor::DrawAction(json& action, size_t index) {
       ImGui::Text("%s : %s = ", input.value().identifier.c_str(), "Number");
       ImGui::SameLine();
 
-      ImGui::PushItemWidth(-1);
+      ImGui::PushItemWidth(100);
       std::string input_value = action["inputs"][std::to_string(input.index())];
-      if (ImGui::InputText("Value", &input_value, ImGuiInputTextFlags_EnterReturnsTrue)) {
+      if (ImGui::InputText("###Value", &input_value, ImGuiInputTextFlags_EnterReturnsTrue)) {
         action["inputs"][std::to_string(input.index())] = input_value;
         submit_changes = true;
       }

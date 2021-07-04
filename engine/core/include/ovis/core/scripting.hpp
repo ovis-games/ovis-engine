@@ -12,7 +12,9 @@
 
 namespace ovis {
 
-struct ScriptType {};
+struct ScriptType {
+  constexpr ScriptType() {}
+};
 
 struct ScriptVariableDefinition {
   ScriptType type;
@@ -34,7 +36,7 @@ struct ScriptFunction {
   std::vector<ScriptVariableDefinition> outputs;
 
   size_t GetInputIndex(std::string_view input_identifier) const {
-    for (const auto& input : IndexRange(outputs)) {
+    for (const auto& input : IndexRange(inputs)) {
       if (input->identifier == input_identifier) {
         return input.index();
       }
@@ -121,7 +123,7 @@ class ScriptChunk : public Serializable {
   std::variant<ScriptError, std::vector<ScriptVariable>> Execute();
 
  private:
-  ScriptContext* context_;
+  ScriptContext* context_ = &global_script_context;
   std::vector<Instruction> instructions_;
 };
 
@@ -133,8 +135,8 @@ struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
   using FunctionType = ReturnType (*)(ArgumentTypes...);
   static constexpr auto INPUT_COUNT = sizeof...(ArgumentTypes);
   static constexpr std::array<ScriptType, INPUT_COUNT> INPUT_TYPES;
-  static constexpr auto OUTPUT_COUNT = std::is_same_v<ReturnType, void> ? 0 : 1;
-  static constexpr std::array<ScriptType, OUTPUT_COUNT> OUTPUT_TYPES;
+  static constexpr size_t OUTPUT_COUNT = std::is_same_v<ReturnType, void> ? 0 : 1;
+  static constexpr std::array<ScriptType, OUTPUT_COUNT> OUTPUT_TYPES = {};
 
   template <FunctionType FUNCTION>
   static void Execute(std::span<ScriptVariable> inputs, std::span<ScriptVariable> outputs) {
