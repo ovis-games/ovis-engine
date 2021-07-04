@@ -8,8 +8,8 @@ void MouseWheelEvent::RegisterType(sol::table* module) {
   // @base ovis.core.Event
   // @usage local input = require "ovis.input"
   // local MouseWheelEvent = input.MouseWheelEvent
-  sol::usertype<MouseWheelEvent> mouse_wheel_event =
-      module->new_usertype<MouseWheelEvent>("MouseWheelEvent", sol::no_constructor, sol::base_classes, sol::bases<Event>());
+  sol::usertype<MouseWheelEvent> mouse_wheel_event = module->new_usertype<MouseWheelEvent>(
+      "MouseWheelEvent", sol::no_constructor, sol::base_classes, sol::bases<Event>());
 
   /// The amount the scroll wheel was turned.
   // The x component refers to the hrozontal scrolling and the y component to vertical scrolling.

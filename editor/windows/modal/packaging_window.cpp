@@ -7,8 +7,8 @@
 
 #include <ovis/utils/json.hpp>
 #include <ovis/utils/log.hpp>
-#include <ovis/networking/fetch.hpp>
 #include <ovis/core/scene.hpp>
+#include <ovis/networking/fetch.hpp>
 
 namespace ovis {
 namespace editor {

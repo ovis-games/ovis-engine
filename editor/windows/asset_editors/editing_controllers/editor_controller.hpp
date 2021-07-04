@@ -14,7 +14,7 @@ class EditorController : public SceneController {
 
   inline Scene* game_scene() const { return game_scene_; }
   inline Scene* editing_scene() const { return scene(); }
-  void SubmitChangesToScene();
+  void SubmitChanges();
 
   inline void ClearTooltip() { tooltip_.clear(); }
   inline void SetTooltip(std::string_view text) { tooltip_ = text; }

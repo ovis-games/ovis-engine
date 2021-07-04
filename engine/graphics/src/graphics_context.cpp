@@ -66,7 +66,9 @@ GraphicsContext::GraphicsContext(SDL_Window* window)
 
 GraphicsContext::~GraphicsContext() {
   m_default_render_target_configuration.reset();
-  SDL_assert(resources_.size() == 0);
+  for (auto& resource : resources_) {
+    SDL_assert(resource->type() == GraphicsResource::Type::NONE);
+  }
 }
 
 void GraphicsContext::Draw(const DrawItem& draw_item) {

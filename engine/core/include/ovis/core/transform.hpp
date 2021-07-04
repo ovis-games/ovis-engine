@@ -31,9 +31,7 @@ class Transform : public SceneObjectComponent {
   inline void SetWorldPosition(const Vector3 position) {
     SetLocalPosition(TransformPosition(FindWorldToParentMatrix(), position));
   }
-  inline void Move(Vector3 offset) {
-    MoveLocally(TransformDirection(FindWorldToParentMatrix(), offset));
-  }
+  inline void Move(Vector3 offset) { MoveLocally(TransformDirection(FindWorldToParentMatrix(), offset)); }
 
   inline Vector3 local_scale() const { return scale_; }
   inline void SetLocalScale(Vector3 new_scale) {

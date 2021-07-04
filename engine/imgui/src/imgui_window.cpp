@@ -16,7 +16,7 @@ void ImGuiWindow::Update(std::chrono::microseconds delta_time) {
   if (!HasFrameStarted()) {
     return;
   }
-  
+
   if (dock_next_frame_) {
     ImGui::SetNextWindowDockID(dockspace_id_);
     dock_next_frame_ = false;

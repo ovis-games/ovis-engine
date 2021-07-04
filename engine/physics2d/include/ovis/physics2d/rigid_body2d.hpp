@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <variant>
+#include <vector>
 
 #include <box2d/b2_body.h>
 #include <box2d/b2_fixture.h>
@@ -222,7 +222,9 @@ class RigidBody2D : public SceneObjectComponent {
 
   inline b2Body* EnforceValidBody() const {
     if (!std::holds_alternative<b2Body*>(body_)) {
-      throw std::runtime_error("Body internals are not created yet. When the component was created within a physics2D callback you need to wait until after the physics update to call this function.");
+      throw std::runtime_error(
+          "Body internals are not created yet. When the component was created within a physics2D callback you need to "
+          "wait until after the physics update to call this function.");
     }
     return std::get<b2Body*>(body_);
   }

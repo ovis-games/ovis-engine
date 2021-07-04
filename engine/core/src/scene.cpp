@@ -150,7 +150,8 @@ SceneObject* Scene::CreateObject(std::string_view base_name, SceneObject* parent
     } while (ContainsObject(object_path));
   }
 
-  auto insert_result = objects_.insert(std::make_pair(object_path, std::make_unique<SceneObject>(this, object_name, parent)));
+  auto insert_result =
+      objects_.insert(std::make_pair(object_path, std::make_unique<SceneObject>(this, object_name, parent)));
   SDL_assert(insert_result.second);
   SDL_assert(object_path == insert_result.first->second->path());
   return insert_result.first->second.get();
@@ -162,7 +163,8 @@ SceneObject* Scene::CreateObject(std::string_view object_name, const json& seria
   return object;
 }
 
-SceneObject* Scene::CreateObject(std::string_view object_name, const sol::table& component_properties, SceneObject* parent) {
+SceneObject* Scene::CreateObject(std::string_view object_name, const sol::table& component_properties,
+                                 SceneObject* parent) {
   auto object = CreateObject(object_name, parent);
 
   for (const auto& [key, value] : component_properties) {
@@ -196,9 +198,8 @@ SceneObject* Scene::GetObject(std::string_view object_path) {
   auto object = objects_.find(std::string(object_path));
   if (object == objects_.end()) {
     return nullptr;
-  } {
-    return object->second.get();
   }
+  { return object->second.get(); }
 }
 
 bool Scene::ContainsObject(std::string_view object_reference) {

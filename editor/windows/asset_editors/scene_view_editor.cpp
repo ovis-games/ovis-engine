@@ -5,6 +5,7 @@
 #include "../../imgui_extensions/input_asset.hpp"
 #include "../../imgui_extensions/input_serializable.hpp"
 #include "../../imgui_extensions/texture_button.hpp"
+#include "../../imgui_extensions/splitter.hpp"
 #include "editing_controllers/editor_camera_controller.hpp"
 #include "editing_controllers/object_selection_controller.hpp"
 #include "editing_controllers/physics2d_shape_controller.hpp"
@@ -13,8 +14,8 @@
 #include "editor_render_passes/selected_object_bounding_box.hpp"
 #include "editor_render_passes/transformation_tools_renderer.hpp"
 
-#include <imgui_stdlib.h>
 #include <imgui_internal.h>
+#include <imgui_stdlib.h>
 
 #include <ovis/utils/utf8.hpp>
 #include <ovis/utils/utils.hpp>
@@ -23,6 +24,7 @@
 #include <ovis/core/scene_controller.hpp>
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/transform.hpp>
+#include <ovis/rendering2d/sprite.hpp>
 #include <ovis/input/mouse_button.hpp>
 #include <ovis/input/mouse_events.hpp>
 #include <ovis/imgui/imgui_start_frame_controller.hpp>
@@ -47,7 +49,8 @@ MouseButton GetMouseButtonFromImGuiIndex(int button) {
 
 }  // namespace
 
-SceneViewEditor::SceneViewEditor(const std::string& scene_asset) : AssetEditor(scene_asset) {
+SceneViewEditor::SceneViewEditor(const std::string& scene_asset, bool allow_adding_objects)
+  : AssetEditor(scene_asset), allow_adding_objects_(allow_adding_objects) {
   editing_scene()->Play();
   AddEditorController<ObjectSelectionController>();
   AddEditorController<TransformationToolsController>();
@@ -101,7 +104,7 @@ void SceneViewEditor::ChangeRunState(RunState new_state) {
   case RunState::RUNNING:
     switch (run_state()) {
       case RunState::STOPPED:
-        SubmitChangesToScene();
+        SubmitChanges();
         game_scene()->Deserialize(GetCurrentJsonFileState());
         game_scene()->Play();
         [[fallthrough]];
@@ -146,11 +149,24 @@ void SceneViewEditor::ChangeRunState(RunState new_state) {
   }
 }
 
+void SceneViewEditor::SelectObject(SceneObject* object) {
+  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
+  SDL_assert(object_selection_controller != nullptr);
+  object_selection_controller->SelectObject(object);
+  SDL_assert(object_selection_controller->selected_object());
+  SDL_assert(object_selection_controller->selected_object() == object);
+  SDL_assert(object_selection_controller->selected_object()->path() == object->path());
+}
+
 
 SceneObject* SceneViewEditor::GetSelectedObject() {
   auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
   SDL_assert(object_selection_controller != nullptr);
   return object_selection_controller->selected_object();
+}
+
+void SceneViewEditor::UpdateSceneEditingCopy() {
+  serialized_scene_editing_copy_ = game_scene()->Serialize();
 }
 
 void SceneViewEditor::CopySelectedObjectToClipboard() {
@@ -166,12 +182,8 @@ SceneObject* SceneViewEditor::PasteObjectFromClipboard() {
   const auto serialized_object = GetClipboardData("application/scene_object_data");
   if (object_name && serialized_object) {
     auto object = game_scene()->CreateObject(*object_name, json::parse(*serialized_object));
-
-    auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
-    SDL_assert(object_selection_controller != nullptr);
-    object_selection_controller->SelectObject(object);
-
-    SubmitChangesToScene();
+    SelectObject(object);
+    SubmitChanges();
     return object;
   } else {
     return nullptr;
@@ -181,10 +193,6 @@ SceneObject* SceneViewEditor::PasteObjectFromClipboard() {
 void SceneViewEditor::DrawContent() {
   DrawToolbar();
   DrawViewport();
-  for (const auto& function : do_once_after_draw_) {
-    function();
-  }
-  do_once_after_draw_.clear();
 }
 
 void SceneViewEditor::DrawToolbar() {
@@ -361,13 +369,13 @@ void SceneViewEditor::DrawViewport() {
       const Vector3 new_screen_space_position = Vector3::FromVector2(mouse_position, screen_space_position.z);
       const Vector3 new_world_space_position = viewport->ScreenSpacePositionToWorldSpace(new_screen_space_position);
       transform->SetWorldPosition(new_world_space_position);
-      SubmitChangesToScene();
+      SubmitChanges();
     }
   }
   if (ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete))) {
     LogI("Delete object");
     game_scene()->DeleteObject(GetSelectedObject());
-    SubmitChangesToScene();
+    SubmitChanges();
   }
 
   if (ImGui::IsItemHovered()) {
@@ -396,104 +404,53 @@ void SceneViewEditor::DrawViewport() {
     latest_mouse_position_ = Vector2::NotANumber();
   }
 
-  // if (ImGui::BeginDragDropTarget()) {
-  //   std::string dropped_asset_id;
+  if (allow_adding_objects_ && ImGui::BeginDragDropTarget()) {
+    if (std::string dropped_asset_id; run_state() != RunState::RUNNING && ImGui::AcceptDragDropAsset("texture2d", &dropped_asset_id)) {
+      SceneObject* object = game_scene()->CreateObject(dropped_asset_id);
 
-  //   if (run_state() != RunState::RUNNING && ImGui::AcceptDragDropAsset("texture2d", &dropped_asset_id)) {
-  //       SceneObject* object = CreateObject(dropped_asset_id, false);
-  //       auto texture_description = LoadTexture2DDescription(GetApplicationAssetLibrary(), dropped_asset_id);
+      auto* transform = object->AddComponent<Transform>("Transform");
+      const Vector2 mouse_position = ImGui::GetMousePos();
+      transform->SetWorldPosition(editor_viewport_->ScreenSpacePositionToWorldSpace(Vector3::FromVector2(mouse_position - top_left)));
 
-  //       auto* transform = object->AddComponent<TransformComponent>("Transform");
-  //       const Vector2 mouse_position = ImGui::GetMousePos();
-  //       transform->SetPosition(scene_viewport_->DeviceCoordinatesToWorldSpace(mouse_position - top_left));
+      auto* sprite = object->AddComponent<Sprite>("Sprite");
+      sprite->SetTexture(dropped_asset_id);
+      sprite->SetSize({ 1.0f, 1.0f });
 
-  //       auto* sprite = object->AddComponent<SpriteComponent>("Sprite");
-  //       sprite->SetTexture(dropped_asset_id);
-  //       sprite->SetSize({static_cast<float>(texture_description->width), static_cast<float>(texture_description->height)});
+      SubmitChanges();
+    }
+    if (std::string dropped_asset_id; run_state() != RunState::RUNNING && ImGui::AcceptDragDropAsset("scene_object", &dropped_asset_id)) {
+      SceneObject* object = game_scene()->CreateObject(dropped_asset_id);
+      if (!object->SetupTemplate(dropped_asset_id)) {
+        LogE("Failed to setup template `{}`", dropped_asset_id);
+      } else {
+        if (auto* transform = object->GetComponent<Transform>("Transform"); transform != nullptr) {
+          const Vector2 mouse_position = ImGui::GetMousePos();
+          transform->SetWorldPosition(editor_viewport_->ScreenSpacePositionToWorldSpace(Vector3::FromVector2(mouse_position - top_left)));
+        }
 
-  //       SubmitChangesToScene();
-  //   }
-  //   ImGui::EndDragDropTarget();
-  // }
+        SubmitChanges();
+      }
+    }
+
+    ImGui::EndDragDropTarget();
+  }
 }
 
 void SceneViewEditor::DrawInspectorContent() {
-  DrawObjectTree();
-  ImGui::Separator();
-  DrawSelectionProperties();
-}
-
-void SceneViewEditor::DrawObjectTree() {
-  ImGuiIO& io = ImGui::GetIO();
-  const bool control_or_command = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;
-  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
-
-  ImVec2 available_content_region = ImGui::GetContentRegionAvail();
-  if (ImGui::BeginChild("ObjectView", ImVec2(0, available_content_region.y / 2), false)) {
-    if (ImGui::BeginPopupContextWindow()) {
-      if (ImGui::Selectable("Create Object")) {
-        object_selection_controller->SelectObject(game_scene()->CreateObject("New Object"));
-        SubmitChangesToScene();
-        renaming_state_ = RenamingState::STARTED_RENAMING;
-      }
-      ImGui::EndPopup();
-    }
-  
-    if (ImGui::IsWindowFocused() && control_or_command && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_V))) {
-      PasteObjectFromClipboard();
-    }
-
-    ImGuiTreeNodeFlags tree_node_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
-                                         ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
-    ImGuiTreeNodeFlags scene_node_flags = tree_node_flags | ImGuiTreeNodeFlags_AllowItemOverlap;
-    if (!object_selection_controller->has_selected_object()) {
-      // If there is no selected object, the scene is selected
-      scene_node_flags |= ImGuiTreeNodeFlags_Selected;
-    }
-    if (ImGui::TreeNodeEx(asset_id().c_str(), scene_node_flags)) {
-      if (ImGui::BeginPopupContextItem()) {
-        if (ImGui::Selectable("Create Object")) {
-          object_selection_controller->SelectObject(game_scene()->CreateObject("New Object"));
-          SubmitChangesToScene();
-          renaming_state_ = RenamingState::STARTED_RENAMING;
-        }
-        ImGui::EndPopup();
-      }
-      if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-        object_selection_controller->ClearSelection();
-      }
-      if (ImGui::BeginDragDropTarget()) {
-        const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("scene_object");
-        if (payload) {
-          SceneObject* dragged_object = *reinterpret_cast<SceneObject**>(payload->Data);
-          if (dragged_object->scene() != game_scene() || dragged_object->parent() != nullptr) {
-            DoOnceAfterDraw([this, dragged_object]() {
-              game_scene()->CreateObject(dragged_object->name(), dragged_object->Serialize());
-              dragged_object->scene()->DeleteObject(dragged_object);
-              SubmitChangesToScene();
-            });
-          }
-        }
-        ImGui::EndDragDropTarget();
-      }
-
-      for (SceneObject* object : game_scene()->root_objects()) {
-        SDL_assert(object != nullptr);
-        SDL_assert(game_scene()->ContainsObject(object->name()));
-        DrawObjectHierarchy(object);
-      }
-
-      ImGui::TreePop();
-    }
+  float object_view_height;
+  float selection_properties_height;
+  ImGui::HorizontalSplitter("InspectorContentSplit", &object_view_height, &selection_properties_height);
+  if (ImGui::BeginChild("ObjectView", ImVec2(0, object_view_height), false)) {
+    DrawObjectTree();
   }
   ImGui::EndChild();
+  DrawSelectionProperties();
 }
 
 void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
   ImGuiIO& io = ImGui::GetIO();
   const bool control_or_command = io.ConfigMacOSXBehaviors ? io.KeySuper : io.KeyCtrl;
-  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
-  const bool is_object_selected = object_selection_controller->selected_object() == object;
+  const bool is_object_selected = GetSelectedObject() == object;
 
   ImGuiTreeNodeFlags scene_object_flags = ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_OpenOnDoubleClick |
                                           ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
@@ -514,7 +471,7 @@ void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
     }
     if (ImGui::IsItemFocused() && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_Delete))) {
       game_scene()->DeleteObject(GetSelectedObject());
-      SubmitChangesToScene();
+      SubmitChanges();
     }
 
     if (ImGui::BeginDragDropSource()) {
@@ -529,10 +486,10 @@ void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
       if (payload) {
         SceneObject* dragged_object = *reinterpret_cast<SceneObject**>(payload->Data);
         if (dragged_object->parent() != object) {
-          DoOnceAfterDraw([this, dragged_object, object]() {
+          DoOnceAfterUpdate([this, dragged_object, object]() {
             object->CreateChildObject(dragged_object->name(), dragged_object->Serialize());
             dragged_object->scene()->DeleteObject(dragged_object);
-            SubmitChangesToScene();
+            SubmitChanges();
           });
         }
       }
@@ -540,16 +497,13 @@ void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
     }
 
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right)) {
-      object_selection_controller->SelectObject(object);
-      SDL_assert(object_selection_controller->selected_object());
-      SDL_assert(object_selection_controller->selected_object() == object);
-      SDL_assert(object_selection_controller->selected_object()->path() == object->path());
+      SelectObject(object);
     }
 
     if (ImGui::BeginPopupContextItem()) {
       if (ImGui::Selectable("Create Child Object")) {
-        object_selection_controller->SelectObject(object->CreateChildObject("New Object"));
-        SubmitChangesToScene();
+        SelectObject(object->CreateChildObject("New Object"));
+        SubmitChanges();
         renaming_state_ = RenamingState::STARTED_RENAMING;
       }
       if (ImGui::Selectable("Rename")) {
@@ -561,12 +515,12 @@ void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
         } else {
           game_scene()->CreateObject(object->name(), object->Serialize());
         }
-        SubmitChangesToScene();
+        SubmitChanges();
       }
       if (ImGui::Selectable("Remove")) {
-        DoOnceAfterDraw([=, this] {
+        DoOnceAfterUpdate([=, this] {
             game_scene()->DeleteObject(object->path());
-            SubmitChangesToScene();
+            SubmitChanges();
             });
       }
       ImGui::EndPopup();
@@ -584,7 +538,7 @@ void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
     ImGui::PushItemWidth(-1);
     if (ImGui::InputText("Renaming", &new_object_name,
                          ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue)) {
-      DoOnceAfterDraw([=, this] {
+      DoOnceAfterUpdate([=, this] {
         if (new_object_name != object->name()) {
           SceneObject* parent = object->parent();
           if (!SceneObject::IsValidName(new_object_name)) {
@@ -595,13 +549,13 @@ void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
             renaming_state_ = RenamingState::STARTED_RENAMING;
           } else {
             if (parent != nullptr) {
-              object_selection_controller->SelectObject(parent->CreateChildObject(new_object_name, object->Serialize()));
+              SelectObject(parent->CreateChildObject(new_object_name, object->Serialize()));
               parent->DeleteChildObject(object->name());
             } else {
-              object_selection_controller->SelectObject(game_scene()->CreateObject(new_object_name, object->Serialize()));
+              SelectObject(game_scene()->CreateObject(new_object_name, object->Serialize()));
               game_scene()->DeleteObject(object->name());
             }
-            SubmitChangesToScene();
+            SubmitChanges();
             renaming_state_ = RenamingState::IS_NOT_RENAMING;
           }
         } else {
@@ -626,9 +580,7 @@ void SceneViewEditor::DrawObjectHierarchy(SceneObject* object) {
 }
 
 void SceneViewEditor::DrawSelectionProperties() {
-  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
-
-  if (object_selection_controller->has_selected_object()) {
+  if (GetSelectedObject() != nullptr) {
     DrawSceneObjectProperties();
   } else {
     DrawSceneProperties();
@@ -636,9 +588,7 @@ void SceneViewEditor::DrawSelectionProperties() {
 }
 
 void SceneViewEditor::DrawSceneObjectProperties() {
-  auto* object_selection_controller = editing_scene()->GetController<ObjectSelectionController>();
-
-  SceneObject* selected_object = object_selection_controller->selected_object();
+  SceneObject* selected_object = GetSelectedObject();
   SDL_assert(selected_object != nullptr);
 
   if (!selected_object) {
@@ -670,7 +620,7 @@ void SceneViewEditor::DrawSceneObjectProperties() {
       if (!selected_object->HasComponent(component_id)) {
         if (ImGui::Selectable(component_id.c_str())) {
           selected_object->AddComponent(component_id);
-          SubmitChangesToScene();
+          SubmitChanges();
         }
       }
     }
@@ -683,8 +633,8 @@ void SceneViewEditor::DrawSceneObjectProperties() {
       Serializable* component = selected_object->GetComponent(component_id);
 
       // Get component path
-      SDL_assert(object_selection_controller->selected_object());
-      const json::json_pointer component_path = GetComponentPath(object_selection_controller->selected_object()->path(), component_id);
+      SDL_assert(GetSelectedObject() != nullptr);
+      const json::json_pointer component_path = GetComponentPath(GetSelectedObject()->path(), component_id);
       if (serialized_scene_editing_copy_.contains(component_path)) {
         json& serialized_component = serialized_scene_editing_copy_[component_path];
         const ovis::json* component_schema = component->GetSchema();
@@ -694,7 +644,7 @@ void SceneViewEditor::DrawSceneObjectProperties() {
                             component_schema ? *component_schema : ovis::json{}, &keep)) {
           if (!keep) {
             selected_object->RemoveComponent(component_id);
-            SubmitChangesToScene();
+            SubmitChanges();
           } else {
             component->Deserialize(serialized_component);
             if (!ImGui::IsItemActive()) {
@@ -703,14 +653,14 @@ void SceneViewEditor::DrawSceneObjectProperties() {
               // not want to have undo steps each frame but only after the
               // dragging is finished. I.e., when the item is deactivated (see
               // below).
-              SubmitChangesToScene();
+              SubmitChanges();
             }
           }
         }
         if (ImGui::IsItemDeactivated()) {
           // After editing is finished reserialize the component so the input gets "validated"
           // and an undo step is created.
-          SubmitChangesToScene();
+          SubmitChanges();
         }
       }
     }
@@ -725,7 +675,7 @@ void SceneViewEditor::DrawSceneProperties() {
   if (ImGui::InputText("Camera", &camera, ImGuiInputTextFlags_EnterReturnsTrue)) {
     serialized_scene_editing_copy_["camera"] = camera;
     game_scene()->Deserialize(serialized_scene_editing_copy_);
-    SubmitChangesToScene();
+    SubmitChanges();
   }
 
   ImGui::Text("Scene controllers");
@@ -750,7 +700,7 @@ void SceneViewEditor::DrawSceneProperties() {
       if (!game_scene()->HasController(controller)) {
         if (ImGui::Selectable(controller.c_str())) {
           game_scene()->AddController(controller);
-          SubmitChangesToScene();
+          SubmitChanges();
         }
       }
     }
@@ -758,7 +708,7 @@ void SceneViewEditor::DrawSceneProperties() {
       if (!game_scene()->HasController(controller)) {
         if (ImGui::Selectable(controller.c_str())) {
           game_scene()->AddController(controller);
-          SubmitChangesToScene();
+          SubmitChanges();
         }
       }
     }
@@ -779,33 +729,19 @@ void SceneViewEditor::DrawSceneProperties() {
                             controller_schema ? *controller_schema : ovis::json{}, &keep)) {
           if (!keep) {
             game_scene()->RemoveController(controller->name());
-            SubmitChangesToScene();
+            SubmitChanges();
           } else {
             controller->Deserialize(serialized_controller);
           }
         }
         if (ImGui::IsItemDeactivated()) {
           // After editing is finished reserialize the controller so the input gets "validated"
-          SubmitChangesToScene();
+          SubmitChanges();
         }
       }
     }
   }
   ImGui::EndChild();
-}
-
-void SceneViewEditor::SetSerializedScene(const json& data) {
-  ChangeRunState(RunState::STOPPED);
-  game_scene()->Deserialize(data);
-  SubmitJsonFile(data);
-  serialized_scene_editing_copy_ = data;
-}
-
-void SceneViewEditor::SubmitChangesToScene() {
-  if (run_state() == RunState::STOPPED) {
-    serialized_scene_editing_copy_ = game_scene()->Serialize();
-    SubmitJsonFile(serialized_scene_editing_copy_);
-  }
 }
 
 void SceneViewEditor::CreateSceneViewports(ImVec2 size) {

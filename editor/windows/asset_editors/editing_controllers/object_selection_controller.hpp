@@ -1,8 +1,7 @@
 #pragma once
 
-#include <string_view>
-
 #include "editor_controller.hpp"
+#include <string_view>
 
 #include <ovis/utils/safe_pointer.hpp>
 #include <ovis/core/intersection.hpp>

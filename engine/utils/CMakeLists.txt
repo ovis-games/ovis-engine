@@ -48,17 +48,18 @@ if (OVIS_EMSCRIPTEN)
       "SHELL:-s USE_SDL=2"
   )
 else ()
-  # find_package(SDL2 REQUIRED)
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(SDL2 REQUIRED sdl2)
-
   if (APPLE OR WIN32)
+    find_package(SDL2 REQUIRED)
+
     target_link_libraries(
       ovis-utils
       PUBLIC
         SDL2::SDL2-static
     )
   else ()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(SDL2 REQUIRED sdl2)
+
     target_include_directories(
       ovis-utils
       PUBLIC

@@ -17,7 +17,8 @@ class LoadingController : public SceneController {
   enum class State { DOWNLOADING_PACKAGE, EXTRACTING, ERROR };
 
  public:
-  LoadingController(std::string_view backend_prefix, std::string_view user_name, std::string_view game_name, std::string_view package_type);
+  LoadingController(std::string_view backend_prefix, std::string_view user_name, std::string_view game_name,
+                    std::string_view package_type);
 
   void Update(std::chrono::microseconds delta_time) override;
 
@@ -32,4 +33,3 @@ class LoadingController : public SceneController {
 }  // namespace player
 }  // namespace ovis
 #endif
-

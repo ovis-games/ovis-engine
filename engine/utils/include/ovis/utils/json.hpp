@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+
 #include <nlohmann/json.hh>
 
 namespace ovis {

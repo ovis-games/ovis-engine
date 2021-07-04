@@ -8,8 +8,8 @@ void MouseButtonPressEvent::RegisterType(sol::table* module) {
   // @base ovis.core.Event
   // @usage local input = require "ovis.input"
   // local MouseButtonPressEvent = input.MouseButtonPressEvent
-  sol::usertype<MouseButtonPressEvent> mouse_button_press_event =
-      module->new_usertype<MouseButtonPressEvent>("MouseButtonPressEvent", sol::no_constructor, sol::base_classes, sol::bases<Event>());
+  sol::usertype<MouseButtonPressEvent> mouse_button_press_event = module->new_usertype<MouseButtonPressEvent>(
+      "MouseButtonPressEvent", sol::no_constructor, sol::base_classes, sol::bases<Event>());
 
   /// The viewport the mouse event occured on.
   // @field[type=ovis.core.SceneViewport] viewport

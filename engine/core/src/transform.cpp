@@ -43,8 +43,7 @@ void Transform::RegisterType(sol::table* module) {
   // @base SceneObjectComponent
   // @usage local core = require "ovis.core"
   // local Transform = core.Transform
-  sol::usertype<Transform> transform_type =
-      module->new_usertype<Transform>("Transform", sol::no_constructor);
+  sol::usertype<Transform> transform_type = module->new_usertype<Transform>("Transform", sol::no_constructor);
 
   /// The position of the transform in local space.
   // @field[type=Vector3] local_position
@@ -56,7 +55,8 @@ void Transform::RegisterType(sol::table* module) {
 
   /// The local scale of the transform.
   // @field[type=Vector3] local_scale
-  transform_type["local_scale"] = sol::property(&Transform::local_scale, sol::resolve<void(Vector3)>(&Transform::SetLocalScale));
+  transform_type["local_scale"] =
+      sol::property(&Transform::local_scale, sol::resolve<void(Vector3)>(&Transform::SetLocalScale));
 
   /// The local rotation of the transform.
   // @field[type=Quaternion] local_rotation
@@ -190,7 +190,7 @@ void Transform::CalculateMatrices() const {
 
 void Transform::FlagAsDirty() {
   dirty_ = true;
-  scene_object()->ForEachChild(true, static_cast<void(*)(SceneObject*)>(FlagAsDirty));
+  scene_object()->ForEachChild(true, static_cast<void (*)(SceneObject*)>(FlagAsDirty));
 }
 
 void Transform::FlagAsDirty(SceneObject* object) {
