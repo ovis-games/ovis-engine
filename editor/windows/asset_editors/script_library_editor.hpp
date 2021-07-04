@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ovis/core/scripting.hpp>
 #include "asset_editor.hpp"
 
 namespace ovis {
@@ -13,9 +14,9 @@ class ScriptLibraryEditor : public AssetEditor {
     void Save() override {}
 
   private:
-    std::vector<json> actions_;
+    ScriptChunk chunk_;
 
-    void DrawAction(json& action, size_t index);
+    bool DrawAction(json& action, size_t index);
     void DrawSpace(size_t index);
 };
 }  // namespace editor
