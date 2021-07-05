@@ -131,10 +131,13 @@ class ScriptEnvironment {
 };
 
 class ScriptChunk : public Serializable {
+ public:
   enum class InstructionType : uint8_t {
     FUNCTION_CALL,
     PUSH_CONSTANT,
-    PUSH_STACK_VARIABLE
+    PUSH_STACK_VARIABLE,
+    JUMP_IF_TRUE,
+    JUMP_IF_FALSE,
   };
   struct FunctionCall {
     uint8_t input_count;
@@ -147,16 +150,19 @@ class ScriptChunk : public Serializable {
   struct PushStackValue {
     int position;
   };
+  struct ConditionalJump {
+    int instruction_offset;
+  };
   struct Instruction {
     InstructionType type;
     std::variant<
       FunctionCall,
       PushConstant,
-      PushStackValue
+      PushStackValue,
+      ConditionalJump 
     > data;
   };
 
- public:
   bool Deserialize(const json& serialized_chunk) override;
   json Serialize() const override;
   std::variant<ScriptError, std::vector<ScriptVariable>> Execute();

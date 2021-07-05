@@ -15,9 +15,13 @@ class ScriptLibraryEditor : public AssetEditor {
 
   private:
     ScriptChunk chunk_;
-
-    bool DrawAction(json& action, size_t index);
-    void DrawSpace(size_t index);
+    json editing_copy_;
+    
+    bool DrawActions(json::json_pointer path);
+    bool DrawAction(json::json_pointer path);
+    bool DrawFunctionCall(json::json_pointer path);
+    bool DrawIfStatement(json::json_pointer path);
+    void DrawSpace(json::json_pointer path);
 };
 }  // namespace editor
 }  // namespace ovis
