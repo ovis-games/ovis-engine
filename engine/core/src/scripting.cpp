@@ -108,7 +108,7 @@ bool ScriptChunk::Deserialize(const json& serialized_chunk) {
       }
 
       // TODO: check input and output count before cast
-      instructions_.push_back(Instruction{ InstructionType::FUNCTION_CALL, FunctionCall{ static_cast<uint8_t>(function->inputs.size()), static_cast<uint8_t>(function->outputs.size()) }});
+      instructions_.push_back(Instruction{ InstructionType::FUNCTION_CALL, FunctionCall{ static_cast<uint8_t>(function->inputs.size()), static_cast<uint8_t>(function->outputs.size()), function->function }});
     }
   }
 

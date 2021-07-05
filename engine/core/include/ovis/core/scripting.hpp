@@ -109,7 +109,7 @@ class ScriptContext {
 
   std::span<ScriptVariable> GetRange(int begin, int end) {
     SDL_assert(begin < 0);
-    SDL_assert(end < 0);
+    SDL_assert(end <= 0);
     SDL_assert(begin <= end);
     SDL_assert(-begin <= stack_.size());
     SDL_assert(end - begin >= 0);
