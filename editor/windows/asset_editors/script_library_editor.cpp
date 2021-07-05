@@ -2,6 +2,8 @@
 #include <imgui.h>
 #include <imgui_stdlib.h>
 #include <ovis/core/scripting.hpp>
+#include <ovis/core/scene.hpp>
+#include <ovis/imgui/imgui_start_frame_controller.hpp>
 
 namespace ovis {
 namespace editor {
@@ -41,6 +43,22 @@ bool ScriptLibraryEditor::DrawAction(json& action, size_t index) {
 
   ImGui::Separator();
   ImGui::BeginGroup();
+  ImFont* font_awesome = scene()->GetController<ImGuiStartFrameController>()->GetFont("FontAwesomeSolid");
+
+  ImGui::PushFont(font_awesome);
+  if (ImGui::SmallButton("\uf7a4")) {
+  }
+  ImGui::PopFont();
+  if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+    ImGui::SetDragDropPayload("action", &index, sizeof(index));
+    ImGui::BeginGroup();
+    const std::string& action_name = action["function"];
+    ImGui::Text("%s", action_name.c_str());
+    ImGui::EndGroup();
+    ImGui::EndDragDropSource();
+  }
+
+
   const std::string& function_identifer = action["function"];
   const ScriptFunction* function = global_script_context.GetFunction(function_identifer);
   if (function == nullptr) {
@@ -101,15 +119,6 @@ bool ScriptLibraryEditor::DrawAction(json& action, size_t index) {
 
   ImGui::EndGroup();
 
-  // if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-  //   ImGui::SetDragDropPayload("action", &index, sizeof(index));
-  //   ImGui::BeginGroup();
-  //   const std::string& action_name = action["function"];
-  //   ImGui::Text("%s", action_name.c_str());
-  //   ImGui::EndGroup();
-  //   ImGui::EndDragDropSource();
-  // }
-
   ImGui::Separator();
 
   ImGui::PopID();
@@ -142,19 +151,22 @@ void ScriptLibraryEditor::DrawSpace(size_t target_index) {
   }
   ImGui::PopItemWidth();
 
-  // if (ImGui::BeginDragDropTarget()) {
-  //   auto payload = ImGui::AcceptDragDropPayload("action");
+  if (ImGui::BeginDragDropTarget()) {
+    auto payload = ImGui::AcceptDragDropPayload("action");
 
-  //   if (payload != nullptr) {
-  //     SDL_assert(payload->DataSize == sizeof(size_t));
-  //     const size_t source_index = *reinterpret_cast<size_t*>(payload->Data);
-  //     json action = actions_[source_index];
-  //     actions_.erase(actions_.begin() + source_index);
-  //     actions_.insert(actions_.begin() + target_index - (target_index > source_index ? 1 : 0), std::move(action));
-  //   }
+    if (payload != nullptr) {
+      SDL_assert(payload->DataSize == sizeof(size_t));
+      const size_t source_index = *reinterpret_cast<size_t*>(payload->Data);
+      json serialized_chunk = GetCurrentJsonFileState();
+      auto& actions = serialized_chunk["actions"];
+      json action = actions[source_index];
+      actions.erase(actions.begin() + source_index);
+      actions.insert(actions.begin() + target_index - (target_index > source_index ? 1 : 0), std::move(action));
+      SubmitJsonFile(serialized_chunk);
+    }
 
-  //   ImGui::EndDragDropTarget();
-  // }
+    ImGui::EndDragDropTarget();
+  }
 }
 
 }  // namespace editor

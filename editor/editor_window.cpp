@@ -136,7 +136,8 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
                                                                  {0xf1b2, 0xf1b2},
                                                                  {0xf0ac, 0xf0ac},
                                                                  {0xf06e, 0xf06e},
-                                                                 {0xf0fe, 0xf0fe}});
+                                                                 {0xf0fe, 0xf0fe},
+                                                                 {0xf7a4, 0xf7a4}});
 }
 
 void EditorWindow::Update(std::chrono::microseconds delta_time) {
