@@ -67,37 +67,49 @@ bool ScriptChunk::Deserialize(const json& serialized_chunk) {
   instructions_.clear();
   const json actions = serialized_chunk["actions"];
 
-  std::vector<size_t> action_stack_offsets = { 0 };
-  size_t current_offset = 0;
-  for (const json& action : actions) {
-    Instruction instruction;
-    auto function = context_->GetFunction(static_cast<std::string>(action["function"]));
-    if (!function) {
-      LogE("Invalid function name: {}", action["function"]);
-      return false;
-    }
+  std::vector<int> action_stack_offsets = { 0 };
+  std::map<size_t, std::map<std::string, int>> output_offsets;
+  int current_stack_offset = 0;
 
-    current_offset += function->outputs.size();
-    action_stack_offsets.push_back(current_offset);
-
-    instruction.function = *function;
-    instruction.inputs.resize(function->inputs.size());
-
-    for (const auto& input : action["inputs"].items()) {
-      // instruction.inputs.
-      auto& value = instruction.inputs[function->GetInputIndex(input.key())];
-      const std::string def = input.value();
-      if (def[0] == '$') {
-        const auto colon_pos = def.find(':');
-        const int action_index = std::stoi(colon_pos != std::string::npos ? def.substr(1, colon_pos - 1) : def.substr(1));
-        // const std::string output_name = colon_pos != std::string::npos ? def.substr(1, colon_pos - 1) : 
-        value = int(current_offset - action_stack_offsets[action_index] + function->inputs.size() - 1);
-      } else {
-        value = ScriptVariable{ "", double(std::stof(def))};
+  for (const auto& action_items : IndexRange(actions)) {
+    const json& action = action_items.value();
+    const std::string type = action["type"];
+    if (type == "function_call") {
+      // Instruction instruction { InstructionType::FUNCTION_CALL, ;
+      auto function = context_->GetFunction(static_cast<std::string>(action["function"]));
+      if (!function) {
+        LogE("Invalid function name: {}", action["function"]);
+        return false;
       }
-    }
 
-    instructions_.push_back(instruction);
+      for (const auto& output : function->outputs) {
+        instructions_.push_back(Instruction{ InstructionType::PUSH_CONSTANT, PushConstant{} });
+        output_offsets[action_items.index()][output.identifier] = current_stack_offset;
+        ++current_stack_offset;
+      }
+
+      for (const auto& input : function->inputs) {
+        if (action["inputs"].contains(input.identifier)) {
+          const std::string& input_value = action["inputs"][input.identifier];
+          if (input_value[0] == '$') {
+            const auto colon_pos = input_value.find(':');
+            if (colon_pos == std::string::npos) {
+              return false;
+            }
+            const int action_index = std::stoi(input_value.substr(1, colon_pos - 1));
+            const std::string output_name = input_value.substr(1, colon_pos - 1);
+            instructions_.push_back(Instruction{ InstructionType::PUSH_STACK_VARIABLE, PushStackValue{ output_offsets[action_index][output_name] - current_stack_offset }});
+          } else {
+            instructions_.push_back(Instruction{ InstructionType::PUSH_CONSTANT, PushConstant{ScriptVariable{ {}, double(std::stod(input_value))}}});
+          }
+        } else {
+          instructions_.push_back(Instruction{ InstructionType::PUSH_CONSTANT, PushConstant{} });
+        }
+      }
+
+      // TODO: check input and output count before cast
+      instructions_.push_back(Instruction{ InstructionType::FUNCTION_CALL, FunctionCall{ static_cast<uint8_t>(function->inputs.size()), static_cast<uint8_t>(function->outputs.size()) }});
+    }
   }
 
   return true;
@@ -109,17 +121,26 @@ json ScriptChunk::Serialize() const {
 
 std::variant<ScriptError, std::vector<ScriptVariable>> ScriptChunk::Execute() {
   for (const auto& instruction : instructions_) {
-    auto outputs = context_->PushStack(instruction.function.outputs.size());
-    auto inputs = context_->PushStack(instruction.function.inputs.size());
-    for (const auto& input : IndexRange(instruction.inputs)) {
-      if (std::holds_alternative<int>(*input)) {
-        inputs[input.index()] = context_->Get(std::get<int>(*input));
-      } else if (std::holds_alternative<ScriptVariable>(*input)) {
-        inputs[input.index()] = std::get<ScriptVariable>(*input);
+    switch (instruction.type) {
+      case InstructionType::FUNCTION_CALL: {
+        const auto& function_call = std::get<FunctionCall>(instruction.data);
+        function_call.function(context_->GetRange(-function_call.input_count, 0), context_->GetRange(-(function_call.input_count + function_call.output_count), -function_call.input_count));
+        context_->PopStack(function_call.input_count);
+        break;
       }
-    }
-    instruction.function.function(inputs, outputs);
-    context_->PopStack(inputs.size());
+
+      case InstructionType::PUSH_CONSTANT: {
+        const PushConstant& push_constant = std::get<PushConstant>(instruction.data);
+        context_->PushValue(push_constant.value);
+        break;
+      }
+
+      case InstructionType::PUSH_STACK_VARIABLE: {
+        const PushStackValue& push_stack_value = std::get<PushStackValue>(instruction.data);
+        context_->PushValue(context_->Get(push_stack_value.position));
+        break;
+      }
+    };
   }
 
   return {};

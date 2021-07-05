@@ -138,7 +138,7 @@ void ScriptLibraryEditor::DrawSpace(size_t target_index) {
         return;
       }
 
-      json action = {{ "function", function_identifier }, {"inputs", {}}};
+      json action = {{"type", "function_call"}, { "function", function_identifier }, {"inputs", {}}};
       for (size_t i = 0; i < function->inputs.size(); ++i) {
         action["inputs"][std::to_string(i)] = "";
       }

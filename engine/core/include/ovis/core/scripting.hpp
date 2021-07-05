@@ -7,6 +7,8 @@
 #include <string>
 #include <variant>
 
+#include <SDL_assert.h>
+
 #include <ovis/utils/serialize.hpp>
 #include <ovis/utils/range.hpp>
 
@@ -22,7 +24,7 @@ struct ScriptVariableDefinition {
 };
 
 struct ScriptVariable {
-  std::string type;
+  ScriptType type;
   std::any value;
 };
 
@@ -86,6 +88,13 @@ class ScriptContext {
     return {stack_.data() + begin, count};
   }
 
+  void PushValue(ScriptVariable value) {
+    if (stack_.size() >= stack_.capacity()) {
+      std::runtime_error("Stack overflow!");
+    }
+    stack_.emplace_back(std::move(value));
+  }
+
   void PopStack(size_t count) {
     if (count > stack_.size()) {
       throw std::runtime_error("Script stack underflow");
@@ -93,8 +102,18 @@ class ScriptContext {
     stack_.resize(stack_.size() - count);
   }
 
-  ScriptVariable Get(size_t offset) {
-    return stack_[stack_.size() - 1 - offset];
+  ScriptVariable Get(int offset) {
+    SDL_assert(offset < 0);
+    return stack_[stack_.size() + offset];
+  }
+
+  std::span<ScriptVariable> GetRange(int begin, int end) {
+    SDL_assert(begin < 0);
+    SDL_assert(end < 0);
+    SDL_assert(begin <= end);
+    SDL_assert(-begin <= stack_.size());
+    SDL_assert(end - begin >= 0);
+    return { &stack_[stack_.size() + begin], static_cast<size_t>(end - begin) };
   }
 
  private:
@@ -112,9 +131,29 @@ class ScriptEnvironment {
 };
 
 class ScriptChunk : public Serializable {
+  enum class InstructionType : uint8_t {
+    FUNCTION_CALL,
+    PUSH_CONSTANT,
+    PUSH_STACK_VARIABLE
+  };
+  struct FunctionCall {
+    uint8_t input_count;
+    uint8_t output_count;
+    ScriptFunctionPointer function;
+  };
+  struct PushConstant {
+    ScriptVariable value;
+  };
+  struct PushStackValue {
+    int position;
+  };
   struct Instruction {
-    ScriptFunction function;
-    std::vector<std::variant<std::string, int, ScriptVariable>> inputs;
+    InstructionType type;
+    std::variant<
+      FunctionCall,
+      PushConstant,
+      PushStackValue
+    > data;
   };
 
  public:
