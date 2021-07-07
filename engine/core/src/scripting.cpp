@@ -15,17 +15,17 @@ void print(double x) { LogI("{}", x); }
 
 }
 
-#define OVIS_REGISTER_FUNCTION(func) RegisterFunction<decltype(func), func>(#func);
+#define OVIS_REGISTER_FUNCTION(func, ...) RegisterFunction<decltype(func), func>(#func, __VA_ARGS__);
 #define OVIS_REGISTER_FUNCTION_WITH_NAME(func, identifier) RegisterFunction<decltype(func), func>(identifier);
 
 ScriptContext::ScriptContext() {
-  OVIS_REGISTER_FUNCTION(add);
-  OVIS_REGISTER_FUNCTION(subtract);
-  OVIS_REGISTER_FUNCTION(multiply);
-  OVIS_REGISTER_FUNCTION(divide);
-  OVIS_REGISTER_FUNCTION(negate);
-  OVIS_REGISTER_FUNCTION(print);
-  OVIS_REGISTER_FUNCTION(is_greater);
+  OVIS_REGISTER_FUNCTION(add, {"x", "y"}, {"result"});
+  OVIS_REGISTER_FUNCTION(subtract, {"x", "y"}, {"result"});
+  OVIS_REGISTER_FUNCTION(multiply, {"x", "y"}, {"result"});
+  OVIS_REGISTER_FUNCTION(divide, {"x", "y"}, {"result"});
+  OVIS_REGISTER_FUNCTION(negate, {"x"}, {"result"});
+  OVIS_REGISTER_FUNCTION(print, {"var"});
+  OVIS_REGISTER_FUNCTION(is_greater, {"x", "y"}, {"is_greater"});
 
   stack_.reserve(1000);
 }
@@ -126,7 +126,8 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
       }
 
       for (const auto& input : function->inputs) {
-        if (!push_value(action["inputs"][input.identifier], &scope)) {
+        if (!action.contains("inputs") || !action["inputs"].is_object() || !push_value(action["inputs"][input.identifier], &scope)) {
+          LogE("No value for input `{}`", input.identifier);
           return {};
         }
       }

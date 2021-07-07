@@ -10,6 +10,10 @@ namespace editor {
 
 ScriptLibraryEditor::ScriptLibraryEditor(const std::string& asset_id) : AssetEditor(asset_id) {
   SetupJsonFile({{"actions", json::array()}});
+
+  docs_["add"] = {
+    {"text", "Add {x} and {y}"},
+  };
 }
 
 void ScriptLibraryEditor::DrawContent() {
@@ -87,6 +91,76 @@ bool ScriptLibraryEditor::DrawFunctionCall(json::json_pointer path) {
   const ScriptFunction* function = global_script_context.GetFunction(function_identifer);
   if (function == nullptr) {
     ImGui::Text("Function definition not found for: %s", function_identifer.c_str());
+  } else if (auto doc = docs_.find(function_identifer); doc != docs_.end()) {
+    const std::string text = doc->second["text"];
+    std::istringstream iss(text);
+    while (iss) {
+      std::string word;
+      iss >> word;
+
+      if (word.front() == '{' && word.back() == '}') {
+        const std::string input_identifier = word.substr(1, word.length() - 2);
+        const auto& input_data = function_call["inputs"][input_identifier];
+        const auto input_path = path / "inputs" / input_identifier;
+
+        if (current_edit_path_ == input_path) {
+          std::string value = input_data.is_string() ? input_data : "";
+          ImGui::PushItemWidth(100);
+          if (ImGui::InputText("###asd", &value, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            function_call["inputs"][input_identifier] = value;
+            current_edit_path_ = json::json_pointer();
+            submit_changes = true;
+          }
+          if (start_editing_) {
+            ImGui::SetKeyboardFocusHere(-1);
+            start_editing_ = false;
+          } else if (!ImGui::IsItemActive()) {
+            LogI("Not active anymore!");
+            current_edit_path_ = json::json_pointer();
+            function_call["inputs"][input_identifier] = value;
+            submit_changes = true;
+          }
+          ImGui::PopItemWidth();
+        } else {
+          std::string value;
+          if (input_data.is_string()) {
+            value = input_data;
+          } else {
+            value = "...";
+          }
+          const std::string button_label = fmt::format("{}###{}", value, input_identifier);
+          if (ImGui::SmallButton(button_label.c_str())) {
+            current_edit_path_ = input_path;
+            start_editing_ = true;
+          }
+        }
+      } else {
+        ImGui::Text("%s", word.c_str());
+      }
+      ImGui::SameLine();
+    }
+
+
+    if (function->outputs.size() == 0) {
+      ImGui::Text(".");
+    } else {
+      ImGui::Text(":");
+      for (const auto& output : IndexRange(function->outputs)) {
+        const std::string button_label = fmt::format("{} : {}", output->identifier, "Number");
+        ImGui::SameLine();
+        ImGui::SmallButton(button_label.c_str());
+
+        if (ImGui::BeginDragDropSource()) {
+          auto parent_pointer = path.parent_pointer();
+          auto& parent = editing_copy_[parent_pointer];
+          size_t array_index = std::stoull(path.to_string().substr(parent_pointer.to_string().size() + 1));
+          const std::string output_reference = fmt::format("${}:{}", array_index, output->identifier);
+          ImGui::SetDragDropPayload("value", output_reference.data(), output_reference.size() + 1);
+          ImGui::SmallButton(button_label.c_str());
+          ImGui::EndDragDropSource();
+        }
+      }
+    }
   } else {
     ImGui::Text("%s", function_identifer.c_str());
     ImGui::Text("Inputs: ");
@@ -199,10 +273,11 @@ void ScriptLibraryEditor::DrawSpace(json::json_pointer path) {
         }
 
         action = {{"type", "function_call"}, { "function", function_identifier }, {"inputs", json::object()}};
-        for (size_t i = 0; i < function->inputs.size(); ++i) {
-          action["inputs"][std::to_string(i)] = "";
+        for (const auto& input : function->inputs) {
+          action["inputs"][input.identifier] = "";
         }
       }
+      action["id"] = rand();
       json serialized_chunk = GetCurrentJsonFileState();
       auto parent_pointer = path.parent_pointer();
       auto& parent = serialized_chunk[parent_pointer];

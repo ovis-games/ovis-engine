@@ -14,7 +14,7 @@
 int main(int argc, char* argv[]) {
   using namespace ovis;
   using namespace ovis::editor;
-  try {
+  // try {
     Log::AddListener(ConsoleLogger);
     Log::AddListener([](LogLevel, const std::string& text) { LogWindow::log_history.push_back(text); });
 
@@ -52,10 +52,10 @@ int main(int argc, char* argv[]) {
     LogI("Quitting editor...");
 
     Quit();
-  } catch (const std::exception& error) {
-    LogE("An unhandled exception occured: {}", error.what());
-  } catch (...) {
-    LogE("An unhandled exception occured");
-  }
+  // } catch (const std::exception& error) {
+  //   LogE("An unhandled exception occured: {}", error.what());
+  // } catch (...) {
+  //   LogE("An unhandled exception occured");
+  // }
   return 0;
 }

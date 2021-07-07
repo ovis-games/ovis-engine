@@ -112,7 +112,6 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
 #if OVIS_ENABLE_BUILTIN_PROFILING
   scene()->AddController(std::make_unique<ProfilingWindow>());
 #endif
-  scene()->AddController<ScriptLibraryEditor>("test");
 
   AddRenderPass(std::make_unique<ImGuiRenderPass>());
 
@@ -158,6 +157,9 @@ void EditorWindow::Update(std::chrono::microseconds delta_time) {
 #endif
 
   Window::Update(delta_time);
+  if (!scene()->HasController(AssetEditor::GetAssetEditorId("test"))) {
+    scene()->GetController<AssetViewerWindow>("Assets")->OpenAssetEditor("test");
+  }
 }
 
 void EditorWindow::ShowMessageBox(std::string_view title, std::string_view message,

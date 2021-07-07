@@ -11,11 +11,15 @@ class ScriptLibraryEditor : public AssetEditor {
     ScriptLibraryEditor(const std::string& asset_id);
 
     void DrawContent() override;
-    void Save() override {}
+    void Save() override { SaveFile("json", GetCurrentJsonFileState().dump()); }
 
   private:
     ScriptChunk chunk_;
     json editing_copy_;
+
+    std::map<std::string, json> docs_;
+    json::json_pointer current_edit_path_;
+    bool start_editing_ = false;
     
     bool DrawActions(json::json_pointer path);
     bool DrawAction(json::json_pointer path);

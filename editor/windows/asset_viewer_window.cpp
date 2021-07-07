@@ -7,6 +7,7 @@
 #include "asset_editors/settings_editor.hpp"
 #include "asset_editors/texture_editor.hpp"
 #include "asset_importers/asset_importer.hpp"
+#include "asset_editors/script_library_editor.hpp"
 #include "dockspace_window.hpp"
 #include <filesystem>
 #include <fstream>
@@ -123,6 +124,8 @@ AssetEditor* AssetViewerWindow::OpenAssetEditor(const std::string& asset_id) {
     asset_editor = scene()->AddController<TextureEditor>(asset_id);
   } else if (asset_type == "settings") {
     asset_editor = scene()->AddController<SettingsEditor>(asset_id);
+  } else if (asset_type == "script_library") {
+    asset_editor = scene()->AddController<ScriptLibraryEditor>(asset_id);
   } else {
     LogE("Unknown asset type: {}", asset_type);
   }
