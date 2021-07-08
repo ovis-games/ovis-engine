@@ -1,8 +1,10 @@
 #include "script_library_editor.hpp"
+
 #include <imgui.h>
 #include <imgui_stdlib.h>
-#include <ovis/core/scripting.hpp>
+
 #include <ovis/core/scene.hpp>
+#include <ovis/core/scripting.hpp>
 #include <ovis/imgui/imgui_start_frame_controller.hpp>
 
 namespace ovis {
@@ -12,22 +14,31 @@ ScriptLibraryEditor::ScriptLibraryEditor(const std::string& asset_id) : AssetEdi
   SetupJsonFile({{"actions", json::array()}});
 
   docs_["add"] = {
-    {"text", "Add {x} and {y}"},
+      {"text", "Add {x} and {y}"},
+  };
+  docs_["print"] = {
+      {"text", "Print {value}"},
   };
 }
 
 void ScriptLibraryEditor::DrawContent() {
-  editing_copy_ = GetCurrentJsonFileState();
+  // editing_copy_ = GetCurrentJsonFileState();
 
   if (ImGui::Button("Run")) {
     if (chunk_.Deserialize(editing_copy_)) {
+      chunk_.Print();
       chunk_.Execute();
     }
   }
 
-  if (DrawActions(json::json_pointer("/actions"))) {
-    SubmitJsonFile(editing_copy_, "json");
+  highlighted_reference_ = reference_to_highlight_;
+  reference_to_highlight_ = "";
+  if (ImGui::BeginChild("actions", ImVec2(-1, -1), 0, ImGuiWindowFlags_AlwaysVerticalScrollbar)) {
+    if (DrawActions(json::json_pointer("/actions"))) {
+      SubmitJsonFile(editing_copy_, "json");
+    }
   }
+  ImGui::EndChild();
 }
 
 bool ScriptLibraryEditor::DrawActions(json::json_pointer path) {
@@ -50,33 +61,62 @@ bool ScriptLibraryEditor::DrawAction(json::json_pointer path) {
   ImGui::PushID(path.to_string().c_str());
   json& action = editing_copy_[path];
 
-  ImGui::Separator();
+  ImGui::GetWindowDrawList()->ChannelsSplit(2);
+  ImGui::GetWindowDrawList()->ChannelsSetCurrent(1);
   ImGui::BeginGroup();
+  ImGui::Indent(10.0f);
   ImFont* font_awesome = scene()->GetController<ImGuiStartFrameController>()->GetFont("FontAwesomeSolid");
 
+  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
+
   ImGui::PushFont(font_awesome);
-  if (ImGui::SmallButton("\uf7a4")) {
+  ImGui::Text("\uf7a4");
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
   }
   ImGui::PopFont();
-  // if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-  //   ImGui::SetDragDropPayload("action", &index, sizeof(index));
-  //   ImGui::BeginGroup();
-  //   const std::string& action_name = action["function"];
-  //   ImGui::Text("%s", action_name.c_str());
-  //   ImGui::EndGroup();
-  //   ImGui::EndDragDropSource();
-  // }
+  ImGui::SameLine();
+  if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+    const size_t id = action["id"];
+    ImGui::SetDragDropPayload("action", &id, sizeof(id));
+    DrawAction(path);
+    ImGui::EndDragDropSource();
+  }
 
-  const std::string& type = action["type"];
+  const std::string& type = action["type"].is_string() ? action["type"] : "";
   if (type == "function_call") {
     submit_changes = DrawFunctionCall(path);
   } else if (type == "if") {
     submit_changes = DrawIfStatement(path);
+  } else {
+    submit_changes = DrawNewAction(path);
   }
+  ImGui::SameLine();
+  ImGui::InvisibleButton("spacing", ImVec2(5.0f, 1.0f));
 
+  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
   ImGui::EndGroup();
+  ImGui::GetWindowDrawList()->ChannelsSetCurrent(0);
+  ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), IM_COL32(80, 80, 80, 255),
+                                            5.0f);
+  ImGui::GetWindowDrawList()->ChannelsMerge();
 
-  ImGui::Separator();
+  ImGui::SameLine();
+  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
+  ImGui::PushFont(font_awesome);
+  ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0));
+  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(0, 0, 0, 0));
+  if (ImGui::SmallButton("\uf1f8")) {
+    DoOnceAfterUpdate([this, path]() {
+      RemoveAction(path);
+      SubmitJsonFile(editing_copy_);
+    });
+  }
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+  }
+  ImGui::PopStyleColor(2);
+  ImGui::PopFont();
 
   ImGui::PopID();
 
@@ -100,14 +140,14 @@ bool ScriptLibraryEditor::DrawFunctionCall(json::json_pointer path) {
 
       if (word.front() == '{' && word.back() == '}') {
         const std::string input_identifier = word.substr(1, word.length() - 2);
-        const auto& input_data = function_call["inputs"][input_identifier];
+        auto& input_data = function_call["inputs"][input_identifier];
         const auto input_path = path / "inputs" / input_identifier;
 
         if (current_edit_path_ == input_path) {
           std::string value = input_data.is_string() ? input_data : "";
           ImGui::PushItemWidth(100);
           if (ImGui::InputText("###asd", &value, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            function_call["inputs"][input_identifier] = value;
+            input_data = value;
             current_edit_path_ = json::json_pointer();
             submit_changes = true;
           }
@@ -115,7 +155,6 @@ bool ScriptLibraryEditor::DrawFunctionCall(json::json_pointer path) {
             ImGui::SetKeyboardFocusHere(-1);
             start_editing_ = false;
           } else if (!ImGui::IsItemActive()) {
-            LogI("Not active anymore!");
             current_edit_path_ = json::json_pointer();
             function_call["inputs"][input_identifier] = value;
             submit_changes = true;
@@ -123,16 +162,43 @@ bool ScriptLibraryEditor::DrawFunctionCall(json::json_pointer path) {
           ImGui::PopItemWidth();
         } else {
           std::string value;
+          bool highlight = false;
+          std::string reference;
           if (input_data.is_string()) {
             value = input_data;
+            if (value.length() > 0 && value[0] == '$') {
+              highlight = value == highlighted_reference_;
+              reference = value;
+              value = GetReferenceName(value);
+            }
           } else {
-            value = "...";
+            value = fmt::format("[{}]", input_identifier);
           }
           const std::string button_label = fmt::format("{}###{}", value, input_identifier);
+          if (highlight) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+          }
           if (ImGui::SmallButton(button_label.c_str())) {
             current_edit_path_ = input_path;
             start_editing_ = true;
           }
+          if (ImGui::IsItemHovered()) {
+            reference_to_highlight_ = reference;
+          }
+          if (highlight) {
+            ImGui::PopStyleColor();
+          }
+        }
+        if (ImGui::BeginDragDropTarget()) {
+          auto payload = ImGui::AcceptDragDropPayload("value");
+
+          if (payload != nullptr) {
+            const char* output_reference = reinterpret_cast<const char*>(payload->Data);
+            input_data = output_reference;
+            submit_changes = true;
+          }
+
+          ImGui::EndDragDropTarget();
         }
       } else {
         ImGui::Text("%s", word.c_str());
@@ -140,82 +206,100 @@ bool ScriptLibraryEditor::DrawFunctionCall(json::json_pointer path) {
       ImGui::SameLine();
     }
 
-
     if (function->outputs.size() == 0) {
       ImGui::Text(".");
     } else {
       ImGui::Text(":");
       for (const auto& output : IndexRange(function->outputs)) {
-        const std::string button_label = fmt::format("{} : {}", output->identifier, "Number");
         ImGui::SameLine();
-        ImGui::SmallButton(button_label.c_str());
+        const auto output_path = path / "outputs" / output->identifier;
+        const std::string reference =
+            fmt::format("${}:{}", static_cast<size_t>(function_call["id"]), output->identifier);
+        std::string output_name = GetReferenceName(reference);
+        if (current_edit_path_ == output_path) {
+          ImGui::PushItemWidth(100);
+          if (ImGui::InputText("###OutputName", &output_name, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            editing_copy_[output_path] = output_name;
+            current_edit_path_ = json::json_pointer();
+            submit_changes = true;
+          }
+          if (start_editing_) {
+            ImGui::SetKeyboardFocusHere(-1);
+            start_editing_ = false;
+          } else if (!ImGui::IsItemActive()) {
+            current_edit_path_ = json::json_pointer();
+          }
+          ImGui::PopItemWidth();
+        } else {
+          if (highlighted_reference_ == reference) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+          }
+          if (ImGui::SmallButton(output_name.c_str())) {
+            current_edit_path_ = output_path;
+            start_editing_ = true;
+          }
+          if (highlighted_reference_ == reference) {
+            ImGui::PopStyleColor();
+          }
+          if (ImGui::IsItemHovered()) {
+            reference_to_highlight_ = reference;
+          }
+        }
 
         if (ImGui::BeginDragDropSource()) {
           auto parent_pointer = path.parent_pointer();
           auto& parent = editing_copy_[parent_pointer];
-          size_t array_index = std::stoull(path.to_string().substr(parent_pointer.to_string().size() + 1));
-          const std::string output_reference = fmt::format("${}:{}", array_index, output->identifier);
+          const size_t id = function_call["id"];
+          const std::string output_reference = fmt::format("${}:{}", id, output->identifier);
           ImGui::SetDragDropPayload("value", output_reference.data(), output_reference.size() + 1);
-          ImGui::SmallButton(button_label.c_str());
+          ImGui::SmallButton(output->identifier.c_str());
           ImGui::EndDragDropSource();
         }
       }
     }
   } else {
-    ImGui::Text("%s", function_identifer.c_str());
-    ImGui::Text("Inputs: ");
+    // ImGui::Text("%s", function_identifer.c_str());
+    // ImGui::Text("Inputs: ");
 
-    for (const auto& input : IndexRange(function->inputs)) {
-      ImGui::PushID("Inputs");
-      ImGui::PushID(input.index());
+    // for (const auto& input : IndexRange(function->inputs)) {
+    //   ImGui::PushID("Inputs");
+    //   ImGui::PushID(input.index());
 
-      ImGui::Text("%s : %s = ", input.value().identifier.c_str(), "Number");
-      ImGui::SameLine();
+    //   ImGui::Text("%s : %s = ", input.value().identifier.c_str(), "Number");
+    //   ImGui::SameLine();
 
-      ImGui::PushItemWidth(100);
-      std::string input_value = function_call["inputs"][std::to_string(input.index())];
-      if (ImGui::InputText("###Value", &input_value, ImGuiInputTextFlags_EnterReturnsTrue)) {
-        function_call["inputs"][std::to_string(input.index())] = input_value;
-        submit_changes = true;
-      }
-      ImGui::PopItemWidth();
+    //   ImGui::PushItemWidth(100);
+    //   std::string input_value = function_call["inputs"][std::to_string(input.index())];
+    //   if (ImGui::InputText("###Value", &input_value, ImGuiInputTextFlags_EnterReturnsTrue)) {
+    //     function_call["inputs"][std::to_string(input.index())] = input_value;
+    //     submit_changes = true;
+    //   }
+    //   ImGui::PopItemWidth();
 
-      if (ImGui::BeginDragDropTarget()) {
-        auto payload = ImGui::AcceptDragDropPayload("value");
+    //   ImGui::PopID();
+    //   ImGui::PopID();
+    // }
+    // ImGui::Text("Outputs: ");
+    // for (const auto& output : IndexRange(function->outputs)) {
+    //   ImGui::PushID("Output");
+    //   ImGui::PushID(output.index());
 
-        if (payload != nullptr) {
-          const char* output_reference = reinterpret_cast<const char*>(payload->Data);
-          function_call["inputs"][std::to_string(input.index())] = output_reference;
-          submit_changes = true;
-        }
+    //   const std::string button_label = fmt::format("{} : {}", output->identifier, "Number");
+    //   ImGui::SmallButton(button_label.c_str());
 
-        ImGui::EndDragDropTarget();
-      }
+    //   if (ImGui::BeginDragDropSource()) {
+    //     auto parent_pointer = path.parent_pointer();
+    //     auto& parent = editing_copy_[parent_pointer];
+    //     size_t array_index = std::stoull(path.to_string().substr(parent_pointer.to_string().size() + 1));
+    //     const std::string output_reference = fmt::format("${}:{}", array_index, output->identifier);
+    //     ImGui::SetDragDropPayload("value", output_reference.data(), output_reference.size() + 1);
+    //     ImGui::SmallButton(button_label.c_str());
+    //     ImGui::EndDragDropSource();
+    //   }
 
-      ImGui::PopID();
-      ImGui::PopID();
-    }
-    ImGui::Text("Outputs: ");
-    for (const auto& output : IndexRange(function->outputs)) {
-      ImGui::PushID("Output");
-      ImGui::PushID(output.index());
-
-      const std::string button_label = fmt::format("{} : {}", output->identifier, "Number");
-      ImGui::SmallButton(button_label.c_str());
-
-      if (ImGui::BeginDragDropSource()) {
-        auto parent_pointer = path.parent_pointer();
-        auto& parent = editing_copy_[parent_pointer];
-        size_t array_index = std::stoull(path.to_string().substr(parent_pointer.to_string().size() + 1));
-        const std::string output_reference = fmt::format("${}:{}", array_index, output->identifier);
-        ImGui::SetDragDropPayload("value", output_reference.data(), output_reference.size() + 1);
-        ImGui::SmallButton(button_label.c_str());
-        ImGui::EndDragDropSource();
-      }
-
-      ImGui::PopID();
-      ImGui::PopID();
-    }
+    //   ImGui::PopID();
+    //   ImGui::PopID();
+    // }
   }
 
   return submit_changes;
@@ -257,53 +341,139 @@ bool ScriptLibraryEditor::DrawIfStatement(json::json_pointer path) {
   return submit_changes;
 }
 
-void ScriptLibraryEditor::DrawSpace(json::json_pointer path) {
-  ImGui::PushItemWidth(-1);
-  std::string function_identifier;
-  const std::string label = fmt::format("###Space{}", path.to_string());
-  if (ImGui::InputText(label.c_str(), &function_identifier, ImGuiInputTextFlags_EnterReturnsTrue)) {
-    DoOnceAfterUpdate([this, path, function_identifier]() {
-      json action;
-      if (function_identifier == "if") {
-        action = {{"type", "if"}, { "condition", "" }, {"actions", json::array()}};
-      } else {
-        auto function = global_script_context.GetFunction(function_identifier);
-        if (function == nullptr) {
-          return;
-        }
-
-        action = {{"type", "function_call"}, { "function", function_identifier }, {"inputs", json::object()}};
-        for (const auto& input : function->inputs) {
-          action["inputs"][input.identifier] = "";
-        }
+bool ScriptLibraryEditor::DrawNewAction(json::json_pointer path) {
+  std::string text;
+  json& action = editing_copy_[path];
+  const std::string label = fmt::format("###{}", path.to_string());
+  if (ImGui::InputText(label.c_str(), &text, ImGuiInputTextFlags_EnterReturnsTrue)) {
+    if (text == "if") {
+      action["type"] = "if";
+      action["condition"] = "";
+      action["actions"] = json::array();
+    } else {
+      auto function = global_script_context.GetFunction(text);
+      if (function == nullptr) {
+        DoOnceAfterUpdate([this, path]() {
+          RemoveAction(path);
+          SubmitJsonFile(editing_copy_);
+        });
+        return false;
       }
-      action["id"] = rand();
-      json serialized_chunk = GetCurrentJsonFileState();
-      auto parent_pointer = path.parent_pointer();
-      auto& parent = serialized_chunk[parent_pointer];
-      size_t array_index = std::stoull(path.to_string().substr(parent_pointer.to_string().size() + 1));
-      parent.insert(parent.begin() + array_index, action);
-      SubmitJsonFile(serialized_chunk, "json");
+
+      action["type"] = "function_call";
+      action["function"] = text;
+      action["inputs"] = json::object();
+      for (const auto& input : function->inputs) {
+        action["inputs"][input.identifier] = json{};
+      }
+      action["outputs"] = json::object();
+      for (const auto& output : function->outputs) {
+        action["outputs"][output.identifier] = json{};
+      }
+    }
+
+    return true;
+  }
+  if (start_editing_) {
+    ImGui::SetKeyboardFocusHere();
+    start_editing_ = false;
+  } else if (!ImGui::IsItemActive()) {
+    DoOnceAfterUpdate([this, path]() {
+      RemoveAction(path);
+      SubmitJsonFile(editing_copy_);
     });
   }
-  ImGui::PopItemWidth();
 
-  // if (ImGui::BeginDragDropTarget()) {
-  //   auto payload = ImGui::AcceptDragDropPayload("action");
+  return false;
+}
 
-  //   if (payload != nullptr) {
-  //     SDL_assert(payload->DataSize == sizeof(size_t));
-  //     const size_t source_index = *reinterpret_cast<size_t*>(payload->Data);
-  //     json serialized_chunk = GetCurrentJsonFileState();
-  //     auto& actions = serialized_chunk["actions"];
-  //     json action = actions[source_index];
-  //     actions.erase(actions.begin() + source_index);
-  //     actions.insert(actions.begin() + target_index - (target_index > source_index ? 1 : 0), std::move(action));
-  //     SubmitJsonFile(serialized_chunk);
-  //   }
+void ScriptLibraryEditor::DrawSpace(json::json_pointer path) {
+  std::string function_identifier;
+  const std::string label = fmt::format("+###Space{}", path.to_string());
+  ImGui::SetNextItemWidth(-1);
+  if (ImGui::InvisibleButton(label.c_str(), ImVec2(-1.0f, 15.0f))) {
+    DoOnceAfterUpdate([this, path, function_identifier]() {
+      size_t id;
+      do {
+        id = rand();
+      } while (!GetActionWithId(id).empty());
 
-  //   ImGui::EndDragDropTarget();
-  // }
+      json action;
+      action["id"] = id;
+      auto parent_pointer = path.parent_pointer();
+      auto& parent = editing_copy_[parent_pointer];
+      size_t array_index = std::stoull(path.to_string().substr(parent_pointer.to_string().size() + 1));
+      parent.insert(parent.begin() + array_index, action);
+      start_editing_ = true;
+    });
+  }
+  if (ImGui::IsItemHovered()) {
+    ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+  }
+
+  if (ImGui::BeginDragDropTarget()) {
+    auto payload = ImGui::AcceptDragDropPayload("action");
+
+    if (payload != nullptr) {
+      //     SDL_assert(payload->DataSize == sizeof(size_t));
+      //     const size_t source_index = *reinterpret_cast<size_t*>(payload->Data);
+      //     json serialized_chunk = GetCurrentJsonFileState();
+      //     auto& actions = serialized_chunk["actions"];
+      //     json action = actions[source_index];
+      //     actions.erase(actions.begin() + source_index);
+      //     actions.insert(actions.begin() + target_index - (target_index > source_index ? 1 : 0), std::move(action));
+      //     SubmitJsonFile(serialized_chunk);
+    }
+
+    ImGui::EndDragDropTarget();
+  }
+}
+
+void ScriptLibraryEditor::RemoveAction(json::json_pointer path) {
+  const auto parent_path = path.parent_pointer();
+  const size_t array_index = std::stoull(path.to_string().substr(parent_path.to_string().size() + 1));
+  json& parent = editing_copy_[parent_path];
+  parent.erase(parent.begin() + array_index);
+}
+
+void ScriptLibraryEditor::JsonFileChanged(const json& data, const std::string& file_type) {
+  if (file_type == "json") {
+    editing_copy_ = data;
+  }
+}
+
+json::json_pointer ScriptLibraryEditor::GetActionWithId(size_t id, json::json_pointer base_path) {
+  for (const auto& action : IndexRange(editing_copy_[base_path])) {
+    if (action.value()["id"] == id) {
+      return base_path / action.index();
+    } else if (action->contains("actions")) {
+      const auto path = GetActionWithId(id, base_path / action.index() / "actions");
+      if (!path.empty()) {
+        return path;
+      }
+    }
+  }
+
+  return json::json_pointer{};
+}
+
+std::string ScriptLibraryEditor::GetReferenceName(std::string_view reference) {
+  const auto ref = ScriptReference::Parse(reference);
+  if (!ref.has_value()) {
+    return "";
+  }
+
+  const auto action_path = GetActionWithId(ref->action_id);
+  if (action_path.empty()) {
+    return "";
+  }
+
+  const auto& action = editing_copy_[action_path];
+  if (action["outputs"][ref->output].is_string()) {
+    return action["outputs"][ref->output];
+  }
+
+  return ref->output;
 }
 
 }  // namespace editor

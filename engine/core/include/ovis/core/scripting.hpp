@@ -9,8 +9,8 @@
 
 #include <SDL_assert.h>
 
-#include <ovis/utils/serialize.hpp>
 #include <ovis/utils/range.hpp>
+#include <ovis/utils/serialize.hpp>
 
 namespace ovis {
 
@@ -113,7 +113,7 @@ class ScriptContext {
     SDL_assert(begin <= end);
     SDL_assert(-begin <= stack_.size());
     SDL_assert(end - begin >= 0);
-    return { &stack_[stack_.size() + begin], static_cast<size_t>(end - begin) };
+    return {&stack_[stack_.size() + begin], static_cast<size_t>(end - begin)};
   }
 
  private:
@@ -155,17 +155,13 @@ class ScriptChunk : public Serializable {
   };
   struct Instruction {
     InstructionType type;
-    std::variant<
-      FunctionCall,
-      PushConstant,
-      PushStackValue,
-      ConditionalJump 
-    > data;
+    std::variant<FunctionCall, PushConstant, PushStackValue, ConditionalJump> data;
   };
 
   bool Deserialize(const json& serialized_chunk) override;
   json Serialize() const override;
   std::variant<ScriptError, std::vector<ScriptVariable>> Execute();
+  void Print();
 
  private:
   ScriptContext* context_ = &global_script_context;
@@ -208,23 +204,32 @@ struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
 };
 
 template <typename FunctionType, FunctionType FUNCTION>
-void ScriptContext::RegisterFunction(std::string_view identifier, std::vector<std::string> inputs_names, std::vector<std::string> outputs_names) {
+void ScriptContext::RegisterFunction(std::string_view identifier, std::vector<std::string> inputs_names,
+                                     std::vector<std::string> outputs_names) {
   using Wrapper = FunctionWrapper<FunctionType>;
 
   std::vector<ScriptVariableDefinition> inputs;
   inputs.reserve(Wrapper::INPUT_TYPES.size());
   for (const auto& type : IndexRange(Wrapper::INPUT_TYPES)) {
-    inputs.push_back({type.value(), type.index() < outputs_names.size() ? outputs_names[type.index()] : std::to_string(type.index())});
+    inputs.push_back(
+        {type.value(), type.index() < inputs_names.size() ? inputs_names[type.index()] : std::to_string(type.index())});
   }
 
   std::vector<ScriptVariableDefinition> outputs;
   inputs.reserve(Wrapper::OUTPUT_TYPES.size());
   for (const auto& type : IndexRange(Wrapper::OUTPUT_TYPES)) {
-    outputs.push_back({type.value(), type.index() < outputs_names.size() ? outputs_names[type.index()] : std::to_string(type.index())});
+    outputs.push_back({type.value(), type.index() < outputs_names.size() ? outputs_names[type.index()]
+                                                                         : std::to_string(type.index())});
   }
 
   RegisterFunction(identifier, &Wrapper::template Execute<FUNCTION>, inputs, outputs);
 }
 
-}  // namespace ovis
+struct ScriptReference {
+  size_t action_id;
+  std::string output;
 
+  static std::optional<ScriptReference> Parse(std::string_view reference);
+};
+
+}  // namespace ovis
