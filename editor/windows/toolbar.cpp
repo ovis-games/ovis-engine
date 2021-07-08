@@ -54,7 +54,7 @@ void Toolbar::BeforeBegin() {
 void Toolbar::DrawContent() {
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(48, 48, 48)));
 
-  ImFont* font_awesome = scene()->GetController<ImGuiStartFrameController>()->GetFont("FontAwesomeSolid");
+  ImFont* font_awesome = scene()->GetController<ImGuiStartFrameController>()->GetFont("FontAwesomeSolid", 28.0f);
 
   ImGui::PushFont(font_awesome);
   if (ImGui::Button("\uf0c7")) {

@@ -36,7 +36,7 @@ class ImGuiStartFrameController : public SceneController {
     std::vector<ImWchar> glyph_ranges;
     ImFont* font;
   };
-  std::map<std::string, FontData, std::less<>> fonts_;
+  std::map<std::pair<std::string, float>, FontData> fonts_;
   bool font_added_ = true;  // Defaults to true, to add default font
   bool reload_font_atlas_ = false;
   unsigned char* font_atlas_pixels_ = nullptr;

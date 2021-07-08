@@ -216,27 +216,27 @@ void ImGuiStartFrameController::ProcessEvent(Event* event) {
 }
 
 ImFont* ImGuiStartFrameController::LoadFont(std::string_view asset, float size, std::vector<std::pair<ImWchar, ImWchar>> ranges) {
-  if (auto font = fonts_.find(asset); font != fonts_.end()) {
+  const auto map_key = std::make_pair(std::string(asset), size);
+  if (auto font = fonts_.find(map_key); font != fonts_.end()) {
     return font->second.font;
   }
 
-  auto asset_as_string = std::string(asset);
-  AssetLibrary* asset_library = GetApplicationAssetLibrary()->Contains(asset_as_string) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary();
+  AssetLibrary* asset_library = GetApplicationAssetLibrary()->Contains(asset) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary();
 
-  if (!asset_library->Contains(asset_as_string) || asset_library->GetAssetType(asset_as_string) != "font") {
+  if (!asset_library->Contains(asset) || asset_library->GetAssetType(asset) != "font") {
     LogE("Could not load font: {}", asset);
     return nullptr;
   }
 
-  const auto asset_file_types = asset_library->GetAssetFileTypes(asset_as_string);
+  const auto asset_file_types = asset_library->GetAssetFileTypes(asset);
   const bool is_ttf_file = std::find(asset_file_types.begin(), asset_file_types.end(), "ttf") != asset_file_types.end();
 
-  auto font_data = GetEngineAssetLibrary()->LoadAssetBinaryFile(std::string(asset), is_ttf_file ? "ttf" : "otf");
+  auto font_data = GetEngineAssetLibrary()->LoadAssetBinaryFile(asset, is_ttf_file ? "ttf" : "otf");
   if (font_data) {
     ImGui::SetCurrentContext(imgui_context_.get());
     ImGuiIO& io = ImGui::GetIO();
 
-    auto inserted = fonts_.insert(std::make_pair(asset, FontData{std::move(*font_data), {}, nullptr}));
+    auto inserted = fonts_.insert(std::make_pair(map_key, FontData{std::move(*font_data), {}, nullptr}));
     ImFontConfig config;
     config.FontDataOwnedByAtlas = false;
 
@@ -265,7 +265,8 @@ ImFont* ImGuiStartFrameController::LoadFont(std::string_view asset, float size, 
 }
 
 ImFont* ImGuiStartFrameController::GetFont(std::string_view name, float size) {
-  if (auto font = fonts_.find(name); font != fonts_.end()) {
+  const auto map_key = std::make_pair(std::string(name), size);
+  if (auto font = fonts_.find(map_key); font != fonts_.end()) {
     return font->second.font;
   } else {
     return nullptr;

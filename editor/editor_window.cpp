@@ -123,20 +123,23 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   io.ClipboardUserData = this;
 
   scene()->GetController<ImGuiStartFrameController>()->LoadFont("FontAwesomeSolid", 28.0f,
-                                                                {{0xf0c7, 0xf0c7},
-                                                                 {0xf0e2, 0xf0e2},
-                                                                 {0xf01e, 0xf01e},
-                                                                 {0xf466, 0xf466},
-                                                                 {0xf2d2, 0xf2d2},
-                                                                 {0xf04b, 0xf04d},
-                                                                 {0xf0b2, 0xf0b2},
-                                                                 {0xf2f1, 0xf2f1},
-                                                                 {0xf424, 0xf424},
-                                                                 {0xf1b2, 0xf1b2},
-                                                                 {0xf0ac, 0xf0ac},
-                                                                 {0xf06e, 0xf06e},
-                                                                 {0xf0fe, 0xf0fe},
-                                                                 {0xf7a4, 0xf7a4}});
+                                                                {
+                                                                    {0xf0c7, 0xf0c7},
+                                                                    {0xf0e2, 0xf0e2},
+                                                                    {0xf01e, 0xf01e},
+                                                                    {0xf466, 0xf466},
+                                                                    {0xf2d2, 0xf2d2},
+                                                                    {0xf04b, 0xf04d},
+                                                                    {0xf0b2, 0xf0b2},
+                                                                    {0xf2f1, 0xf2f1},
+                                                                    {0xf424, 0xf424},
+                                                                    {0xf1b2, 0xf1b2},
+                                                                    {0xf0ac, 0xf0ac},
+                                                                    {0xf06e, 0xf06e},
+                                                                    {0xf0fe, 0xf0fe},
+                                                                });
+  scene()->GetController<ImGuiStartFrameController>()->LoadFont("FontAwesomeSolid", 20.0f,
+                                                                {{0xf7a4, 0xf7a4}, {0xf1f8, 0xf1f8}});
 }
 
 void EditorWindow::Update(std::chrono::microseconds delta_time) {
