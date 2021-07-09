@@ -283,12 +283,9 @@ void ScriptChunk::Print() {
 
       case InstructionType::JUMP_IF_FALSE: {
         const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
-        if (std::any_cast<double>(context_->Get(-1).value) == 0.0) {
-          const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
-          LogI("jump_if_false {} [-1]", conditional_jump.instruction_offset);
-          break;
-        }
-      };
+        LogI("jump_if_false {} [-1]", conditional_jump.instruction_offset);
+        break;
+      }
     }
   }
 }
