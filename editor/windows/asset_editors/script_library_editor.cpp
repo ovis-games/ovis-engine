@@ -14,7 +14,22 @@ ScriptLibraryEditor::ScriptLibraryEditor(const std::string& asset_id) : AssetEdi
   SetupJsonFile({{"actions", json::array()}});
 
   docs_["add"] = {
-      {"text", "Add {x} and {y}"},
+      {"text", "{x} + {y}"},
+  };
+  docs_["subtract"] = {
+      {"text", "{x} - {y}"},
+  };
+  docs_["multiply"] = {
+      {"text", "{x} * {y}"},
+  };
+  docs_["divide"] = {
+      {"text", "{x} / {y}"},
+  };
+  docs_["negate"] = {
+      {"text", "- {x}"},
+  };
+  docs_["is_greater"] = {
+      {"text", "Is {x} greater than {y}"},
   };
   docs_["print"] = {
       {"text", "Print {value}"},
@@ -41,7 +56,7 @@ void ScriptLibraryEditor::DrawContent() {
   ImGui::EndChild();
 }
 
-bool ScriptLibraryEditor::DrawActions(json::json_pointer path) {
+bool ScriptLibraryEditor::DrawActions(const json::json_pointer& path) {
   auto& actions = editing_copy_[path];
 
   bool submit_changes = false;
@@ -50,12 +65,21 @@ bool ScriptLibraryEditor::DrawActions(json::json_pointer path) {
     if (DrawAction(path / action.index())) {
       submit_changes = true;
     }
+    if (action->contains("actions")) {
+      ImGui::PushID(path.to_string().c_str());
+      ImGui::TreePush("actions");
+      if (DrawActions(path / action.index() / "actions")) {
+        submit_changes = true;
+      }
+      ImGui::TreePop();
+      ImGui::PopID();
+    }
   }
   DrawSpace(path / actions.size());
   return submit_changes;
 }
 
-bool ScriptLibraryEditor::DrawAction(json::json_pointer path) {
+bool ScriptLibraryEditor::DrawAction(const json::json_pointer& path) {
   bool submit_changes = false;
 
   ImGui::PushID(path.to_string().c_str());
@@ -123,7 +147,7 @@ bool ScriptLibraryEditor::DrawAction(json::json_pointer path) {
   return submit_changes;
 }
 
-bool ScriptLibraryEditor::DrawFunctionCall(json::json_pointer path) {
+bool ScriptLibraryEditor::DrawFunctionCall(const json::json_pointer& path) {
   bool submit_changes = false;
 
   json& function_call = editing_copy_[path];
@@ -140,65 +164,9 @@ bool ScriptLibraryEditor::DrawFunctionCall(json::json_pointer path) {
 
       if (word.front() == '{' && word.back() == '}') {
         const std::string input_identifier = word.substr(1, word.length() - 2);
-        auto& input_data = function_call["inputs"][input_identifier];
         const auto input_path = path / "inputs" / input_identifier;
-
-        if (current_edit_path_ == input_path) {
-          std::string value = input_data.is_string() ? input_data : "";
-          ImGui::PushItemWidth(100);
-          if (ImGui::InputText("###asd", &value, ImGuiInputTextFlags_EnterReturnsTrue)) {
-            input_data = value;
-            current_edit_path_ = json::json_pointer();
-            submit_changes = true;
-          }
-          if (start_editing_) {
-            ImGui::SetKeyboardFocusHere(-1);
-            start_editing_ = false;
-          } else if (!ImGui::IsItemActive()) {
-            current_edit_path_ = json::json_pointer();
-            function_call["inputs"][input_identifier] = value;
-            submit_changes = true;
-          }
-          ImGui::PopItemWidth();
-        } else {
-          std::string value;
-          bool highlight = false;
-          std::string reference;
-          if (input_data.is_string()) {
-            value = input_data;
-            if (value.length() > 0 && value[0] == '$') {
-              highlight = value == highlighted_reference_;
-              reference = value;
-              value = GetReferenceName(value);
-            }
-          } else {
-            value = fmt::format("[{}]", input_identifier);
-          }
-          const std::string button_label = fmt::format("{}###{}", value, input_identifier);
-          if (highlight) {
-            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-          }
-          if (ImGui::SmallButton(button_label.c_str())) {
-            current_edit_path_ = input_path;
-            start_editing_ = true;
-          }
-          if (ImGui::IsItemHovered()) {
-            reference_to_highlight_ = reference;
-          }
-          if (highlight) {
-            ImGui::PopStyleColor();
-          }
-        }
-        if (ImGui::BeginDragDropTarget()) {
-          auto payload = ImGui::AcceptDragDropPayload("value");
-
-          if (payload != nullptr) {
-            const char* output_reference = reinterpret_cast<const char*>(payload->Data);
-            input_data = output_reference;
-            submit_changes = true;
-          }
-
-          ImGui::EndDragDropTarget();
+        if (DrawInput(input_path, {})) {
+          submit_changes = true;
         }
       } else {
         ImGui::Text("%s", word.c_str());
@@ -305,43 +273,19 @@ bool ScriptLibraryEditor::DrawFunctionCall(json::json_pointer path) {
   return submit_changes;
 }
 
-bool ScriptLibraryEditor::DrawIfStatement(json::json_pointer path) {
+bool ScriptLibraryEditor::DrawIfStatement(const json::json_pointer& path) {
   bool submit_changes = false;
 
   ImGui::Text("if ");
   ImGui::SameLine();
-  ImGui::PushItemWidth(100);
-
-  json& if_statement = editing_copy_[path];
-  std::string condition = if_statement["condition"];
-  if (ImGui::InputText("###Condition", &condition, ImGuiInputTextFlags_EnterReturnsTrue)) {
-    if_statement["condition"] = condition;
+  if (DrawInput(path / "condition", {})) {
     submit_changes = true;
   }
-  ImGui::PopItemWidth();
-
-  if (ImGui::BeginDragDropTarget()) {
-    auto payload = ImGui::AcceptDragDropPayload("value");
-
-    if (payload != nullptr) {
-      const char* output_reference = reinterpret_cast<const char*>(payload->Data);
-      if_statement["condition"] = condition;
-      submit_changes = true;
-    }
-
-    ImGui::EndDragDropTarget();
-  }
-
-  ImGui::TreePush("Test");
-  if (DrawActions(path / "actions")) {
-    submit_changes = true;
-  }
-  ImGui::TreePop();
 
   return submit_changes;
 }
 
-bool ScriptLibraryEditor::DrawNewAction(json::json_pointer path) {
+bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
   std::string text;
   json& action = editing_copy_[path];
   const std::string label = fmt::format("###{}", path.to_string());
@@ -387,7 +331,7 @@ bool ScriptLibraryEditor::DrawNewAction(json::json_pointer path) {
   return false;
 }
 
-void ScriptLibraryEditor::DrawSpace(json::json_pointer path) {
+void ScriptLibraryEditor::DrawSpace(const json::json_pointer& path) {
   std::string function_identifier;
   const std::string label = fmt::format("+###Space{}", path.to_string());
   ImGui::SetNextItemWidth(-1);
@@ -429,7 +373,80 @@ void ScriptLibraryEditor::DrawSpace(json::json_pointer path) {
   }
 }
 
-void ScriptLibraryEditor::RemoveAction(json::json_pointer path) {
+bool ScriptLibraryEditor::DrawInput(const json::json_pointer& path, ScriptType type) {
+  bool submit_changes = false;
+  json& value = editing_copy_[path];
+  const std::string identifier = path.to_string().substr(path.parent_pointer().to_string().size() + 1);
+
+  std::string string_value = value.is_string() ? value : "";
+  if (current_edit_path_ == path) {
+    ImGui::PushItemWidth(100);
+    const std::string text_label = fmt::format("###{}", path.to_string());
+    if (ImGui::InputText(text_label.c_str(), &string_value, ImGuiInputTextFlags_EnterReturnsTrue)) {
+      current_edit_path_ = json::json_pointer();
+      value = string_value;
+      submit_changes = true;
+    }
+    if (start_editing_) {
+      ImGui::SetKeyboardFocusHere(-1);
+      start_editing_ = false;
+    } else if (!ImGui::IsItemActive()) {
+      current_edit_path_ = json::json_pointer();
+      value = string_value;
+      submit_changes = true;
+    }
+    ImGui::PopItemWidth();
+  } else {
+    bool highlight = false;
+    bool enable_drag = true;
+    std::string display_value;
+    if (value.is_string()) {
+      if (string_value.length() > 0 && string_value[0] == '$') {
+        highlight = string_value == highlighted_reference_;
+        display_value = GetReferenceName(string_value);
+      } else {
+        display_value = string_value;
+      }
+    } else {
+      string_value = fmt::format("[{}]", identifier);
+      enable_drag = false;
+    }
+    const std::string button_label = fmt::format("{}###{}", display_value, identifier);
+    if (highlight) {
+      ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+    }
+    if (ImGui::SmallButton(button_label.c_str())) {
+      current_edit_path_ = path;
+      start_editing_ = true;
+    }
+    if (ImGui::IsItemHovered()) {
+      reference_to_highlight_ = string_value;
+    }
+    if (highlight) {
+      ImGui::PopStyleColor();
+    }
+    if (ImGui::BeginDragDropSource()) {
+      ImGui::SetDragDropPayload("value", string_value.data(), string_value.size() + 1);
+      ImGui::SmallButton(display_value.c_str());
+      ImGui::EndDragDropSource();
+    }
+  }
+  if (ImGui::BeginDragDropTarget()) {
+    auto payload = ImGui::AcceptDragDropPayload("value");
+
+    if (payload != nullptr) {
+      const char* output_reference = reinterpret_cast<const char*>(payload->Data);
+      value = output_reference;
+      submit_changes = true;
+    }
+
+    ImGui::EndDragDropTarget();
+  }
+
+  return submit_changes;
+}
+
+void ScriptLibraryEditor::RemoveAction(const json::json_pointer& path) {
   const auto parent_path = path.parent_pointer();
   const size_t array_index = std::stoull(path.to_string().substr(parent_path.to_string().size() + 1));
   json& parent = editing_copy_[parent_path];

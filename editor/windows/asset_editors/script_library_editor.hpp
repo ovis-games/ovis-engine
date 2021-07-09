@@ -24,14 +24,15 @@ class ScriptLibraryEditor : public AssetEditor {
   std::string highlighted_reference_;
   std::string reference_to_highlight_;
 
-  bool DrawActions(json::json_pointer path);
-  bool DrawAction(json::json_pointer path);
-  bool DrawFunctionCall(json::json_pointer path);
-  bool DrawIfStatement(json::json_pointer path);
-  bool DrawNewAction(json::json_pointer path);
-  void DrawSpace(json::json_pointer path);
+  bool DrawActions(const json::json_pointer& path);
+  bool DrawAction(const json::json_pointer& path);
+  bool DrawFunctionCall(const json::json_pointer& path);
+  bool DrawIfStatement(const json::json_pointer& path);
+  bool DrawNewAction(const json::json_pointer& path);
+  void DrawSpace(const json::json_pointer& path);
+  bool DrawInput(const json::json_pointer& path, ScriptType type);
 
-  void RemoveAction(json::json_pointer path);
+  void RemoveAction(const json::json_pointer& path);
   void JsonFileChanged(const json& data, const std::string& file_type) override;
   json::json_pointer GetActionWithId(size_t id, json::json_pointer base_path = json::json_pointer{"/actions"});
   std::string GetReferenceName(std::string_view reference);
