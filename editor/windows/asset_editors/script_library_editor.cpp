@@ -37,8 +37,6 @@ ScriptLibraryEditor::ScriptLibraryEditor(const std::string& asset_id) : AssetEdi
 }
 
 void ScriptLibraryEditor::DrawContent() {
-  // editing_copy_ = GetCurrentJsonFileState();
-
   if (ImGui::Button("Run")) {
     if (chunk_.Deserialize(editing_copy_)) {
       chunk_.Print();
@@ -79,68 +77,80 @@ bool ScriptLibraryEditor::DrawActions(const json::json_pointer& path) {
   return submit_changes;
 }
 
-bool ScriptLibraryEditor::DrawAction(const json::json_pointer& path) {
+bool ScriptLibraryEditor::DrawAction(const json::json_pointer& path, bool dragging_preview) {
   bool submit_changes = false;
 
   ImGui::PushID(path.to_string().c_str());
   json& action = editing_copy_[path];
 
-  ImGui::GetWindowDrawList()->ChannelsSplit(2);
-  ImGui::GetWindowDrawList()->ChannelsSetCurrent(1);
-  ImGui::BeginGroup();
-  ImGui::Indent(10.0f);
+  bool is_dragging = !dragging_preview && dragged_action_path_ == path;
+
   ImFont* font_awesome = scene()->GetController<ImGuiStartFrameController>()->GetFont("FontAwesomeSolid");
+  if (!is_dragging) {
+    ImGui::GetWindowDrawList()->ChannelsSplit(2);
+    ImGui::GetWindowDrawList()->ChannelsSetCurrent(1);
+    ImGui::BeginGroup();
+    ImGui::Indent(10.0f);
 
-  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
 
-  ImGui::PushFont(font_awesome);
-  ImGui::Text("\uf7a4");
-  if (ImGui::IsItemHovered()) {
-    ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
-  }
-  ImGui::PopFont();
-  ImGui::SameLine();
-  if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-    const size_t id = action["id"];
-    ImGui::SetDragDropPayload("action", &id, sizeof(id));
-    DrawAction(path);
-    ImGui::EndDragDropSource();
-  }
-
-  const std::string& type = action["type"].is_string() ? action["type"] : "";
-  if (type == "function_call") {
-    submit_changes = DrawFunctionCall(path);
-  } else if (type == "if") {
-    submit_changes = DrawIfStatement(path);
+    ImGui::PushFont(font_awesome);
+    ImGui::SmallButton("\uf7a4###Placeholder");
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeAll);
+    }
+    ImGui::PopFont();
+    ImGui::SameLine();
   } else {
-    submit_changes = DrawNewAction(path);
+    ImGui::InvisibleButton("###Placeholder", ImVec2(1, 1));
   }
-  ImGui::SameLine();
-  ImGui::InvisibleButton("spacing", ImVec2(5.0f, 1.0f));
+  if (!dragging_preview) {
+    if (ImGui::BeginDragDropSource()) {
+      dragged_action_path_ = path;
+      const size_t id = action["id"];
+      ImGui::SetDragDropPayload("action", &id, sizeof(id));
+      DrawAction(path, true);
+      ImGui::EndDragDropSource();
+    } else if (dragged_action_path_ == path) {
+      dragged_action_path_ = json::json_pointer{};
+    }
+  }
+  if (!is_dragging) {
+    const std::string& type = action["type"].is_string() ? action["type"] : "";
+    if (type == "function_call") {
+      submit_changes = DrawFunctionCall(path);
+    } else if (type == "if") {
+      submit_changes = DrawIfStatement(path);
+    } else {
+      submit_changes = DrawNewAction(path);
+    }
+    ImGui::SameLine();
+    ImGui::InvisibleButton("spacing", ImVec2(5.0f, 1.0f));
 
-  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
-  ImGui::EndGroup();
-  ImGui::GetWindowDrawList()->ChannelsSetCurrent(0);
-  ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), IM_COL32(80, 80, 80, 255),
-                                            5.0f);
-  ImGui::GetWindowDrawList()->ChannelsMerge();
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
+    ImGui::EndGroup();
+    ImGui::GetWindowDrawList()->ChannelsSetCurrent(0);
+    ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
+                                              IM_COL32(80, 80, 80, 255), 5.0f);
+    ImGui::GetWindowDrawList()->ChannelsMerge();
 
-  ImGui::SameLine();
-  ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
-  ImGui::PushFont(font_awesome);
-  ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0));
-  ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(0, 0, 0, 0));
-  if (ImGui::SmallButton("\uf1f8")) {
-    DoOnceAfterUpdate([this, path]() {
-      RemoveAction(path);
-      SubmitJsonFile(editing_copy_);
-    });
+    ImGui::SameLine();
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
+    ImGui::PushFont(font_awesome);
+    ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(0, 0, 0, 0));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, IM_COL32(0, 0, 0, 0));
+    if (ImGui::SmallButton("\uf1f8")) {
+      DoOnceAfterUpdate([this, path]() {
+        RemoveAction(path);
+        SubmitJsonFile(editing_copy_);
+      });
+    }
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
+    }
+    ImGui::PopStyleColor(2);
+    ImGui::PopFont();
   }
-  if (ImGui::IsItemHovered()) {
-    ImGui::SetMouseCursor(ImGuiMouseCursor_Hand);
-  }
-  ImGui::PopStyleColor(2);
-  ImGui::PopFont();
 
   ImGui::PopID();
 
@@ -332,18 +342,17 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
 }
 
 void ScriptLibraryEditor::DrawSpace(const json::json_pointer& path) {
+  if (dragged_action_path_ == path) {
+    return;
+  }
+
   std::string function_identifier;
   const std::string label = fmt::format("+###Space{}", path.to_string());
   ImGui::SetNextItemWidth(-1);
   if (ImGui::InvisibleButton(label.c_str(), ImVec2(-1.0f, 15.0f))) {
     DoOnceAfterUpdate([this, path, function_identifier]() {
-      size_t id;
-      do {
-        id = rand();
-      } while (!GetActionWithId(id).empty());
-
       json action;
-      action["id"] = id;
+      action["id"] = GenerateActionId();
       auto parent_pointer = path.parent_pointer();
       auto& parent = editing_copy_[parent_pointer];
       size_t array_index = std::stoull(path.to_string().substr(parent_pointer.to_string().size() + 1));
@@ -359,14 +368,25 @@ void ScriptLibraryEditor::DrawSpace(const json::json_pointer& path) {
     auto payload = ImGui::AcceptDragDropPayload("action");
 
     if (payload != nullptr) {
-      //     SDL_assert(payload->DataSize == sizeof(size_t));
-      //     const size_t source_index = *reinterpret_cast<size_t*>(payload->Data);
-      //     json serialized_chunk = GetCurrentJsonFileState();
-      //     auto& actions = serialized_chunk["actions"];
-      //     json action = actions[source_index];
-      //     actions.erase(actions.begin() + source_index);
-      //     actions.insert(actions.begin() + target_index - (target_index > source_index ? 1 : 0), std::move(action));
-      //     SubmitJsonFile(serialized_chunk);
+      SDL_assert(payload->DataSize == sizeof(size_t));
+      const size_t source_id = *reinterpret_cast<size_t*>(payload->Data);
+      json::json_pointer old_action_path = GetActionWithId(source_id);
+      DoOnceAfterUpdate([this, path, old_action_path]() {
+        json action = editing_copy_[old_action_path];
+
+        const size_t temporary_id_for_old_action = GenerateActionId();
+        editing_copy_[old_action_path]["id"] = temporary_id_for_old_action;
+
+        auto parent_pointer = path.parent_pointer();
+        auto& parent = editing_copy_[parent_pointer];
+        size_t array_index = std::stoull(path.to_string().substr(parent_pointer.to_string().size() + 1));
+        parent.insert(parent.begin() + array_index, action);
+
+        // The path of the old action could have changed, so get path again
+        RemoveAction(GetActionWithId(temporary_id_for_old_action));
+
+        SubmitJsonFile(editing_copy_);
+      });
     }
 
     ImGui::EndDragDropTarget();
@@ -491,6 +511,14 @@ std::string ScriptLibraryEditor::GetReferenceName(std::string_view reference) {
   }
 
   return ref->output;
+}
+
+size_t ScriptLibraryEditor::GenerateActionId() {
+  size_t id;
+  do {
+    id = rand();
+  } while (!GetActionWithId(id).empty());
+  return id;
 }
 
 }  // namespace editor

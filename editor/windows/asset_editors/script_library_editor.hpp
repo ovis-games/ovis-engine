@@ -23,9 +23,10 @@ class ScriptLibraryEditor : public AssetEditor {
   bool start_editing_ = false;
   std::string highlighted_reference_;
   std::string reference_to_highlight_;
+  json::json_pointer dragged_action_path_;
 
   bool DrawActions(const json::json_pointer& path);
-  bool DrawAction(const json::json_pointer& path);
+  bool DrawAction(const json::json_pointer& path, bool dragging_preview = false);
   bool DrawFunctionCall(const json::json_pointer& path);
   bool DrawIfStatement(const json::json_pointer& path);
   bool DrawNewAction(const json::json_pointer& path);
@@ -36,6 +37,7 @@ class ScriptLibraryEditor : public AssetEditor {
   void JsonFileChanged(const json& data, const std::string& file_type) override;
   json::json_pointer GetActionWithId(size_t id, json::json_pointer base_path = json::json_pointer{"/actions"});
   std::string GetReferenceName(std::string_view reference);
+  size_t GenerateActionId();
 };
 }  // namespace editor
 }  // namespace ovis
