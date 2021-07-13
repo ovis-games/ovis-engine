@@ -54,6 +54,7 @@ add_executable(
   windows/asset_editors/settings_editor.hpp windows/asset_editors/settings_editor.cpp
   windows/asset_editors/script_editor.hpp windows/asset_editors/script_editor.cpp
   windows/asset_editors/script_library_editor.hpp windows/asset_editors/script_library_editor.cpp
+  windows/asset_editors/visual_script_editor.hpp windows/asset_editors/visual_script_editor.cpp
   windows/asset_editors/texture_editor.hpp windows/asset_editors/texture_editor.cpp
   windows/asset_editors/scene_view_editor.hpp windows/asset_editors/scene_view_editor.cpp
   windows/asset_editors/scene_editor.hpp windows/asset_editors/scene_editor.cpp

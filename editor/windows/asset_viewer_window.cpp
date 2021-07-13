@@ -8,6 +8,7 @@
 #include "asset_editors/texture_editor.hpp"
 #include "asset_importers/asset_importer.hpp"
 #include "asset_editors/script_library_editor.hpp"
+#include "asset_editors/visual_script_editor.hpp"
 #include "dockspace_window.hpp"
 #include <filesystem>
 #include <fstream>
@@ -119,7 +120,7 @@ AssetEditor* AssetViewerWindow::OpenAssetEditor(const std::string& asset_id) {
   } else if (asset_type == "scene_object") {
     asset_editor = scene()->AddController<SceneObjectEditor>(asset_id);
   } else if (asset_type == "scene_controller") {
-    asset_editor = scene()->AddController<ScriptEditor>(asset_id);
+    asset_editor = scene()->AddController<VisualScriptEditor>(asset_id);
   } else if (asset_type == "texture2d") {
     asset_editor = scene()->AddController<TextureEditor>(asset_id);
   } else if (asset_type == "settings") {

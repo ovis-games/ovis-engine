@@ -59,6 +59,16 @@ struct ScriptFunction {
 
 struct ScriptError {};
 
+struct ScriptFunctionResult {
+  std::vector<ScriptVariable> output_values;
+  std::optional<ScriptError> error;
+};
+
+struct ScriptParseError {
+  size_t action_id;
+  std::string message;
+};
+
 class ScriptChunk;
 
 class ScriptContext {
@@ -130,7 +140,7 @@ class ScriptEnvironment {
   std::map<std::string, ScriptVariable> variables_;
 };
 
-class ScriptChunk : public Serializable {
+class ScriptChunk {
  public:
   enum class InstructionType : uint8_t {
     FUNCTION_CALL,
@@ -158,14 +168,16 @@ class ScriptChunk : public Serializable {
     std::variant<FunctionCall, PushConstant, PushStackValue, ConditionalJump> data;
   };
 
-  bool Deserialize(const json& serialized_chunk) override;
-  json Serialize() const override;
-  std::variant<ScriptError, std::vector<ScriptVariable>> Execute();
+  ScriptChunk(const json& definition);
+
+  ScriptFunctionResult Execute(std::span<const ScriptVariable> input);
   void Print();
 
  private:
   ScriptContext* context_ = &global_script_context;
   std::vector<Instruction> instructions_;
+  std::vector<ScriptVariableDefinition> inputs_;
+  std::vector<ScriptVariableDefinition> outputs_;
 };
 
 template <typename FunctionType>
@@ -226,7 +238,7 @@ void ScriptContext::RegisterFunction(std::string_view identifier, std::vector<st
 }
 
 struct ScriptReference {
-  size_t action_id;
+  std::string node_id;
   std::string output;
 
   static std::optional<ScriptReference> Parse(std::string_view reference);

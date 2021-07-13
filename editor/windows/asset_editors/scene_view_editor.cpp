@@ -198,7 +198,7 @@ void SceneViewEditor::DrawContent() {
 void SceneViewEditor::DrawToolbar() {
   ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(ImColor(48, 48, 48)));
 
-  ImFont* font_awesome = scene()->GetController<ImGuiStartFrameController>()->GetFont("FontAwesomeSolid");
+  ImFont* font_awesome = scene()->GetController<ImGuiStartFrameController>()->GetFont("FontAwesomeSolid", 28.0f);
 
   if (run_state() == RunState::RUNNING) {
     ImGui::PushFont(font_awesome);

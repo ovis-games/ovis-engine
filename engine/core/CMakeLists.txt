@@ -24,6 +24,7 @@ add_library(
   include/ovis/core/intersection.hpp src/intersection.cpp
   include/ovis/core/math.hpp src/math.cpp
   include/ovis/core/scripting.hpp src/scripting.cpp
+  include/ovis/core/visual_script_scene_controller.hpp src/visual_script_scene_controller.cpp
 )
 add_library(ovis::core ALIAS ovis-core)
 

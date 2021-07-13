@@ -83,8 +83,19 @@ namespace {
 
 struct Scope {
   const Scope* parent;
-  std::map<size_t, std::map<std::string, int>> output_offsets;
+  std::map<std::string, int, std::less<>> stack_variable_offsets;
   std::vector<ScriptChunk::Instruction> instructions;
+
+  std::optional<int> GetStackVariableOffset(std::string_view reference) const {
+    const auto offset = stack_variable_offsets.find(reference);
+    if (offset != stack_variable_offsets.end()) {
+      return offset->second;
+    } else if (parent != nullptr) {
+      return parent->GetStackVariableOffset(reference);
+    } else {
+      return {};
+    }
+  }
 };
 
 std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, const Scope* parent_scope = nullptr) {
@@ -104,11 +115,10 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
 
     if (definition.is_string()) {
       const std::string& definition_string = definition;
-      auto reference = ScriptReference::Parse(definition_string);
-      if (reference.has_value()) {
-        scope->instructions.push_back(Instruction{
-            InstructionType::PUSH_STACK_VARIABLE,
-            PushStackValue{scope->output_offsets[reference->action_id][reference->output] - current_stack_offset}});
+      if (definition_string.size() > 0 && definition_string[0] == '$') {
+        scope->instructions.push_back(
+            Instruction{InstructionType::PUSH_STACK_VARIABLE,
+                        PushStackValue{*scope->GetStackVariableOffset(definition_string) - current_stack_offset}});
       } else {
         scope->instructions.push_back(Instruction{
             InstructionType::PUSH_CONSTANT, PushConstant{ScriptVariable{{}, double(std::stod(definition_string))}}});
@@ -132,11 +142,13 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
 
       for (const auto& output : function->outputs) {
         scope.instructions.push_back(Instruction{InstructionType::PUSH_CONSTANT, PushConstant{}});
-        if (scope.output_offsets.contains(action["id"])) {
+        if (scope.stack_variable_offsets.contains(
+                fmt::format("${}:{}", static_cast<int>(action["id"]), output.identifier))) {
           LogE("Duplicate action id: {}", static_cast<size_t>(action["id"]));
           return {};
         }
-        scope.output_offsets[action["id"]][output.identifier] = current_stack_offset;
+        scope.stack_variable_offsets[fmt::format("${}:{}", static_cast<int>(action["id"]), output.identifier)] =
+            current_stack_offset;
         ++current_stack_offset;
       }
 
@@ -173,26 +185,48 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
   return scope;
 }
 
+std::vector<ScriptVariableDefinition> ParseVariableDefinitions(ScriptContext* context,
+                                                               const json& serialized_definitions) {
+  std::vector<ScriptVariableDefinition> definitions;
+  for (const auto& definition : serialized_definitions.items()) {
+    definitions.push_back({ScriptType{}, definition.key()});
+  }
+  return definitions;
+}
+
 }  // namespace
 
-bool ScriptChunk::Deserialize(const json& serialized_chunk) {
+ScriptChunk::ScriptChunk(const json& serialized_chunk) {
   instructions_.clear();
-  const json actions = serialized_chunk["actions"];
+  inputs_ = ParseVariableDefinitions(context_, serialized_chunk["inputs"]);
+  outputs_ = ParseVariableDefinitions(context_, serialized_chunk["outputs"]);
 
-  auto scope = ParseScope(context_, actions);
+  const json actions = serialized_chunk["actions"];
+  Scope function_scope;
+  for (const auto& output : IndexRange(outputs_)) {
+    function_scope.stack_variable_offsets[fmt::format("$outputs:{}", output->identifier)] =
+        -static_cast<int>(outputs_.size()) - static_cast<int>(inputs_.size()) + output.index();
+  }
+  for (const auto& input : IndexRange(inputs_)) {
+    function_scope.stack_variable_offsets[fmt::format("$inputs:{}", input->identifier)] =
+        -static_cast<int>(inputs_.size()) + input.index();
+  }
+  auto scope = ParseScope(context_, actions, &function_scope);
   if (scope.has_value()) {
     instructions_ = scope->instructions;
-    return true;
-  } else {
-    return false;
   }
 }
 
-json ScriptChunk::Serialize() const {
-  return {};
-}
+ScriptFunctionResult ScriptChunk::Execute(std::span<const ScriptVariable> input_values) {
+  if (input_values.size() != inputs_.size()) {
+    LogE("Input count does not match");
+    return {};
+  }
 
-std::variant<ScriptError, std::vector<ScriptVariable>> ScriptChunk::Execute() {
+  for (const auto& value : input_values) {
+    context_->PushValue(value);
+  }
+
   size_t instruction_pointer = 0;
   while (instruction_pointer < instructions_.size()) {
     const auto& instruction = instructions_[instruction_pointer];
@@ -300,7 +334,6 @@ std::optional<ScriptReference> ScriptReference::Parse(std::string_view reference
     return {};
   }
 
-  return ScriptReference{std::stoull(std::string(reference.substr(1, colon_pos - 1))),
-                         std::string(reference.substr(colon_pos + 1))};
+  return ScriptReference{std::string(reference.substr(1, colon_pos - 1)), std::string(reference.substr(colon_pos + 1))};
 }
 }  // namespace ovis

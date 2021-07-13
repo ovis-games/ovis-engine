@@ -15,7 +15,7 @@ class ScriptLibraryEditor : public AssetEditor {
   void Save() override { SaveFile("json", GetCurrentJsonFileState().dump()); }
 
  private:
-  ScriptChunk chunk_;
+  std::optional<ScriptChunk> chunk_;
   json editing_copy_;
 
   std::map<std::string, json> docs_;
@@ -25,13 +25,19 @@ class ScriptLibraryEditor : public AssetEditor {
   std::string reference_to_highlight_;
   json::json_pointer dragged_action_path_;
 
+  bool DrawEntrypoint();
   bool DrawActions(const json::json_pointer& path);
   bool DrawAction(const json::json_pointer& path, bool dragging_preview = false);
   bool DrawFunctionCall(const json::json_pointer& path);
   bool DrawIfStatement(const json::json_pointer& path);
   bool DrawNewAction(const json::json_pointer& path);
   void DrawSpace(const json::json_pointer& path);
+  bool DrawStackVariable(const json::json_pointer& path);
   bool DrawInput(const json::json_pointer& path, ScriptType type);
+
+  void BeginNode();
+  void EndNode();
+  bool DrawRenameableValueSource(const char* id, std::string* name, ScriptType type, std::string_view reference);
 
   void RemoveAction(const json::json_pointer& path);
   void JsonFileChanged(const json& data, const std::string& file_type) override;

@@ -12,7 +12,7 @@
 #include <ovis/core/scene_controller.hpp>
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_viewport.hpp>
-#include <ovis/core/script_scene_controller.hpp>
+#include <ovis/core/visual_script_scene_controller.hpp>
 
 namespace ovis {
 
@@ -60,7 +60,7 @@ SceneController* Scene::AddController(const std::string& scene_controller_id) {
   if (SceneController::IsRegistered(scene_controller_id)) {
     controller = *SceneController::Create(scene_controller_id);
   } else {
-    controller = LoadScriptSceneController(scene_controller_id, &lua);
+    controller = LoadVisualScriptSceneController(scene_controller_id);
   }
 
   if (controller == nullptr) {
