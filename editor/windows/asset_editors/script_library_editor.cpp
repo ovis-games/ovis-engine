@@ -453,21 +453,26 @@ void ScriptLibraryEditor::BeginNode() {
   ImGui::BeginGroup();
   ImGui::Indent(10.0f);
   ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
+  ImGui::BeginGroup();
 }
 
 void ScriptLibraryEditor::EndNode() {
+  ImGui::EndGroup();
   ImGui::SameLine();
-  ImGui::InvisibleButton("spacing", ImVec2(5.0f, 1.0f));
-
+  ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10.0f);
+  ImGui::NewLine();
   ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
   ImGui::EndGroup();
+
   ImGui::GetWindowDrawList()->ChannelsSetCurrent(0);
-  ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
-                                            IM_COL32(80, 80, 80, 255), 5.0f);
+  ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), IM_COL32(80, 80, 80, 255),
+                                            5.0f);
+
   ImGui::GetWindowDrawList()->ChannelsMerge();
 }
 
-bool ScriptLibraryEditor::DrawRenameableValueSource(const char* id, std::string* name, ScriptTypeId type, std::string_view reference) {
+bool ScriptLibraryEditor::DrawRenameableValueSource(const char* id, std::string* name, ScriptTypeId type,
+                                                    std::string_view reference) {
   bool name_changed = false;
 
   ImGui::PushID(id);
@@ -553,7 +558,6 @@ std::string ScriptLibraryEditor::GetReferenceName(std::string_view reference) {
   if (ref->node_id == "inputs") {
     return editing_copy_["inputs"][ref->output]["name"];
   } else if (ref->node_id == "outputs") {
-
   } else {
     const auto action_path = GetActionWithId(std::stoull(ref->node_id));
     if (action_path.empty()) {
