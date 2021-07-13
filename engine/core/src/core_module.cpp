@@ -11,6 +11,7 @@
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_object_component.hpp>
 #include <ovis/core/script_scene_controller.hpp>
+#include <ovis/core/scripting.hpp>
 #include <ovis/core/transform.hpp>
 
 namespace ovis {
@@ -95,6 +96,11 @@ bool LoadCoreModule() {
     SceneObjectComponent::Register("Camera", [](SceneObject* object) { return std::make_unique<Camera>(object); });
 
     lua.require("ovis.core", &LoadCoreModule);
+
+    global_script_context()->RegisterType<Scene>("Scene");
+    global_script_context()->RegisterFunction<decltype(&Scene::ClearObjects), &Scene::ClearObjects>(
+        "clear_scene_objects", {"scene"});
+
     module_loaded = true;
   }
 

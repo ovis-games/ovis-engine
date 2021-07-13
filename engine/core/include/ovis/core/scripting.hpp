@@ -15,6 +15,8 @@
 
 namespace ovis {
 
+class ScriptContext;
+
 using ScriptTypeId = size_t;
 
 struct ScriptType {
@@ -38,7 +40,7 @@ struct ScriptVariable {
 
 using ScriptFunctionParameters = std::vector<ScriptVariable>;
 
-using ScriptFunctionPointer = void (*)(std::span<ScriptVariable> input, std::span<ScriptVariable> output);
+using ScriptFunctionPointer = void (*)(ScriptContext* context, int input_count, int output_count);
 
 struct ScriptFunction {
   ScriptFunctionPointer function;
@@ -126,6 +128,15 @@ class ScriptContext {
     return {stack_.data() + begin, count};
   }
 
+  void AssignValue(int offset, ScriptVariable value) { GetValue(offset) = value; }
+
+  template <typename T>
+  void AssignValue(int offset, T&& new_value) {
+    ScriptVariable& value = GetValue(offset);
+    value.type = GetType<T>().id;
+    value.value = new_value;
+  }
+
   void PushValue(ScriptVariable value) {
     if (stack_.size() >= stack_.capacity()) {
       std::runtime_error("Stack overflow!");
@@ -136,7 +147,7 @@ class ScriptContext {
   template <typename T>
   void PushValue(T&& value) {
     const auto& type = GetType<T>();
-    ScriptVariable script_value { type.id, value };
+    ScriptVariable script_value{type.id, value};
     PushValue(script_value);
   }
 
@@ -155,9 +166,32 @@ class ScriptContext {
     stack_.resize(stack_.size() - count);
   }
 
-  ScriptVariable Get(int offset) {
+  ScriptVariable& GetValue(int offset) {
     SDL_assert(offset < 0);
     return stack_[stack_.size() + offset];
+  }
+
+  template <typename T>
+  T GetValue(int offset) {
+    const ScriptVariable& value = GetValue(offset);
+    return std::any_cast<T>(value.value);
+  }
+
+  template <typename... T>
+  std::tuple<T...> GetValues(int begin) {
+    std::tuple<T...> values;
+    FillValueTuple<0>(&values, begin);
+    return values;
+  }
+
+  template <int N, typename... T>
+  void FillValueTuple(std::tuple<T...>* values, int begin) {
+    if constexpr (N == sizeof...(T)) {
+      return;
+    } else {
+      std::get<N>(*values) = GetValue<std::tuple_element_t<N, std::tuple<T...>>>(begin + N);
+      FillValueTuple<N + 1>(values, begin);
+    }
   }
 
   std::span<ScriptVariable> GetRange(int begin, int end) {
@@ -177,7 +211,7 @@ class ScriptContext {
   std::unordered_map<std::type_index, ScriptTypeId> type_indices_;
 };
 
-static ScriptContext global_script_context;
+ScriptContext* global_script_context();
 
 class ScriptEnvironment {
  public:
@@ -225,7 +259,7 @@ class ScriptChunk {
   void Print();
 
  private:
-  ScriptContext* context_ = &global_script_context;
+  ScriptContext* context_ = global_script_context();
   std::vector<Instruction> instructions_;
   std::vector<ScriptVariableDefinition> inputs_;
   std::vector<ScriptVariableDefinition> outputs_;
@@ -243,25 +277,12 @@ struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
   static constexpr size_t OUTPUT_COUNT = std::is_same_v<ReturnType, void> ? 0 : 1;
 
   template <FunctionType FUNCTION>
-  static void Execute(std::span<ScriptVariable> inputs, std::span<ScriptVariable> outputs) {
-    std::tuple<ArgumentTypes...> args;
-    FillArgumentTuple<0>(&args, inputs);
+  static void Execute(ScriptContext* context, int input_count, int output_count) {
+    const auto inputs = context->GetValues<ArgumentTypes...>(-input_count);
     if constexpr (OUTPUT_COUNT == 0) {
-      std::apply(FUNCTION, args);
+      std::apply(FUNCTION, inputs);
     } else {
-      const auto result = std::apply(FUNCTION, args);
-      outputs[0].value = result;
-    }
-  }
-
-  template <size_t N>
-  static void FillArgumentTuple(std::tuple<ArgumentTypes...>* arguments, std::span<ScriptVariable> inputs) {
-    if constexpr (N == sizeof...(ArgumentTypes)) {
-      return;
-    } else {
-      std::get<N>(*arguments) =
-          std::any_cast<typename std::tuple_element<N, std::tuple<ArgumentTypes...>>::type>(inputs[N].value);
-      FillArgumentTuple<N + 1>(arguments, inputs);
+      context->AssignValue(-input_count - output_count, std::apply(FUNCTION, inputs));
     }
   }
 
@@ -277,6 +298,47 @@ struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
       return;
     } else {
       *id = context->GetType<typename std::tuple_element<N, std::tuple<ArgumentTypes...>>::type>().id;
+      FillInputTypeIdArray<N + 1>(context, id + 1);
+    }
+  }
+
+  static std::array<ScriptTypeId, OUTPUT_COUNT> GetOutputTypeIds(ScriptContext* context) {
+    std::array<ScriptTypeId, OUTPUT_COUNT> output_types_ids;
+    if constexpr (OUTPUT_COUNT == 1) {
+      output_types_ids[0] = context->GetType<ReturnType>().id;
+    }
+    return output_types_ids;
+  }
+};
+
+template <typename ReturnType, typename ObjectType, typename... ArgumentTypes>
+struct FunctionWrapper<ReturnType (ObjectType::*)(ArgumentTypes...)> {
+  using FunctionType = ReturnType (ObjectType::*)(ArgumentTypes...);
+  static constexpr auto INPUT_COUNT = sizeof...(ArgumentTypes) + 1;
+  static constexpr size_t OUTPUT_COUNT = std::is_same_v<ReturnType, void> ? 0 : 1;
+
+  template <FunctionType FUNCTION>
+  static void Execute(ScriptContext* context, int input_count, int output_count) {
+    const auto inputs = context->GetValues<ObjectType*, ArgumentTypes...>(-input_count);
+    if constexpr (OUTPUT_COUNT == 0) {
+      std::apply(FUNCTION, inputs);
+    } else {
+      context->AssignValue(-input_count - output_count, std::apply(FUNCTION, inputs));
+    }
+  }
+
+  static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {
+    std::array<ScriptTypeId, INPUT_COUNT> input_type_ids;
+    FillInputTypeIdArray(context, input_type_ids.data());
+    return input_type_ids;
+  }
+
+  template <size_t N = 0>
+  static void FillInputTypeIdArray(ScriptContext* context, ScriptTypeId* id) {
+    if constexpr (N == sizeof...(ArgumentTypes) + 1) {
+      return;
+    } else {
+      *id = context->GetType<typename std::tuple_element<N, std::tuple<ObjectType*, ArgumentTypes...>>::type>().id;
       FillInputTypeIdArray<N + 1>(context, id + 1);
     }
   }

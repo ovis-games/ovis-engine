@@ -30,7 +30,13 @@ void print_bool(bool x) {
   LogI("{}", x);
 }
 
+std::unique_ptr<ScriptContext> global_context = std::make_unique<ScriptContext>();
+
 }  // namespace
+
+ScriptContext* global_script_context() {
+  return global_context.get();
+}
 
 #define OVIS_REGISTER_FUNCTION(func, ...) RegisterFunction<decltype(func), func>(#func, __VA_ARGS__);
 #define OVIS_REGISTER_FUNCTION_WITH_NAME(func, identifier) RegisterFunction<decltype(func), func>(identifier);
@@ -69,23 +75,23 @@ const ScriptFunction* ScriptContext::GetFunction(std::string_view identifier) {
   }
 }
 
-std::variant<ScriptError, std::vector<ScriptVariable>> ScriptContext::Execute(std::string_view function_identifier,
-                                                                              std::span<ScriptVariable> inputs) {
-  const auto function = functions_.find(function_identifier);
+// std::variant<ScriptError, std::vector<ScriptVariable>> ScriptContext::Execute(std::string_view function_identifier,
+//                                                                               std::span<ScriptVariable> inputs) {
+//   const auto function = functions_.find(function_identifier);
 
-  if (function == functions_.end()) {
-    return ScriptError{};
-  }
+//   if (function == functions_.end()) {
+//     return ScriptError{};
+//   }
 
-  if (function->second.inputs.size() != inputs.size()) {
-    return ScriptError{};
-  }
+//   if (function->second.inputs.size() != inputs.size()) {
+//     return ScriptError{};
+//   }
 
-  std::vector<ScriptVariable> outputs(function->second.outputs.size());
-  function->second.function(inputs, outputs);
+//   std::vector<ScriptVariable> outputs(function->second.outputs.size());
+//   function->second.function(inputs, outputs);
 
-  return outputs;
-}
+//   return outputs;
+// }
 
 namespace {
 
@@ -246,9 +252,7 @@ ScriptFunctionResult ScriptChunk::Execute() {
     switch (instruction.type) {
       case InstructionType::FUNCTION_CALL: {
         const auto& function_call = std::get<FunctionCall>(instruction.data);
-        function_call.function(
-            context_->GetRange(-function_call.input_count, 0),
-            context_->GetRange(-(function_call.input_count + function_call.output_count), -function_call.input_count));
+        function_call.function(context_, function_call.input_count, function_call.output_count);
         context_->PopStack(function_call.input_count);
         ++instruction_pointer;
         break;
@@ -263,14 +267,14 @@ ScriptFunctionResult ScriptChunk::Execute() {
 
       case InstructionType::PUSH_STACK_VARIABLE: {
         const PushStackValue& push_stack_value = std::get<PushStackValue>(instruction.data);
-        context_->PushValue(context_->Get(push_stack_value.position));
+        context_->PushValue(context_->GetValue(push_stack_value.position));
         ++instruction_pointer;
         break;
       }
 
       case InstructionType::JUMP_IF_TRUE: {
         const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
-        if (std::any_cast<double>(context_->Get(-1).value) != 0.0) {
+        if (std::any_cast<double>(context_->GetValue(-1).value) != 0.0) {
           instruction_pointer += conditional_jump.instruction_offset;
         } else {
           ++instruction_pointer;
@@ -281,7 +285,7 @@ ScriptFunctionResult ScriptChunk::Execute() {
 
       case InstructionType::JUMP_IF_FALSE: {
         const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
-        if (std::any_cast<double>(context_->Get(-1).value) == 0.0) {
+        if (std::any_cast<double>(context_->GetValue(-1).value) == 0.0) {
           instruction_pointer += conditional_jump.instruction_offset;
         } else {
           ++instruction_pointer;

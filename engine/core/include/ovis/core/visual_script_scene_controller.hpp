@@ -21,6 +21,7 @@ class VisualScriptSceneController : public SceneController {
   std::optional<ScriptChunk> update_;
 };
 
-std::unique_ptr<VisualScriptSceneController> LoadVisualScriptSceneController(const std::string& asset_id, ScriptContext* script_context = &global_script_context);
+std::unique_ptr<VisualScriptSceneController> LoadVisualScriptSceneController(
+    const std::string& asset_id, ScriptContext* script_context = global_script_context());
 
 }  // namespace ovis

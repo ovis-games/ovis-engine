@@ -37,6 +37,9 @@ ScriptLibraryEditor::ScriptLibraryEditor(const std::string& asset_id) : AssetEdi
   docs_["print_bool"] = {
       {"text", "Print {value}"},
   };
+  docs_["clear_scene_objects"] = {
+      {"text", "Clear objects of {scene}"},
+  };
 }
 
 void ScriptLibraryEditor::DrawContent() {
@@ -178,7 +181,7 @@ bool ScriptLibraryEditor::DrawFunctionCall(const json::json_pointer& path) {
 
   json& function_call = editing_copy_[path];
   const std::string& function_identifer = function_call["function"];
-  const ScriptFunction* function = global_script_context.GetFunction(function_identifer);
+  const ScriptFunction* function = global_script_context()->GetFunction(function_identifer);
   if (function == nullptr) {
     ImGui::Text("Function definition not found for: %s", function_identifer.c_str());
   } else if (auto doc = docs_.find(function_identifer); doc != docs_.end()) {
@@ -286,7 +289,7 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
       action["condition"] = "";
       action["actions"] = json::array();
     } else {
-      auto function = global_script_context.GetFunction(text);
+      auto function = global_script_context()->GetFunction(text);
       if (function == nullptr) {
         DoOnceAfterUpdate([this, path]() {
           RemoveAction(path);
