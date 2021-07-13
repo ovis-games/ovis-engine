@@ -218,6 +218,7 @@ ScriptChunk::ScriptChunk(const json& serialized_chunk) {
 
   const json actions = serialized_chunk["actions"];
   Scope function_scope;
+  function_scope.parent = nullptr;
   for (const auto& output : IndexRange(outputs_)) {
     function_scope.stack_variable_offsets[fmt::format("$outputs:{}", output->identifier)] =
         -static_cast<int>(outputs_.size()) - static_cast<int>(inputs_.size()) + output.index();
