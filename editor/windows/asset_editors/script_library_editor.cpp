@@ -34,6 +34,9 @@ ScriptLibraryEditor::ScriptLibraryEditor(const std::string& asset_id) : AssetEdi
   docs_["print"] = {
       {"text", "Print {value}"},
   };
+  docs_["print_bool"] = {
+      {"text", "Print {value}"},
+  };
 }
 
 void ScriptLibraryEditor::DrawContent() {
@@ -207,7 +210,7 @@ bool ScriptLibraryEditor::DrawFunctionCall(const json::json_pointer& path) {
         const std::string reference =
             fmt::format("${}:{}", static_cast<size_t>(function_call["id"]), output->identifier);
         std::string output_name = GetReferenceName(reference);
-        if (DrawRenameableValueSource(output_path.to_string().c_str(), &output_name, ScriptType{}, reference)) {
+        if (DrawRenameableValueSource(output_path.to_string().c_str(), &output_name, ScriptTypeId{}, reference)) {
           editing_copy_[output_path] = output_name;
           submit_changes = true;
         }
@@ -371,7 +374,7 @@ void ScriptLibraryEditor::DrawSpace(const json::json_pointer& path) {
   }
 }
 
-bool ScriptLibraryEditor::DrawInput(const json::json_pointer& path, ScriptType type) {
+bool ScriptLibraryEditor::DrawInput(const json::json_pointer& path, ScriptTypeId type) {
   bool submit_changes = false;
   json& value = editing_copy_[path];
   const std::string identifier = path.to_string().substr(path.parent_pointer().to_string().size() + 1);
@@ -464,7 +467,7 @@ void ScriptLibraryEditor::EndNode() {
   ImGui::GetWindowDrawList()->ChannelsMerge();
 }
 
-bool ScriptLibraryEditor::DrawRenameableValueSource(const char* id, std::string* name, ScriptType type, std::string_view reference) {
+bool ScriptLibraryEditor::DrawRenameableValueSource(const char* id, std::string* name, ScriptTypeId type, std::string_view reference) {
   bool name_changed = false;
 
   ImGui::PushID(id);

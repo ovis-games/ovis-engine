@@ -20,10 +20,13 @@ double divide(double x, double y) {
 double negate(double x) {
   return -x;
 }
-double is_greater(double x, double y) {
-  return x > y ? 1.0 : 0.0;
+bool is_greater(double x, double y) {
+  return x > y;
 }
 void print(double x) {
+  LogI("{}", x);
+}
+void print_bool(bool x) {
   LogI("{}", x);
 }
 
@@ -33,12 +36,17 @@ void print(double x) {
 #define OVIS_REGISTER_FUNCTION_WITH_NAME(func, identifier) RegisterFunction<decltype(func), func>(identifier);
 
 ScriptContext::ScriptContext() {
+  RegisterType<double>("Number");
+  RegisterType<bool>("Boolean");
+  RegisterType<std::string>("String");
+
   OVIS_REGISTER_FUNCTION(add, {"x", "y"}, {"result"});
   OVIS_REGISTER_FUNCTION(subtract, {"x", "y"}, {"result"});
   OVIS_REGISTER_FUNCTION(multiply, {"x", "y"}, {"result"});
   OVIS_REGISTER_FUNCTION(divide, {"x", "y"}, {"result"});
   OVIS_REGISTER_FUNCTION(negate, {"x"}, {"result"});
   OVIS_REGISTER_FUNCTION(print, {"value"});
+  OVIS_REGISTER_FUNCTION(print_bool, {"value"});
   OVIS_REGISTER_FUNCTION(is_greater, {"x", "y"}, {"is_greater"});
 
   stack_.reserve(1000);
@@ -189,7 +197,7 @@ std::vector<ScriptVariableDefinition> ParseVariableDefinitions(ScriptContext* co
                                                                const json& serialized_definitions) {
   std::vector<ScriptVariableDefinition> definitions;
   for (const auto& definition : serialized_definitions.items()) {
-    definitions.push_back({ScriptType{}, definition.key()});
+    definitions.push_back({context->GetType(std::string(definition.value()["type"])).id, definition.key()});
   }
   return definitions;
 }
@@ -227,6 +235,10 @@ ScriptFunctionResult ScriptChunk::Execute(std::span<const ScriptVariable> input_
     context_->PushValue(value);
   }
 
+  return Execute();
+}
+
+ScriptFunctionResult ScriptChunk::Execute() {
   size_t instruction_pointer = 0;
   while (instruction_pointer < instructions_.size()) {
     const auto& instruction = instructions_[instruction_pointer];

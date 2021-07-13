@@ -9,9 +9,9 @@ class Property {
 
 };
 
-class Type {
+class Class {
 public:
-  Type(std::string_view name, Type* base = nullptr);
+  Class(std::string_view name, Type* base = nullptr);
 
   std::string_view name() const {
     return name_;

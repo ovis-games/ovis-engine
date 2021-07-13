@@ -33,11 +33,11 @@ class ScriptLibraryEditor : public AssetEditor {
   bool DrawNewAction(const json::json_pointer& path);
   void DrawSpace(const json::json_pointer& path);
   bool DrawStackVariable(const json::json_pointer& path);
-  bool DrawInput(const json::json_pointer& path, ScriptType type);
+  bool DrawInput(const json::json_pointer& path, ScriptTypeId type);
 
   void BeginNode();
   void EndNode();
-  bool DrawRenameableValueSource(const char* id, std::string* name, ScriptType type, std::string_view reference);
+  bool DrawRenameableValueSource(const char* id, std::string* name, ScriptTypeId type, std::string_view reference);
 
   void RemoveAction(const json::json_pointer& path);
   void JsonFileChanged(const json& data, const std::string& file_type) override;

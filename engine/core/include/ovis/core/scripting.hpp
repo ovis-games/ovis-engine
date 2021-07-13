@@ -5,6 +5,7 @@
 #include <map>
 #include <span>
 #include <string>
+#include <typeindex>
 #include <variant>
 
 #include <SDL_assert.h>
@@ -14,17 +15,24 @@
 
 namespace ovis {
 
+using ScriptTypeId = size_t;
+
 struct ScriptType {
-  constexpr ScriptType() {}
+  ScriptType(ScriptTypeId id, std::string_view name, bool reference_type)
+      : id(id), name(name), reference_type(reference_type) {}
+
+  ScriptTypeId id;
+  std::string name;
+  bool reference_type;
 };
 
 struct ScriptVariableDefinition {
-  ScriptType type;
+  ScriptTypeId type;
   std::string identifier;
 };
 
 struct ScriptVariable {
-  ScriptType type;
+  ScriptTypeId type;
   std::any value;
 };
 
@@ -75,6 +83,26 @@ class ScriptContext {
  public:
   ScriptContext();
 
+  template <typename T>
+  ScriptType& RegisterType(std::string name) {
+    ScriptTypeId id = types_.size();
+    SDL_assert(type_names_.find(name) == type_names_.end());
+    SDL_assert(type_indices_.find(typeid(T)) == type_indices_.end());
+
+    types_.emplace_back(id, name, false);
+    type_names_.insert(std::make_pair(name, id));
+    type_indices_.insert(std::make_pair(std::type_index(typeid(T)), id));
+
+    return types_.back();
+  }
+
+  const ScriptType& GetType(std::string_view name) { return types_[type_names_[std::string(name)]]; }
+
+  template <typename T>
+  const ScriptType& GetType() {
+    return types_[type_indices_[std::type_index(typeid(T))]];
+  }
+
   void RegisterFunction(std::string_view identifier, ScriptFunctionPointer function,
                         std::span<const ScriptVariableDefinition> inputs,
                         std::span<const ScriptVariableDefinition> outputs);
@@ -105,6 +133,21 @@ class ScriptContext {
     stack_.emplace_back(std::move(value));
   }
 
+  template <typename T>
+  void PushValue(T&& value) {
+    const auto& type = GetType<T>();
+    ScriptVariable script_value { type.id, value };
+    PushValue(script_value);
+  }
+
+  template <typename T, typename... Ts>
+  void PushValues(T&& value, Ts&&... values) {
+    PushValue(std::forward<T>(value));
+    if constexpr (sizeof...(Ts) > 0) {
+      PushValues<Ts...>(std::forward<Ts>(values)...);
+    }
+  }
+
   void PopStack(size_t count) {
     if (count > stack_.size()) {
       throw std::runtime_error("Script stack underflow");
@@ -129,6 +172,9 @@ class ScriptContext {
  private:
   std::map<std::string, ScriptFunction, std::less<>> functions_;
   std::vector<ScriptVariable> stack_;
+  std::vector<ScriptType> types_;
+  std::unordered_map<std::string, ScriptTypeId> type_names_;
+  std::unordered_map<std::type_index, ScriptTypeId> type_indices_;
 };
 
 static ScriptContext global_script_context;
@@ -171,6 +217,11 @@ class ScriptChunk {
   ScriptChunk(const json& definition);
 
   ScriptFunctionResult Execute(std::span<const ScriptVariable> input);
+  template <typename... Inputs>
+  ScriptFunctionResult Execute(Inputs&&... inputs) {
+    context_->PushValues(std::forward<Inputs>(inputs)...);
+    return Execute();
+  }
   void Print();
 
  private:
@@ -178,6 +229,8 @@ class ScriptChunk {
   std::vector<Instruction> instructions_;
   std::vector<ScriptVariableDefinition> inputs_;
   std::vector<ScriptVariableDefinition> outputs_;
+
+  ScriptFunctionResult Execute();
 };
 
 template <typename FunctionType>
@@ -187,9 +240,7 @@ template <typename ReturnType, typename... ArgumentTypes>
 struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
   using FunctionType = ReturnType (*)(ArgumentTypes...);
   static constexpr auto INPUT_COUNT = sizeof...(ArgumentTypes);
-  static constexpr std::array<ScriptType, INPUT_COUNT> INPUT_TYPES;
   static constexpr size_t OUTPUT_COUNT = std::is_same_v<ReturnType, void> ? 0 : 1;
-  static constexpr std::array<ScriptType, OUTPUT_COUNT> OUTPUT_TYPES = {};
 
   template <FunctionType FUNCTION>
   static void Execute(std::span<ScriptVariable> inputs, std::span<ScriptVariable> outputs) {
@@ -213,6 +264,30 @@ struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
       FillArgumentTuple<N + 1>(arguments, inputs);
     }
   }
+
+  static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {
+    std::array<ScriptTypeId, INPUT_COUNT> input_type_ids;
+    FillInputTypeIdArray(context, input_type_ids.data());
+    return input_type_ids;
+  }
+
+  template <size_t N = 0>
+  static void FillInputTypeIdArray(ScriptContext* context, ScriptTypeId* id) {
+    if constexpr (N == sizeof...(ArgumentTypes)) {
+      return;
+    } else {
+      *id = context->GetType<typename std::tuple_element<N, std::tuple<ArgumentTypes...>>::type>().id;
+      FillInputTypeIdArray<N + 1>(context, id + 1);
+    }
+  }
+
+  static std::array<ScriptTypeId, OUTPUT_COUNT> GetOutputTypeIds(ScriptContext* context) {
+    std::array<ScriptTypeId, OUTPUT_COUNT> output_types_ids;
+    if constexpr (OUTPUT_COUNT == 1) {
+      output_types_ids[0] = context->GetType<ReturnType>().id;
+    }
+    return output_types_ids;
+  }
 };
 
 template <typename FunctionType, FunctionType FUNCTION>
@@ -221,17 +296,19 @@ void ScriptContext::RegisterFunction(std::string_view identifier, std::vector<st
   using Wrapper = FunctionWrapper<FunctionType>;
 
   std::vector<ScriptVariableDefinition> inputs;
-  inputs.reserve(Wrapper::INPUT_TYPES.size());
-  for (const auto& type : IndexRange(Wrapper::INPUT_TYPES)) {
-    inputs.push_back(
-        {type.value(), type.index() < inputs_names.size() ? inputs_names[type.index()] : std::to_string(type.index())});
+  inputs.reserve(Wrapper::INPUT_COUNT);
+
+  const auto input_type_ids = Wrapper::GetInputTypeIds(this);
+  for (size_t i = 0; i < Wrapper::INPUT_COUNT; ++i) {
+    inputs.push_back({input_type_ids[i], i < inputs_names.size() ? inputs_names[i] : std::to_string(i)});
   }
 
   std::vector<ScriptVariableDefinition> outputs;
-  inputs.reserve(Wrapper::OUTPUT_TYPES.size());
-  for (const auto& type : IndexRange(Wrapper::OUTPUT_TYPES)) {
-    outputs.push_back({type.value(), type.index() < outputs_names.size() ? outputs_names[type.index()]
-                                                                         : std::to_string(type.index())});
+  inputs.reserve(Wrapper::OUTPUT_COUNT);
+
+  const auto output_type_ids = Wrapper::GetOutputTypeIds(this);
+  for (size_t i = 0; i < Wrapper::OUTPUT_COUNT; ++i) {
+    outputs.push_back({output_type_ids[i], i < outputs_names.size() ? outputs_names[i] : std::to_string(i)});
   }
 
   RegisterFunction(identifier, &Wrapper::template Execute<FUNCTION>, inputs, outputs);

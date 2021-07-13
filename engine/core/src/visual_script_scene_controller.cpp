@@ -18,8 +18,7 @@ void VisualScriptSceneController::Play() {}
 void VisualScriptSceneController::Stop() {}
 
 void VisualScriptSceneController::Update(std::chrono::microseconds delta_time) {
-  ScriptVariable delta_time_in_seconds{ScriptType{}, delta_time.count() / 1000000.0};
-  update_->Execute({&delta_time_in_seconds, 1});
+  update_->Execute(delta_time.count() / 1000000.0);
 }
 
 void VisualScriptSceneController::ProcessEvent(Event* event) {}
