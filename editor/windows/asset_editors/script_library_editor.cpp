@@ -272,7 +272,7 @@ bool ScriptLibraryEditor::DrawIfStatement(const json::json_pointer& path) {
 
   ImGui::Text("if ");
   ImGui::SameLine();
-  if (DrawInput(path / "condition", {})) {
+  if (DrawInput(path / "condition", global_script_context()->GetTypeId<bool>())) {
     submit_changes = true;
   }
 

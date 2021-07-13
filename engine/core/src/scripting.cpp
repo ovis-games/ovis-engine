@@ -203,7 +203,8 @@ std::vector<ScriptVariableDefinition> ParseVariableDefinitions(ScriptContext* co
                                                                const json& serialized_definitions) {
   std::vector<ScriptVariableDefinition> definitions;
   for (const auto& definition : serialized_definitions.items()) {
-    definitions.push_back({context->GetType(std::string(definition.value()["type"])).id, definition.key()});
+    const std::string type(definition.value()["type"]);
+    definitions.push_back({context->GetTypeId(type), definition.key()});
   }
   return definitions;
 }
@@ -274,7 +275,7 @@ ScriptFunctionResult ScriptChunk::Execute() {
 
       case InstructionType::JUMP_IF_TRUE: {
         const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
-        if (std::any_cast<double>(context_->GetValue(-1).value) != 0.0) {
+        if (context_->GetValue<bool>(-1)) {
           instruction_pointer += conditional_jump.instruction_offset;
         } else {
           ++instruction_pointer;
@@ -285,7 +286,7 @@ ScriptFunctionResult ScriptChunk::Execute() {
 
       case InstructionType::JUMP_IF_FALSE: {
         const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
-        if (std::any_cast<double>(context_->GetValue(-1).value) == 0.0) {
+        if (!context_->GetValue<bool>(-1)) {
           instruction_pointer += conditional_jump.instruction_offset;
         } else {
           ++instruction_pointer;

@@ -7,6 +7,7 @@
 #include <string>
 #include <typeindex>
 #include <variant>
+#include <limits>
 
 #include <SDL_assert.h>
 
@@ -18,6 +19,7 @@ namespace ovis {
 class ScriptContext;
 
 using ScriptTypeId = size_t;
+constexpr ScriptTypeId SCRIPT_TYPE_UNKNOWN = std::numeric_limits<ScriptTypeId>::max();
 
 struct ScriptType {
   ScriptType(ScriptTypeId id, std::string_view name, bool reference_type)
@@ -86,7 +88,7 @@ class ScriptContext {
   ScriptContext();
 
   template <typename T>
-  ScriptType& RegisterType(std::string name) {
+  ScriptType* RegisterType(std::string name) {
     ScriptTypeId id = types_.size();
     SDL_assert(type_names_.find(name) == type_names_.end());
     SDL_assert(type_indices_.find(typeid(T)) == type_indices_.end());
@@ -95,14 +97,45 @@ class ScriptContext {
     type_names_.insert(std::make_pair(name, id));
     type_indices_.insert(std::make_pair(std::type_index(typeid(T)), id));
 
-    return types_.back();
+    return &types_.back();
   }
 
-  const ScriptType& GetType(std::string_view name) { return types_[type_names_[std::string(name)]]; }
+  ScriptTypeId GetTypeId(std::string_view name) {
+    const auto it = type_names_.find(std::string(name));
+    if (it == type_names_.end()) {
+      return SCRIPT_TYPE_UNKNOWN;
+    } else {
+      return it->second;
+    }
+  }
+
+  const ScriptType* GetType(std::string_view name) {
+    const ScriptTypeId type_id = GetTypeId(name);
+    if (type_id == SCRIPT_TYPE_UNKNOWN) {
+      return nullptr;
+    } else {
+      return &types_[type_id];
+    }
+  }
 
   template <typename T>
-  const ScriptType& GetType() {
-    return types_[type_indices_[std::type_index(typeid(T))]];
+  ScriptTypeId GetTypeId() {
+    const auto it = type_indices_.find(typeid(T));
+    if (it == type_indices_.end()) {
+      return SCRIPT_TYPE_UNKNOWN;
+    } else {
+      return it->second;
+    }
+  }
+
+  template <typename T>
+  const ScriptType* GetType() {
+    const ScriptTypeId type_id = GetTypeId<T>();
+    if (type_id == SCRIPT_TYPE_UNKNOWN) {
+      return nullptr;
+    } else {
+      return &types_[type_id];
+    }
   }
 
   void RegisterFunction(std::string_view identifier, ScriptFunctionPointer function,
@@ -133,7 +166,7 @@ class ScriptContext {
   template <typename T>
   void AssignValue(int offset, T&& new_value) {
     ScriptVariable& value = GetValue(offset);
-    value.type = GetType<T>().id;
+    value.type = GetTypeId<T>();
     value.value = new_value;
   }
 
@@ -146,8 +179,7 @@ class ScriptContext {
 
   template <typename T>
   void PushValue(T&& value) {
-    const auto& type = GetType<T>();
-    ScriptVariable script_value{type.id, value};
+    ScriptVariable script_value{GetTypeId<T>(), value};
     PushValue(script_value);
   }
 
@@ -297,7 +329,7 @@ struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
     if constexpr (N == sizeof...(ArgumentTypes)) {
       return;
     } else {
-      *id = context->GetType<typename std::tuple_element<N, std::tuple<ArgumentTypes...>>::type>().id;
+      *id = context->GetTypeId<typename std::tuple_element<N, std::tuple<ArgumentTypes...>>::type>();
       FillInputTypeIdArray<N + 1>(context, id + 1);
     }
   }
@@ -305,7 +337,7 @@ struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
   static std::array<ScriptTypeId, OUTPUT_COUNT> GetOutputTypeIds(ScriptContext* context) {
     std::array<ScriptTypeId, OUTPUT_COUNT> output_types_ids;
     if constexpr (OUTPUT_COUNT == 1) {
-      output_types_ids[0] = context->GetType<ReturnType>().id;
+      output_types_ids[0] = context->GetTypeId<ReturnType>();
     }
     return output_types_ids;
   }
@@ -338,7 +370,7 @@ struct FunctionWrapper<ReturnType (ObjectType::*)(ArgumentTypes...)> {
     if constexpr (N == sizeof...(ArgumentTypes) + 1) {
       return;
     } else {
-      *id = context->GetType<typename std::tuple_element<N, std::tuple<ObjectType*, ArgumentTypes...>>::type>().id;
+      *id = context->GetTypeId<typename std::tuple_element<N, std::tuple<ObjectType*, ArgumentTypes...>>::type>();
       FillInputTypeIdArray<N + 1>(context, id + 1);
     }
   }
