@@ -86,6 +86,15 @@ int LoadCoreModule(lua_State* l) {
   return core_module.push();
 }
 
+namespace {
+Vector3 MakeVector3(double x, double y, double z) {
+  return Vector3(x, y, z);
+}
+double Vector3Length(Vector3 v) {
+  return Length(v);
+}
+}
+
 bool LoadCoreModule() {
   static bool module_loaded = false;
   if (!module_loaded) {
@@ -100,6 +109,10 @@ bool LoadCoreModule() {
     global_script_context()->RegisterType<Scene>("Scene");
     global_script_context()->RegisterFunction<decltype(&Scene::ClearObjects), &Scene::ClearObjects>(
         "clear_scene_objects", {"scene"});
+
+    global_script_context()->RegisterType<Vector3>("Vector3");
+    global_script_context()->RegisterFunction<decltype(MakeVector3), &MakeVector3>("create_vector3", {"x","y","z"});
+    global_script_context()->RegisterFunction<decltype(Vector3Length), &Vector3Length>("vector3_length", {"v"}, {"length"});
 
     module_loaded = true;
   }

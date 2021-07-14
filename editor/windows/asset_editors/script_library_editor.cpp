@@ -40,6 +40,12 @@ ScriptLibraryEditor::ScriptLibraryEditor(const std::string& asset_id) : AssetEdi
   docs_["clear_scene_objects"] = {
       {"text", "Clear objects of {scene}"},
   };
+  docs_["create_vector3"] = {
+      {"text", "Create Vector3 with {x} , {y} and {z}"},
+  };
+  docs_["vector3_length"] = {
+      {"text", "Get length of {v}"},
+  };
 }
 
 void ScriptLibraryEditor::DrawContent() {
