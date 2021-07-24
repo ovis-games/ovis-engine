@@ -59,11 +59,11 @@ ScriptContext::ScriptContext() {
 }
 
 void ScriptContext::RegisterFunction(std::string_view identifier, ScriptFunctionPointer function,
-                                     std::span<const ScriptVariableDefinition> inputs,
-                                     std::span<const ScriptVariableDefinition> outputs) {
+                                     std::span<const ScriptValueDefinition> inputs,
+                                     std::span<const ScriptValueDefinition> outputs) {
   functions_.insert(std::make_pair(
-      identifier, ScriptFunction{function, std::vector<ScriptVariableDefinition>{inputs.begin(), inputs.end()},
-                                 std::vector<ScriptVariableDefinition>{outputs.begin(), outputs.end()}}));
+      identifier, ScriptFunction{function, std::vector<ScriptValueDefinition>{inputs.begin(), inputs.end()},
+                                 std::vector<ScriptValueDefinition>{outputs.begin(), outputs.end()}}));
 }
 
 const ScriptFunction* ScriptContext::GetFunction(std::string_view identifier) {
@@ -75,8 +75,8 @@ const ScriptFunction* ScriptContext::GetFunction(std::string_view identifier) {
   }
 }
 
-// std::variant<ScriptError, std::vector<ScriptVariable>> ScriptContext::Execute(std::string_view function_identifier,
-//                                                                               std::span<ScriptVariable> inputs) {
+// std::variant<ScriptError, std::vector<ScriptValue>> ScriptContext::Execute(std::string_view function_identifier,
+//                                                                               std::span<ScriptValue> inputs) {
 //   const auto function = functions_.find(function_identifier);
 
 //   if (function == functions_.end()) {
@@ -87,7 +87,7 @@ const ScriptFunction* ScriptContext::GetFunction(std::string_view identifier) {
 //     return ScriptError{};
 //   }
 
-//   std::vector<ScriptVariable> outputs(function->second.outputs.size());
+//   std::vector<ScriptValue> outputs(function->second.outputs.size());
 //   function->second.function(inputs, outputs);
 
 //   return outputs;
@@ -135,7 +135,7 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
                         PushStackValue{*scope->GetStackVariableOffset(definition_string) - current_stack_offset}});
       } else {
         scope->instructions.push_back(Instruction{
-            InstructionType::PUSH_CONSTANT, PushConstant{ScriptVariable{{}, double(std::stod(definition_string))}}});
+            InstructionType::PUSH_CONSTANT, PushConstant{ScriptValue{{}, double(std::stod(definition_string))}}});
       }
     } else {
       scope->instructions.push_back(Instruction{InstructionType::PUSH_CONSTANT, PushConstant{}});
@@ -199,9 +199,9 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
   return scope;
 }
 
-std::vector<ScriptVariableDefinition> ParseVariableDefinitions(ScriptContext* context,
+std::vector<ScriptValueDefinition> ParseVariableDefinitions(ScriptContext* context,
                                                                const json& serialized_definitions) {
-  std::vector<ScriptVariableDefinition> definitions;
+  std::vector<ScriptValueDefinition> definitions;
   for (const auto& definition : serialized_definitions.items()) {
     const std::string type(definition.value()["type"]);
     definitions.push_back({context->GetTypeId(type), definition.key()});
@@ -233,7 +233,7 @@ ScriptChunk::ScriptChunk(const json& serialized_chunk) {
   }
 }
 
-ScriptFunctionResult ScriptChunk::Execute(std::span<const ScriptVariable> input_values) {
+ScriptFunctionResult ScriptChunk::Execute(std::span<const ScriptValue> input_values) {
   if (input_values.size() != inputs_.size()) {
     LogE("Input count does not match");
     return {};

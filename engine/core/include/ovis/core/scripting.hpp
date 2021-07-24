@@ -30,24 +30,24 @@ struct ScriptType {
   bool reference_type;
 };
 
-struct ScriptVariableDefinition {
+struct ScriptValueDefinition {
   ScriptTypeId type;
   std::string identifier;
 };
 
-struct ScriptVariable {
+struct ScriptValue {
   ScriptTypeId type;
   std::any value;
 };
 
-using ScriptFunctionParameters = std::vector<ScriptVariable>;
+using ScriptFunctionParameters = std::vector<ScriptValue>;
 
 using ScriptFunctionPointer = void (*)(ScriptContext* context, int input_count, int output_count);
 
 struct ScriptFunction {
   ScriptFunctionPointer function;
-  std::vector<ScriptVariableDefinition> inputs;
-  std::vector<ScriptVariableDefinition> outputs;
+  std::vector<ScriptValueDefinition> inputs;
+  std::vector<ScriptValueDefinition> outputs;
 
   size_t GetInputIndex(std::string_view input_identifier) const {
     for (const auto& input : IndexRange(inputs)) {
@@ -72,7 +72,7 @@ struct ScriptFunction {
 struct ScriptError {};
 
 struct ScriptFunctionResult {
-  std::vector<ScriptVariable> output_values;
+  std::vector<ScriptValue> output_values;
   std::optional<ScriptError> error;
 };
 
@@ -139,8 +139,8 @@ class ScriptContext {
   }
 
   void RegisterFunction(std::string_view identifier, ScriptFunctionPointer function,
-                        std::span<const ScriptVariableDefinition> inputs,
-                        std::span<const ScriptVariableDefinition> outputs);
+                        std::span<const ScriptValueDefinition> inputs,
+                        std::span<const ScriptValueDefinition> outputs);
 
   template <typename T, T FUNCTION>
   void RegisterFunction(std::string_view identifier, std::vector<std::string> inputs_names = {},
@@ -148,10 +148,10 @@ class ScriptContext {
 
   const ScriptFunction* GetFunction(std::string_view identifier);
 
-  std::variant<ScriptError, std::vector<ScriptVariable>> Execute(std::string_view function_identifier,
-                                                                 std::span<ScriptVariable> arguments);
+  std::variant<ScriptError, std::vector<ScriptValue>> Execute(std::string_view function_identifier,
+                                                                 std::span<ScriptValue> arguments);
 
-  std::span<ScriptVariable> PushStack(size_t count) {
+  std::span<ScriptValue> PushStack(size_t count) {
     if (stack_.size() + count > stack_.capacity()) {
       throw std::runtime_error("Script stack overflow");
     }
@@ -161,16 +161,16 @@ class ScriptContext {
     return {stack_.data() + begin, count};
   }
 
-  void AssignValue(int offset, ScriptVariable value) { GetValue(offset) = value; }
+  void AssignValue(int offset, ScriptValue value) { GetValue(offset) = value; }
 
   template <typename T>
   void AssignValue(int offset, T&& new_value) {
-    ScriptVariable& value = GetValue(offset);
+    ScriptValue& value = GetValue(offset);
     value.type = GetTypeId<T>();
     value.value = new_value;
   }
 
-  void PushValue(ScriptVariable value) {
+  void PushValue(ScriptValue value) {
     if (stack_.size() >= stack_.capacity()) {
       std::runtime_error("Stack overflow!");
     }
@@ -179,7 +179,7 @@ class ScriptContext {
 
   template <typename T>
   void PushValue(T&& value) {
-    ScriptVariable script_value{GetTypeId<T>(), value};
+    ScriptValue script_value{GetTypeId<T>(), value};
     PushValue(script_value);
   }
 
@@ -198,14 +198,14 @@ class ScriptContext {
     stack_.resize(stack_.size() - count);
   }
 
-  ScriptVariable& GetValue(int offset) {
+  ScriptValue& GetValue(int offset) {
     SDL_assert(offset < 0);
     return stack_[stack_.size() + offset];
   }
 
   template <typename T>
   T GetValue(int offset) {
-    const ScriptVariable& value = GetValue(offset);
+    const ScriptValue& value = GetValue(offset);
     return std::any_cast<T>(value.value);
   }
 
@@ -226,7 +226,7 @@ class ScriptContext {
     }
   }
 
-  std::span<ScriptVariable> GetRange(int begin, int end) {
+  std::span<ScriptValue> GetRange(int begin, int end) {
     SDL_assert(begin < 0);
     SDL_assert(end <= 0);
     SDL_assert(begin <= end);
@@ -237,7 +237,7 @@ class ScriptContext {
 
  private:
   std::map<std::string, ScriptFunction, std::less<>> functions_;
-  std::vector<ScriptVariable> stack_;
+  std::vector<ScriptValue> stack_;
   std::vector<ScriptType> types_;
   std::unordered_map<std::string, ScriptTypeId> type_names_;
   std::unordered_map<std::type_index, ScriptTypeId> type_indices_;
@@ -249,7 +249,7 @@ class ScriptEnvironment {
  public:
  private:
   ScriptEnvironment* parent = nullptr;
-  std::map<std::string, ScriptVariable> variables_;
+  std::map<std::string, ScriptValue> variables_;
 };
 
 class ScriptChunk {
@@ -267,7 +267,7 @@ class ScriptChunk {
     ScriptFunctionPointer function;
   };
   struct PushConstant {
-    ScriptVariable value;
+    ScriptValue value;
   };
   struct PushStackValue {
     int position;
@@ -282,7 +282,7 @@ class ScriptChunk {
 
   ScriptChunk(const json& definition);
 
-  ScriptFunctionResult Execute(std::span<const ScriptVariable> input);
+  ScriptFunctionResult Execute(std::span<const ScriptValue> input);
   template <typename... Inputs>
   ScriptFunctionResult Execute(Inputs&&... inputs) {
     context_->PushValues(std::forward<Inputs>(inputs)...);
@@ -293,8 +293,8 @@ class ScriptChunk {
  private:
   ScriptContext* context_ = global_script_context();
   std::vector<Instruction> instructions_;
-  std::vector<ScriptVariableDefinition> inputs_;
-  std::vector<ScriptVariableDefinition> outputs_;
+  std::vector<ScriptValueDefinition> inputs_;
+  std::vector<ScriptValueDefinition> outputs_;
 
   ScriptFunctionResult Execute();
 };
@@ -389,7 +389,7 @@ void ScriptContext::RegisterFunction(std::string_view identifier, std::vector<st
                                      std::vector<std::string> outputs_names) {
   using Wrapper = FunctionWrapper<FunctionType>;
 
-  std::vector<ScriptVariableDefinition> inputs;
+  std::vector<ScriptValueDefinition> inputs;
   inputs.reserve(Wrapper::INPUT_COUNT);
 
   const auto input_type_ids = Wrapper::GetInputTypeIds(this);
@@ -397,7 +397,7 @@ void ScriptContext::RegisterFunction(std::string_view identifier, std::vector<st
     inputs.push_back({input_type_ids[i], i < inputs_names.size() ? inputs_names[i] : std::to_string(i)});
   }
 
-  std::vector<ScriptVariableDefinition> outputs;
+  std::vector<ScriptValueDefinition> outputs;
   inputs.reserve(Wrapper::OUTPUT_COUNT);
 
   const auto output_type_ids = Wrapper::GetOutputTypeIds(this);
