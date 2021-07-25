@@ -138,6 +138,14 @@ class ScriptContext {
     }
   }
 
+  template <typename T>
+  ScriptValue CreateScriptValue(T&& value) {
+    return ScriptValue {
+      .type = GetTypeId<T>(),
+      .value = value
+    };
+  }
+
   void RegisterFunction(std::string_view identifier, ScriptFunctionPointer function,
                         std::span<const ScriptValueDefinition> inputs,
                         std::span<const ScriptValueDefinition> outputs);
@@ -164,10 +172,8 @@ class ScriptContext {
   void AssignValue(int offset, ScriptValue value) { GetValue(offset) = value; }
 
   template <typename T>
-  void AssignValue(int offset, T&& new_value) {
-    ScriptValue& value = GetValue(offset);
-    value.type = GetTypeId<T>();
-    value.value = new_value;
+  void AssignValue(int offset, T&& value) {
+    AssignValue(offset, CreateScriptValue(value));
   }
 
   void PushValue(ScriptValue value) {
@@ -179,8 +185,7 @@ class ScriptContext {
 
   template <typename T>
   void PushValue(T&& value) {
-    ScriptValue script_value{GetTypeId<T>(), value};
-    PushValue(script_value);
+    PushValue(CreateScriptValue(value));
   }
 
   template <typename T, typename... Ts>
