@@ -81,6 +81,11 @@ struct ScriptParseError {
   std::string message;
 };
 
+template <typename T>
+concept Number = (std::is_integral_v<std::remove_reference_t<std::remove_cv_t<T>>> &&
+                  !std::is_same_v<std::remove_reference_t<std::remove_cv_t<T>>, bool>) ||
+                 std::is_floating_point_v<std::remove_reference_t<std::remove_cv_t<T>>>;
+
 class ScriptChunk;
 
 class ScriptContext {
@@ -136,6 +141,14 @@ class ScriptContext {
     } else {
       return &types_[type_id];
     }
+  }
+
+  template <Number T>
+  ScriptValue CreateScriptValue(T&& number) {
+    return ScriptValue {
+      .type = GetTypeId<T>(),
+      .value = static_cast<double>(number)
+    };
   }
 
   template <typename T>
@@ -208,6 +221,12 @@ class ScriptContext {
     return stack_[stack_.size() + offset];
   }
 
+  template <Number T>
+  T GetValue(int offset) {
+    const ScriptValue& value = GetValue(offset);
+    return static_cast<T>(std::any_cast<double>(value.value));
+  }
+
   template <typename T>
   T GetValue(int offset) {
     const ScriptValue& value = GetValue(offset);
@@ -215,7 +234,7 @@ class ScriptContext {
   }
 
   template <typename... T>
-  std::tuple<T...> GetValues(int begin) {
+  auto GetValues(int begin) {
     std::tuple<std::remove_cv_t<std::remove_reference_t<T>>...> values;
     FillValueTuple<0>(&values, begin);
     return values;
