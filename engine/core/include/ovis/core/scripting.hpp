@@ -216,7 +216,7 @@ class ScriptContext {
 
   template <typename... T>
   std::tuple<T...> GetValues(int begin) {
-    std::tuple<T...> values;
+    std::tuple<std::remove_cv_t<std::remove_reference_t<T>>...> values;
     FillValueTuple<0>(&values, begin);
     return values;
   }
