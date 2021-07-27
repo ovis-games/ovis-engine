@@ -1,3 +1,4 @@
+#include "ovis/core/math_operations.hpp"
 #include <middleclass.hpp>
 #include <sol/sol.hpp>
 
@@ -86,15 +87,6 @@ int LoadCoreModule(lua_State* l) {
   return core_module.push();
 }
 
-namespace {
-Vector3 MakeVector3(double x, double y, double z) {
-  return Vector3(x, y, z);
-}
-double Vector3Length(Vector3 v) {
-  return Length(v);
-}
-}
-
 bool LoadCoreModule() {
   static bool module_loaded = false;
   if (!module_loaded) {
@@ -111,8 +103,9 @@ bool LoadCoreModule() {
         "clear_scene_objects", {"scene"});
 
     global_script_context()->RegisterType<Vector3>("Vector3");
-    global_script_context()->RegisterFunction<decltype(MakeVector3), &MakeVector3>("create_vector3", {"x","y","z"});
-    global_script_context()->RegisterFunction<decltype(Vector3Length), &Vector3Length>("vector3_length", {"v"}, {"length"});
+    global_script_context()->RegisterConstructor<Vector3, float, float, float>("create_vector3", {"x", "y", "z"});
+    global_script_context()->RegisterFunction<decltype(Length<Vector3>), &Length<Vector3>>("vector3_length", {"v"},
+                                                                                           {"length"});
 
     module_loaded = true;
   }

@@ -2,12 +2,12 @@
 
 #include <any>
 #include <functional>
+#include <limits>
 #include <map>
 #include <span>
 #include <string>
 #include <typeindex>
 #include <variant>
-#include <limits>
 
 #include <SDL_assert.h>
 
@@ -124,7 +124,7 @@ class ScriptContext {
   }
 
   template <typename T>
-  ScriptTypeId GetTypeId() {
+  ScriptTypeId GetTypeId() const {
     const auto it = type_indices_.find(typeid(T));
     if (it == type_indices_.end()) {
       return SCRIPT_TYPE_UNKNOWN;
@@ -134,7 +134,7 @@ class ScriptContext {
   }
 
   template <typename T>
-  const ScriptType* GetType() {
+  const ScriptType* GetType() const {
     const ScriptTypeId type_id = GetTypeId<T>();
     if (type_id == SCRIPT_TYPE_UNKNOWN) {
       return nullptr;
@@ -145,32 +145,29 @@ class ScriptContext {
 
   template <Number T>
   ScriptValue CreateScriptValue(T&& number) {
-    return ScriptValue {
-      .type = GetTypeId<T>(),
-      .value = static_cast<double>(number)
-    };
+    return ScriptValue{.type = GetTypeId<T>(), .value = static_cast<double>(number)};
   }
 
   template <typename T>
   ScriptValue CreateScriptValue(T&& value) {
-    return ScriptValue {
-      .type = GetTypeId<T>(),
-      .value = value
-    };
+    return ScriptValue{.type = GetTypeId<T>(), .value = value};
   }
 
   void RegisterFunction(std::string_view identifier, ScriptFunctionPointer function,
-                        std::span<const ScriptValueDefinition> inputs,
-                        std::span<const ScriptValueDefinition> outputs);
+                        std::span<const ScriptValueDefinition> inputs, std::span<const ScriptValueDefinition> outputs);
 
   template <typename T, T FUNCTION>
   void RegisterFunction(std::string_view identifier, std::vector<std::string> inputs_names = {},
                         std::vector<std::string> outputs_names = {});
 
+  template <typename T, typename... ConstructorArguments>
+  void RegisterConstructor(std::string_view identifier, std::vector<std::string> input_names = {},
+                           std::string_view output_name = "");
+
   const ScriptFunction* GetFunction(std::string_view identifier);
 
   std::variant<ScriptError, std::vector<ScriptValue>> Execute(std::string_view function_identifier,
-                                                                 std::span<ScriptValue> arguments);
+                                                              std::span<ScriptValue> arguments);
 
   std::span<ScriptValue> PushStack(size_t count) {
     if (stack_.size() + count > stack_.capacity()) {
@@ -249,6 +246,31 @@ class ScriptContext {
       FillValueTuple<N + 1>(values, begin);
     }
   }
+
+  template <typename... T>
+  std::array<ScriptTypeId, sizeof...(T)> GetTypeIds() const {
+    std::array<ScriptTypeId, sizeof...(T)> input_type_ids;
+    FillInputTypeIdArray<0, T...>(input_type_ids.data());
+    return input_type_ids;
+  }
+
+  template <size_t N, typename... T>
+  void FillInputTypeIdArray(ScriptTypeId* id) const {
+    if constexpr (N == sizeof...(T)) {
+      return;
+    } else {
+      *id = GetTypeId<typename std::tuple_element_t<N, std::tuple<T...>>>();
+      FillInputTypeIdArray<N + 1, T...>(id + 1);
+    }
+  }
+
+  // static std::array<ScriptTypeId, OUTPUT_COUNT> GetOutputTypeIds(ScriptContext* context) {
+  //   std::array<ScriptTypeId, OUTPUT_COUNT> output_types_ids;
+  //   if constexpr (OUTPUT_COUNT == 1) {
+  //     output_types_ids[0] = context->GetTypeId<ReturnType>();
+  //   }
+  //   return output_types_ids;
+  // }
 
   std::span<ScriptValue> GetRange(int begin, int end) {
     SDL_assert(begin < 0);
@@ -343,19 +365,7 @@ struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
   }
 
   static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {
-    std::array<ScriptTypeId, INPUT_COUNT> input_type_ids;
-    FillInputTypeIdArray(context, input_type_ids.data());
-    return input_type_ids;
-  }
-
-  template <size_t N = 0>
-  static void FillInputTypeIdArray(ScriptContext* context, ScriptTypeId* id) {
-    if constexpr (N == sizeof...(ArgumentTypes)) {
-      return;
-    } else {
-      *id = context->GetTypeId<typename std::tuple_element<N, std::tuple<ArgumentTypes...>>::type>();
-      FillInputTypeIdArray<N + 1>(context, id + 1);
-    }
+    return context->GetTypeIds<ArgumentTypes...>();
   }
 
   static std::array<ScriptTypeId, OUTPUT_COUNT> GetOutputTypeIds(ScriptContext* context) {
@@ -384,26 +394,35 @@ struct FunctionWrapper<ReturnType (ObjectType::*)(ArgumentTypes...)> {
   }
 
   static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {
-    std::array<ScriptTypeId, INPUT_COUNT> input_type_ids;
-    FillInputTypeIdArray(context, input_type_ids.data());
-    return input_type_ids;
-  }
-
-  template <size_t N = 0>
-  static void FillInputTypeIdArray(ScriptContext* context, ScriptTypeId* id) {
-    if constexpr (N == sizeof...(ArgumentTypes) + 1) {
-      return;
-    } else {
-      *id = context->GetTypeId<typename std::tuple_element<N, std::tuple<ObjectType*, ArgumentTypes...>>::type>();
-      FillInputTypeIdArray<N + 1>(context, id + 1);
-    }
+    return context->GetTypeIds<ObjectType*, ArgumentTypes...>();
   }
 
   static std::array<ScriptTypeId, OUTPUT_COUNT> GetOutputTypeIds(ScriptContext* context) {
     std::array<ScriptTypeId, OUTPUT_COUNT> output_types_ids;
     if constexpr (OUTPUT_COUNT == 1) {
-      output_types_ids[0] = context->GetType<ReturnType>().id;
+      output_types_ids[0] = context->GetTypeId<ReturnType>();
     }
+    return output_types_ids;
+  }
+};
+
+template <typename T, typename... ConstructorArguments>
+struct ConstructorWrapper {
+  static constexpr auto INPUT_COUNT = sizeof...(ConstructorArguments);
+  static constexpr size_t OUTPUT_COUNT = 1;
+
+  static void Execute(ScriptContext* context, int input_count, int output_count) {
+    const auto inputs = context->GetValues<ConstructorArguments...>(-input_count);
+    context->AssignValue(-input_count - output_count, std::make_from_tuple<T>(std::move(inputs)));
+  }
+
+  static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {
+    return context->GetTypeIds<ConstructorArguments...>();
+  }
+
+  static std::array<ScriptTypeId, OUTPUT_COUNT> GetOutputTypeIds(ScriptContext* context) {
+    std::array<ScriptTypeId, OUTPUT_COUNT> output_types_ids;
+    output_types_ids[0] = context->GetTypeId<T>();
     return output_types_ids;
   }
 };
@@ -422,7 +441,7 @@ void ScriptContext::RegisterFunction(std::string_view identifier, std::vector<st
   }
 
   std::vector<ScriptValueDefinition> outputs;
-  inputs.reserve(Wrapper::OUTPUT_COUNT);
+  outputs.reserve(Wrapper::OUTPUT_COUNT);
 
   const auto output_type_ids = Wrapper::GetOutputTypeIds(this);
   for (size_t i = 0; i < Wrapper::OUTPUT_COUNT; ++i) {
@@ -430,6 +449,26 @@ void ScriptContext::RegisterFunction(std::string_view identifier, std::vector<st
   }
 
   RegisterFunction(identifier, &Wrapper::template Execute<FUNCTION>, inputs, outputs);
+}
+
+template <typename T, typename... ConstructorArguments>
+void ScriptContext::RegisterConstructor(std::string_view identifier, std::vector<std::string> input_names,
+                                        std::string_view output_name) {
+  using Wrapper = ConstructorWrapper<T, ConstructorArguments...>;
+
+  std::vector<ScriptValueDefinition> inputs;
+  inputs.reserve(Wrapper::INPUT_COUNT);
+
+  const auto input_type_ids = Wrapper::GetInputTypeIds(this);
+  for (size_t i = 0; i < Wrapper::INPUT_COUNT; ++i) {
+    inputs.push_back({input_type_ids[i], i < input_names.size() ? input_names[i] : std::to_string(i)});
+  }
+
+  std::vector<ScriptValueDefinition> outputs;
+  const auto output_type_ids = Wrapper::GetOutputTypeIds(this);
+  outputs.push_back({ output_type_ids[0], std::string(output_name.length() > 0 ? output_name : "0")});
+
+  RegisterFunction(identifier, &Wrapper::Execute, inputs, outputs);
 }
 
 struct ScriptReference {
