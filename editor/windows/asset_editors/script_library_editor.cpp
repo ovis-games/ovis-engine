@@ -3,6 +3,7 @@
 #include <imgui.h>
 #include <imgui_stdlib.h>
 
+#include <ovis/core/asset_library.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scripting.hpp>
 #include <ovis/imgui/imgui_start_frame_controller.hpp>
@@ -13,39 +14,10 @@ namespace editor {
 ScriptLibraryEditor::ScriptLibraryEditor(const std::string& asset_id) : AssetEditor(asset_id) {
   SetupJsonFile({{"actions", json::array()}});
 
-  docs_["add"] = {
-      {"text", "{x} + {y}"},
-  };
-  docs_["subtract"] = {
-      {"text", "{x} - {y}"},
-  };
-  docs_["multiply"] = {
-      {"text", "{x} * {y}"},
-  };
-  docs_["divide"] = {
-      {"text", "{x} / {y}"},
-  };
-  docs_["negate"] = {
-      {"text", "- {x}"},
-  };
-  docs_["is_greater"] = {
-      {"text", "Is {x} greater than {y}"},
-  };
-  docs_["print"] = {
-      {"text", "Print {value}"},
-  };
-  docs_["print_bool"] = {
-      {"text", "Print {value}"},
-  };
-  docs_["clear_scene_objects"] = {
-      {"text", "Clear objects of {scene}"},
-  };
-  docs_["create_vector3"] = {
-      {"text", "Create Vector3 with {x} , {y} and {z}"},
-  };
-  docs_["vector3_length"] = {
-      {"text", "Get length of {v}"},
-  };
+  auto core_defition = GetEngineAssetLibrary()->LoadAssetTextFile("core_definitions", "json");
+  if (core_defition.has_value()) {
+    docs_ = json::parse(*core_defition);
+  }
 }
 
 void ScriptLibraryEditor::DrawContent() {
@@ -191,7 +163,7 @@ bool ScriptLibraryEditor::DrawFunctionCall(const json::json_pointer& path) {
   if (function == nullptr) {
     ImGui::Text("Function definition not found for: %s", function_identifer.c_str());
   } else if (auto doc = docs_.find(function_identifer); doc != docs_.end()) {
-    const std::string text = doc->second["text"];
+    const std::string text = doc.value()["text"];
     std::istringstream iss(text);
     while (iss) {
       std::string word;
@@ -574,7 +546,8 @@ std::string ScriptLibraryEditor::GetReferenceName(std::string_view reference) {
     }
 
     const auto& action = editing_copy_[action_path];
-    if (action["outputs"][ref->output].is_string()) {
+    const auto& outputs = action["outputs"];
+    if (outputs.contains(ref->output) && outputs[ref->output].is_string()) {
       return action["outputs"][ref->output];
     }
   }

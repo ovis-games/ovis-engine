@@ -18,7 +18,7 @@ class ScriptLibraryEditor : public AssetEditor {
   std::optional<ScriptChunk> chunk_;
   json editing_copy_;
 
-  std::map<std::string, json> docs_;
+  json docs_;
   json::json_pointer current_edit_path_;
   bool start_editing_ = false;
   std::string highlighted_reference_;

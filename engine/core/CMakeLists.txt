@@ -45,6 +45,7 @@ target_add_assets(
   ovis-core
 
   assets/core.schema.json
+  assets/core_definitions.script_definitions.json
 )
 
 if (OVIS_BUILD_TESTS)

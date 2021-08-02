@@ -1,0 +1,53 @@
+{
+  "add": {
+    "text": "{x} + {y}"
+  },
+  "subtract": {
+    "text": "{x} - {y}"
+  },
+  "multiply": {
+    "text": "{x} * {y}"
+  },
+  "divide": {
+    "text": "{x} / {y}"
+  },
+  "negate": {
+    "text": "-{x}"
+  },
+  "is_greater": {
+    "text": "{x} > {y}"
+  },
+  "is_smaller": {
+    "text": "{x} < {y}"
+  },
+  "print": {
+    "text": "Print {value}"
+  },
+  "print_bool": {
+    "text": "Print {value}"
+  },
+  "create_vector3": {
+    "text": "Create Vector3 with {x} , {y} and {z}"
+  },
+  "vector3_add": {
+    "text": "{x} + {y}"
+  },
+  "vector3_length": {
+    "text": "Length of {vector}"
+  },
+  "is_greater": {
+    "text": "{x} > {y}"
+  },
+  "is_greater": {
+    "text": "{x} > {y}"
+  },
+  "is_greater": {
+    "text": "{x} > {y}"
+  },
+  "is_greater": {
+    "text": "{x} > {y}"
+  },
+  "is_greater": {
+    "text": "{x} > {y}"
+  }
+}
