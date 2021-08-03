@@ -38,7 +38,7 @@ class ScriptLibraryEditor : public AssetEditor {
   bool DrawInput(const json::json_pointer& path, ScriptTypeId type);
 
   void BeginNode();
-  void EndNode();
+  void EndNode(bool draw_error_border = false);
   bool DrawRenameableValueSource(const char* id, std::string* name, ScriptTypeId type, std::string_view reference);
 
   void RemoveAction(const json::json_pointer& path);

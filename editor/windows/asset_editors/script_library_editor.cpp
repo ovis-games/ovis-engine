@@ -130,7 +130,12 @@ bool ScriptLibraryEditor::DrawAction(const json::json_pointer& path, bool draggi
     } else {
       submit_changes = DrawNewAction(path);
     }
-    EndNode();
+    const int action_id = action["id"];
+    if (error_.has_value() && error_->action_id == action_id) {
+      EndNode(true);
+    } else {
+      EndNode();
+    }
     ImGui::SameLine();
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5.0f);
     ImGui::PushFont(font_awesome);
@@ -147,6 +152,10 @@ bool ScriptLibraryEditor::DrawAction(const json::json_pointer& path, bool draggi
     }
     ImGui::PopStyleColor(2);
     ImGui::PopFont();
+    if (error_.has_value() && error_->action_id == action_id) {
+      ImGui::SameLine();
+      ImGui::TextColored(ImColor(204, 0, 0, 255), "%s", error_->message.c_str());
+    }
   }
 
   ImGui::PopID();
@@ -437,7 +446,7 @@ void ScriptLibraryEditor::BeginNode() {
   ImGui::BeginGroup();
 }
 
-void ScriptLibraryEditor::EndNode() {
+void ScriptLibraryEditor::EndNode(bool draw_error_border) {
   ImGui::EndGroup();
   ImGui::SameLine();
   ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10.0f);
@@ -448,6 +457,10 @@ void ScriptLibraryEditor::EndNode() {
   ImGui::GetWindowDrawList()->ChannelsSetCurrent(0);
   ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), IM_COL32(80, 80, 80, 255),
                                             5.0f);
+  if (draw_error_border) {
+    ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), IM_COL32(204, 0, 0, 255),
+                                        5.0f);
+  }
 
   ImGui::GetWindowDrawList()->ChannelsMerge();
 }
