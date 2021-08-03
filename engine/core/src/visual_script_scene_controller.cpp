@@ -3,6 +3,7 @@
 #include <ovis/utils/log.hpp>
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/scene.hpp>
+#include <ovis/core/script_error_event.hpp>
 #include <ovis/core/visual_script_scene_controller.hpp>
 
 namespace ovis {
@@ -18,7 +19,12 @@ void VisualScriptSceneController::Play() {}
 void VisualScriptSceneController::Stop() {}
 
 void VisualScriptSceneController::Update(std::chrono::microseconds delta_time) {
-  update_->Execute(delta_time.count() / 1000000.0, this->scene());
+  const auto result = update_->Execute(delta_time.count() / 1000000.0, this->scene());
+  if (result.error) {
+    LogE("Error: {}", result.error->message);
+    ScriptErrorEvent error_event(name(), *result.error);
+    PostGlobalEvent(&error_event);
+  }
 }
 
 void VisualScriptSceneController::ProcessEvent(Event* event) {}

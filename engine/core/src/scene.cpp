@@ -18,13 +18,16 @@ namespace ovis {
 
 const json Scene::schema_ = {{"$ref", "engine#/$defs/scene"}};
 
-Scene::Scene() {}
+Scene::Scene() {
+  event_handler_index_ = RegisterGlobalEventHandler([this](Event* event) { ProcessEvent(event); });
+}
 
 Scene::~Scene() {
   // Explicitly clear owning containers because the destructor of their objects may need to still access the scene.
   ClearObjects();
   controllers_.clear();
   removed_controllers_.clear();
+  DeregisterGlobalEventHandler(event_handler_index_);
 }
 
 SceneController* Scene::AddController(std::unique_ptr<SceneController> scene_controller) {
