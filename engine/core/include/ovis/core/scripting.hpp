@@ -19,7 +19,7 @@ namespace ovis {
 class ScriptContext;
 
 using ScriptTypeId = size_t;
-constexpr ScriptTypeId SCRIPT_TYPE_UNKNOWN = std::numeric_limits<ScriptTypeId>::max();
+constexpr ScriptTypeId SCRIPT_TYPE_UNKNOWN = 0;
 
 struct ScriptType {
   ScriptType(ScriptTypeId id, std::string_view name, bool reference_type)
@@ -40,9 +40,14 @@ struct ScriptValue {
   std::any value;
 };
 
+struct ScriptError {
+  int action_id;
+  std::string message;
+};
+
 using ScriptFunctionParameters = std::vector<ScriptValue>;
 
-using ScriptFunctionPointer = void (*)(ScriptContext* context, int input_count, int output_count);
+using ScriptFunctionPointer = std::optional<ScriptError> (*)(ScriptContext* context, int input_count, int output_count);
 
 struct ScriptFunction {
   ScriptFunctionPointer function;
@@ -68,8 +73,6 @@ struct ScriptFunction {
     return -1;
   }
 };
-
-struct ScriptError {};
 
 struct ScriptFunctionResult {
   std::vector<ScriptValue> output_values;
@@ -105,6 +108,8 @@ class ScriptContext {
     return &types_.back();
   }
 
+  const ScriptType* GetType(ScriptTypeId type_id) const { return &types_[type_id]; }
+
   ScriptTypeId GetTypeId(std::string_view name) {
     const auto it = type_names_.find(std::string(name));
     if (it == type_names_.end()) {
@@ -115,12 +120,7 @@ class ScriptContext {
   }
 
   const ScriptType* GetType(std::string_view name) {
-    const ScriptTypeId type_id = GetTypeId(name);
-    if (type_id == SCRIPT_TYPE_UNKNOWN) {
-      return nullptr;
-    } else {
-      return &types_[type_id];
-    }
+    return GetType(GetTypeId(name));
   }
 
   template <typename T>
@@ -135,12 +135,7 @@ class ScriptContext {
 
   template <typename T>
   const ScriptType* GetType() const {
-    const ScriptTypeId type_id = GetTypeId<T>();
-    if (type_id == SCRIPT_TYPE_UNKNOWN) {
-      return nullptr;
-    } else {
-      return &types_[type_id];
-    }
+    return GetType(GetTypeId<T>());
   }
 
   template <Number T>
@@ -219,31 +214,63 @@ class ScriptContext {
   }
 
   template <Number T>
-  T GetValue(int offset) {
+  std::variant<T, ScriptError> GetValue(int offset) {
     const ScriptValue& value = GetValue(offset);
-    return static_cast<T>(std::any_cast<double>(value.value));
+    const ScriptTypeId target_type_id = GetTypeId<T>();
+    if (target_type_id == value.type) [[likely]] {
+      assert(value.value.type() == typeid(double));
+      return static_cast<T>(std::any_cast<double>(value.value));
+    } else {
+      return ScriptError {
+        .action_id = -1,
+        .message = fmt::format("Expected {}, got {}", GetType<T>()->name, GetType(value.type)->name)
+      };
+    }
   }
 
   template <typename T>
-  T GetValue(int offset) {
+  std::variant<T, ScriptError> GetValue(int offset) {
     const ScriptValue& value = GetValue(offset);
-    return std::any_cast<T>(value.value);
+    const ScriptTypeId target_type_id = GetTypeId<T>();
+    if (target_type_id == value.type) [[likely]] {
+      assert(value.value.type() == typeid(T));
+      return std::any_cast<T>(value.value);
+    } else {
+      return ScriptError {
+        .action_id = -1,
+        .message = fmt::format("Expected {}, got {}", GetType<T>()->name, GetType(value.type)->name)
+      };
+    }
   }
 
   template <typename... T>
-  auto GetValues(int begin) {
+  std::variant<std::tuple<std::remove_cv_t<std::remove_reference_t<T>>...>, ScriptError> GetValues(int begin) {
     std::tuple<std::remove_cv_t<std::remove_reference_t<T>>...> values;
-    FillValueTuple<0>(&values, begin);
-    return values;
+
+    ScriptError error;
+    if (FillValueTuple<0>(&values, begin, &error)) [[likely]] {
+      return values;
+    } else {
+      return error;
+    }
   }
 
   template <int N, typename... T>
-  void FillValueTuple(std::tuple<T...>* values, int begin) {
+  bool FillValueTuple(std::tuple<T...>* values, int begin, ScriptError* error) {
+    SDL_assert(error != nullptr);
+
     if constexpr (N == sizeof...(T)) {
-      return;
+      return true;
     } else {
-      std::get<N>(*values) = GetValue<std::tuple_element_t<N, std::tuple<T...>>>(begin + N);
-      FillValueTuple<N + 1>(values, begin);
+      using Type = std::tuple_element_t<N, std::tuple<T...>>;
+      auto value = GetValue<Type>(begin + N);
+      if (std::holds_alternative<Type>(value)) [[likely]] {
+        std::get<N>(*values) = std::move(std::get<Type>(value));
+        return FillValueTuple<N + 1>(values, begin, error);
+      } else {
+        *error = std::get<ScriptError>(value);
+        return false;
+      }
     }
   }
 
@@ -339,6 +366,7 @@ class ScriptChunk {
  private:
   ScriptContext* context_ = global_script_context();
   std::vector<Instruction> instructions_;
+  std::vector<int> instruction_actions_;
   std::vector<ScriptValueDefinition> inputs_;
   std::vector<ScriptValueDefinition> outputs_;
 
@@ -355,13 +383,19 @@ struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
   static constexpr size_t OUTPUT_COUNT = std::is_same_v<ReturnType, void> ? 0 : 1;
 
   template <FunctionType FUNCTION>
-  static void Execute(ScriptContext* context, int input_count, int output_count) {
+  static std::optional<ScriptError> Execute(ScriptContext* context, int input_count, int output_count) {
     const auto inputs = context->GetValues<ArgumentTypes...>(-input_count);
-    if constexpr (OUTPUT_COUNT == 0) {
-      std::apply(FUNCTION, inputs);
-    } else {
-      context->AssignValue(-input_count - output_count, std::apply(FUNCTION, inputs));
+    if (std::holds_alternative<ScriptError>(inputs)) [[unlikely]] {
+      return std::get<ScriptError>(inputs);
     }
+
+    if constexpr (OUTPUT_COUNT == 0) {
+      std::apply(FUNCTION, std::get<0>(inputs));
+    } else {
+      context->AssignValue(-input_count - output_count, std::apply(FUNCTION, std::get<0>(inputs)));
+    }
+
+    return {};
   }
 
   static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {
@@ -384,13 +418,19 @@ struct FunctionWrapper<ReturnType (ObjectType::*)(ArgumentTypes...)> {
   static constexpr size_t OUTPUT_COUNT = std::is_same_v<ReturnType, void> ? 0 : 1;
 
   template <FunctionType FUNCTION>
-  static void Execute(ScriptContext* context, int input_count, int output_count) {
+  static std::optional<ScriptError> Execute(ScriptContext* context, int input_count, int output_count) {
     const auto inputs = context->GetValues<ObjectType*, ArgumentTypes...>(-input_count);
-    if constexpr (OUTPUT_COUNT == 0) {
-      std::apply(FUNCTION, inputs);
-    } else {
-      context->AssignValue(-input_count - output_count, std::apply(FUNCTION, inputs));
+    if (std::holds_alternative<ScriptError>(inputs)) [[unlikely]] {
+      return std::get<ScriptError>(inputs);
     }
+
+    if constexpr (OUTPUT_COUNT == 0) {
+      std::apply(FUNCTION, std::get<0>(inputs));
+    } else {
+      context->AssignValue(-input_count - output_count, std::apply(FUNCTION, std::get<0>(inputs)));
+    }
+
+    return {};
   }
 
   static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {
@@ -411,9 +451,13 @@ struct ConstructorWrapper {
   static constexpr auto INPUT_COUNT = sizeof...(ConstructorArguments);
   static constexpr size_t OUTPUT_COUNT = 1;
 
-  static void Execute(ScriptContext* context, int input_count, int output_count) {
+  static std::optional<ScriptError> Execute(ScriptContext* context, int input_count, int output_count) {
     const auto inputs = context->GetValues<ConstructorArguments...>(-input_count);
-    context->AssignValue(-input_count - output_count, std::make_from_tuple<T>(std::move(inputs)));
+    if (std::holds_alternative<ScriptError>(inputs)) [[unlikely]] {
+      return std::get<ScriptError>(inputs);
+    }
+    context->AssignValue(-input_count - output_count, std::make_from_tuple<T>(std::move(std::get<0>(inputs))));
+    return {};
   }
 
   static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {

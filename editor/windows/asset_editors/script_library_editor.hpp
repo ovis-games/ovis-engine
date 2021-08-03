@@ -13,6 +13,7 @@ class ScriptLibraryEditor : public AssetEditor {
 
   void DrawContent() override;
   void Save() override { SaveFile("json", GetCurrentJsonFileState().dump()); }
+  void SetError(ScriptError error) { error_ = std::move(error); }
 
  private:
   std::optional<ScriptChunk> chunk_;
@@ -24,6 +25,7 @@ class ScriptLibraryEditor : public AssetEditor {
   std::string highlighted_reference_;
   std::string reference_to_highlight_;
   json::json_pointer dragged_action_path_;
+  std::optional<ScriptError> error_;
 
   bool DrawEntrypoint();
   bool DrawActions(const json::json_pointer& path);

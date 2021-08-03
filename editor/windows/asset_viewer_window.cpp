@@ -18,6 +18,7 @@
 #include <ovis/utils/log.hpp>
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/lua.hpp>
+#include <ovis/core/script_error_event.hpp>
 
 namespace ovis {
 namespace editor {
@@ -27,6 +28,7 @@ AssetViewerWindow::AssetViewerWindow() : ImGuiWindow("Assets"), current_path_("/
   UpdateBefore("Overlay");
 
   SubscribeToEvent(LuaErrorEvent::TYPE);
+  SubscribeToEvent("ScriptErrorEvent");
 }
 
 void AssetViewerWindow::DrawContent() {
@@ -96,13 +98,17 @@ void AssetViewerWindow::DrawContent() {
 }
 
 void AssetViewerWindow::ProcessEvent(Event* event) {
-  if (event->type() == LuaErrorEvent::TYPE) {
+ if (event->type() == LuaErrorEvent::TYPE) {
     auto* lua_error_event = down_cast<LuaErrorEvent*>(event);
     std::vector<LuaError> errors = ParseLuaErrorMessage(lua_error_event->message());
     if (errors.size() > 0) {
       ScriptEditor* script_editor = down_cast<ScriptEditor*>(OpenAssetEditor(errors[0].asset_id));
       script_editor->SetErrors(errors);
     }
+  } else if (event->type() == "ScriptErrorEvent") {
+    auto* script_error_event = down_cast<ScriptErrorEvent*>(event);
+    VisualScriptEditor* script_editor = down_cast<VisualScriptEditor*>(OpenAssetEditor(std::string(script_error_event->asset_id())));
+    script_editor->SetError(script_error_event->error());
   }
 }
 

@@ -42,6 +42,7 @@ ScriptContext* global_script_context() {
 #define OVIS_REGISTER_FUNCTION_WITH_NAME(func, identifier) RegisterFunction<decltype(func), func>(identifier);
 
 ScriptContext::ScriptContext() {
+  types_.push_back(ScriptType(0, "Unknown", false));
   RegisterType<double>("Number");
   RegisterType<bool>("Boolean");
   RegisterType<std::string>("String");
@@ -99,6 +100,7 @@ struct Scope {
   const Scope* parent;
   std::map<std::string, int, std::less<>> stack_variable_offsets;
   std::vector<ScriptChunk::Instruction> instructions;
+  std::vector<int> instruction_actions;
 
   std::optional<int> GetStackVariableOffset(std::string_view reference) const {
     const auto offset = stack_variable_offsets.find(reference);
@@ -147,6 +149,7 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
 
   for (const auto& action : actions) {
     const std::string type = action["type"];
+    const int action_id = action["id"]; 
     if (type == "function_call") {
       auto function = context->GetFunction(static_cast<std::string>(action["function"]));
       if (!function) {
@@ -156,13 +159,13 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
 
       for (const auto& output : function->outputs) {
         scope.instructions.push_back(Instruction{InstructionType::PUSH_CONSTANT, PushConstant{}});
+        scope.instruction_actions.push_back(action_id);
         if (scope.stack_variable_offsets.contains(
                 fmt::format("${}:{}", static_cast<int>(action["id"]), output.identifier))) {
           LogE("Duplicate action id: {}", static_cast<size_t>(action["id"]));
           return {};
         }
-        scope.stack_variable_offsets[fmt::format("${}:{}", static_cast<int>(action["id"]), output.identifier)] =
-            current_stack_offset;
+        scope.stack_variable_offsets[fmt::format("${}:{}", action_id, output.identifier)] = current_stack_offset;
         ++current_stack_offset;
       }
 
@@ -172,6 +175,7 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
           LogE("No value for input `{}`", input.identifier);
           return {};
         }
+        scope.instruction_actions.push_back(action_id);
       }
 
       // TODO: check input and output count before cast
@@ -179,6 +183,7 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
           Instruction{InstructionType::FUNCTION_CALL,
                       FunctionCall{static_cast<uint8_t>(function->inputs.size()),
                                    static_cast<uint8_t>(function->outputs.size()), function->function}});
+      scope.instruction_actions.push_back(action_id);
       current_stack_offset -= function->inputs.size();
     } else if (type == "if") {
       const auto if_scope = ParseScope(context, action["actions"], &scope);
@@ -188,12 +193,16 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
       if (!push_value(action["condition"], &scope)) {
         return {};
       }
+      scope.instruction_actions.push_back(action_id);
       scope.instructions.push_back(Instruction{InstructionType::JUMP_IF_FALSE,
                                                ConditionalJump{static_cast<int>(if_scope->instructions.size() + 1)}});
+      scope.instruction_actions.push_back(action_id);
       --current_stack_offset;
 
       scope.instructions.insert(scope.instructions.end(), if_scope->instructions.begin(), if_scope->instructions.end());
+      scope.instruction_actions.insert(scope.instruction_actions.end(), if_scope->instruction_actions.begin(), if_scope->instruction_actions.end());
     }
+    assert(scope.instructions.size() == scope.instruction_actions.size());
   }
 
   return scope;
@@ -230,13 +239,15 @@ ScriptChunk::ScriptChunk(const json& serialized_chunk) {
   auto scope = ParseScope(context_, actions, &function_scope);
   if (scope.has_value()) {
     instructions_ = scope->instructions;
+    instruction_actions_ = scope->instruction_actions;
   }
 }
 
 ScriptFunctionResult ScriptChunk::Execute(std::span<const ScriptValue> input_values) {
   if (input_values.size() != inputs_.size()) {
     LogE("Input count does not match");
-    return {};
+    return {.error =
+                ScriptError{.message = fmt::format("Expected {} inputs, got {}", inputs_.size(), input_values.size())}};
   }
 
   for (const auto& value : input_values) {
@@ -254,7 +265,11 @@ ScriptFunctionResult ScriptChunk::Execute() {
     switch (instruction.type) {
       case InstructionType::FUNCTION_CALL: {
         const auto& function_call = std::get<FunctionCall>(instruction.data);
-        function_call.function(context_, function_call.input_count, function_call.output_count);
+        auto result = function_call.function(context_, function_call.input_count, function_call.output_count);
+        if (result.has_value()) [[unlikely]] {
+          return {.error =
+                      ScriptError{.action_id = instruction_actions_[instruction_pointer], .message = result->message}};
+        }
         context_->PopStack(function_call.input_count);
         ++instruction_pointer;
         break;
@@ -276,23 +291,45 @@ ScriptFunctionResult ScriptChunk::Execute() {
 
       case InstructionType::JUMP_IF_TRUE: {
         const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
-        if (context_->GetValue<bool>(-1)) {
-          instruction_pointer += conditional_jump.instruction_offset;
+        const auto value_or_error = context_->GetValue<bool>(-1);
+        if (std::holds_alternative<bool>(value_or_error)) [[likely]] {
+          if (std::get<bool>(value_or_error)) {
+            instruction_pointer += conditional_jump.instruction_offset;
+          } else {
+            ++instruction_pointer;
+          }
+          context_->PopStack(1);
         } else {
-          ++instruction_pointer;
+          const auto error = std::get<ScriptError>(value_or_error);
+          return ScriptFunctionResult {
+            .error = ScriptError {
+              .action_id = instruction_actions_[instruction_pointer],
+              .message = error.message
+            }
+          };
         }
-        context_->PopStack(1);
         break;
       }
 
       case InstructionType::JUMP_IF_FALSE: {
         const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
-        if (!context_->GetValue<bool>(-1)) {
-          instruction_pointer += conditional_jump.instruction_offset;
+        const auto value_or_error = context_->GetValue<bool>(-1);
+        if (std::holds_alternative<bool>(value_or_error)) [[likely]] {
+          if (!std::get<bool>(value_or_error)) {
+            instruction_pointer += conditional_jump.instruction_offset;
+          } else {
+            ++instruction_pointer;
+          }
+          context_->PopStack(1);
         } else {
-          ++instruction_pointer;
+          const auto error = std::get<ScriptError>(value_or_error);
+          return ScriptFunctionResult {
+            .error = ScriptError {
+              .action_id = instruction_actions_[instruction_pointer],
+              .message = error.message
+            }
+          };
         }
-        context_->PopStack(1);
         break;
       }
     };

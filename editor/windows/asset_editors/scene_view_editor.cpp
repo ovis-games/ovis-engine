@@ -58,6 +58,7 @@ SceneViewEditor::SceneViewEditor(const std::string& scene_asset, bool allow_addi
   AddEditorController<Physics2DShapeController>();
 
   SubscribeToEvent(LuaErrorEvent::TYPE);
+  SubscribeToEvent("ScriptErrorEvent");
   CreateSceneViewports({1, 1});
 }
 
@@ -82,6 +83,10 @@ void SceneViewEditor::ProcessEvent(Event* event) {
   AssetEditor::ProcessEvent(event);
   if (event->is_propagating()) {
     if (event->type() == LuaErrorEvent::TYPE) {
+      if (run_state() == RunState::RUNNING) {
+        ChangeRunState(RunState::PAUSED);
+      }
+    } else if (event->type() == "ScriptErrorEvent") {
       if (run_state() == RunState::RUNNING) {
         ChangeRunState(RunState::PAUSED);
       }
