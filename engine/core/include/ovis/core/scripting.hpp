@@ -277,7 +277,9 @@ class ScriptContext {
         std::get<N>(*values) = std::move(std::get<Type>(value));
         return FillValueTuple<N + 1>(values, begin, error);
       } else {
-        *error = std::get<ScriptError>(value);
+        const auto& inner_error = std::get<ScriptError>(value);
+        error->action_id = inner_error.action_id;
+        error->message = fmt::format("{}: {}", N + 1, inner_error.message);
         return false;
       }
     }
@@ -395,7 +397,9 @@ struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
   static std::optional<ScriptError> Execute(ScriptContext* context, int input_count, int output_count) {
     const auto inputs = context->GetValues<ArgumentTypes...>(-input_count);
     if (std::holds_alternative<ScriptError>(inputs)) [[unlikely]] {
-      return std::get<ScriptError>(inputs);
+      ScriptError error = std::get<ScriptError>(inputs);
+      error.message = fmt::format("Parameter {}", error.message);
+      return error;
     }
 
     if constexpr (OUTPUT_COUNT == 0) {
@@ -430,7 +434,9 @@ struct FunctionWrapper<ReturnType (ObjectType::*)(ArgumentTypes...)> {
   static std::optional<ScriptError> Execute(ScriptContext* context, int input_count, int output_count) {
     const auto inputs = context->GetValues<ObjectType*, ArgumentTypes...>(-input_count);
     if (std::holds_alternative<ScriptError>(inputs)) [[unlikely]] {
-      return std::get<ScriptError>(inputs);
+      ScriptError error = std::get<ScriptError>(inputs);
+      error.message = fmt::format("Parameter {}", error.message);
+      return error;
     }
 
     if constexpr (OUTPUT_COUNT == 0) {
@@ -463,7 +469,9 @@ struct ConstructorWrapper {
   static std::optional<ScriptError> Execute(ScriptContext* context, int input_count, int output_count) {
     const auto inputs = context->GetValues<ConstructorArguments...>(-input_count);
     if (std::holds_alternative<ScriptError>(inputs)) [[unlikely]] {
-      return std::get<ScriptError>(inputs);
+      ScriptError error = std::get<ScriptError>(inputs);
+      error.message = fmt::format("Parameter {}", error.message);
+      return error;
     }
     context->AssignValue(-input_count - output_count, std::make_from_tuple<T>(std::move(std::get<0>(inputs))));
     return {};
