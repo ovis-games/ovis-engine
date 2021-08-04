@@ -122,6 +122,15 @@ class ScriptContext {
   const ScriptType* GetType(std::string_view name) {
     return GetType(GetTypeId(name));
   }
+  template <Number T>
+  ScriptTypeId GetTypeId() const {
+    const auto it = type_indices_.find(typeid(double));
+    if (it == type_indices_.end()) {
+      return SCRIPT_TYPE_UNKNOWN;
+    } else {
+      return it->second;
+    }
+  }
 
   template <typename T>
   ScriptTypeId GetTypeId() const {

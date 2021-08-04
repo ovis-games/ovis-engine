@@ -137,7 +137,7 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
                         PushStackValue{*scope->GetStackVariableOffset(definition_string) - current_stack_offset}});
       } else {
         scope->instructions.push_back(Instruction{
-            InstructionType::PUSH_CONSTANT, PushConstant{ScriptValue{{}, double(std::stod(definition_string))}}});
+            InstructionType::PUSH_CONSTANT, PushConstant{ScriptValue{context->GetTypeId<double>(), double(std::stod(definition_string))}}});
       }
     } else {
       scope->instructions.push_back(Instruction{InstructionType::PUSH_CONSTANT, PushConstant{}});
