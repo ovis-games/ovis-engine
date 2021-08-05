@@ -1,6 +1,7 @@
 #include "script_library_editor.hpp"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
 #include <ovis/core/asset_library.hpp>
@@ -172,7 +173,7 @@ bool ScriptLibraryEditor::DrawFunctionCall(const json::json_pointer& path) {
   if (function == nullptr) {
     ImGui::Text("Function definition not found for: %s", function_identifer.c_str());
   } else if (auto doc = docs_.find(function_identifer); doc != docs_.end()) {
-    const std::string text = doc.value()["text"];
+    const std::string& text = doc.value()["text"];
     std::istringstream iss(text);
     while (iss) {
       std::string word;
@@ -267,49 +268,79 @@ bool ScriptLibraryEditor::DrawIfStatement(const json::json_pointer& path) {
 }
 
 bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
+  bool submit_changes = false;
+
   std::string text;
   json& action = editing_copy_[path];
   const std::string label = fmt::format("###{}", path.to_string());
-  if (ImGui::InputText(label.c_str(), &text, ImGuiInputTextFlags_EnterReturnsTrue)) {
-    if (text == "if") {
-      action["type"] = "if";
-      action["condition"] = "";
-      action["actions"] = json::array();
-    } else {
-      auto function = global_script_context()->GetFunction(text);
-      if (function == nullptr) {
-        DoOnceAfterUpdate([this, path]() {
-          RemoveAction(path);
-          SubmitJsonFile(editing_copy_);
-        });
-        return false;
-      }
 
-      action["type"] = "function_call";
-      action["function"] = text;
-      action["inputs"] = json::object();
-      for (const auto& input : function->inputs) {
-        action["inputs"][input.identifier] = json{};
-      }
-      action["outputs"] = json::object();
-      for (const auto& output : function->outputs) {
-        action["outputs"][output.identifier] = json{};
-      }
-    }
-
-    return true;
+  // TODO: See implementation at https://gist.github.com/harold-b/7dcc02557c2b15d76c61fde1186e31d0
+  if (ImGui::InputText(label.c_str(), &text)) {
   }
+
+  const auto was_active_last_frame_id = ImGui::GetID("was_active_last_frame");
+  const auto storage = ImGui::GetStateStorage();
+  const bool was_active_last_frame = storage->GetBool(was_active_last_frame_id, true);
+
+  // if (!was_active_last_frame) {
+  //   DoOnceAfterUpdate([this, path]() {
+  //     RemoveAction(path);
+  //     SubmitJsonFile(editing_copy_);
+  //   });
+  // }
+
+
+  bool is_active;
   if (start_editing_) {
     ImGui::SetKeyboardFocusHere();
     start_editing_ = false;
-  } else if (!ImGui::IsItemActive()) {
-    DoOnceAfterUpdate([this, path]() {
-      RemoveAction(path);
-      SubmitJsonFile(editing_copy_);
-    });
+    is_active = true;
+  } else {
+    is_active = ImGui::IsItemActive() || ImGui::IsItemDeactivated();
   }
 
-  return false;
+  if (is_active || was_active_last_frame) {
+    ImGui::SetNextWindowPos({ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y});
+    ImGui::SetNextWindowSize({ImGui::GetItemRectSize().x, 0});
+    if (ImGui::Begin("##autocomplete", nullptr,
+                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+                         ImGuiWindowFlags_Tooltip)) {
+      ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
+      is_active = is_active || ImGui::IsWindowFocused();
+
+      for (const auto& function : docs_.items()) {
+        const auto& identifier = function.key();
+        const std::string& function_text = function.value()["text"];
+
+        if (!std::strstr(identifier.c_str(), text.c_str()) && !std::strstr(function_text.c_str(), text.c_str())) {
+          continue;
+        }
+
+        if (ImGui::Selectable(function_text.c_str())) {
+          LogD("click");
+          action["type"] = "function_call";
+          action["function"] = identifier;
+          action["inputs"] = json::object();
+
+          auto function = global_script_context()->GetFunction(identifier);
+          for (const auto& input : function->inputs) {
+            action["inputs"][input.identifier] = json{};
+          }
+          action["outputs"] = json::object();
+          for (const auto& output : function->outputs) {
+            action["outputs"][output.identifier] = json{};
+          }
+
+          submit_changes = true;
+        }
+      }
+    }
+    ImGui::End();
+  }
+
+  storage->SetBool(was_active_last_frame_id, is_active);
+
+  return submit_changes;
 }
 
 void ScriptLibraryEditor::DrawSpace(const json::json_pointer& path) {
