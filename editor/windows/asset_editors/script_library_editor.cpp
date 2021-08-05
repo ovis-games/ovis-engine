@@ -12,6 +12,58 @@
 namespace ovis {
 namespace editor {
 
+namespace {
+
+template <typename T>
+void ParseFunctionText(const ScriptFunction* function, std::string_view function_text, T&& callback) {
+  assert(function != nullptr);
+
+  std::string_view remaining = function_text;
+  bool inside_brace = false;
+  do {
+    if (!inside_brace) {
+      const auto brace_pos = remaining.find('(');
+      const auto text_before_brace = remaining.substr(0, brace_pos);
+      callback(text_before_brace);
+      if (brace_pos != std::string_view::npos) {
+        inside_brace = true;
+        remaining = remaining.substr(brace_pos + 1);
+      } else {
+        remaining = "";
+      }
+    } else {
+      const auto brace_pos = remaining.find(')');
+      const auto input_identifier = remaining.substr(0, brace_pos);
+
+      std::optional<ScriptTypeId> type;
+      for (const auto& input : function->inputs) {
+        if (input.identifier == input_identifier) {
+          type = input.type;
+          break;
+        }
+      }
+      if (!type) {
+        LogE("Unknown input {} for function text {}", input_identifier, function_text);
+      } else {
+        callback(ScriptValueDefinition{
+            .type = *type,
+            .identifier = std::string(input_identifier),
+        });
+      }
+
+      if (brace_pos != std::string_view::npos) {
+        inside_brace = false;
+        remaining = remaining.substr(brace_pos + 1);
+      } else {
+        LogE("Invalid function text: {}", function_text);
+        remaining = "";
+      }
+    }
+  } while (remaining.size() > 0);
+}
+
+}
+
 ScriptLibraryEditor::ScriptLibraryEditor(const std::string& asset_id) : AssetEditor(asset_id) {
   SetupJsonFile({{"actions", json::array()}});
 
@@ -174,22 +226,19 @@ bool ScriptLibraryEditor::DrawFunctionCall(const json::json_pointer& path) {
     ImGui::Text("Function definition not found for: %s", function_identifer.c_str());
   } else if (auto doc = docs_.find(function_identifer); doc != docs_.end()) {
     const std::string& text = doc.value()["text"];
-    std::istringstream iss(text);
-    while (iss) {
-      std::string word;
-      iss >> word;
 
-      if (word.front() == '{' && word.back() == '}') {
-        const std::string input_identifier = word.substr(1, word.length() - 2);
-        const auto input_path = path / "inputs" / input_identifier;
-        if (DrawInput(input_path, {})) {
+    ParseFunctionText(function, text, [&, this](std::variant<std::string_view, ScriptValueDefinition> text_or_input) {
+      if (std::holds_alternative<std::string_view>(text_or_input)) {
+        const std::string_view text = std::get<0>(text_or_input);
+        ImGui::TextUnformatted(text.begin(), text.end());
+      } else if (std::holds_alternative<ScriptValueDefinition>(text_or_input)) {
+        const auto input = std::get<1>(text_or_input);
+        if (DrawInput(path / "inputs" / input.identifier, input.type)) {
           submit_changes = true;
         }
-      } else {
-        ImGui::Text("%s", word.c_str());
       }
       ImGui::SameLine();
-    }
+    });
 
     if (function->outputs.size() == 0) {
       ImGui::Text(".");
@@ -289,7 +338,6 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
   //   });
   // }
 
-
   bool is_active;
   if (start_editing_) {
     ImGui::SetKeyboardFocusHere();
@@ -308,21 +356,42 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
       ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
       is_active = is_active || ImGui::IsWindowFocused();
 
-      for (const auto& function : docs_.items()) {
-        const auto& identifier = function.key();
-        const std::string& function_text = function.value()["text"];
+      const bool alt_down = ImGui::GetIO().KeyAlt;
 
-        if (!std::strstr(identifier.c_str(), text.c_str()) && !std::strstr(function_text.c_str(), text.c_str())) {
+      for (const auto& function_documentation : docs_.items()) {
+        const auto& function_identifier = function_documentation.key();
+        const std::string& function_text = function_documentation.value()["text"];
+
+        if (!std::strstr(function_identifier.c_str(), text.c_str()) && !std::strstr(function_text.c_str(), text.c_str())) {
           continue;
         }
 
-        if (ImGui::Selectable(function_text.c_str())) {
+        auto function = global_script_context()->GetFunction(function_identifier);
+        if (function == nullptr) {
+          continue;
+        }
+
+        std::string final_text;
+        ParseFunctionText(function, function_text, [&, this](std::variant<std::string_view, ScriptValueDefinition> text_or_input) {
+          if (std::holds_alternative<std::string_view>(text_or_input)) {
+            const std::string_view text = std::get<0>(text_or_input);
+            final_text += text;
+          } else if (std::holds_alternative<ScriptValueDefinition>(text_or_input)) {
+            const auto input = std::get<1>(text_or_input);
+            if (alt_down) {
+              final_text += fmt::format("{}[{}]", input.identifier, global_script_context()->GetType(input.type)->name);
+            } else {
+              final_text += input.identifier;
+            }
+          }
+        });
+
+        if (ImGui::Selectable(final_text.c_str())) {
           LogD("click");
           action["type"] = "function_call";
-          action["function"] = identifier;
+          action["function"] = function_identifier;
           action["inputs"] = json::object();
 
-          auto function = global_script_context()->GetFunction(identifier);
           for (const auto& input : function->inputs) {
             action["inputs"][input.identifier] = json{};
           }

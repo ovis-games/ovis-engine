@@ -1,53 +1,53 @@
 {
   "add": {
-    "text": "{x} + {y}"
+    "text": "(x) + (y)"
   },
   "subtract": {
-    "text": "{x} - {y}"
+    "text": "(x) - (y)"
   },
   "multiply": {
-    "text": "{x} * {y}"
+    "text": "(x) * (y)"
   },
   "divide": {
-    "text": "{x} / {y}"
+    "text": "(x) / (y)"
   },
   "negate": {
-    "text": "-{x}"
+    "text": "-(x)"
   },
   "is_greater": {
-    "text": "{x} > {y}"
+    "text": "(x) > (y)"
   },
   "is_smaller": {
-    "text": "{x} < {y}"
+    "text": "(x) < (y)"
   },
   "print": {
-    "text": "Print {value}"
+    "text": "Print (value)"
   },
   "print_bool": {
-    "text": "Print {value}"
+    "text": "Print (value)"
   },
   "create_vector3": {
-    "text": "Create Vector3 with {x} , {y} and {z}"
+    "text": "Create Vector3 with (x) , (y) and (z)"
   },
   "vector3_add": {
-    "text": "{x} + {y}"
+    "text": "(first vector) + (second vector)"
   },
   "vector3_length": {
-    "text": "Length of {vector}"
+    "text": "Length of (vector)"
   },
   "is_greater": {
-    "text": "{x} > {y}"
+    "text": "(x) > (y)"
   },
   "is_greater": {
-    "text": "{x} > {y}"
+    "text": "(x) > (y)"
   },
   "is_greater": {
-    "text": "{x} > {y}"
+    "text": "(x) > (y)"
   },
   "is_greater": {
-    "text": "{x} > {y}"
+    "text": "(x) > (y)"
   },
   "is_greater": {
-    "text": "{x} > {y}"
+    "text": "(x) > (y)"
   }
 }
