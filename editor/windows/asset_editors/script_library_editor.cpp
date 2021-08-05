@@ -331,13 +331,6 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
   const auto storage = ImGui::GetStateStorage();
   const bool was_active_last_frame = storage->GetBool(was_active_last_frame_id, true);
 
-  // if (!was_active_last_frame) {
-  //   DoOnceAfterUpdate([this, path]() {
-  //     RemoveAction(path);
-  //     SubmitJsonFile(editing_copy_);
-  //   });
-  // }
-
   bool is_active;
   if (start_editing_) {
     ImGui::SetKeyboardFocusHere();
