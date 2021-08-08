@@ -182,6 +182,9 @@ bool ScriptLibraryEditor::DrawAction(const json::json_pointer& path, bool draggi
       submit_changes = DrawIfStatement(path);
     } else {
       submit_changes = DrawNewAction(path);
+      if (submit_changes) {
+        new_action_text_ = "";
+      }
     }
     const int action_id = action["id"];
     if (error_.has_value() && error_->action_id == action_id) {
@@ -319,17 +322,18 @@ bool ScriptLibraryEditor::DrawIfStatement(const json::json_pointer& path) {
 bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
   bool submit_changes = false;
 
-  std::string text;
   json& action = editing_copy_[path];
   const std::string label = fmt::format("###{}", path.to_string());
+  const auto storage = ImGui::GetStateStorage();
 
   // TODO: See implementation at https://gist.github.com/harold-b/7dcc02557c2b15d76c61fde1186e31d0
-  if (ImGui::InputText(label.c_str(), &text)) {
+  if (ImGui::InputText(label.c_str(), &new_action_text_)) {
   }
 
   const auto was_active_last_frame_id = ImGui::GetID("was_active_last_frame");
-  const auto storage = ImGui::GetStateStorage();
+  // const auto restore_focus_id = ImGui::GetID("restore_focus");
   const bool was_active_last_frame = storage->GetBool(was_active_last_frame_id, true);
+  // const bool restore_focus = storage->GetBool(was_active_last_frame_id, true);
 
   bool is_active;
   if (start_editing_) {
@@ -342,16 +346,16 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
 
   if (is_active || was_active_last_frame) {
     ImGui::SetNextWindowPos({ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y});
-    ImGui::SetNextWindowSize({ImGui::GetItemRectSize().x, 0});
+    ImGui::SetNextWindowSize({ImGui::GetItemRectSize().x, 200}, ImGuiCond_Appearing);
     if (ImGui::Begin("##autocomplete", nullptr,
-                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
-                         ImGuiWindowFlags_Tooltip)) {
+                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_Tooltip)) {
       ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
+      ImGui::PushAllowKeyboardFocus(false);
       is_active = is_active || ImGui::IsWindowFocused();
 
       const bool alt_down = ImGui::GetIO().KeyAlt;
 
-      if (std::strstr("if", text.c_str())) {
+      if (std::strstr("if", new_action_text_.c_str())) {
         if (ImGui::Selectable("if")) {
           action["type"] = "if";
           action["actions"] = json::array();
@@ -363,7 +367,7 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
         const auto& function_identifier = function_documentation.key();
         const std::string& function_text = function_documentation.value()["text"];
 
-        if (!std::strstr(function_identifier.c_str(), text.c_str()) && !std::strstr(function_text.c_str(), text.c_str())) {
+        if (!std::strstr(function_identifier.c_str(), new_action_text_.c_str()) && !std::strstr(function_text.c_str(), new_action_text_.c_str())) {
           continue;
         }
 
@@ -386,7 +390,7 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
             }
           }
         });
-        final_text += fmt::format("##{}", function_identifier);
+        final_text += fmt::format("###{}", function_identifier);
 
         if (ImGui::Selectable(final_text.c_str())) {
           action["type"] = "function_call";
@@ -404,6 +408,7 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
           submit_changes = true;
         }
       }
+      ImGui::PopAllowKeyboardFocus();
     }
     ImGui::End();
   }

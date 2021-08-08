@@ -26,6 +26,7 @@ class ScriptLibraryEditor : public AssetEditor {
   std::string reference_to_highlight_;
   json::json_pointer dragged_action_path_;
   std::optional<ScriptError> error_;
+  std::string new_action_text_;
 
   bool DrawEntrypoint();
   bool DrawActions(const json::json_pointer& path);
