@@ -351,6 +351,14 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
 
       const bool alt_down = ImGui::GetIO().KeyAlt;
 
+      if (std::strstr("if", text.c_str())) {
+        if (ImGui::Selectable("if")) {
+          action["type"] = "if";
+          action["actions"] = json::array();
+          submit_changes = true;
+        }
+      }
+
       for (const auto& function_documentation : docs_.items()) {
         const auto& function_identifier = function_documentation.key();
         const std::string& function_text = function_documentation.value()["text"];
