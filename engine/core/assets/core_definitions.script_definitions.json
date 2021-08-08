@@ -30,10 +30,46 @@
     "text": "Create Vector3 with (x) , (y) and (z)"
   },
   "vector3_add": {
-    "text": "(first vector) + (second vector)"
+    "text": "(first vector)+(second vector)"
+  },
+  "vector3_negate": {
+    "text": "-(vector)"
+  },
+  "vector3_subtract": {
+    "text": "(first vector)-(second vector)"
+  },
+  "vector3_multiply": {
+    "text": "(first vector)*(second vector)"
+  },
+  "vector3_multiply_scalar": {
+    "text": "(vector)*(scalar)"
+  },
+  "vector3_to_string": {
+    "text": "(vector) to String"
+  },
+  "vector3_min": {
+    "text": "Minimum of (first vector) and (second vector)"
+  },
+  "vector3_max": {
+    "text": "Maximum of (first vector) and (second vector)"
+  },
+  "vector3_clamp": {
+    "text": "Clamp (vector) between (min) and (max)"
+  },
+  "vector3_squared_length": {
+    "text": "Squared length of (vector)"
   },
   "vector3_length": {
     "text": "Length of (vector)"
+  },
+  "vector3_normalize": {
+    "text": "Normalize (vector)"
+  },
+  "vector3_dot": {
+    "text": "Dot product of (first vector) and (second vector)"
+  },
+  "vector3_cross": {
+    "text": "Cross product of (first vector) and (second vector)"
   },
   "is_greater": {
     "text": "(x) > (y)"
