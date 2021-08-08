@@ -64,7 +64,9 @@ bool Update() {
     window->Render();
   }
 
+#if OVIS_ENABLE_BUILT_IN_PROFILING
   ProfilingLog::default_log()->AdvanceFrame();
+#endif
 
   return true;
 }
