@@ -23,7 +23,10 @@ double negate(double x) {
 bool is_greater(double x, double y) {
   return x > y;
 }
-void print(double x) {
+void print(const std::string& text) {
+  LogI("{}", text);
+}
+void print_number(double x) {
   LogI("{}", x);
 }
 void print_bool(bool x) {
@@ -50,6 +53,7 @@ ScriptContext::ScriptContext() {
   RegisterFunction<divide>("divide", {"x", "y"}, {"result"});
   RegisterFunction<negate>("negate", {"x"}, {"result"});
   RegisterFunction<print>("print", {"value"}, {"result"});
+  RegisterFunction<print_number>("print_number", {"value"}, {"result"});
   RegisterFunction<print_bool>("print_bool", {"value"}, {"result"});
   RegisterFunction<is_greater>("is_greater", {"x", "y"}, {"result"});
 
