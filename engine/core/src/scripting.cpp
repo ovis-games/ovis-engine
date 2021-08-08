@@ -38,23 +38,20 @@ ScriptContext* global_script_context() {
   return global_context.get();
 }
 
-#define OVIS_REGISTER_FUNCTION(func, ...) RegisterFunction<decltype(func), func>(#func, __VA_ARGS__);
-#define OVIS_REGISTER_FUNCTION_WITH_NAME(func, identifier) RegisterFunction<decltype(func), func>(identifier);
-
 ScriptContext::ScriptContext() {
   types_.push_back(ScriptType(0, "Unknown", false));
   RegisterType<double>("Number");
   RegisterType<bool>("Boolean");
   RegisterType<std::string>("String");
 
-  OVIS_REGISTER_FUNCTION(add, {"x", "y"}, {"result"});
-  OVIS_REGISTER_FUNCTION(subtract, {"x", "y"}, {"result"});
-  OVIS_REGISTER_FUNCTION(multiply, {"x", "y"}, {"result"});
-  OVIS_REGISTER_FUNCTION(divide, {"x", "y"}, {"result"});
-  OVIS_REGISTER_FUNCTION(negate, {"x"}, {"result"});
-  OVIS_REGISTER_FUNCTION(print, {"value"});
-  OVIS_REGISTER_FUNCTION(print_bool, {"value"});
-  OVIS_REGISTER_FUNCTION(is_greater, {"x", "y"}, {"is_greater"});
+  RegisterFunction<add>("add", {"x", "y"}, {"result"});
+  RegisterFunction<subtract>("subtract", {"x", "y"}, {"result"});
+  RegisterFunction<multiply>("multiply", {"x", "y"}, {"result"});
+  RegisterFunction<divide>("divide", {"x", "y"}, {"result"});
+  RegisterFunction<negate>("negate", {"x"}, {"result"});
+  RegisterFunction<print>("print", {"value"}, {"result"});
+  RegisterFunction<print_bool>("print_bool", {"value"}, {"result"});
+  RegisterFunction<is_greater>("is_greater", {"x", "y"}, {"result"});
 
   stack_.reserve(1000);
 }
@@ -136,8 +133,9 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
             Instruction{InstructionType::PUSH_STACK_VARIABLE,
                         PushStackValue{*scope->GetStackVariableOffset(definition_string) - current_stack_offset}});
       } else {
-        scope->instructions.push_back(Instruction{
-            InstructionType::PUSH_CONSTANT, PushConstant{ScriptValue{context->GetTypeId<double>(), double(std::stod(definition_string))}}});
+        scope->instructions.push_back(
+            Instruction{InstructionType::PUSH_CONSTANT,
+                        PushConstant{ScriptValue{context->GetTypeId<double>(), double(std::stod(definition_string))}}});
       }
     } else {
       scope->instructions.push_back(Instruction{InstructionType::PUSH_CONSTANT, PushConstant{}});
@@ -149,7 +147,7 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
 
   for (const auto& action : actions) {
     const std::string type = action["type"];
-    const int action_id = action["id"]; 
+    const int action_id = action["id"];
     if (type == "function_call") {
       auto function = context->GetFunction(static_cast<std::string>(action["function"]));
       if (!function) {
@@ -200,7 +198,8 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
       --current_stack_offset;
 
       scope.instructions.insert(scope.instructions.end(), if_scope->instructions.begin(), if_scope->instructions.end());
-      scope.instruction_actions.insert(scope.instruction_actions.end(), if_scope->instruction_actions.begin(), if_scope->instruction_actions.end());
+      scope.instruction_actions.insert(scope.instruction_actions.end(), if_scope->instruction_actions.begin(),
+                                       if_scope->instruction_actions.end());
     }
     assert(scope.instructions.size() == scope.instruction_actions.size());
   }
@@ -209,7 +208,7 @@ std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, con
 }
 
 std::vector<ScriptValueDefinition> ParseVariableDefinitions(ScriptContext* context,
-                                                               const json& serialized_definitions) {
+                                                            const json& serialized_definitions) {
   std::vector<ScriptValueDefinition> definitions;
   for (const auto& definition : serialized_definitions.items()) {
     const std::string type(definition.value()["type"]);
@@ -301,12 +300,8 @@ ScriptFunctionResult ScriptChunk::Execute() {
           context_->PopStack(1);
         } else {
           const auto error = std::get<ScriptError>(value_or_error);
-          return ScriptFunctionResult {
-            .error = ScriptError {
-              .action_id = instruction_actions_[instruction_pointer],
-              .message = error.message
-            }
-          };
+          return ScriptFunctionResult{
+              .error = ScriptError{.action_id = instruction_actions_[instruction_pointer], .message = error.message}};
         }
         break;
       }
@@ -323,12 +318,8 @@ ScriptFunctionResult ScriptChunk::Execute() {
           context_->PopStack(1);
         } else {
           const auto error = std::get<ScriptError>(value_or_error);
-          return ScriptFunctionResult {
-            .error = ScriptError {
-              .action_id = instruction_actions_[instruction_pointer],
-              .message = error.message
-            }
-          };
+          return ScriptFunctionResult{
+              .error = ScriptError{.action_id = instruction_actions_[instruction_pointer], .message = error.message}};
         }
         break;
       }

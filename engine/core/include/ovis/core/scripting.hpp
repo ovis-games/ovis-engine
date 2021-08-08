@@ -160,7 +160,7 @@ class ScriptContext {
   void RegisterFunction(std::string_view identifier, ScriptFunctionPointer function,
                         std::span<const ScriptValueDefinition> inputs, std::span<const ScriptValueDefinition> outputs);
 
-  template <typename T, T FUNCTION>
+  template <auto FUNCTION>
   void RegisterFunction(std::string_view identifier, std::vector<std::string> inputs_names = {},
                         std::vector<std::string> outputs_names = {});
 
@@ -388,7 +388,7 @@ template <typename FunctionType>
 struct FunctionWrapper;
 
 template <typename ReturnType, typename... ArgumentTypes>
-struct FunctionWrapper<ReturnType(ArgumentTypes...)> {
+struct FunctionWrapper<ReturnType(*)(ArgumentTypes...)> {
   using FunctionType = ReturnType (*)(ArgumentTypes...);
   static constexpr auto INPUT_COUNT = sizeof...(ArgumentTypes);
   static constexpr size_t OUTPUT_COUNT = std::is_same_v<ReturnType, void> ? 0 : 1;
@@ -488,9 +488,10 @@ struct ConstructorWrapper {
   }
 };
 
-template <typename FunctionType, FunctionType FUNCTION>
+template <auto FUNCTION>
 void ScriptContext::RegisterFunction(std::string_view identifier, std::vector<std::string> inputs_names,
                                      std::vector<std::string> outputs_names) {
+  using FunctionType = decltype(FUNCTION);
   using Wrapper = FunctionWrapper<FunctionType>;
 
   std::vector<ScriptValueDefinition> inputs;

@@ -315,4 +315,45 @@ void Vector3::RegisterType(sol::table* module) {
   // clang-format off
 }
 
+void Vector3::RegisterType(ScriptContext* context) {
+  // vector3_type["x"] = &Vector3::x;
+  // vector3_type["y"] = &Vector3::y;
+  // vector3_type["z"] = &Vector3::z;
+  // vector3_type["ZERO"] = sol::property(Vector3::Zero);
+  // vector3_type["ONE"] = sol::property(Vector3::One);
+  // vector3_type["POSITIVE_X"] = sol::property(Vector3::PositiveX);
+  // vector3_type["NEGATIVE_X"] = sol::property(Vector3::NegativeX);
+  // vector3_type["POSITIVE_Y"] = sol::property(Vector3::PositiveY);
+  // vector3_type["NEGATIVE_Y"] = sol::property(Vector3::NegativeY);
+  // vector3_type["POSITIVE_Z"] = sol::property(Vector3::PositiveZ);
+  // vector3_type["NEGATIVE_Z"] = sol::property(Vector3::NegativeZ);
+
+  context->RegisterType<Vector3>("Vector3");
+  context->RegisterConstructor<Vector3, float, float, float>("create_vector3", {"x", "y", "z"}, "vector");
+  // vector3_type[sol::meta_function::equal_to] = static_cast<bool (*)(const Vector3&, const Vector3&)>(ovis::operator==);
+  context->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator+)>("vector3_add", {"first vector", "second vector"}, {"vector"});
+  // vector3_type[sol::meta_function::unary_minus] = static_cast<Vector3 (*)(const Vector3&)>(ovis::operator-);
+  // vector3_type[sol::meta_function::subtraction] =
+  //     static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator-);
+  // vector3_type[sol::meta_function::multiplication] =
+  //     sol::overload(static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator*),
+  //                   static_cast<Vector3 (*)(float, const Vector3&)>(ovis::operator*),
+  //                   static_cast<Vector3 (*)(const Vector3&, float)>(ovis::operator*));
+  // vector3_type[sol::meta_function::division] =
+  //     sol::overload(static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator/),
+  //                   static_cast<Vector3 (*)(float, const Vector3&)>(ovis::operator/),
+  //                   static_cast<Vector3 (*)(const Vector3&, float)>(ovis::operator/));
+  // vector3_type[sol::meta_function::length] = [](const Vector3& vector) { return 3; };
+  // vector3_type[sol::meta_function::to_string] = [](const Vector3& vector) { return fmt::format("{}", vector); };
+  // vector3_type["min"] = &ovis::min<Vector3>;
+  // vector3_type["max"] = &ovis::max<Vector3>;
+  // vector3_type["clamp"] = &ovis::clamp<Vector3>;
+  // vector3_type["length_squared"] = &ovis::SquaredLength<Vector3>;
+  // vector3_type["length"] = &Length<Vector3>;
+  context->RegisterFunction<Length<Vector3>>("vector3_length", {"vector"}, {"length"});
+ // vector3_type["normalize"] = &Normalize<Vector3>;
+  // vector3_type["dot"] = &Dot<Vector3>;
+  // vector3_type["cross"] = &Cross;
+}
+
 }

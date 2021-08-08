@@ -99,13 +99,9 @@ bool LoadCoreModule() {
     lua.require("ovis.core", &LoadCoreModule);
 
     global_script_context()->RegisterType<Scene>("Scene");
-    global_script_context()->RegisterFunction<decltype(&Scene::ClearObjects), &Scene::ClearObjects>(
-        "clear_scene_objects", {"scene"});
+    global_script_context()->RegisterFunction<&Scene::ClearObjects>("clear_scene_objects", {"scene"});
 
-    global_script_context()->RegisterType<Vector3>("Vector3");
-    global_script_context()->RegisterConstructor<Vector3, float, float, float>("create_vector3", {"x", "y", "z"});
-    global_script_context()->RegisterFunction<decltype(Length<Vector3>), &Length<Vector3>>("vector3_length", {"v"},
-                                                                                           {"length"});
+    Vector3::RegisterType(global_script_context());
 
     module_loaded = true;
   }
