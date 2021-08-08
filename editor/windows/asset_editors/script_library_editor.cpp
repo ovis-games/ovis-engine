@@ -378,9 +378,9 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
             }
           }
         });
+        final_text += fmt::format("##{}", function_identifier);
 
         if (ImGui::Selectable(final_text.c_str())) {
-          LogD("click");
           action["type"] = "function_call";
           action["function"] = function_identifier;
           action["inputs"] = json::object();
@@ -401,6 +401,13 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
   }
 
   storage->SetBool(was_active_last_frame_id, is_active);
+
+  if (!is_active && !was_active_last_frame) {
+    DoOnceAfterUpdate([this, path]() {
+      RemoveAction(path);
+      SubmitJsonFile(editing_copy_);
+    });
+  }
 
   return submit_changes;
 }
