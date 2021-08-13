@@ -10,13 +10,30 @@
 #include <ovis/core/asset_library.hpp>
 #include <ovis/application/application.hpp>
 
+#if OVIS_EMSCRIPTEN
+#include <emscripten.h>
+#include <emscripten/html5.h>
+#include <emscripten/val.h>
+
+extern "C" {
+
+int EMSCRIPTEN_KEEPALIVE Ovis_GetAssetCount() {
+  ovis::GetApplicationAssetLibrary();
+}
+
+}
+#endif
+
 // Usage: ovis-editor backend_url project_id authentication_token
 int main(int argc, char* argv[]) {
   using namespace ovis;
   using namespace ovis::editor;
   try {
-    Log::AddListener(ConsoleLogger);
-    Log::AddListener([](LogLevel, const std::string& text) { LogWindow::log_history.push_back(text); });
+    // Log::AddListener(ConsoleLogger);
+    Log::AddListener([](LogLevel level, const std::string& text) {
+      emscripten::val::global("window").call<void>("ovis_log", emscripten::val(GetLogLevelString(level)),
+                                                   emscripten::val(text.c_str()));
+    });
 
     ImGui::SetCustomJsonFunction("core#/$defs/vector2", &ImGui::InputVector2);
     ImGui::SetCustomJsonFunction("core#/$defs/vector3", &ImGui::InputVector3);
@@ -45,7 +62,7 @@ int main(int argc, char* argv[]) {
     // LoadModule<Physics2DModule>();
     // LoadModule<EditorModule>();
 
-    EditorWindow editor_window;
+    // EditorWindow editor_window;
 
     Run();
 

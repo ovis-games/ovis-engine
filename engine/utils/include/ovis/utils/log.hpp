@@ -17,6 +17,7 @@ using LogListener = std::function<void(LogLevel, const std::string&)>;
 namespace detail {
 
 static const char LOG_LEVEL_CHARS[] = {'V', 'D', 'I', 'W', 'E'};
+static const char* LOG_LEVEL_STRINGS[] = {"verbose", "debug", "info", "warning", "error"};
 
 }  // namespace detail
 
@@ -69,6 +70,10 @@ inline void LogW(std::string_view format_string, T&&... args) {
 template <typename... T>
 inline void LogE(std::string_view format_string, T&&... args) {
   Log::Write(LogLevel::ERROR, format_string, std::forward<T>(args)...);
+}
+
+inline const char* GetLogLevelString(LogLevel level) {
+  return detail::LOG_LEVEL_STRINGS[static_cast<int>(level)];
 }
 
 }  // namespace ovis
