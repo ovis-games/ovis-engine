@@ -1,5 +1,7 @@
 #include "script_library_editor.hpp"
 
+#include <charconv>
+
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
@@ -8,6 +10,8 @@
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scripting.hpp>
 #include <ovis/imgui/imgui_start_frame_controller.hpp>
+
+#include "../../imgui_extensions/auto_complete_input.hpp"
 
 namespace ovis {
 namespace editor {
@@ -71,13 +75,61 @@ ScriptLibraryEditor::ScriptLibraryEditor(const std::string& asset_id) : AssetEdi
   if (core_defition.has_value()) {
     docs_ = json::parse(*core_defition);
   }
+
+  auto_complete_list_.push_back("if");
+  auto_complete_data_.push_back(json{
+      {"type", "if"}});
+
+  std::string final_text;
+  json action_preset =json::object();
+  action_preset["type"] = "function_call";
+  for (const auto& function_documentation : docs_.items()) {
+    final_text.clear();
+    const auto& function_identifier = function_documentation.key();
+    const std::string& function_text = function_documentation.value()["text"];
+
+    auto function = global_script_context()->GetFunction(function_identifier);
+    if (function == nullptr) {
+      continue;
+    }
+
+    ParseFunctionText(function, function_text, [&, this](std::variant<std::string_view, ScriptValueDefinition> text_or_input) {
+      if (std::holds_alternative<std::string_view>(text_or_input)) {
+        const std::string_view text = std::get<0>(text_or_input);
+        final_text += text;
+      } else if (std::holds_alternative<ScriptValueDefinition>(text_or_input)) {
+        const auto input = std::get<1>(text_or_input);
+        // if (alt_down) {
+        //   final_text += fmt::format("{}[{}]", input.identifier, global_script_context()->GetType(input.type)->name);
+        // } else {
+          final_text += input.identifier;
+        // }
+      }
+    });
+    auto_complete_list_.push_back(final_text);
+    action_preset["function"] = function_identifier;
+    action_preset["inputs"] = json::object();
+    for (const auto& input : function->inputs) {
+      action_preset["inputs"][input.identifier] = json::object();
+    }
+    action_preset["outputs"] = json::object();
+    for (const auto& output : function->outputs) {
+      action_preset["outputs"][output.identifier] = json::object();
+    }
+    auto_complete_data_.push_back(action_preset);
+  }
 }
 
 void ScriptLibraryEditor::DrawContent() {
   if (ImGui::Button("Run")) {
-    chunk_.emplace(editing_copy_);
-    chunk_->Print();
-    chunk_->Execute({});
+    auto chunk_or_error = ScriptChunk::Load(editing_copy_);
+    if (std::holds_alternative<ScriptError>(chunk_or_error)) {
+      error_ = std::get<ScriptError>(chunk_or_error);
+    } else {
+      chunk_.emplace(std::move(std::get<ScriptChunk>(chunk_or_error)));
+      chunk_->Print();
+      chunk_->Execute({});
+    }
   }
   ImGui::Separator();
 
@@ -87,7 +139,7 @@ void ScriptLibraryEditor::DrawContent() {
     if (DrawEntrypoint()) {
       SubmitJsonFile(editing_copy_, "json");
     }
-    if (DrawActions(json::json_pointer("/actions"))) {
+    if (DrawActions(json::json_pointer("/actions"), ScriptActionReference::Root())) {
       SubmitJsonFile(editing_copy_, "json");
     }
   }
@@ -119,19 +171,20 @@ bool ScriptLibraryEditor::DrawEntrypoint() {
   return submit_changes;
 }
 
-bool ScriptLibraryEditor::DrawActions(const json::json_pointer& path) {
+bool ScriptLibraryEditor::DrawActions(const json::json_pointer& path, const ScriptActionReference& parent_reference) {
   auto& actions = editing_copy_[path];
 
   bool submit_changes = false;
   for (auto& action : IndexRange(actions)) {
+    const auto reference = parent_reference / action.index();
     DrawSpace(path / action.index());
-    if (DrawAction(path / action.index())) {
+    if (DrawAction(path / action.index(), reference)) {
       submit_changes = true;
     }
     if (action->contains("actions")) {
       ImGui::PushID(path.to_string().c_str());
       ImGui::TreePush("actions");
-      if (DrawActions(path / action.index() / "actions")) {
+      if (DrawActions(path / action.index() / "actions", reference)) {
         submit_changes = true;
       }
       ImGui::TreePop();
@@ -142,7 +195,7 @@ bool ScriptLibraryEditor::DrawActions(const json::json_pointer& path) {
   return submit_changes;
 }
 
-bool ScriptLibraryEditor::DrawAction(const json::json_pointer& path, bool dragging_preview) {
+bool ScriptLibraryEditor::DrawAction(const json::json_pointer& path, const ScriptActionReference& reference, bool dragging_preview) {
   bool submit_changes = false;
 
   ImGui::PushID(path.to_string().c_str());
@@ -164,15 +217,15 @@ bool ScriptLibraryEditor::DrawAction(const json::json_pointer& path, bool draggi
     ImGui::InvisibleButton("###Placeholder", ImVec2(1, 1));
   }
   if (!dragging_preview) {
-    if (ImGui::BeginDragDropSource()) {
-      dragged_action_path_ = path;
-      const size_t id = action["id"];
-      ImGui::SetDragDropPayload("action", &id, sizeof(id));
-      DrawAction(path, true);
-      ImGui::EndDragDropSource();
-    } else if (dragged_action_path_ == path) {
-      dragged_action_path_ = json::json_pointer{};
-    }
+    // if (ImGui::BeginDragDropSource()) {
+    //   dragged_action_path_ = path;
+    //   const size_t id = action["id"];
+    //   ImGui::SetDragDropPayload("action", &id, sizeof(id));
+    //   DrawAction(path, true);
+    //   ImGui::EndDragDropSource();
+    // } else if (dragged_action_path_ == path) {
+    //   dragged_action_path_ = json::json_pointer{};
+    // }
   }
   if (!is_dragging) {
     const std::string& type = action["type"].is_string() ? action["type"] : "";
@@ -182,12 +235,8 @@ bool ScriptLibraryEditor::DrawAction(const json::json_pointer& path, bool draggi
       submit_changes = DrawIfStatement(path);
     } else {
       submit_changes = DrawNewAction(path);
-      if (submit_changes) {
-        new_action_text_ = "";
-      }
     }
-    const int action_id = action["id"];
-    if (error_.has_value() && error_->action_id == action_id) {
+    if (error_.has_value() && error_->action == reference) {
       EndNode(true);
     } else {
       EndNode();
@@ -208,7 +257,7 @@ bool ScriptLibraryEditor::DrawAction(const json::json_pointer& path, bool draggi
     }
     ImGui::PopStyleColor(2);
     ImGui::PopFont();
-    if (error_.has_value() && error_->action_id == action_id) {
+    if (error_.has_value() && error_->action == reference) {
       ImGui::SameLine();
       ImGui::TextColored(ImColor(204, 0, 0, 255), "%s", error_->message.c_str());
     }
@@ -260,48 +309,7 @@ bool ScriptLibraryEditor::DrawFunctionCall(const json::json_pointer& path) {
       }
     }
   } else {
-    // ImGui::Text("%s", function_identifer.c_str());
-    // ImGui::Text("Inputs: ");
-
-    // for (const auto& input : IndexRange(function->inputs)) {
-    //   ImGui::PushID("Inputs");
-    //   ImGui::PushID(input.index());
-
-    //   ImGui::Text("%s : %s = ", input.value().identifier.c_str(), "Number");
-    //   ImGui::SameLine();
-
-    //   ImGui::PushItemWidth(100);
-    //   std::string input_value = function_call["inputs"][std::to_string(input.index())];
-    //   if (ImGui::InputText("###Value", &input_value, ImGuiInputTextFlags_EnterReturnsTrue)) {
-    //     function_call["inputs"][std::to_string(input.index())] = input_value;
-    //     submit_changes = true;
-    //   }
-    //   ImGui::PopItemWidth();
-
-    //   ImGui::PopID();
-    //   ImGui::PopID();
-    // }
-    // ImGui::Text("Outputs: ");
-    // for (const auto& output : IndexRange(function->outputs)) {
-    //   ImGui::PushID("Output");
-    //   ImGui::PushID(output.index());
-
-    //   const std::string button_label = fmt::format("{} : {}", output->identifier, "Number");
-    //   ImGui::SmallButton(button_label.c_str());
-
-    //   if (ImGui::BeginDragDropSource()) {
-    //     auto parent_pointer = path.parent_pointer();
-    //     auto& parent = editing_copy_[parent_pointer];
-    //     size_t array_index = std::stoull(path.to_string().substr(parent_pointer.to_string().size() + 1));
-    //     const std::string output_reference = fmt::format("${}:{}", array_index, output->identifier);
-    //     ImGui::SetDragDropPayload("value", output_reference.data(), output_reference.size() + 1);
-    //     ImGui::SmallButton(button_label.c_str());
-    //     ImGui::EndDragDropSource();
-    //   }
-
-    //   ImGui::PopID();
-    //   ImGui::PopID();
-    // }
+    LogE("Cannot find documentation for {}", function_identifer);
   }
 
   return submit_changes;
@@ -324,103 +332,28 @@ bool ScriptLibraryEditor::DrawNewAction(const json::json_pointer& path) {
 
   json& action = editing_copy_[path];
   const std::string label = fmt::format("###{}", path.to_string());
-  const auto storage = ImGui::GetStateStorage();
 
-  // TODO: See implementation at https://gist.github.com/harold-b/7dcc02557c2b15d76c61fde1186e31d0
-  if (ImGui::InputText(label.c_str(), &new_action_text_)) {
-  }
-
-  const auto was_active_last_frame_id = ImGui::GetID("was_active_last_frame");
-  // const auto restore_focus_id = ImGui::GetID("restore_focus");
-  const bool was_active_last_frame = storage->GetBool(was_active_last_frame_id, true);
-  // const bool restore_focus = storage->GetBool(was_active_last_frame_id, true);
-
-  bool is_active;
+  int selected_index;
   if (start_editing_) {
     ImGui::SetKeyboardFocusHere();
     start_editing_ = false;
-    is_active = true;
-  } else {
-    is_active = ImGui::IsItemActive() || ImGui::IsItemDeactivated();
   }
 
-  if (is_active || was_active_last_frame) {
-    ImGui::SetNextWindowPos({ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y});
-    ImGui::SetNextWindowSize({ImGui::GetItemRectSize().x, 200}, ImGuiCond_Appearing);
-    if (ImGui::Begin("##autocomplete", nullptr,
-                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_Tooltip)) {
-      ImGui::BringWindowToDisplayFront(ImGui::GetCurrentWindow());
-      ImGui::PushAllowKeyboardFocus(false);
-      is_active = is_active || ImGui::IsWindowFocused();
-
-      const bool alt_down = ImGui::GetIO().KeyAlt;
-
-      if (std::strstr("if", new_action_text_.c_str())) {
-        if (ImGui::Selectable("if")) {
-          action["type"] = "if";
-          action["actions"] = json::array();
-          submit_changes = true;
-        }
-      }
-
-      for (const auto& function_documentation : docs_.items()) {
-        const auto& function_identifier = function_documentation.key();
-        const std::string& function_text = function_documentation.value()["text"];
-
-        if (!std::strstr(function_identifier.c_str(), new_action_text_.c_str()) && !std::strstr(function_text.c_str(), new_action_text_.c_str())) {
-          continue;
-        }
-
-        auto function = global_script_context()->GetFunction(function_identifier);
-        if (function == nullptr) {
-          continue;
-        }
-
-        std::string final_text;
-        ParseFunctionText(function, function_text, [&, this](std::variant<std::string_view, ScriptValueDefinition> text_or_input) {
-          if (std::holds_alternative<std::string_view>(text_or_input)) {
-            const std::string_view text = std::get<0>(text_or_input);
-            final_text += text;
-          } else if (std::holds_alternative<ScriptValueDefinition>(text_or_input)) {
-            const auto input = std::get<1>(text_or_input);
-            if (alt_down) {
-              final_text += fmt::format("{}[{}]", input.identifier, global_script_context()->GetType(input.type)->name);
-            } else {
-              final_text += input.identifier;
-            }
-          }
-        });
-        final_text += fmt::format("###{}", function_identifier);
-
-        if (ImGui::Selectable(final_text.c_str())) {
-          action["type"] = "function_call";
-          action["function"] = function_identifier;
-          action["inputs"] = json::object();
-
-          for (const auto& input : function->inputs) {
-            action["inputs"][input.identifier] = json{};
-          }
-          action["outputs"] = json::object();
-          for (const auto& output : function->outputs) {
-            action["outputs"][output.identifier] = json{};
-          }
-
-          submit_changes = true;
-        }
-      }
-      ImGui::PopAllowKeyboardFocus();
+  if (ImGui::AutoCompleteInput(label.c_str(), &new_action_text_, auto_complete_list_.data(), auto_complete_list_.size(), &selected_index)) {
+    if (selected_index != -1) {
+      json& action = editing_copy_[path];
+      action.merge_patch(auto_complete_data_[selected_index]);
+      submit_changes = true;
     }
-    ImGui::End();
+    current_edit_path_ = json::json_pointer();
   }
 
-  storage->SetBool(was_active_last_frame_id, is_active);
-
-  if (!is_active && !was_active_last_frame) {
-    DoOnceAfterUpdate([this, path]() {
-      RemoveAction(path);
-      SubmitJsonFile(editing_copy_);
-    });
-  }
+//   if (!is_active && !was_active_last_frame) {
+//     DoOnceAfterUpdate([this, path]() {
+//       RemoveAction(path);
+//       SubmitJsonFile(editing_copy_);
+//     });
+//   }
 
   return submit_changes;
 }
@@ -482,69 +415,123 @@ bool ScriptLibraryEditor::DrawInput(const json::json_pointer& path, ScriptTypeId
   json& value = editing_copy_[path];
   const std::string identifier = path.to_string().substr(path.parent_pointer().to_string().size() + 1);
 
-  std::string string_value = value.is_string() ? value : "";
+  std::string string_value;
+  if (value.is_string()) {
+    value = string_value;
+  } else if (value.is_number()) {
+    string_value = std::to_string(static_cast<double>(value));
+  } else if (value.is_boolean()) {
+    string_value = value ? "true" : "false";
+  } else if (value.is_object()) {
+    // string_value = value["variable_name"];
+  }
+
   if (current_edit_path_ == path) {
-    ImGui::PushItemWidth(100);
-    const std::string text_label = fmt::format("###{}", path.to_string());
-    if (ImGui::InputText(text_label.c_str(), &string_value, ImGuiInputTextFlags_EnterReturnsTrue)) {
-      current_edit_path_ = json::json_pointer();
-      value = string_value;
-      submit_changes = true;
+    std::vector<std::string> suggestions;
+    if (type == global_script_context()->GetTypeId<double>()) {
+      double number;
+      const auto parse_result =
+          std::from_chars(new_action_text_.data(), new_action_text_.data() + new_action_text_.size(), number);
+      if (parse_result.ec == std::errc()) {
+        suggestions.push_back(std::to_string(number) + "##" + new_action_text_);
+      }
     }
+    ImGui::PushItemWidth(200.0f);
+    bool is_active;
     if (start_editing_) {
-      ImGui::SetKeyboardFocusHere(-1);
-      start_editing_ = false;
-    } else if (!ImGui::IsItemActive()) {
+      ImGui::SetKeyboardFocusHere();
+    }
+    if (ImGui::AutoCompleteInput(identifier.c_str(), &new_action_text_, suggestions.data(), suggestions.size(), nullptr,
+                                 &is_active)) {
       current_edit_path_ = json::json_pointer();
-      value = string_value;
-      submit_changes = true;
+      if (type == global_script_context()->GetTypeId<double>()) {
+        double number;
+        const auto parse_result =
+            std::from_chars(new_action_text_.data(), new_action_text_.data() + new_action_text_.size(), number);
+        if (parse_result.ec == std::errc()) {
+          editing_copy_[path] = number;
+          submit_changes = true;
+        }
+      }
+      new_action_text_ = "";
     }
     ImGui::PopItemWidth();
+    if (!is_active && !start_editing_) {
+      current_edit_path_ = json::json_pointer();
+      new_action_text_ = "";
+    }
+    if (start_editing_) {
+      start_editing_ = false;
+    }
+    // ImGui::PushItemWidth(100);
+    // const std::string label = fmt::format("###{}", path.to_string());
+    // if (type == global_script_context()->GetTypeId<std::string>()) {
+    //   std::string string_value = value.is_string() ? value : "";
+    //   if (ImGui::InputText(label.c_str(), &string_value)) {
+    //     current_edit_path_ = json::json_pointer();
+    //     value = string_value;
+    //     submit_changes = true;
+    //   }
+    // } else if (type == global_script_context()->GetTypeId<double>()) {
+    //   double value
+    //   ImGui::InputDouble(label.c_str(), 
+    // } else {
+    //   current_edit_path_ = json::json_pointer();
+    // }
+
+    // ImGui::PopItemWidth();
   } else {
-    bool highlight = false;
-    bool enable_drag = true;
-    std::string display_value;
-    if (value.is_string()) {
-      if (string_value.length() > 0 && string_value[0] == '$') {
-        highlight = string_value == highlighted_reference_;
-        display_value = GetReferenceName(string_value);
-      } else {
-        display_value = string_value;
-      }
-    } else {
-      string_value = fmt::format("[{}]", identifier);
-      enable_drag = false;
-    }
-    const std::string button_label = fmt::format("{}###{}", display_value, identifier);
-    if (highlight) {
-      ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
-    }
-    if (ImGui::SmallButton(button_label.c_str())) {
+    const std::string label = fmt::format("{}###{}", string_value, identifier);
+    if (ImGui::SmallButton(label.c_str())) {
       current_edit_path_ = path;
+      new_action_text_ = string_value;
       start_editing_ = true;
     }
-    if (ImGui::IsItemHovered()) {
-      reference_to_highlight_ = string_value;
-    }
-    if (highlight) {
-      ImGui::PopStyleColor();
-    }
-    if (ImGui::BeginDragDropSource()) {
-      ImGui::SetDragDropPayload("value", string_value.data(), string_value.size());
-      ImGui::SmallButton(display_value.c_str());
-      ImGui::EndDragDropSource();
-    }
-  }
-  if (ImGui::BeginDragDropTarget()) {
-    auto payload = ImGui::AcceptDragDropPayload("value");
+    // bool highlight = false;
+    // bool enable_drag = true;
+    // std::string display_value;
 
-    if (payload != nullptr) {
-      const char* output_reference = reinterpret_cast<const char*>(payload->Data);
-      value = std::string(output_reference, output_reference + payload->DataSize);
-      submit_changes = true;
-    }
+    // if (value.is_string()) {
+    //   if (string_value.length() > 0 && string_value[0] == '$') {
+    //     highlight = string_value == highlighted_reference_;
+    //     display_value = GetReferenceName(string_value);
+    //   } else {
+    //     display_value = string_value;
+    //   }
+    // } else {
+    //   string_value = fmt::format("[{}]", identifier);
+    //   enable_drag = false;
+    // }
+    // const std::string button_label = fmt::format("{}###{}", display_value, identifier);
+    // if (highlight) {
+    //   ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+    // }
+    // if (ImGui::SmallButton(button_label.c_str())) {
+    //   current_edit_path_ = path;
+    //   start_editing_ = true;
+    // }
+    // if (ImGui::IsItemHovered()) {
+    //   reference_to_highlight_ = string_value;
+    // }
+    // if (highlight) {
+    //   ImGui::PopStyleColor();
+    // }
+    // if (ImGui::BeginDragDropSource()) {
+    //   ImGui::SetDragDropPayload("value", string_value.data(), string_value.size());
+    //   ImGui::SmallButton(display_value.c_str());
+    //   ImGui::EndDragDropSource();
+    // }
+  // }
+  // if (ImGui::BeginDragDropTarget()) {
+    // auto payload = ImGui::AcceptDragDropPayload("value");
 
-    ImGui::EndDragDropTarget();
+    // if (payload != nullptr) {
+    //   const char* output_reference = reinterpret_cast<const char*>(payload->Data);
+    //   value = std::string(output_reference, output_reference + payload->DataSize);
+    //   submit_changes = true;
+    // }
+
+    // ImGui::EndDragDropTarget();
   }
 
   return submit_changes;

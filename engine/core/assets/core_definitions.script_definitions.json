@@ -26,8 +26,68 @@
   "print_bool": {
     "text": "Print (value)"
   },
+  "is_greater": {
+    "text": "(x) > (y)"
+  },
+  "is_greater": {
+    "text": "(x) > (y)"
+  },
+  "is_greater": {
+    "text": "(x) > (y)"
+  },
+  "is_greater": {
+    "text": "(x) > (y)"
+  },
+  "is_greater": {
+    "text": "(x) > (y)"
+  },
+  "create_vector2": {
+    "text": "Create Vector2 with (x) and (y)"
+  },
+  "vector2_add": {
+    "text": "(first vector)+(second vector)"
+  },
+  "vector2_negate": {
+    "text": "-(vector)"
+  },
+  "vector2_subtract": {
+    "text": "(first vector)-(second vector)"
+  },
+  "vector2_multiply": {
+    "text": "(first vector)*(second vector)"
+  },
+  "vector2_multiply_scalar": {
+    "text": "(vector)*(scalar)"
+  },
+  "vector2_to_string": {
+    "text": "(vector) to String"
+  },
+  "vector2_min": {
+    "text": "Minimum of (first vector) and (second vector)"
+  },
+  "vector2_max": {
+    "text": "Maximum of (first vector) and (second vector)"
+  },
+  "vector2_clamp": {
+    "text": "Clamp (vector) between (min) and (max)"
+  },
+  "vector2_squared_length": {
+    "text": "Squared length of (vector)"
+  },
+  "vector2_length": {
+    "text": "Length of (vector)"
+  },
+  "vector2_normalize": {
+    "text": "Normalize (vector)"
+  },
+  "vector2_dot": {
+    "text": "Dot product of (first vector) and (second vector)"
+  },
+  "vector2_cross": {
+    "text": "Cross product of (first vector) and (second vector)"
+  },
   "create_vector3": {
-    "text": "Create Vector3 with (x) , (y) and (z)"
+    "text": "Create Vector3 with (x), (y) and (z)"
   },
   "vector3_add": {
     "text": "(first vector)+(second vector)"
@@ -71,19 +131,13 @@
   "vector3_cross": {
     "text": "Cross product of (first vector) and (second vector)"
   },
-  "is_greater": {
-    "text": "(x) > (y)"
+  "scene_add_object": {
+    "text": "Add object named (base name) to (scene)"
   },
-  "is_greater": {
-    "text": "(x) > (y)"
+  "scene_remove_object": {
+    "text": "Remove (object) from (scene)"
   },
-  "is_greater": {
-    "text": "(x) > (y)"
-  },
-  "is_greater": {
-    "text": "(x) > (y)"
-  },
-  "is_greater": {
-    "text": "(x) > (y)"
+  "scene_remove_object_by_name": {
+    "text": "Remove object named (object name) from (scene)"
   }
 }

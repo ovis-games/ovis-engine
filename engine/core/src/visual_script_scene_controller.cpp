@@ -9,7 +9,13 @@
 namespace ovis {
 
 VisualScriptSceneController::VisualScriptSceneController(std::string_view asset_id) : SceneController(asset_id) {
-  update_.emplace(json::parse(GetApplicationAssetLibrary()->LoadAssetTextFile(asset_id, "json").value()));
+  auto chunk_or_error =
+      ScriptChunk::Load(json::parse(GetApplicationAssetLibrary()->LoadAssetTextFile(asset_id, "json").value()));
+  if (std::holds_alternative<ScriptError>(chunk_or_error)) {
+    LogE("Failed to load script controller: {}", std::get<ScriptError>(chunk_or_error).message);
+  } else {
+    update_.emplace(std::move(std::get<ScriptChunk>(chunk_or_error)));
+  }
 }
 
 VisualScriptSceneController::~VisualScriptSceneController() {}

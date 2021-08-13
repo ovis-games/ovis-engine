@@ -97,120 +97,6 @@ const ScriptFunction* ScriptContext::GetFunction(std::string_view identifier) {
 
 namespace {
 
-struct Scope {
-  const Scope* parent;
-  std::map<std::string, int, std::less<>> stack_variable_offsets;
-  std::vector<ScriptChunk::Instruction> instructions;
-  std::vector<int> instruction_actions;
-
-  std::optional<int> GetStackVariableOffset(std::string_view reference) const {
-    const auto offset = stack_variable_offsets.find(reference);
-    if (offset != stack_variable_offsets.end()) {
-      return offset->second;
-    } else if (parent != nullptr) {
-      return parent->GetStackVariableOffset(reference);
-    } else {
-      return {};
-    }
-  }
-};
-
-std::optional<Scope> ParseScope(ScriptContext* context, const json& actions, const Scope* parent_scope = nullptr) {
-  using Instruction = ScriptChunk::Instruction;
-  using InstructionType = ScriptChunk::InstructionType;
-  using PushConstant = ScriptChunk::PushConstant;
-  using FunctionCall = ScriptChunk::FunctionCall;
-  using PushStackValue = ScriptChunk::PushStackValue;
-  using ConditionalJump = ScriptChunk::ConditionalJump;
-
-  int current_stack_offset = 0;
-  Scope scope;
-  scope.parent = parent_scope;
-
-  auto push_value = [&](const json& definition, Scope* scope) {
-    SDL_assert(scope != nullptr);
-
-    if (definition.is_string()) {
-      const std::string& definition_string = definition;
-      if (definition_string.size() > 0 && definition_string[0] == '$') {
-        scope->instructions.push_back(
-            Instruction{InstructionType::PUSH_STACK_VARIABLE,
-                        PushStackValue{*scope->GetStackVariableOffset(definition_string) - current_stack_offset}});
-      } else {
-        scope->instructions.push_back(
-            Instruction{InstructionType::PUSH_CONSTANT,
-                        PushConstant{ScriptValue{context->GetTypeId<double>(), double(std::stod(definition_string))}}});
-      }
-    } else {
-      scope->instructions.push_back(Instruction{InstructionType::PUSH_CONSTANT, PushConstant{}});
-    }
-    ++current_stack_offset;
-
-    return true;
-  };
-
-  for (const auto& action : actions) {
-    const std::string type = action["type"];
-    const int action_id = action["id"];
-    if (type == "function_call") {
-      auto function = context->GetFunction(static_cast<std::string>(action["function"]));
-      if (!function) {
-        LogE("Invalid function name: {}", action["function"]);
-        return {};
-      }
-
-      for (const auto& output : function->outputs) {
-        scope.instructions.push_back(Instruction{InstructionType::PUSH_CONSTANT, PushConstant{}});
-        scope.instruction_actions.push_back(action_id);
-        if (scope.stack_variable_offsets.contains(
-                fmt::format("${}:{}", static_cast<int>(action["id"]), output.identifier))) {
-          LogE("Duplicate action id: {}", static_cast<size_t>(action["id"]));
-          return {};
-        }
-        scope.stack_variable_offsets[fmt::format("${}:{}", action_id, output.identifier)] = current_stack_offset;
-        ++current_stack_offset;
-      }
-
-      for (const auto& input : function->inputs) {
-        if (!action.contains("inputs") || !action["inputs"].is_object() ||
-            !push_value(action["inputs"][input.identifier], &scope)) {
-          LogE("No value for input `{}`", input.identifier);
-          return {};
-        }
-        scope.instruction_actions.push_back(action_id);
-      }
-
-      // TODO: check input and output count before cast
-      scope.instructions.push_back(
-          Instruction{InstructionType::FUNCTION_CALL,
-                      FunctionCall{static_cast<uint8_t>(function->inputs.size()),
-                                   static_cast<uint8_t>(function->outputs.size()), function->function}});
-      scope.instruction_actions.push_back(action_id);
-      current_stack_offset -= function->inputs.size();
-    } else if (type == "if") {
-      const auto if_scope = ParseScope(context, action["actions"], &scope);
-      if (!if_scope.has_value()) {
-        return {};
-      }
-      if (!push_value(action["condition"], &scope)) {
-        return {};
-      }
-      scope.instruction_actions.push_back(action_id);
-      scope.instructions.push_back(Instruction{InstructionType::JUMP_IF_FALSE,
-                                               ConditionalJump{static_cast<int>(if_scope->instructions.size() + 1)}});
-      scope.instruction_actions.push_back(action_id);
-      --current_stack_offset;
-
-      scope.instructions.insert(scope.instructions.end(), if_scope->instructions.begin(), if_scope->instructions.end());
-      scope.instruction_actions.insert(scope.instruction_actions.end(), if_scope->instruction_actions.begin(),
-                                       if_scope->instruction_actions.end());
-    }
-    assert(scope.instructions.size() == scope.instruction_actions.size());
-  }
-
-  return scope;
-}
-
 std::vector<ScriptValueDefinition> ParseVariableDefinitions(ScriptContext* context,
                                                             const json& serialized_definitions) {
   std::vector<ScriptValueDefinition> definitions;
@@ -223,26 +109,37 @@ std::vector<ScriptValueDefinition> ParseVariableDefinitions(ScriptContext* conte
 
 }  // namespace
 
-ScriptChunk::ScriptChunk(const json& serialized_chunk) {
-  instructions_.clear();
-  inputs_ = ParseVariableDefinitions(context_, serialized_chunk["inputs"]);
-  outputs_ = ParseVariableDefinitions(context_, serialized_chunk["outputs"]);
+std::variant<ScriptChunk, ScriptError> ScriptChunk::Load(const json& serialized_chunk, ScriptContext* context) {
+  ScriptChunk chunk(context);
+  chunk.instructions_.clear();
+  chunk.inputs_ = ParseVariableDefinitions(context, serialized_chunk["inputs"]);
+  chunk.outputs_ = ParseVariableDefinitions(context, serialized_chunk["outputs"]);
 
   const json actions = serialized_chunk["actions"];
-  Scope function_scope;
-  function_scope.parent = nullptr;
-  for (const auto& output : IndexRange(outputs_)) {
-    function_scope.stack_variable_offsets[fmt::format("$outputs:{}", output->identifier)] =
-        -static_cast<int>(outputs_.size()) - static_cast<int>(inputs_.size()) + output.index();
+  for (const auto& output : chunk.outputs_) {
+    chunk.local_variables_.push_back(LocalVariable{
+        .name = output.identifier,
+        .declaring_action = ScriptActionReference(),
+        .type = output.type,
+        .position = static_cast<int>(chunk.local_variables_.size()),
+    });
   }
-  for (const auto& input : IndexRange(inputs_)) {
-    function_scope.stack_variable_offsets[fmt::format("$inputs:{}", input->identifier)] =
-        -static_cast<int>(inputs_.size()) + input.index();
+  for (const auto& input : chunk.inputs_) {
+    chunk.local_variables_.push_back(LocalVariable{
+        .name = input.identifier,
+        .declaring_action = ScriptActionReference(),
+        .type = input.type,
+        .position = static_cast<int>(chunk.local_variables_.size()),
+    });
   }
-  auto scope = ParseScope(context_, actions, &function_scope);
-  if (scope.has_value()) {
-    instructions_ = scope->instructions;
-    instruction_actions_ = scope->instruction_actions;
+  const auto scope_or_error = chunk.ParseScope(actions);
+  if (std::holds_alternative<ScriptError>(scope_or_error)) {
+    return std::get<ScriptError>(scope_or_error);
+  } else {
+    const auto& scope = std::get<Scope>(scope_or_error);
+    chunk.instructions_ = scope.instructions;
+    chunk.instruction_to_action_mappings_ = scope.instruction_to_action_mappings;
+    return chunk;
   }
 }
 
@@ -270,8 +167,8 @@ ScriptFunctionResult ScriptChunk::Execute() {
         const auto& function_call = std::get<FunctionCall>(instruction.data);
         auto result = function_call.function(context_, function_call.input_count, function_call.output_count);
         if (result.has_value()) [[unlikely]] {
-          return {.error =
-                      ScriptError{.action_id = instruction_actions_[instruction_pointer], .message = result->message}};
+          return {.error = ScriptError{.action = instruction_to_action_mappings_[instruction_pointer],
+                                       .message = result->message}};
         }
         context_->PopStack(function_call.input_count);
         ++instruction_pointer;
@@ -292,6 +189,27 @@ ScriptFunctionResult ScriptChunk::Execute() {
         break;
       }
 
+      case InstructionType::POP: {
+        const Pop& pop = std::get<Pop>(instruction.data);
+        context_->PopStack(static_cast<std::size_t>(pop.count));
+        ++instruction_pointer;
+        break;
+      }
+
+      case InstructionType::ASSIGN_CONSTANT: {
+        const AssignConstant& assign_constant = std::get<AssignConstant>(instruction.data);
+        context_->AssignValue(assign_constant.position, assign_constant.value);
+        ++instruction_pointer;
+        break;
+      }
+
+      case InstructionType::ASSIGN_STACK_VARIABLE: {
+        const AssignStackVariable& assign_stack_variable = std::get<AssignStackVariable>(instruction.data);
+        context_->AssignValue(assign_stack_variable.destination_position,
+                              context_->GetValue(assign_stack_variable.source_position));
+        break;
+      }
+
       case InstructionType::JUMP_IF_TRUE: {
         const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
         const auto value_or_error = context_->GetValue<bool>(-1);
@@ -304,8 +222,9 @@ ScriptFunctionResult ScriptChunk::Execute() {
           context_->PopStack(1);
         } else {
           const auto error = std::get<ScriptError>(value_or_error);
-          return ScriptFunctionResult{
-              .error = ScriptError{.action_id = instruction_actions_[instruction_pointer], .message = error.message}};
+          return ScriptFunctionResult{.error =
+                                          ScriptError{.action = instruction_to_action_mappings_[instruction_pointer],
+                                                      .message = error.message}};
         }
         break;
       }
@@ -322,8 +241,9 @@ ScriptFunctionResult ScriptChunk::Execute() {
           context_->PopStack(1);
         } else {
           const auto error = std::get<ScriptError>(value_or_error);
-          return ScriptFunctionResult{
-              .error = ScriptError{.action_id = instruction_actions_[instruction_pointer], .message = error.message}};
+          return ScriptFunctionResult{.error =
+                                          ScriptError{.action = instruction_to_action_mappings_[instruction_pointer],
+                                                      .message = error.message}};
         }
         break;
       }
@@ -359,6 +279,25 @@ void ScriptChunk::Print() {
         break;
       }
 
+      case InstructionType::POP: {
+        const Pop& pop = std::get<Pop>(instruction.data);
+        LogI("pop [-{}]", pop.count);
+        break;
+      }
+
+      case InstructionType::ASSIGN_CONSTANT: {
+        const AssignConstant& assign_constant = std::get<AssignConstant>(instruction.data);
+        LogI("assign_constant {}->{} [0]", "some_value", assign_constant.position);
+        break;
+      }
+
+      case InstructionType::ASSIGN_STACK_VARIABLE: {
+        const AssignStackVariable& assign_stack_variable = std::get<AssignStackVariable>(instruction.data);
+        LogI("assign_stack_variable {}->{} [0]", assign_stack_variable.source_position,
+             assign_stack_variable.destination_position);
+        break;
+      }
+
       case InstructionType::JUMP_IF_TRUE: {
         const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
         LogI("jump_if_true {} [-1]", conditional_jump.instruction_offset);
@@ -372,6 +311,157 @@ void ScriptChunk::Print() {
       }
     }
   }
+}
+
+ScriptChunk::ScriptChunk(ScriptContext* context) : context_(context) {}
+
+std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json& actions, const ScriptActionReference& parent) {
+  Scope scope;
+
+  auto push_value = [&](const json& value, Scope* scope) {
+    // SDL_assert(scope != nullptr);
+
+    if (value.is_string()) {
+      const std::string& string = value;
+      scope->instructions.push_back(Instruction{
+          .type = InstructionType::PUSH_CONSTANT,
+          .data = PushConstant{.value = ScriptValue{.type = context_->GetTypeId<std::string>(), .value = string}}});
+      return true;
+    } else if (value.is_number()) {
+      const double number = value;
+      scope->instructions.push_back(Instruction{
+          .type = InstructionType::PUSH_CONSTANT,
+          .data = PushConstant{.value = ScriptValue{.type = context_->GetTypeId<double>(), .value = number}}});
+      return true;
+    } else if (value.is_boolean()) {
+      const bool boolean = value;
+      scope->instructions.push_back(Instruction{
+          .type = InstructionType::PUSH_CONSTANT,
+          .data = PushConstant{.value = ScriptValue{.type = context_->GetTypeId<bool>(), .value = boolean}}});
+      return true;
+    } else if (value.is_object()) {
+      const std::string& local_variable_name = value["local_variable"];
+      const auto local_variable = GetLocalVariable(local_variable_name);
+      if (!local_variable.has_value()) {
+        LogE("Unknown variable: {}", local_variable_name);
+        return false;
+      } else {
+        scope->instructions.push_back(Instruction{.type = InstructionType::PUSH_STACK_VARIABLE,
+                                                  .data = PushStackValue{.position = local_variable->position}});
+        // TODO: check expected type
+        return true;
+      }
+    } else {
+      return false;
+    }
+  };
+
+  for (const auto& indexed_action : IndexRange(actions)) {
+    const json& action = indexed_action.value();
+    const std::string type = action["type"];
+    const ScriptActionReference action_reference = parent / indexed_action.index();
+    if (type == "function_call") {
+      const auto& function_identifier = static_cast<std::string>(action["function"]);
+      auto function = context_->GetFunction(function_identifier);
+      if (!function) {
+        return ScriptError{.action = action_reference,
+                           .message = fmt::format("Unknown function identifier '{}'", function_identifier)};
+      }
+
+      for (const auto& output : function->outputs) {
+        if (action.contains(json::json_pointer(fmt::format("/outputs/{}", output.identifier)))) {
+          const std::string variable_name = action["outputs"][output.identifier];
+          const auto& existing_variable = GetLocalVariable(variable_name);
+
+          if (!existing_variable.has_value()) {
+            scope.instructions.push_back(Instruction{InstructionType::PUSH_CONSTANT, PushConstant{}});
+            scope.instruction_to_action_mappings.push_back(action_reference);
+            local_variables_.push_back(LocalVariable{.name = variable_name,
+                                                     .declaring_action = action_reference,
+                                                     .type = output.type,
+                                                     .position = static_cast<int>(local_variables_.size())});
+          } else if (existing_variable->type != output.type) {
+            return ScriptError{
+                .action = action_reference,
+                .message = fmt::format("Assigning function output to local variable with different type. Output '{}' "
+                                       "has type '{}', local variable '{}' has type '{}'",
+                                       output.identifier, context_->GetType(output.type)->name, variable_name,
+                                       context_->GetType(existing_variable->type)->name)};
+          }
+        }
+      }
+      for (const auto& output : function->outputs) {
+        scope.instructions.push_back(Instruction{InstructionType::PUSH_CONSTANT, PushConstant{}});
+        scope.instruction_to_action_mappings.push_back(action_reference);
+      }
+
+      for (const auto& input : function->inputs) {
+        if (!action.contains("inputs") || !action["inputs"].is_object() ||
+          !push_value(action["inputs"][input.identifier], &scope)) {
+          return ScriptError{.action = action_reference,
+                             .message = fmt::format("No value for input '{}' provided", input.identifier)};
+        }
+        scope.instruction_to_action_mappings.push_back(action_reference);
+      }
+
+      // TODO: check input and output count before cast
+      scope.instructions.push_back(
+          Instruction{InstructionType::FUNCTION_CALL,
+                      FunctionCall{static_cast<uint8_t>(function->inputs.size()),
+                                   static_cast<uint8_t>(function->outputs.size()), function->function}});
+      scope.instruction_to_action_mappings.push_back(action_reference);
+
+      for (const auto& output : function->outputs) {
+        if (action.contains(json::json_pointer(fmt::format("/outputs/{}", output.identifier)))) {
+          const std::string variable_name = action["outputs"][output.identifier];
+          const auto& existing_variable = GetLocalVariable(variable_name);
+
+          if (existing_variable.has_value()) {
+            scope.instructions.push_back(Instruction{
+                InstructionType::ASSIGN_STACK_VARIABLE,
+                AssignStackVariable{.source_position = static_cast<int>(
+                                        -(function->outputs.size() - function->GetOutputIndex(output.identifier))),
+                                    .destination_position = existing_variable->position}});
+            scope.instruction_to_action_mappings.push_back(action_reference);
+          }
+        }
+      }
+      scope.instructions.push_back(
+          Instruction{.type = InstructionType::POP, .data = Pop{.count = static_cast<int>(outputs_.size())}});
+      scope.instruction_to_action_mappings.push_back(action_reference);
+    } else if (type == "if") {
+      const auto if_scope_result = ParseScope(action["actions"], action_reference);
+      if (std::holds_alternative<ScriptError>(if_scope_result)) {
+        return std::get<ScriptError>(if_scope_result);
+      }
+      if (!push_value(action["condition"], &scope)) {
+        // TODO: Return proper error
+        return {};
+      }
+      const auto& if_scope = std::get<Scope>(if_scope_result);
+      scope.instruction_to_action_mappings.push_back(action_reference);
+      scope.instructions.push_back(Instruction{InstructionType::JUMP_IF_FALSE,
+                                               ConditionalJump{static_cast<int>(if_scope.instructions.size() + 1)}});
+      scope.instruction_to_action_mappings.push_back(action_reference);
+
+      scope.instructions.insert(scope.instructions.end(), if_scope.instructions.begin(), if_scope.instructions.end());
+      scope.instruction_to_action_mappings.insert(scope.instruction_to_action_mappings.end(),
+                                                  if_scope.instruction_to_action_mappings.begin(),
+                                                  if_scope.instruction_to_action_mappings.end());
+    }
+    assert(scope.instructions.size() == scope.instruction_to_action_mappings.size());
+  }
+
+  return scope;
+}
+
+std::optional<ScriptChunk::LocalVariable> ScriptChunk::GetLocalVariable(std::string_view name) {
+  for (const auto& variable : local_variables_) {
+    if (variable.name == name) {
+      return variable;
+    }
+  }
+  return {};
 }
 
 std::optional<ScriptReference> ScriptReference::Parse(std::string_view reference) {

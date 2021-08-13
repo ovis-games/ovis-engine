@@ -40,8 +40,29 @@ struct ScriptValue {
   std::any value;
 };
 
+struct ScriptActionReference {
+  std::string string;
+
+  static ScriptActionReference Root() { return {.string = "/"}; }
+};
+
+inline bool operator==(const ScriptActionReference& lhs, const ScriptActionReference& rhs) {
+  return lhs.string == rhs.string;
+}
+
+inline ScriptActionReference operator/(const ScriptActionReference& reference, int i) {
+  assert(reference.string != "");
+
+  if (reference.string == "/") {
+    return ScriptActionReference{.string = reference.string + std::to_string(i)};
+  } else {
+    return ScriptActionReference{.string = reference.string + "/" + std::to_string(i)};
+  }
+}
+
+
 struct ScriptError {
-  int action_id;
+  ScriptActionReference action;
   std::string message;
 };
 
@@ -230,10 +251,8 @@ class ScriptContext {
       assert(value.value.type() == typeid(double));
       return static_cast<T>(std::any_cast<double>(value.value));
     } else {
-      return ScriptError {
-        .action_id = -1,
-        .message = fmt::format("Expected {}, got {}", GetType<T>()->name, GetType(value.type)->name)
-      };
+      return ScriptError{.action = ScriptActionReference(),
+                         .message = fmt::format("Expected {}, got {}", GetType<T>()->name, GetType(value.type)->name)};
     }
   }
 
@@ -245,10 +264,8 @@ class ScriptContext {
       assert(value.value.type() == typeid(T));
       return std::any_cast<T>(value.value);
     } else {
-      return ScriptError {
-        .action_id = -1,
-        .message = fmt::format("Expected {}, got {}", GetType<T>()->name, GetType(value.type)->name)
-      };
+      return ScriptError{.action = ScriptActionReference(),
+                         .message = fmt::format("Expected {}, got {}", GetType<T>()->name, GetType(value.type)->name)};
     }
   }
 
@@ -278,7 +295,7 @@ class ScriptContext {
         return FillValueTuple<N + 1>(values, begin, error);
       } else {
         const auto& inner_error = std::get<ScriptError>(value);
-        error->action_id = inner_error.action_id;
+        error->action = inner_error.action;
         error->message = fmt::format("{}: {}", N + 1, inner_error.message);
         return false;
       }
@@ -342,6 +359,9 @@ class ScriptChunk {
     FUNCTION_CALL,
     PUSH_CONSTANT,
     PUSH_STACK_VARIABLE,
+    ASSIGN_CONSTANT,
+    ASSIGN_STACK_VARIABLE,
+    POP,
     JUMP_IF_TRUE,
     JUMP_IF_FALSE,
   };
@@ -356,15 +376,27 @@ class ScriptChunk {
   struct PushStackValue {
     int position;
   };
+  struct AssignConstant {
+    ScriptValue value;
+    int position;
+  };
+  struct AssignStackVariable {
+    int source_position;
+    int destination_position;
+  };
+  struct Pop {
+    int count;
+  };
   struct ConditionalJump {
     int instruction_offset;
   };
   struct Instruction {
     InstructionType type;
-    std::variant<FunctionCall, PushConstant, PushStackValue, ConditionalJump> data;
+    std::variant<FunctionCall, PushConstant, PushStackValue, Pop, AssignConstant, AssignStackVariable, ConditionalJump> data;
   };
 
-  ScriptChunk(const json& definition);
+
+  static std::variant<ScriptChunk, ScriptError> Load(const json& definition, ScriptContext* context = global_script_context());
 
   ScriptFunctionResult Execute(std::span<const ScriptValue> input);
   template <typename... Inputs>
@@ -372,15 +404,37 @@ class ScriptChunk {
     context_->PushValues(std::forward<Inputs>(inputs)...);
     return Execute();
   }
+
+  std::vector<ScriptValueDefinition> GetVisibleLocalVariables(ScriptActionReference action);
+
   void Print();
 
  private:
+  ScriptChunk(ScriptContext* context);
+
+  // Needed for running
   ScriptContext* context_ = global_script_context();
   std::vector<Instruction> instructions_;
-  std::vector<int> instruction_actions_;
   std::vector<ScriptValueDefinition> inputs_;
   std::vector<ScriptValueDefinition> outputs_;
 
+  // Only necessary for parsing / debugging
+  std::vector<ScriptActionReference> instruction_to_action_mappings_;
+  struct LocalVariable {
+    std::string name;
+    ScriptActionReference declaring_action;
+    ScriptTypeId type;
+    int position;
+  };
+  std::vector<LocalVariable> local_variables_;
+
+  struct Scope {
+    std::vector<ScriptChunk::Instruction> instructions;
+    std::vector<ScriptActionReference> instruction_to_action_mappings;
+  };
+  std::variant<Scope, ScriptError> ParseScope(const json& actions, const ScriptActionReference& parent = ScriptActionReference::Root());
+
+  std::optional<LocalVariable> GetLocalVariable(std::string_view name);
   ScriptFunctionResult Execute();
 };
 

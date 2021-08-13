@@ -542,4 +542,17 @@ void Scene::RegisterType(sol::table* module) {
   // clang-format on
 }
 
+void Scene::RegisterType(ScriptContext* context) {
+  context->RegisterType<Scene>("Scene");
+  const auto create_object = [](Scene* scene, std::string_view name) { return scene->CreateObject(name); };
+  context->RegisterFunction<static_cast<SceneObject* (*)(Scene*, std::string_view)>(create_object)>(
+      "scene_add_object", {"scene", "base name"}, {"object"});
+  context->RegisterFunction<static_cast<SceneObject* (Scene::*)(std::string_view, SceneObject*)>(&Scene::CreateObject)>(
+      "scene_add_child_object", {"scene", "base name", "parent"}, {"object"});
+  context->RegisterFunction<static_cast<void (Scene::*)(SceneObject*)>(&Scene::DeleteObject)>(
+      "scene_remove_object", {"scene", "object"}, {});
+  context->RegisterFunction<static_cast<void (Scene::*)(std::string_view)>(&Scene::DeleteObject)>(
+      "scene_remove_object_by_name", {"scene", "object name"}, {});
+}
+
 }  // namespace ovis

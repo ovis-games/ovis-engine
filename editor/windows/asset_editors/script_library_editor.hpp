@@ -26,11 +26,13 @@ class ScriptLibraryEditor : public AssetEditor {
   std::string reference_to_highlight_;
   json::json_pointer dragged_action_path_;
   std::optional<ScriptError> error_;
+  std::vector<std::string> auto_complete_list_;
+  std::vector<json> auto_complete_data_;
   std::string new_action_text_;
 
   bool DrawEntrypoint();
-  bool DrawActions(const json::json_pointer& path);
-  bool DrawAction(const json::json_pointer& path, bool dragging_preview = false);
+  bool DrawActions(const json::json_pointer& path, const ScriptActionReference& parent_reference);
+  bool DrawAction(const json::json_pointer& path, const ScriptActionReference& reference, bool dragging_preview = false);
   bool DrawFunctionCall(const json::json_pointer& path);
   bool DrawIfStatement(const json::json_pointer& path);
   bool DrawNewAction(const json::json_pointer& path);
