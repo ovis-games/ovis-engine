@@ -68,12 +68,15 @@ class SceneController : public Serializable,
     UpdateAfter(T::Name());
   }
 
+  void DoOnceAfterUpdate(const std::function<void()>& function) { after_update_callbacks_.push_back(function); }
+
  private:
   Scene* scene_;
   std::string name_;
   std::set<std::string> update_before_list_;
   std::set<std::string> update_after_list_;
   std::set<std::string> subscribed_events_;
+  std::vector<std::function<void()>> after_update_callbacks_;
 
   static const json DEFAULT_SCHEMA;
 
@@ -89,6 +92,10 @@ class SceneController : public Serializable,
 #if OVIS_ENABLE_BUILT_IN_PROFILING
     update_profiler_.EndMeasurement();
 #endif
+    for (const auto& cb : after_update_callbacks_) {
+      cb();
+    }
+    after_update_callbacks_.clear();
   }
 };
 

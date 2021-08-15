@@ -183,7 +183,7 @@ void Physics2DShapeController::ProcessEvent(Event* event) {
             const size_t insert_position = GetLineLoopInsertPosition(vertices_, new_vertex);
             vertices_.insert(vertices_.begin() + insert_position, new_vertex);
             fixture_->SetConvexPolygon(vertices_);
-            SubmitChangesToScene();
+            SubmitChanges();
           }
           mouse_button_event->StopPropagation();
         } else if (type_ == b2Shape::e_chain) {
@@ -192,7 +192,7 @@ void Physics2DShapeController::ProcessEvent(Event* event) {
               GetLineStripInsertPosition({vertices_.data() + 1, vertices_.size() - 2}, new_vertex);
           vertices_.insert(vertices_.begin() + insert_position + 1, new_vertex);
           fixture_->SetChain(vertices_.front(), {vertices_.data() + 1, vertices_.size() - 2}, vertices_.back());
-          SubmitChangesToScene();
+          SubmitChanges();
           mouse_button_event->StopPropagation();
         }
 
@@ -205,7 +205,7 @@ void Physics2DShapeController::ProcessEvent(Event* event) {
             } else {
               vertices_.erase(vertices_.begin() + *selection_);
               fixture_->SetConvexPolygon(vertices_);
-              SubmitChangesToScene();
+              SubmitChanges();
             }
           } else if (type_ == b2Shape::e_chain) {
             if (*selection_ == 0 || *selection_ == vertices_.size() - 1) {
@@ -217,7 +217,7 @@ void Physics2DShapeController::ProcessEvent(Event* event) {
             } else {
               vertices_.erase(vertices_.begin() + *selection_);
               fixture_->SetChain(vertices_.front(), {vertices_.data() + 1, vertices_.size() - 2}, vertices_.back());
-              SubmitChangesToScene();
+              SubmitChanges();
             }
           }
           mouse_button_event->StopPropagation();
@@ -232,7 +232,7 @@ void Physics2DShapeController::ProcessEvent(Event* event) {
     if (mouse_button_event->button() == MouseButton::Left() && is_dragging_) {
       error_vertex_.reset();
       is_dragging_ = false;
-      SubmitChangesToScene();
+      SubmitChanges();
       mouse_button_event->StopPropagation();
     }
   }

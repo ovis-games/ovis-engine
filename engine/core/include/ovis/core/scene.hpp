@@ -76,8 +76,12 @@ class Scene : public Serializable, public SafelyReferenceable {
   void ClearObjects();
   SceneObject* GetObject(std::string_view object_reference);
   bool ContainsObject(std::string_view object_reference);
-  inline auto objects() const { return TransformRange(objects_, [](const auto& name_object) { return name_object.second.get(); }); }
-  inline auto root_objects() const { return FilterRange(objects(), [](const SceneObject* object) { return !object->has_parent(); }); }
+  inline auto objects() const {
+    return TransformRange(objects_, [](const auto& name_object) { return name_object.second.get(); });
+  }
+  inline auto root_objects() const {
+    return FilterRange(objects(), [](const SceneObject* object) { return !object->has_parent(); });
+  }
 
   // TODO: create proper iterator here
   void GetSceneObjectsWithComponent(const std::string& component_id, std::vector<SceneObject*>* scene_objects) const;
@@ -102,6 +106,7 @@ class Scene : public Serializable, public SafelyReferenceable {
   const json* GetSchema() const override { return &schema_; }
 
   static void RegisterType(sol::table* module);
+  static void RegisterType(ScriptContext* context);
 
  private:
   void InvalidateControllerOrder();
@@ -116,6 +121,7 @@ class Scene : public Serializable, public SafelyReferenceable {
 
   std::unordered_map<std::string, std::unique_ptr<SceneObject>> objects_;
   bool is_playing_ = false;
+  std::size_t event_handler_index_;
 
   SceneViewport* main_viewport_ = nullptr;
 

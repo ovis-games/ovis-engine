@@ -5,6 +5,7 @@
 
 #include <sol/sol.hpp>
 
+#include <ovis/utils/event_handler.hpp>
 #include <ovis/utils/lua_reference.hpp>
 
 namespace ovis {
@@ -25,5 +26,9 @@ class Event : public DynamicallyLuaReferencableBase {
   std::string type_;
   bool is_propagating_ = true;
 };
+
+std::size_t RegisterGlobalEventHandler(std::function<void(Event* event)> callback);
+void DeregisterGlobalEventHandler(std::size_t event_hander_index);
+void PostGlobalEvent(Event* event);
 
 }  // namespace ovis

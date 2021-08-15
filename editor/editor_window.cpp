@@ -8,9 +8,11 @@
 #include "windows/log_window.hpp"
 #include "windows/modal/loading_window.hpp"
 #include "windows/modal/message_box_window.hpp"
+#include "windows/profiling_window.hpp"
 #include "windows/toast_window.hpp"
 #include "windows/toolbar.hpp"
 #include "windows/profiling_window.hpp"
+#include "windows/asset_editors/script_library_editor.hpp"
 
 #if OVIS_EMSCRIPTEN
 #include <emscripten.h>
@@ -107,7 +109,9 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   scene()->AddController(std::make_unique<InspectorWindow>());
   scene()->AddController(std::make_unique<Overlay>());
   scene()->AddController(std::make_unique<ToastWindow>());
+#if OVIS_ENABLE_BUILTIN_PROFILING
   scene()->AddController(std::make_unique<ProfilingWindow>());
+#endif
 
   AddRenderPass(std::make_unique<ImGuiRenderPass>());
 
@@ -119,19 +123,23 @@ EditorWindow::EditorWindow() : Window(CreateWindowDescription()) {
   io.ClipboardUserData = this;
 
   scene()->GetController<ImGuiStartFrameController>()->LoadFont("FontAwesomeSolid", 28.0f,
-                                                                {{0xf0c7, 0xf0c7},
-                                                                 {0xf0e2, 0xf0e2},
-                                                                 {0xf01e, 0xf01e},
-                                                                 {0xf466, 0xf466},
-                                                                 {0xf2d2, 0xf2d2},
-                                                                 {0xf04b, 0xf04d},
-                                                                 {0xf0b2, 0xf0b2},
-                                                                 {0xf2f1, 0xf2f1},
-                                                                 {0xf424, 0xf424},
-                                                                 {0xf1b2, 0xf1b2},
-                                                                 {0xf0ac, 0xf0ac},
-                                                                 {0xf06e, 0xf06e},
-                                                                 {0xf0fe, 0xf0fe}});
+                                                                {
+                                                                    {0xf0c7, 0xf0c7},
+                                                                    {0xf0e2, 0xf0e2},
+                                                                    {0xf01e, 0xf01e},
+                                                                    {0xf466, 0xf466},
+                                                                    {0xf2d2, 0xf2d2},
+                                                                    {0xf04b, 0xf04d},
+                                                                    {0xf0b2, 0xf0b2},
+                                                                    {0xf2f1, 0xf2f1},
+                                                                    {0xf424, 0xf424},
+                                                                    {0xf1b2, 0xf1b2},
+                                                                    {0xf0ac, 0xf0ac},
+                                                                    {0xf06e, 0xf06e},
+                                                                    {0xf0fe, 0xf0fe},
+                                                                });
+  scene()->GetController<ImGuiStartFrameController>()->LoadFont("FontAwesomeSolid", 20.0f,
+                                                                {{0xf7a4, 0xf7a4}, {0xf1f8, 0xf1f8}});
 }
 
 void EditorWindow::Update(std::chrono::microseconds delta_time) {
@@ -152,11 +160,16 @@ void EditorWindow::Update(std::chrono::microseconds delta_time) {
 #endif
 
   Window::Update(delta_time);
+  if (!scene()->HasController(AssetEditor::GetAssetEditorId("test"))) {
+    scene()->GetController<AssetViewerWindow>("Assets")->OpenAssetEditor("test");
+  }
 }
 
-void EditorWindow::ShowMessageBox(std::string_view title, std::string_view message, std::vector<std::string_view> buttons,
+void EditorWindow::ShowMessageBox(std::string_view title, std::string_view message,
+                                  std::vector<std::string_view> buttons,
                                   std::function<void(std::string_view)> callback) {
-  scene()->AddController(std::make_unique<MessageBoxWindow>(scene()->CreateControllerName("MessageBox"), title, message, buttons, std::move(callback)));
+  scene()->AddController(std::make_unique<MessageBoxWindow>(scene()->CreateControllerName("MessageBox"), title, message,
+                                                            buttons, std::move(callback)));
 }
 
 void EditorWindow::SetUIStyle() {

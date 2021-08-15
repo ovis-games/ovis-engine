@@ -79,7 +79,7 @@ class ActionHistory : public ActionHistoryBase {
     }
     do_functions_[current_position_->id](context_, current_position_->data);
     LogV("Redo: {} (action_id={}, data={})", current_position_->description, current_position_->id,
-               current_position_->data.dump());
+         current_position_->data.dump());
     ++current_position_;
     return true;
   }
@@ -91,7 +91,7 @@ class ActionHistory : public ActionHistoryBase {
     --current_position_;
     undo_functions_[current_position_->id](context_, current_position_->data);
     LogV("Undo: {} (action_id={}, data={})", current_position_->description, current_position_->id,
-               current_position_->data.dump());
+         current_position_->data.dump());
     return true;
   }
 

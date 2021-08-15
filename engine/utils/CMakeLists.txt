@@ -48,15 +48,18 @@ if (OVIS_EMSCRIPTEN)
       "SHELL:-s USE_SDL=2"
   )
 else ()
-  find_package(SDL2 REQUIRED)
-
   if (APPLE OR WIN32)
+    find_package(SDL2 REQUIRED)
+
     target_link_libraries(
       ovis-utils
       PUBLIC
         SDL2::SDL2-static
     )
   else ()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(SDL2 REQUIRED sdl2)
+
     target_include_directories(
       ovis-utils
       PUBLIC
@@ -97,8 +100,12 @@ if (OVIS_BUILD_TESTS)
       ovis::utils
   )
 
-  add_test(
-    ovis-utils-test
-    ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-utils-test.js
-  )
+  if (OVIS_EMSCRIPTEN)
+    add_test(
+      ovis-utils-test
+      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-utils-test.js
+    )
+  else ()
+    add_test(ovis-utils-test ovis-utils-test)
+  endif ()
 endif ()

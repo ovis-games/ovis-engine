@@ -183,7 +183,8 @@ class RangeFilter {
     Iterator(const Iterator&) = default;
     ~Iterator() = default;
 
-    inline Iterator(Functor& functor, IteratorType iterator, IteratorType end) : functor_(functor), iterator_(iterator), end_(end) {
+    inline Iterator(Functor& functor, IteratorType iterator, IteratorType end)
+        : functor_(functor), iterator_(iterator), end_(end) {
       // Find first element that passes the filter
       while (iterator_ != end_ && !functor_(*iterator_)) {
         ++iterator_;
@@ -222,7 +223,8 @@ class RangeFilter {
   };
 
  public:
-  inline RangeFilter(const IteratorType& begin, const IteratorType& end, Functor functor) : begin_(begin), end_(end), functor_(functor) {}
+  inline RangeFilter(const IteratorType& begin, const IteratorType& end, Functor functor)
+      : begin_(begin), end_(end), functor_(functor) {}
 
   inline Iterator begin() const { return {functor_, begin_, end_}; }
 
@@ -293,7 +295,8 @@ class RangeAdapter {
   };
 
  public:
-  inline RangeAdapter(const IteratorType& begin, const IteratorType& end, Functor functor) : begin_(begin), end_(end), functor_(functor) {}
+  inline RangeAdapter(const IteratorType& begin, const IteratorType& end, Functor functor)
+      : begin_(begin), end_(end), functor_(functor) {}
 
   inline Iterator begin() const { return {functor_, begin_}; }
 

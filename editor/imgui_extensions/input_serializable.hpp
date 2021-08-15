@@ -1,11 +1,11 @@
 #pragma once
 
-#include <type_traits>
-#include <ovis/utils/serialize.hpp>
 #include "input_json.hpp"
+#include <type_traits>
 
-namespace ImGui
-{
+#include <ovis/utils/serialize.hpp>
+
+namespace ImGui {
 
 inline bool InputSerializable(const char* label, ovis::Serializable* object) {
   ovis::json data = object->Serialize();
@@ -19,4 +19,4 @@ inline bool InputSerializable(const char* label, ovis::Serializable* object) {
   }
 }
 
-} // namespace ImGui
+}  // namespace ImGui

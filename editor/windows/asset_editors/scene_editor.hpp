@@ -4,8 +4,8 @@
 #include "scene_view_editor.hpp"
 #include <variant>
 
-#include <ovis/rendering/render_target_viewport.hpp>
 #include <ovis/core/scene.hpp>
+#include <ovis/rendering/render_target_viewport.hpp>
 
 namespace ovis {
 namespace editor {
@@ -19,7 +19,9 @@ class SceneEditor : public SceneViewEditor {
   static void CreateNew(const std::string& asset_id);
 
  protected:
+  void SubmitChanges() override;
   void JsonFileChanged(const json& data, const std::string& file_type) override;
+  void DrawObjectTree() override;
 };
 
 }  // namespace editor

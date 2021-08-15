@@ -61,7 +61,8 @@ void TransformationToolsController::Update(std::chrono::microseconds) {
 
   const Quaternion rotation = transform->world_rotation();
 
-  const Vector3 unit_offset = viewport->WorldSpacePositionToScreenSpace(transform->world_position() + Vector3::PositiveX());
+  const Vector3 unit_offset =
+      viewport->WorldSpacePositionToScreenSpace(transform->world_position() + Vector3::PositiveX());
   world_to_screen_space_factor_ = Distance(unit_offset, object_position_screen_space_);
 
   // Scaling in world space is not possible
@@ -124,7 +125,7 @@ void TransformationToolsController::ProcessEvent(Event* event) {
     ClearTooltip();
     if (is_dragging_) {
       is_dragging_ = false;
-      SubmitChangesToScene();
+      SubmitChanges();
       event->StopPropagation();
     }
     // We may hover another gizmo now, so recheck it

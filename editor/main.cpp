@@ -17,9 +17,53 @@
 
 extern "C" {
 
-int EMSCRIPTEN_KEEPALIVE Ovis_GetAssetCount() {
-  ovis::GetApplicationAssetLibrary();
+int EMSCRIPTEN_KEEPALIVE OvisScripting_GetFunctionInputCount(const char* function_identifier) {
+  return ovis::global_script_context()->GetFunction(function_identifier)->inputs.size();
 }
+
+const char* EMSCRIPTEN_KEEPALIVE OvisScripting_GetFunctionInputName(const char* function_identifier, int index) {
+  const auto function = ovis::global_script_context()->GetFunction(function_identifier);
+  if (index < function->inputs.size()) {
+    return function->inputs[index].identifier.c_str();
+  } else {
+    return "";
+  }
+}
+
+const char* EMSCRIPTEN_KEEPALIVE OvisScripting_GetFunctionInputType(const char* function_identifier, int index) {
+  const auto function = ovis::global_script_context()->GetFunction(function_identifier);
+  if (index < function->inputs.size()) {
+    return ovis::global_script_context()->GetType(function->inputs[index].type)->name.c_str();
+  } else {
+    return "";
+  }
+}
+
+int EMSCRIPTEN_KEEPALIVE OvisScripting_GetFunctionOutputCount(const char* function_identifier) {
+  return ovis::global_script_context()->GetFunction(function_identifier)->outputs.size();
+}
+
+const char* EMSCRIPTEN_KEEPALIVE OvisScripting_GetFunctionOutputName(const char* function_identifier, int index) {
+  const auto function = ovis::global_script_context()->GetFunction(function_identifier);
+  if (index < function->outputs.size()) {
+    return function->outputs[index].identifier.c_str();
+  } else {
+    return "";
+  }
+}
+
+const char* EMSCRIPTEN_KEEPALIVE OvisScripting_GetFunctionOutputType(const char* function_identifier, int index) {
+  const auto function = ovis::global_script_context()->GetFunction(function_identifier);
+  if (index < function->outputs.size()) {
+    return ovis::global_script_context()->GetType(function->outputs[index].type)->name.c_str();
+  } else {
+    return "";
+  }
+}
+
+// ovis::ScriptChunk* EMSCRIPTEN_KEEPALIVE OvisScripting_CreateChunk() {
+//   return new ovis::ScriptChunk();
+// }
 
 }
 #endif

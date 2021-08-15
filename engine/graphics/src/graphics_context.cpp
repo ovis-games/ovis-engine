@@ -18,7 +18,7 @@ GraphicsContext::GraphicsContext(SDL_Window* window)
   SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
   SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
+  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
 #if !defined(__IPHONEOS__) && !defined(__EMSCRIPTEN__)
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
@@ -66,7 +66,9 @@ GraphicsContext::GraphicsContext(SDL_Window* window)
 
 GraphicsContext::~GraphicsContext() {
   m_default_render_target_configuration.reset();
-  SDL_assert(resources_.size() == 0);
+  for (auto& resource : resources_) {
+    SDL_assert(resource->type() == GraphicsResource::Type::NONE);
+  }
 }
 
 void GraphicsContext::Draw(const DrawItem& draw_item) {

@@ -1,8 +1,8 @@
 #include <algorithm>
+#include <cstring>
 #include <ctime>
 #include <iomanip>
 #include <sstream>
-#include <cstring>
 
 #include <ovis/utils/profiling.hpp>
 
@@ -15,7 +15,7 @@ std::string GetFilenameFriendlyCurrentTimeString() {
   return stream.str();
 }
 
-ProfilingLog default_profiling_log{GetFilenameFriendlyCurrentTimeString()};
+std::unique_ptr<ProfilingLog> default_profiling_log;
 }  // namespace
 
 ProfilingLog::ProfilingLog(const std::string& filename, char delimiter)
@@ -29,7 +29,10 @@ ProfilingLog::~ProfilingLog() {
 }
 
 ProfilingLog* ProfilingLog::default_log() {
-  return &default_profiling_log;
+  if (default_profiling_log == nullptr) {
+    default_profiling_log = std::make_unique<ProfilingLog>(GetFilenameFriendlyCurrentTimeString());
+  }
+  return default_profiling_log.get();
 }
 
 void ProfilingLog::AddProfiler(Profiler* profiler_to_add) {

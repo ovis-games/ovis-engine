@@ -2,18 +2,18 @@
 
 #include <cassert>
 #include <cstddef>
-#include <type_traits>
-#include <vector>
 #include <cstdint>
-#include <stdexcept>
 #include <limits>
 #include <optional>
+#include <stdexcept>
+#include <type_traits>
+#include <vector>
 
 namespace ovis {
 
 template <typename T>
 class sparse_vector {
-public:
+ public:
   // The definitions according to the standard containers
   using value_type = T;
   using size_type = std::size_t;
@@ -21,18 +21,13 @@ public:
   using reference = value_type&;
   using const_reference = const value_type&;
   using pointer = value_type*;
-  
+
   template <bool is_const>
   class basic_iterator;
   using iterator = basic_iterator<false>;
   using const_iterator = basic_iterator<true>;
 
-  sparse_vector(): 
-    data_(nullptr),
-    free_positions_(nullptr),
-    size_(0),
-    capacity_(0) {
-  }
+  sparse_vector() : data_(nullptr), free_positions_(nullptr), size_(0), capacity_(0) {}
 
   ~sparse_vector() {
     for (size_type i = 0; i < capacity_; ++i) {
@@ -74,10 +69,8 @@ public:
     assert(contains(index));
     return reinterpret_cast<const_reference>(data_[index]);
   }
-  
-  inline bool contains(size_type index) const {
-    return index < capacity_ && !free_positions_[index];
-  }
+
+  inline bool contains(size_type index) const { return index < capacity_ && !free_positions_[index]; }
 
   // Iterators
   inline constexpr iterator begin() noexcept {
@@ -93,8 +86,12 @@ public:
     return const_iterator(data_ + first_occupied_index, free_positions_ + first_occupied_index);
   }
   inline constexpr iterator end() noexcept { return iterator(data_ + capacity_, free_positions_ + capacity_); }
-  inline constexpr const_iterator end() const noexcept { return const_iterator(data_ + capacity_, free_positions_ + capacity_); }
-  inline constexpr const_iterator cend() const noexcept { return const_iterator(data_ + capacity_, free_positions_ + capacity_); }
+  inline constexpr const_iterator end() const noexcept {
+    return const_iterator(data_ + capacity_, free_positions_ + capacity_);
+  }
+  inline constexpr const_iterator cend() const noexcept {
+    return const_iterator(data_ + capacity_, free_positions_ + capacity_);
+  }
 
   // Capacity
   inline bool empty() const { return size_ == 0; }
@@ -104,7 +101,7 @@ public:
     if (new_cap > capacity_) {
       value_storage* data = new value_storage[new_cap];
       bool* free_positions = new bool[new_cap + 1];
-  
+
       for (size_type i = 0; i < capacity_; ++i) {
         if (!free_positions_[i]) {
           // TODO: nothing good happens if this throws...
@@ -154,7 +151,7 @@ public:
     return it++;
   }
 
-private:
+ private:
   using value_storage = std::aligned_storage_t<sizeof(T), alignof(T)>;
   value_storage* data_;
   bool* free_positions_;
@@ -194,45 +191,45 @@ private:
 template <typename T>
 template <bool is_const>
 class sparse_vector<T>::basic_iterator {
-public:
+ public:
   friend class sparse_vector<T>;
   using value_type = std::conditional_t<is_const, T, const T>;
 
-basic_iterator(const iterator&) = default;
-~basic_iterator() = default;
+  basic_iterator(const iterator&) = default;
+  ~basic_iterator() = default;
 
-inline basic_iterator(sparse_vector<T>::value_storage* value, bool* is_free) : value_(value), is_free_(is_free) {}
+  inline basic_iterator(sparse_vector<T>::value_storage* value, bool* is_free) : value_(value), is_free_(is_free) {}
 
-basic_iterator& operator=(const basic_iterator&) = default;
+  basic_iterator& operator=(const basic_iterator&) = default;
 
-inline bool operator==(const basic_iterator& rhs) const { return value_ == rhs.value_; }
+  inline bool operator==(const basic_iterator& rhs) const { return value_ == rhs.value_; }
 
-inline bool operator!=(const basic_iterator& rhs) const { return value_ != rhs.value_; }
+  inline bool operator!=(const basic_iterator& rhs) const { return value_ != rhs.value_; }
 
-inline value_type& operator*() const { return *reinterpret_cast<value_type*>(value_); }
+  inline value_type& operator*() const { return *reinterpret_cast<value_type*>(value_); }
 
-inline value_type* operator->() const { return reinterpret_cast<value_type*>(value_); }
+  inline value_type* operator->() const { return reinterpret_cast<value_type*>(value_); }
 
-inline basic_iterator& operator++() {
-  do {
-    ++value_;
-    ++is_free_;
-  } while (*is_free_);
-  return *this;
-}
+  inline basic_iterator& operator++() {
+    do {
+      ++value_;
+      ++is_free_;
+    } while (*is_free_);
+    return *this;
+  }
 
-inline basic_iterator operator++(int) {
-  basic_iterator result(*this);
-  do {
-    ++value_;
-    ++is_free_;
-  } while (*is_free_);
-  return result;
-}
+  inline basic_iterator operator++(int) {
+    basic_iterator result(*this);
+    do {
+      ++value_;
+      ++is_free_;
+    } while (*is_free_);
+    return result;
+  }
 
-private:
+ private:
   sparse_vector<T>::value_storage* value_;
   bool* is_free_;
 };
 
-}
+}  // namespace ovis

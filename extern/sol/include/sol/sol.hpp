@@ -9249,6 +9249,7 @@ namespace sol {
 #include <forward_list>
 #include <algorithm>
 #include <sstream>
+#include <limits>
 
 namespace sol {
 	namespace detail {

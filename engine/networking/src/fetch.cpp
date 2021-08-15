@@ -117,4 +117,3 @@ void Fetch(const std::string& url, const FetchOptions& options, Blob body) {
 #endif
 
 }  // namespace ovis
-

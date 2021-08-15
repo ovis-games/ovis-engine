@@ -39,17 +39,10 @@ void Vector2::RegisterType(sol::table* module) {
   // assert(p1 == Vector2.new(8,1))
   // assert(p2 == Vector2.new(12,1))
   sol::usertype<Vector2> vector2_type = module->new_usertype<Vector2>(
-    "Vector2", sol::factories(
-      []() { return Vector2(0, 0); },
-      [](float x, float y) { return Vector2(x, y); },
-      [](const sol::table& t) {
-        return Vector2(
-          t.get_or("x", t.get_or(1, 0.0f)),
-          t.get_or("y", t.get_or(2, 0.0f))
-        );
-      }
-    )
-  );
+      "Vector2", sol::factories([]() { return Vector2(0, 0); }, [](float x, float y) { return Vector2(x, y); },
+                                [](const sol::table& t) {
+                                  return Vector2(t.get_or("x", t.get_or(1, 0.0f)), t.get_or("y", t.get_or(2, 0.0f)));
+                                }));
 
   /// The x component of the vector.
   // @field[type=number] x
@@ -285,8 +278,40 @@ void Vector2::RegisterType(sol::table* module) {
   // local v2 = Vector2.new(4, 5)
   // assert(Vector2.dot(v1, v2) == 14)
   vector2_type["dot"] = &Dot<Vector2>;
-  
+
   // clang-format on
 }
 
+void Vector2::RegisterType(ScriptContext* context) {
+  // vector2_type["x"] = &Vector2::x;
+  // vector2_type["y"] = &Vector2::y;
+  // vector2_type["z"] = &Vector2::z;
+  // vector2_type["ZERO"] = sol::property(Vector2::Zero);
+  // vector2_type["ONE"] = sol::property(Vector2::One);
+  // vector2_type["POSITIVE_X"] = sol::property(Vector2::PositiveX);
+  // vector2_type["NEGATIVE_X"] = sol::property(Vector2::NegativeX);
+  // vector2_type["POSITIVE_Y"] = sol::property(Vector2::PositiveY);
+  // vector2_type["NEGATIVE_Y"] = sol::property(Vector2::NegativeY);
+  // vector2_type["POSITIVE_Z"] = sol::property(Vector2::PositiveZ);
+  // vector2_type["NEGATIVE_Z"] = sol::property(Vector2::NegativeZ);
+
+  context->RegisterType<Vector2>("Vector2");
+  context->RegisterConstructor<Vector2, float, float>("create_vector2", {"x", "y"}, "vector");
+  // vector2_type[sol::meta_function::equal_to] = static_cast<bool (*)(const Vector2&, const Vector2&)>(ovis::operator==);
+  context->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator+)>("vector2_add", {"first vector", "second vector"}, {"vector"});
+  context->RegisterFunction<static_cast<Vector2 (*)(const Vector2&)>(ovis::operator-)>("vector2_negate", {"vector"}, {"vector"});
+  context->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator-)>("vector2_subtract", {"first vector", "second vector"}, {"vector"});
+  context->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator*)>("vector2_multiply", {"first vector", "second vector"}, {"vector"});
+  context->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, float)>(ovis::operator*)>("vector2_multiply_scalar", {"vector", "scalar"}, {"vector"});
+  const auto vector2_to_string = [](const Vector2& vector) { return fmt::format("{}", vector); };
+  context->RegisterFunction<static_cast<std::string(*)(const Vector2&)>(vector2_to_string)>("vector2_to_string", {"vector"}, {"string"});
+  context->RegisterFunction<&ovis::min<Vector2>>("vector2_min", {"first vector", "second vector"}, {"minimum"});
+  context->RegisterFunction<&ovis::max<Vector2>>("vector2_max", {"first vector", "second vector"}, {"maximum"});
+  context->RegisterFunction<&ovis::clamp<Vector2>>("vector2_clamp", {"vector", "min", "max"}, {"clamped vector"});
+  context->RegisterFunction<&SquaredLength<Vector2>>("vector2_squared_length", {"vector"}, {"squared length"});
+  context->RegisterFunction<&Length<Vector2>>("vector2_length", {"vector"}, {"length"});
+  context->RegisterFunction<&Normalize<Vector2>>("vector2_normalize", {"vector"}, {"normalized vector"});
+  context->RegisterFunction<&Dot<Vector2>>("vector2_dot", {"first vector", "second vector"}, {"dot product"});
 }
+
+}  // namespace ovis

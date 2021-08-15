@@ -2,7 +2,6 @@
 
 #include <box2d/b2_draw.h>
 
-
 namespace ovis {
 
 // class Physics2DDebugLayer : public PrimitiveRenderer, public b2Draw {

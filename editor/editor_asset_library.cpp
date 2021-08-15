@@ -17,7 +17,7 @@
 namespace ovis {
 namespace editor {
 
-EditorAssetLibrary::EditorAssetLibrary(const std::string& directory) : DirectoryAssetLibrary(directory) {
+EditorAssetLibrary::EditorAssetLibrary(std::string_view directory) : DirectoryAssetLibrary(directory) {
   if (!std::filesystem::exists(directory)) {
     if (!std::filesystem::create_directory(directory)) {
       LogE("Failed to create asset library directory '{}'", directory);
@@ -30,7 +30,7 @@ EditorAssetLibrary::EditorAssetLibrary(const std::string& directory) : Directory
 }
 
 bool EditorAssetLibrary::CreateAsset(
-    const std::string& asset_id, const std::string& type,
+    std::string_view asset_id, std::string_view type,
     const std::vector<std::pair<std::string, std::variant<std::string, Blob>>>& files) {
   if (DirectoryAssetLibrary::CreateAsset(asset_id, type, files)) {
     for (const auto file : files) {
@@ -42,7 +42,7 @@ bool EditorAssetLibrary::CreateAsset(
   }
 }
 
-bool EditorAssetLibrary::SaveAssetFile(const std::string& asset_id, const std::string& file_type,
+bool EditorAssetLibrary::SaveAssetFile(std::string_view asset_id, std::string_view file_type,
                                        std::variant<std::string, Blob> content) {
   if (DirectoryAssetLibrary::SaveAssetFile(asset_id, file_type, std::move(content))) {
     UploadFile(*GetAssetFilename(asset_id, file_type));
@@ -52,7 +52,7 @@ bool EditorAssetLibrary::SaveAssetFile(const std::string& asset_id, const std::s
   }
 }
 
-bool EditorAssetLibrary::DeleteAsset(const std::string& asset_id) {
+bool EditorAssetLibrary::DeleteAsset(std::string_view asset_id) {
   const auto asset_types = GetAssetFileTypes(asset_id);
   for (const auto& file_type : asset_types) {
     const std::optional<std::string> filename = GetAssetFilename(asset_id, file_type);
@@ -61,7 +61,8 @@ bool EditorAssetLibrary::DeleteAsset(const std::string& asset_id) {
       continue;
     }
     const std::string relative_filename = std::filesystem::relative(*filename, directory());
-    const std::string url = fmt::format("{}/v1/games/{}/{}/assets/{}", backend_url, user_name, game_name, relative_filename);
+    const std::string url =
+        fmt::format("{}/v1/games/{}/{}/assets/{}", backend_url, user_name, game_name, relative_filename);
 
     FetchOptions options;
     options.method = RequestMethod::DELETE;
@@ -97,8 +98,8 @@ std::optional<Blob> EditorAssetLibrary::Package() {
   tar.remaining_data = 0;
   tar.last_header = 0;
 
-  for (const std::string& asset_id : GetAssets()) {
-    for (const std::string& asset_file_type : GetAssetFileTypes(asset_id)) {
+  for (std::string_view asset_id : GetAssets()) {
+    for (std::string_view asset_file_type : GetAssetFileTypes(asset_id)) {
       const std::optional<std::string> asset_filename = GetAssetFilename(asset_id, asset_file_type);
       if (!asset_filename) {
         LogE("Could not get asset filename for asset id '{}' and file type '{}'", asset_id, asset_file_type);
@@ -133,7 +134,7 @@ std::optional<Blob> EditorAssetLibrary::Package() {
   return archive_data;
 }
 
-// void AssetLibrary::AddScene(const std::string& id, const std::string& path) {
+// void AssetLibrary::AddScene(std::string_view id, std::string_view path) {
 //   SDL_assert(!AssetExists(id));
 //   if (EnsurePath(path)) {
 //     const std::string scene_filename = GetAssetFilename(path, id, "scene.json");
@@ -150,7 +151,7 @@ std::optional<Blob> EditorAssetLibrary::Package() {
 //   }
 // }
 
-// void AssetLibrary::AddSceneControllerScript(const std::string& id, const std::string& path) {
+// void AssetLibrary::AddSceneControllerScript(std::string_view id, std::string_view path) {
 //   SDL_assert(!AssetExists(id));
 //   if (EnsurePath(path)) {
 //     const std::string script_options_filename = GetAssetFilename(path, id, "script.json");
@@ -184,10 +185,10 @@ std::optional<Blob> EditorAssetLibrary::Package() {
 //   }
 // }
 
-void EditorAssetLibrary::UploadFile(const std::string& filename) {
+void EditorAssetLibrary::UploadFile(std::string_view filename) {
   // std::filesystem::relative(filename, directory_);
   // TODO: check if inside directory_
-  files_to_upload_.insert(filename);
+  files_to_upload_.emplace(filename);
   UploadNextFile();
 }
 
@@ -202,7 +203,8 @@ void EditorAssetLibrary::UploadNextFile() {
       LogI("Uploading {} ({} bytes)", filename, file_data->size());
 
       std::string relative_filename = std::filesystem::relative(filename, directory());
-      std::string url = fmt::format("{}/v1/games/{}/{}/assets/{}", backend_url, user_name, game_name, relative_filename);
+      std::string url =
+          fmt::format("{}/v1/games/{}/{}/assets/{}", backend_url, user_name, game_name, relative_filename);
       FetchOptions options;
       options.method = RequestMethod::PUT;
       options.headers["Content-Type"] = "application/octet-stream";

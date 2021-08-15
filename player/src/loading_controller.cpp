@@ -25,7 +25,8 @@ LoadingController::LoadingController(std::string_view backend_prefix, std::strin
     std::filesystem::create_directory("/tmp");
   }
 
-  const std::string url = fmt::format("{}/v1/games/{}/{}/packages/{}", backend_prefix, user_name, game_name, package_type);
+  const std::string url =
+      fmt::format("{}/v1/games/{}/{}/packages/{}", backend_prefix, user_name, game_name, package_type);
 
   FetchOptions options;
   options.method = RequestMethod::GET;

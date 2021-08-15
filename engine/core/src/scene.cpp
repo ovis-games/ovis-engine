@@ -12,19 +12,22 @@
 #include <ovis/core/scene_controller.hpp>
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_viewport.hpp>
-#include <ovis/core/script_scene_controller.hpp>
+#include <ovis/core/visual_script_scene_controller.hpp>
 
 namespace ovis {
 
 const json Scene::schema_ = {{"$ref", "engine#/$defs/scene"}};
 
-Scene::Scene() {}
+Scene::Scene() {
+  event_handler_index_ = RegisterGlobalEventHandler([this](Event* event) { ProcessEvent(event); });
+}
 
 Scene::~Scene() {
   // Explicitly clear owning containers because the destructor of their objects may need to still access the scene.
   ClearObjects();
   controllers_.clear();
   removed_controllers_.clear();
+  DeregisterGlobalEventHandler(event_handler_index_);
 }
 
 SceneController* Scene::AddController(std::unique_ptr<SceneController> scene_controller) {
@@ -60,7 +63,7 @@ SceneController* Scene::AddController(const std::string& scene_controller_id) {
   if (SceneController::IsRegistered(scene_controller_id)) {
     controller = *SceneController::Create(scene_controller_id);
   } else {
-    controller = LoadScriptSceneController(scene_controller_id, &lua);
+    controller = LoadVisualScriptSceneController(scene_controller_id);
   }
 
   if (controller == nullptr) {
@@ -150,7 +153,8 @@ SceneObject* Scene::CreateObject(std::string_view base_name, SceneObject* parent
     } while (ContainsObject(object_path));
   }
 
-  auto insert_result = objects_.insert(std::make_pair(object_path, std::make_unique<SceneObject>(this, object_name, parent)));
+  auto insert_result =
+      objects_.insert(std::make_pair(object_path, std::make_unique<SceneObject>(this, object_name, parent)));
   SDL_assert(insert_result.second);
   SDL_assert(object_path == insert_result.first->second->path());
   return insert_result.first->second.get();
@@ -162,7 +166,8 @@ SceneObject* Scene::CreateObject(std::string_view object_name, const json& seria
   return object;
 }
 
-SceneObject* Scene::CreateObject(std::string_view object_name, const sol::table& component_properties, SceneObject* parent) {
+SceneObject* Scene::CreateObject(std::string_view object_name, const sol::table& component_properties,
+                                 SceneObject* parent) {
   auto object = CreateObject(object_name, parent);
 
   for (const auto& [key, value] : component_properties) {
@@ -196,9 +201,8 @@ SceneObject* Scene::GetObject(std::string_view object_path) {
   auto object = objects_.find(std::string(object_path));
   if (object == objects_.end()) {
     return nullptr;
-  } {
-    return object->second.get();
   }
+  { return object->second.get(); }
 }
 
 bool Scene::ContainsObject(std::string_view object_reference) {
@@ -536,6 +540,19 @@ void Scene::RegisterType(sol::table* module) {
   // };
 
   // clang-format on
+}
+
+void Scene::RegisterType(ScriptContext* context) {
+  context->RegisterType<Scene>("Scene");
+  const auto create_object = [](Scene* scene, std::string_view name) { return scene->CreateObject(name); };
+  context->RegisterFunction<static_cast<SceneObject* (*)(Scene*, std::string_view)>(create_object)>(
+      "scene_add_object", {"scene", "base name"}, {"object"});
+  context->RegisterFunction<static_cast<SceneObject* (Scene::*)(std::string_view, SceneObject*)>(&Scene::CreateObject)>(
+      "scene_add_child_object", {"scene", "base name", "parent"}, {"object"});
+  context->RegisterFunction<static_cast<void (Scene::*)(SceneObject*)>(&Scene::DeleteObject)>(
+      "scene_remove_object", {"scene", "object"}, {});
+  context->RegisterFunction<static_cast<void (Scene::*)(std::string_view)>(&Scene::DeleteObject)>(
+      "scene_remove_object_by_name", {"scene", "object name"}, {});
 }
 
 }  // namespace ovis

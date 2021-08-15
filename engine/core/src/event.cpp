@@ -1,3 +1,5 @@
+#include <vector>
+
 #include <ovis/core/event.hpp>
 
 namespace ovis {
@@ -22,6 +24,38 @@ void Event::RegisterType(sol::table* module) {
   // appropriately and do not want any further processing of the event you should call stop_propagation.
   // @function stop_propagation
   event_type["stop_propagation"] = &Event::StopPropagation;
+}
+
+namespace {
+std::vector<std::function<void(Event* event)>> global_event_callbacks;
+}
+
+std::size_t RegisterGlobalEventHandler(std::function<void(Event* event)> callback) {
+  for (std::size_t i = 0; i < global_event_callbacks.size(); ++i) {
+    if (!global_event_callbacks[i]) {
+      global_event_callbacks[i] = callback;
+      return i;
+    }
+  }
+  global_event_callbacks.push_back(callback);
+  return global_event_callbacks.size() - 1;
+}
+
+void DeregisterGlobalEventHandler(std::size_t event_hander_index) {
+  assert(event_hander_index < global_event_callbacks.size());
+
+  global_event_callbacks[event_hander_index] = std::function<void(Event* event)>();
+}
+
+void PostGlobalEvent(Event* event) {
+  for (auto& callback : global_event_callbacks) {
+    if (callback) {
+      callback(event);
+      if (!event->is_propagating()) {
+        return;
+      }
+    }
+  }
 }
 
 }  // namespace ovis

@@ -1,3 +1,4 @@
+#include "ovis/core/math_operations.hpp"
 #include <middleclass.hpp>
 #include <sol/sol.hpp>
 
@@ -11,6 +12,7 @@
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_object_component.hpp>
 #include <ovis/core/script_scene_controller.hpp>
+#include <ovis/core/scripting.hpp>
 #include <ovis/core/transform.hpp>
 
 namespace ovis {
@@ -90,10 +92,16 @@ bool LoadCoreModule() {
   if (!module_loaded) {
     lua.open_libraries(sol::lib::base, sol::lib::coroutine, sol::lib::string, sol::lib::math, sol::lib::table,
                        sol::lib::package);
-    SceneObjectComponent::Register("Transform", [](SceneObject* object) { return std::make_unique<Transform>(object); });
+    SceneObjectComponent::Register("Transform",
+                                   [](SceneObject* object) { return std::make_unique<Transform>(object); });
     SceneObjectComponent::Register("Camera", [](SceneObject* object) { return std::make_unique<Camera>(object); });
 
     lua.require("ovis.core", &LoadCoreModule);
+
+    Vector2::RegisterType(global_script_context());
+    Vector3::RegisterType(global_script_context());
+    Scene::RegisterType(global_script_context());
+
     module_loaded = true;
   }
 

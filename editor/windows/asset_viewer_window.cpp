@@ -2,10 +2,13 @@
 
 #include "../editor_window.hpp"
 #include "asset_editors/scene_editor.hpp"
+#include "asset_editors/scene_object_editor.hpp"
 #include "asset_editors/script_editor.hpp"
 #include "asset_editors/settings_editor.hpp"
 #include "asset_editors/texture_editor.hpp"
 #include "asset_importers/asset_importer.hpp"
+#include "asset_editors/script_library_editor.hpp"
+#include "asset_editors/visual_script_editor.hpp"
 #include "dockspace_window.hpp"
 #include <filesystem>
 #include <fstream>
@@ -15,6 +18,7 @@
 #include <ovis/utils/log.hpp>
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/lua.hpp>
+#include <ovis/core/script_error_event.hpp>
 
 namespace ovis {
 namespace editor {
@@ -24,10 +28,12 @@ AssetViewerWindow::AssetViewerWindow() : ImGuiWindow("Assets"), current_path_("/
   UpdateBefore("Overlay");
 
   SubscribeToEvent(LuaErrorEvent::TYPE);
+  SubscribeToEvent("ScriptErrorEvent");
 }
 
 void AssetViewerWindow::DrawContent() {
   ImGui::BeginChild("AssetView", ImVec2(0, 0), false);
+
   if (ImGui::BeginPopupContextWindow()) {
     if (ImGui::BeginMenu("Create")) {
       if (ImGui::Selectable("Scene")) {
@@ -61,7 +67,8 @@ void AssetViewerWindow::DrawContent() {
         EditorWindow::instance()->ShowMessageBox(
             fmt::format("Delete {}?", asset_id),
             fmt::format("Are you sure you want to delete the asset {}? This action cannot be undone!", asset_id),
-            {"Delete Permanently", "Cancel"}, [asset_id, asset_viewer_window = safe_ptr(this)](std::string_view pressed_button) {
+            {"Delete Permanently", "Cancel"},
+            [asset_id, asset_viewer_window = safe_ptr(this)](std::string_view pressed_button) {
               if (pressed_button == "Delete Permanently" && asset_viewer_window != nullptr) {
                 asset_viewer_window->CloseAssetEditor(asset_id);
                 GetApplicationAssetLibrary()->DeleteAsset(asset_id);
@@ -77,16 +84,31 @@ void AssetViewerWindow::DrawContent() {
   }
 
   ImGui::EndChild();
+
+  if (ImGui::BeginDragDropTarget()) {
+    const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("scene_object");
+    if (payload) {
+      SceneObject* dragged_object = *reinterpret_cast<SceneObject**>(payload->Data);
+      const std::string asset_name = GetNewAssetName(std::string(dragged_object->name()));
+      GetApplicationAssetLibrary()->CreateAsset(asset_name, "scene_object",
+                                                {{"json", dragged_object->Serialize().dump()}});
+    }
+    ImGui::EndDragDropTarget();
+  }
 }
 
 void AssetViewerWindow::ProcessEvent(Event* event) {
-  if (event->type() == LuaErrorEvent::TYPE) {
+ if (event->type() == LuaErrorEvent::TYPE) {
     auto* lua_error_event = down_cast<LuaErrorEvent*>(event);
     std::vector<LuaError> errors = ParseLuaErrorMessage(lua_error_event->message());
     if (errors.size() > 0) {
       ScriptEditor* script_editor = down_cast<ScriptEditor*>(OpenAssetEditor(errors[0].asset_id));
       script_editor->SetErrors(errors);
     }
+  } else if (event->type() == "ScriptErrorEvent") {
+    auto* script_error_event = down_cast<ScriptErrorEvent*>(event);
+    VisualScriptEditor* script_editor = down_cast<VisualScriptEditor*>(OpenAssetEditor(std::string(script_error_event->asset_id())));
+    script_editor->SetError(script_error_event->error());
   }
 }
 
@@ -101,12 +123,16 @@ AssetEditor* AssetViewerWindow::OpenAssetEditor(const std::string& asset_id) {
   AssetEditor* asset_editor = nullptr;
   if (asset_type == "scene") {
     asset_editor = scene()->AddController<SceneEditor>(asset_id);
+  } else if (asset_type == "scene_object") {
+    asset_editor = scene()->AddController<SceneObjectEditor>(asset_id);
   } else if (asset_type == "scene_controller") {
-    asset_editor = scene()->AddController<ScriptEditor>(asset_id);
+    asset_editor = scene()->AddController<VisualScriptEditor>(asset_id);
   } else if (asset_type == "texture2d") {
     asset_editor = scene()->AddController<TextureEditor>(asset_id);
   } else if (asset_type == "settings") {
     asset_editor = scene()->AddController<SettingsEditor>(asset_id);
+  } else if (asset_type == "script_library") {
+    asset_editor = scene()->AddController<ScriptLibraryEditor>(asset_id);
   } else {
     LogE("Unknown asset type: {}", asset_type);
   }
