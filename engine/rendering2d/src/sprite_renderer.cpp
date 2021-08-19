@@ -36,6 +36,16 @@ void SpriteRenderer::CreateResources() {
       {*shader_program_->GetAttributeLocation("Position"), 0, 0, VertexAttributeType::FLOAT32_VECTOR2},
       {*shader_program_->GetAttributeLocation("TextureCoordinates"), 8, 0, VertexAttributeType::FLOAT32_VECTOR2}};
   vertex_input_ = std::make_unique<VertexInput>(context(), vi_desc);
+
+  Texture2DDescription empty_texture_desc {
+    .width = 1,
+    .height = 1,
+    .mip_map_count = 1,
+    .format = TextureFormat::RGBA_UINT8,
+    .filter = TextureFilter::POINT
+  };
+  const uint32_t white_pixel = 0xffffffff;
+  empty_texture_ = std::make_unique<Texture2D>(context(), empty_texture_desc, &white_pixel);
 }
 
 void SpriteRenderer::Render(const RenderContext& render_context) {
@@ -75,11 +85,14 @@ void SpriteRenderer::Render(const RenderContext& render_context) {
     const Color color = sprite->color();
     const std::string texture_asset = sprite->texture_asset();
 
-    auto texture_iterator = textures_.find(texture_asset);
-    if (texture_iterator == textures_.end()) {
-      texture_iterator = textures_.insert(std::make_pair(texture_asset, LoadTexture2D(texture_asset, context()))).first;
+    Texture2D* texture = empty_texture_.get();
+    if (texture_asset.size() > 0) {
+      auto texture_iterator = textures_.find(texture_asset);
+      if (texture_iterator == textures_.end()) {
+        texture_iterator = textures_.insert(std::make_pair(texture_asset, LoadTexture2D(texture_asset, context()))).first;
+      }
+      texture = texture_iterator->second.get();
     }
-    Texture2D* texture = texture_iterator->second.get();
 
     Transform* transform = object->GetComponent<Transform>("Transform");
     const Matrix4 world_view_projection =
