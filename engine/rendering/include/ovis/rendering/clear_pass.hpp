@@ -11,6 +11,10 @@ class ClearPass : public RenderPass {
  public:
   ClearPass();
 
+  std::optional<ovis::Color> clear_color() const { return clear_color_; }
+  void SetClearColor(Color color) { clear_color_ = color; }
+  void DisableColorClearing() { clear_color_.reset(); }
+
   void Render(const RenderContext&) override;
 
  private:
