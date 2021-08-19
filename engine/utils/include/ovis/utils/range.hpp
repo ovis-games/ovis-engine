@@ -321,6 +321,12 @@ class TupleElementRange {
  public:
   class IteratorAdapter {
    public:
+    using value_type = std::remove_reference_t<decltype(std::get<ELEMENT_INDEX>(*std::declval<IteratorType>()))>;
+    using difference_type = std::ptrdiff_t;
+    using reference = const value_type&;
+    using pointer = const value_type*;
+    using iterator_category = typename std::iterator_traits<IteratorType>::iterator_category;
+
     IteratorAdapter(const IteratorAdapter&) = default;
     ~IteratorAdapter() = default;
 
