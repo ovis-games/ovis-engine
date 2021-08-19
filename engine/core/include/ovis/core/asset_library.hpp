@@ -99,7 +99,7 @@ AssetLibrary* GetEngineAssetLibrary();
 AssetLibrary* GetApplicationAssetLibrary();
 
 inline AssetLibrary* GetAssetLibraryForAsset(std::string_view asset_id) {
-  return GetApplicationAssetLibrary()->Contains(asset_id) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary();
+  return (GetApplicationAssetLibrary() && GetApplicationAssetLibrary()->Contains(asset_id)) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary();
 }
 
 }  // namespace ovis
