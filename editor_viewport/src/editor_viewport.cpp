@@ -7,7 +7,12 @@
 namespace ovis {
 namespace editor {
 
+EditorViewport* EditorViewport::instance_ = nullptr;
+
 EditorViewport::EditorViewport() : Window(WindowDescription{}), camera_controller_(this) {
+  SDL_assert(instance_ == nullptr);
+  instance_ = this;
+
   AddRenderPass("ClearPass");
   AddRenderPass("SpriteRenderer");
 
@@ -16,6 +21,11 @@ EditorViewport::EditorViewport() : Window(WindowDescription{}), camera_controlle
 
   AddController(&camera_controller_);
   AddController(&object_selection_controller_);
+}
+
+EditorViewport::~EditorViewport() {
+  SDL_assert(instance_ == this);
+  instance_ = nullptr;
 }
 
 void EditorViewport::Update(std::chrono::microseconds delta_time) {
@@ -51,7 +61,6 @@ void EditorViewport::ProcessEvent(Event* event) {
   
 void EditorViewport::AddController(ViewportController* controller) {
   controllers_.push_back(controller);
-  controller->viewport_ = this;
 }
 
 }  // namespace editor

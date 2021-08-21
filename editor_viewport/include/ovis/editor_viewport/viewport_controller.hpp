@@ -15,10 +15,9 @@ class ViewportController {
   virtual void Update(std::chrono::microseconds delta_time) {}
   virtual void ProcessEvent(Event* event) {}
 
-  EditorViewport* viewport() const { return viewport_; }
+  EditorViewport* viewport() const;
 
  private:
-  EditorViewport* viewport_;
 };
 
 }  // namespace editor

@@ -13,24 +13,23 @@
 
 #include <ovis/editor_viewport/editor_viewport.hpp>
 
-ovis::Scene* scene = nullptr;
-
 #if OVIS_EMSCRIPTEN
 extern "C" {
+using namespace ovis;
+using namespace ovis::editor;
 
 void EMSCRIPTEN_KEEPALIVE OvisEditorViewport_Quit() {
-  scene = nullptr;
   SDL_Event sdl_event;
   sdl_event.type = SDL_QUIT;
   SDL_PushEvent(&sdl_event);
 }
 
 bool EMSCRIPTEN_KEEPALIVE OvisEditorViewport_SetScene(const char* serialized_scene) {
-  if (scene == nullptr) {
+  if (EditorViewport::instance() == nullptr) {
     return false;
   }
 
-  return scene->Deserialize(ovis::json::parse(serialized_scene));
+  return EditorViewport::instance()->scene()->Deserialize(ovis::json::parse(serialized_scene));
 }
 
 int EMSCRIPTEN_KEEPALIVE OvisEditorViewport_GetRegisteredSceneObjectComponentCount() {
@@ -67,11 +66,7 @@ int main(int argc, char* argv[]) {
 
   EditorViewport viewport;
 
-  scene = viewport.scene();
-
   Run();
-
-  scene = nullptr;
 
   Quit();
 }

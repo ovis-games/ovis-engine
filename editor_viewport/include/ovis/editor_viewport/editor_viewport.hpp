@@ -10,13 +10,17 @@ namespace editor {
 class EditorViewport : public Window {
  public:
   EditorViewport();
+  ~EditorViewport();
 
   void SetSelection(std::string_view object_path);
 
   void Update(std::chrono::microseconds delta_time) override;
   void ProcessEvent(Event* event) override;
 
+  static EditorViewport* instance() { return instance_; }
+
  private:
+  static EditorViewport* instance_;
   std::optional<std::string> selected_object_;
   std::vector<ViewportController*> controllers_;
   CameraController camera_controller_;
