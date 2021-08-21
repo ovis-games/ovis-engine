@@ -1,5 +1,9 @@
 #include <ovis/editor_viewport/object_selection_controller.hpp>
 
+#include <emscripten.h>
+#include <emscripten/val.h>
+#include <emscripten/bind.h>
+
 #include <ovis/utils/log.hpp>
 #include <ovis/core/intersection.hpp>
 #include <ovis/rendering2d/sprite.hpp>
@@ -20,6 +24,15 @@ AxisAlignedBoundingBox3D GetComponentAABB(std::string_view id, SceneObjectCompon
     return AxisAlignedBoundingBox3D::Empty();
   }
 };
+
+void SelectObject(std::string path) {
+  EditorViewport::instance()->object_selection_controller()->SelectObject(path);
+}
+
+EMSCRIPTEN_BINDINGS(editor_viewport_module) {
+  using namespace emscripten;
+  function("viewportSelectObject", &SelectObject);
+}
 
 }  // namespace
 
