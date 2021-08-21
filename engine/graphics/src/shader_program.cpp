@@ -129,9 +129,7 @@ void ShaderProgram::Bind() {
 }
 
 std::unique_ptr<ShaderProgram> LoadShaderProgram(const std::string& asset_id, GraphicsContext* graphics_context) {
-  return LoadShaderProgram(
-      GetApplicationAssetLibrary()->Contains(asset_id) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary(),
-      asset_id, graphics_context);
+  return LoadShaderProgram(GetAssetLibraryForAsset(asset_id), asset_id, graphics_context);
 }
 
 std::unique_ptr<ShaderProgram> LoadShaderProgram(AssetLibrary* asset_library, const std::string& asset_id,
