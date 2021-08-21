@@ -77,20 +77,30 @@ class MouseButtonReleaseEvent : public MouseButtonEvent {
   static void RegisterType(sol::table* module);
 };
 
+enum class MouseWheelDeltaMode {
+  PIXELS = 0,
+  LINES = 1,
+  PAGES = 2,
+  UNKNDOWN = 3,
+};
+
 class MouseWheelEvent : public Event {
   OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
 
  public:
   inline static const std::string TYPE = "MouseWheelEvent";
 
-  inline MouseWheelEvent(Vector2 delta) : Event(TYPE), delta_(delta) {}
+  inline MouseWheelEvent(Vector2 delta, MouseWheelDeltaMode mode = MouseWheelDeltaMode::UNKNDOWN)
+      : Event(TYPE), delta_(delta), mode_(mode) {}
 
   inline Vector2 delta() const { return delta_; }
+  inline MouseWheelDeltaMode mode() const { return mode_; }
 
   static void RegisterType(sol::table* module);
 
  private:
   Vector2 delta_;
+  MouseWheelDeltaMode mode_;
 };
 
 }  // namespace ovis

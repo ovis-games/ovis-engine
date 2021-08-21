@@ -128,7 +128,8 @@ static const std::unordered_map<std::string, Key> KEY_NAME_TO_KEY = {
 EM_BOOL HandleWheelEvent(int event_type, const EmscriptenWheelEvent* wheel_event, void* viewport) {
   SceneViewport* scene_viewport = static_cast<SceneViewport*>(viewport);
   MouseWheelEvent mouse_wheel_event(
-      {static_cast<float>(-wheel_event->deltaX), static_cast<float>(-wheel_event->deltaY)});
+      {static_cast<float>(-wheel_event->deltaX), static_cast<float>(-wheel_event->deltaY)},
+      static_cast<MouseWheelDeltaMode>(wheel_event->deltaMode));
   scene_viewport->ProcessEvent(&mouse_wheel_event);
   return !mouse_wheel_event.is_propagating();
 }

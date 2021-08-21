@@ -47,7 +47,11 @@ void CameraController::ProcessEvent(Event* event) {
     }
   } else if (event->type() == MouseWheelEvent::TYPE) {
     MouseWheelEvent* mouse_wheel_event = static_cast<MouseWheelEvent*>(event);
-    camera_.SetVerticalFieldOfView(camera_.vertical_field_of_view() * std::pow(2.0, -mouse_wheel_event->delta().y));
+    double delta = mouse_wheel_event->delta().y;
+    if (mouse_wheel_event->mode() == MouseWheelDeltaMode::PIXELS) {
+      delta /= 50.0;
+    }
+    camera_.SetVerticalFieldOfView(camera_.vertical_field_of_view() * std::pow(2.0, -delta));
     event->StopPropagation();
   }
 }
