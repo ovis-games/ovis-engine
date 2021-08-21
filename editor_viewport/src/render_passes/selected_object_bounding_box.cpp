@@ -19,7 +19,6 @@ void SelectedObjectBoundingBox::Render(const RenderContext& render_context) {
   SceneObject* object = object_selection_controller->selected_object();
 
   if (object != nullptr) {
-    LogD("Selected object: {}", object->path());
     AxisAlignedBoundingBox3D aabb = object_selection_controller->selected_object_aabb();
 
     BeginDraw(render_context);
