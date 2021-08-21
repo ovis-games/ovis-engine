@@ -20,7 +20,6 @@ class CameraController : public ViewportController {
   void ProcessEvent(Event* event) override;
 
  private:
-  EditorViewport* viewport_;
   Camera camera_;
   Vector3 camera_position_;
 };

@@ -14,7 +14,7 @@ EditorViewport::EditorViewport() : Window(WindowDescription{}), camera_controlle
   SetCustomCameraMatrices(Matrix3x4::IdentityTransformation(),
                           Matrix4::FromOrthographicProjection(-10, 10, -10, 10, -10, 10));
 
-  controllers_.push_back(&camera_controller_);
+  AddController(&camera_controller_);
 }
 
 void EditorViewport::Update(std::chrono::microseconds delta_time) {
@@ -46,6 +46,11 @@ void EditorViewport::ProcessEvent(Event* event) {
   }
 
   scene()->ProcessEvent(event);
+}
+  
+void EditorViewport::AddController(ViewportController* controller) {
+  controllers_.push_back(controller);
+  controller->viewport_ = this;
 }
 
 }  // namespace editor

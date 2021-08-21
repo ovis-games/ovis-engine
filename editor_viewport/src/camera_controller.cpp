@@ -11,11 +11,7 @@ namespace ovis {
 namespace editor {
 
 CameraController::CameraController(EditorViewport* viewport)
-    : ViewportController(), camera_(nullptr), viewport_(viewport) {
-  // SubscribeToEvent(MouseMoveEvent::TYPE);
-  // SubscribeToEvent(MouseButtonPressEvent::TYPE);
-  // SubscribeToEvent(MouseWheelEvent::TYPE);
-
+    : ViewportController(), camera_(nullptr) {
   camera_.SetProjectionType(ProjectionType::ORTHOGRAPHIC);
   camera_.SetVerticalFieldOfView(100.0f);
   camera_.SetNearClipPlane(0.0f);
@@ -23,8 +19,8 @@ CameraController::CameraController(EditorViewport* viewport)
 }
 
 void CameraController::Update(std::chrono::microseconds delta_time) {
-  camera_.SetAspectRatio(viewport_->GetAspectRatio());
-  viewport_->SetCustomCameraMatrices(Matrix3x4::FromTranslation(-camera_position_), camera_.projection_matrix());
+  camera_.SetAspectRatio(viewport()->GetAspectRatio());
+  viewport()->SetCustomCameraMatrices(Matrix3x4::FromTranslation(-camera_position_), camera_.projection_matrix());
 }
 
 void CameraController::ProcessEvent(Event* event) {
@@ -35,7 +31,7 @@ void CameraController::ProcessEvent(Event* event) {
   } else if (event->type() == MouseMoveEvent::TYPE) {
     if (GetMouseButtonState(MouseButton::Right())) {
       MouseMoveEvent* mouse_move_event = static_cast<MouseMoveEvent*>(event);
-      SDL_assert(viewport_ == mouse_move_event->viewport());
+      SDL_assert(viewport() == mouse_move_event->viewport());
 
       const Vector2 old_mouse_position =
           mouse_move_event->screen_space_position() - mouse_move_event->relative_screen_space_position();

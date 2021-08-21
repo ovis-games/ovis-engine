@@ -19,6 +19,8 @@ class EditorViewport : public Window {
   std::optional<std::string> selected_object_;
   std::vector<ViewportController*> controllers_;
   CameraController camera_controller_;
+
+  void AddController(ViewportController* controller);
 };
 
 }
