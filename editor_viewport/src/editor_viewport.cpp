@@ -17,6 +17,8 @@ EditorViewport::EditorViewport()
   AddRenderPass("ClearPass");
   AddRenderPass("SpriteRenderer");
 
+  AddRenderPass(std::make_unique<SelectedObjectBoundingBox>());
+
   SetCustomCameraMatrices(Matrix3x4::IdentityTransformation(),
                           Matrix4::FromOrthographicProjection(-10, 10, -10, 10, -10, 10));
 

@@ -5,6 +5,8 @@ add_executable(
   include/ovis/editor_viewport/viewport_controller.hpp src/viewport_controller.cpp
   include/ovis/editor_viewport/camera_controller.hpp src/camera_controller.cpp
   include/ovis/editor_viewport/object_selection_controller.hpp src/object_selection_controller.cpp
+
+  include/ovis/editor_viewport/render_passes/selected_object_bounding_box.hpp src/render_passes/selected_object_bounding_box.cpp
 )
 
 target_include_directories(
