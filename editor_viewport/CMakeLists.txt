@@ -3,6 +3,7 @@ add_executable(
   src/main.cpp
   include/ovis/editor_viewport/editor_viewport.hpp src/editor_viewport.cpp
   include/ovis/editor_viewport/camera_controller.hpp src/camera_controller.cpp
+  include/ovis/editor_viewport/object_selection_controller.hpp src/object_selection_controller.cpp
 )
 
 target_include_directories(

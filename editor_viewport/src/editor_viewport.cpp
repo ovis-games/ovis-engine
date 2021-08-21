@@ -15,6 +15,7 @@ EditorViewport::EditorViewport() : Window(WindowDescription{}), camera_controlle
                           Matrix4::FromOrthographicProjection(-10, 10, -10, 10, -10, 10));
 
   AddController(&camera_controller_);
+  AddController(&object_selection_controller_);
 }
 
 void EditorViewport::Update(std::chrono::microseconds delta_time) {

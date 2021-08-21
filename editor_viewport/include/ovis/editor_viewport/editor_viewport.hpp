@@ -2,6 +2,7 @@
 
 #include <ovis/application/window.hpp>
 #include <ovis/editor_viewport/camera_controller.hpp>
+#include <ovis/editor_viewport/object_selection_controller.hpp>
 
 namespace ovis {
 namespace editor {
@@ -19,6 +20,7 @@ class EditorViewport : public Window {
   std::optional<std::string> selected_object_;
   std::vector<ViewportController*> controllers_;
   CameraController camera_controller_;
+  ObjectSelectionController object_selection_controller_;
 
   void AddController(ViewportController* controller);
 };
