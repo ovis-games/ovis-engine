@@ -25,6 +25,8 @@ class SceneViewport {
     return size.x / size.y;
   }
 
+  virtual void ProcessEvent(Event* event);
+
   inline Scene* scene() const { return scene_; }
   inline void SetScene(Scene* scene) { scene_ = scene; }
 

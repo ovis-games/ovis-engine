@@ -112,14 +112,14 @@ bool Window::SendEvent(const SDL_Event& event) {
   switch (event.type) {
     case SDL_MOUSEWHEEL: {
       MouseWheelEvent mouse_wheel_event({static_cast<float>(event.wheel.x), static_cast<float>(event.wheel.y)});
-      scene_.ProcessEvent(&mouse_wheel_event);
+      ProcessEvent(&mouse_wheel_event);
       return !mouse_wheel_event.is_propagating();
     }
 
     case SDL_MOUSEMOTION: {
       MouseMoveEvent mouse_move_event(this, {static_cast<float>(event.motion.x), static_cast<float>(event.motion.y)},
                                       {static_cast<float>(event.motion.xrel), static_cast<float>(event.motion.yrel)});
-      scene_.ProcessEvent(&mouse_move_event);
+      ProcessEvent(&mouse_move_event);
       return !mouse_move_event.is_propagating();
     }
 
@@ -128,7 +128,7 @@ bool Window::SendEvent(const SDL_Event& event) {
       MouseButtonPressEvent mouse_button_event(
           this, {static_cast<float>(event.button.x), static_cast<float>(event.button.y)}, button);
       SetMouseButtonState(button, true);
-      scene_.ProcessEvent(&mouse_button_event);
+      ProcessEvent(&mouse_button_event);
       return !mouse_button_event.is_propagating();
     }
 
@@ -137,27 +137,27 @@ bool Window::SendEvent(const SDL_Event& event) {
       MouseButtonReleaseEvent mouse_button_event(
           this, {static_cast<float>(event.button.x), static_cast<float>(event.button.y)}, button);
       SetMouseButtonState(button, false);
-      scene_.ProcessEvent(&mouse_button_event);
+      ProcessEvent(&mouse_button_event);
       return !mouse_button_event.is_propagating();
     }
 
     case SDL_TEXTINPUT: {
       TextInputEvent text_input_event(event.text.text);
-      scene_.ProcessEvent(&text_input_event);
+      ProcessEvent(&text_input_event);
       return !text_input_event.is_propagating();
     }
 
     case SDL_KEYDOWN: {
       KeyPressEvent key_press_event(Key{static_cast<uint16_t>(event.key.keysym.scancode)});
       SetKeyState(key_press_event.key(), true);
-      scene_.ProcessEvent(&key_press_event);
+      ProcessEvent(&key_press_event);
       return !key_press_event.is_propagating();
     }
 
     case SDL_KEYUP: {
       KeyReleaseEvent key_release_event(Key{static_cast<uint16_t>(event.key.keysym.scancode)});
       SetKeyState(key_release_event.key(), false);
-      scene_.ProcessEvent(&key_release_event);
+      ProcessEvent(&key_release_event);
       return !key_release_event.is_propagating();
     }
   }

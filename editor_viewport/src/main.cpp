@@ -11,6 +11,8 @@
 #include <ovis/application/application.hpp>
 #include <ovis/application/window.hpp>
 
+#include <ovis/editor_viewport/editor_viewport.hpp>
+
 ovis::Scene* scene = nullptr;
 
 #if OVIS_EMSCRIPTEN
@@ -49,6 +51,7 @@ const char* EMSCRIPTEN_KEEPALIVE OvisEditorViewport_GetRegisteredSceneObjectComp
 // Usage: ovis-player backend_url project_id
 int main(int argc, char* argv[]) {
   using namespace ovis;
+  using namespace ovis::editor;
 
   Log::AddListener(ConsoleLogger);
   Log::AddListener([](LogLevel level, const std::string& text) {
@@ -62,16 +65,9 @@ int main(int argc, char* argv[]) {
   SetEngineAssetsDirectory("/ovis_assets");
 #endif
 
-  Window window(WindowDescription{});
-  window.AddRenderPass("ClearPass");
-  window.AddRenderPass("SpriteRenderer");
+  EditorViewport viewport;
 
-  scene = window.scene();
-
-  window.SetCustomCameraMatrices(
-    Matrix3x4::IdentityTransformation(),
-    Matrix4::FromOrthographicProjection(-10, 10, -10, 10, -10, 10)
-  );
+  scene = viewport.scene();
 
   Run();
 

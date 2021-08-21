@@ -129,7 +129,7 @@ EM_BOOL HandleWheelEvent(int event_type, const EmscriptenWheelEvent* wheel_event
   SceneViewport* scene_viewport = static_cast<SceneViewport*>(viewport);
   MouseWheelEvent mouse_wheel_event(
       {static_cast<float>(-wheel_event->deltaX), static_cast<float>(-wheel_event->deltaY)});
-  scene_viewport->scene()->ProcessEvent(&mouse_wheel_event);
+  scene_viewport->ProcessEvent(&mouse_wheel_event);
   return !mouse_wheel_event.is_propagating();
 }
 
@@ -142,7 +142,7 @@ EM_BOOL HandleKeyDownEvent(int event_type, const EmscriptenKeyboardEvent* keyboa
   bool key_press_event_is_propagating = false;
   if (keyboard_event->repeat == false) {
     KeyPressEvent key_press_event(key);
-    scene_viewport->scene()->ProcessEvent(&key_press_event);
+    scene_viewport->ProcessEvent(&key_press_event);
     key_press_event_is_propagating = key_press_event.is_propagating();
   }
 
@@ -177,7 +177,7 @@ EM_BOOL HandleKeyPressEvent(int event_type, const EmscriptenKeyboardEvent* keybo
   if (keyboard_event->altKey == false && keyboard_event->ctrlKey == false && keyboard_event->metaKey == false &&
       std::strcmp("Enter", keyboard_event->key) != 0) {
     TextInputEvent text_input_event(keyboard_event->key);
-    scene_viewport->scene()->ProcessEvent(&text_input_event);
+    scene_viewport->ProcessEvent(&text_input_event);
     return !text_input_event.is_propagating();
   } else {
     return false;
@@ -190,7 +190,7 @@ EM_BOOL HandleKeyUpEvent(int event_type, const EmscriptenKeyboardEvent* keyboard
 
   SceneViewport* scene_viewport = static_cast<SceneViewport*>(viewport);
   KeyReleaseEvent key_release_event(key);
-  scene_viewport->scene()->ProcessEvent(&key_release_event);
+  scene_viewport->ProcessEvent(&key_release_event);
   return !key_release_event.is_propagating();
 }
 
@@ -199,7 +199,7 @@ EM_BOOL HandleMouseMoveEvent(int event_type, const EmscriptenMouseEvent* mouse_e
   MouseMoveEvent mouse_move_event(
       scene_viewport, {static_cast<float>(mouse_event->targetX), static_cast<float>(mouse_event->targetY)},
       {static_cast<float>(mouse_event->movementX), static_cast<float>(mouse_event->movementY)});
-  scene_viewport->scene()->ProcessEvent(&mouse_move_event);
+  scene_viewport->ProcessEvent(&mouse_move_event);
   return !mouse_move_event.is_propagating();
 }
 
@@ -210,7 +210,7 @@ EM_BOOL HandleMouseDownEvent(int event_type, const EmscriptenMouseEvent* mouse_e
   SceneViewport* scene_viewport = static_cast<SceneViewport*>(viewport);
   MouseButtonPressEvent mouse_button_event(
       scene_viewport, {static_cast<float>(mouse_event->targetX), static_cast<float>(mouse_event->targetY)}, button);
-  scene_viewport->scene()->ProcessEvent(&mouse_button_event);
+  scene_viewport->ProcessEvent(&mouse_button_event);
   return false;
 }
 
@@ -221,7 +221,7 @@ EM_BOOL HandleMouseUpEvent(int event_type, const EmscriptenMouseEvent* mouse_eve
   SceneViewport* scene_viewport = static_cast<SceneViewport*>(viewport);
   MouseButtonReleaseEvent mouse_button_event(
       scene_viewport, {static_cast<float>(mouse_event->targetX), static_cast<float>(mouse_event->targetY)}, button);
-  scene_viewport->scene()->ProcessEvent(&mouse_button_event);
+  scene_viewport->ProcessEvent(&mouse_button_event);
   return false;
 }
 
@@ -231,7 +231,7 @@ EM_BOOL HandleBlurEvent(int event_type, const EmscriptenFocusEvent* focus_event,
     if (IsKeyPressed(key)) {
       SetKeyState(key, false);
       KeyReleaseEvent key_release_event(key);
-      scene_viewport->scene()->ProcessEvent(&key_release_event);
+      scene_viewport->ProcessEvent(&key_release_event);
     }
   }
   return false;

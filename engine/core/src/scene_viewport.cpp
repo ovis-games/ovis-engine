@@ -2,6 +2,10 @@
 
 namespace ovis {
 
+void SceneViewport::ProcessEvent(Event* event) {
+  scene_->ProcessEvent(event);
+}
+
 void SceneViewport::RegisterType(sol::table* module) {
   /// A viewport renders the scene from a specific viewpoint.
   // @classmod ovis.core.SceneViewport
