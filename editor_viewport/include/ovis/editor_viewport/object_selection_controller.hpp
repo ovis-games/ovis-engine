@@ -24,12 +24,12 @@ class ObjectSelectionController : public ViewportController {
   void SelectObject(SceneObject* object);
   void ClearSelection() { SelectObject(nullptr); }
 
-  inline bool has_selected_object() const { return selected_object_; }
-  inline SceneObject* selected_object() const { return selected_object_.get(); }
+  bool has_selected_object() const;
+  SceneObject* selected_object() const;
   AxisAlignedBoundingBox3D selected_object_aabb() const { return selected_object_aabb_; }
 
  private:
-  safe_ptr<SceneObject> selected_object_;
+  std::optional<std::string> selected_object_path_;
   AxisAlignedBoundingBox3D selected_object_aabb_;
 };
 

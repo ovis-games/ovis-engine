@@ -69,8 +69,6 @@ void ObjectSelectionController::ProcessEvent(Event* event) {
     }
 
     if (closest_object != nullptr) {
-      LogD("Selecting object: {}", closest_object->path());
-      LogD("Call SelectObject()");
       SelectObject(closest_object);
       mouse_button_press_event->StopPropagation();
     }
@@ -81,14 +79,24 @@ void ObjectSelectionController::SelectObject(SceneObject* object) {
   auto selection_event = emscripten::val::object();
   selection_event.set("type", "object_selection");
   if (object != nullptr) {
-    selection_event.set("path", std::string(object->path()));
+    selected_object_path_ = object->path();
+    selection_event.set("path", *selected_object_path_);
+  } else {
+    selected_object_path_.reset();
   }
-  selected_object_.reset(object);
   viewport()->SendEvent(selection_event);
 }
 
 void ObjectSelectionController::SelectObject(std::string_view object_path) {
   SelectObject(viewport()->scene()->GetObject(object_path));
+}
+
+bool ObjectSelectionController::has_selected_object() const {
+  return selected_object_path_.has_value() && viewport()->scene()->ContainsObject(*selected_object_path_);
+}
+
+SceneObject* ObjectSelectionController::selected_object() const {
+  return selected_object_path_.has_value() ? viewport()->scene()->GetObject(*selected_object_path_) : nullptr;
 }
 
 }  // namespace editor
