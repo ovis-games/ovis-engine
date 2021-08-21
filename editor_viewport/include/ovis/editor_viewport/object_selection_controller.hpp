@@ -21,8 +21,8 @@ class ObjectSelectionController : public ViewportController {
   void ProcessEvent(Event* event) override;
 
   void SelectObject(std::string_view object_path);
-  inline void SelectObject(SceneObject* object) { selected_object_.reset(object); }
-  inline void ClearSelection() { selected_object_.reset(); }
+  void SelectObject(SceneObject* object);
+  void ClearSelection() { SelectObject(nullptr); }
 
   inline bool has_selected_object() const { return selected_object_; }
   inline SceneObject* selected_object() const { return selected_object_.get(); }

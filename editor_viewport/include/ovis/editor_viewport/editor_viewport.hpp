@@ -1,5 +1,7 @@
 #pragma once
 
+#include <emscripten/val.h>
+
 #include <ovis/application/window.hpp>
 #include <ovis/editor_viewport/camera_controller.hpp>
 #include <ovis/editor_viewport/object_selection_controller.hpp>
@@ -11,6 +13,9 @@ class EditorViewport : public Window {
  public:
   EditorViewport();
   ~EditorViewport();
+
+  void SetEventCallback(emscripten::val event_callback);
+  void SendEvent(emscripten::val event);
 
   void SetSelection(std::string_view object_path);
 
@@ -25,6 +30,7 @@ class EditorViewport : public Window {
   std::vector<ViewportController*> controllers_;
   CameraController camera_controller_;
   ObjectSelectionController object_selection_controller_;
+  emscripten::val event_callback_;
 
   void AddController(ViewportController* controller);
 };

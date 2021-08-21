@@ -18,12 +18,14 @@ if (OVIS_EMSCRIPTEN)
     ovis-editor-viewport
     PUBLIC
     "SHELL:-s FETCH=1"
+    "SHELL:-s --bind"
     "SHELL:-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0"
   )
   target_link_options(
     ovis-editor-viewport
     PUBLIC
       "SHELL:-s FETCH=1"
+      "SHELL:-s --bind"
       "SHELL:-s FORCE_FILESYSTEM=1"
       "SHELL:-s MODULARIZE=1"
       "SHELL:-s ALLOW_MEMORY_GROWTH=1"

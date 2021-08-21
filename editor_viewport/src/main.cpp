@@ -3,6 +3,7 @@
 #if OVIS_EMSCRIPTEN
 #include <emscripten.h>
 #include <emscripten/val.h>
+#include <emscripten/bind.h>
 #endif
 
 #include <ovis/utils/log.hpp>
@@ -45,6 +46,15 @@ const char* EMSCRIPTEN_KEEPALIVE OvisEditorViewport_GetRegisteredSceneObjectComp
 }
 
 }
+
+void SetEventCallback(emscripten::val callback) {
+  EditorViewport::instance()->SetEventCallback(callback);
+}
+
+EMSCRIPTEN_BINDINGS(editor_viewport_module) {
+  function("viewportSetEventCallback", &SetEventCallback);
+}
+
 #endif
 
 // Usage: ovis-player backend_url project_id

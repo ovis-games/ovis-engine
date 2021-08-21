@@ -70,14 +70,25 @@ void ObjectSelectionController::ProcessEvent(Event* event) {
 
     if (closest_object != nullptr) {
       LogD("Selecting object: {}", closest_object->path());
+      LogD("Call SelectObject()");
       SelectObject(closest_object);
       mouse_button_press_event->StopPropagation();
     }
   }
 }
 
+void ObjectSelectionController::SelectObject(SceneObject* object) {
+  auto selection_event = emscripten::val::object();
+  selection_event.set("type", "object_selection");
+  if (object != nullptr) {
+    selection_event.set("path", std::string(object->path()));
+  }
+  selected_object_.reset(object);
+  viewport()->SendEvent(selection_event);
+}
+
 void ObjectSelectionController::SelectObject(std::string_view object_path) {
-  selected_object_.reset(viewport()->scene()->GetObject(object_path));
+  SelectObject(viewport()->scene()->GetObject(object_path));
 }
 
 }  // namespace editor

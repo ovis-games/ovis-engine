@@ -9,7 +9,8 @@ namespace editor {
 
 EditorViewport* EditorViewport::instance_ = nullptr;
 
-EditorViewport::EditorViewport() : Window(WindowDescription{}), camera_controller_(this) {
+EditorViewport::EditorViewport()
+    : Window(WindowDescription{}), camera_controller_(this), event_callback_(emscripten::val::null()) {
   SDL_assert(instance_ == nullptr);
   instance_ = this;
 
@@ -26,6 +27,20 @@ EditorViewport::EditorViewport() : Window(WindowDescription{}), camera_controlle
 EditorViewport::~EditorViewport() {
   SDL_assert(instance_ == this);
   instance_ = nullptr;
+}
+
+void EditorViewport::SetEventCallback(emscripten::val event_callback) {
+  LogD("Set event callback: {}", event_callback.typeOf().as<std::string>());
+  if (event_callback.typeOf().as<std::string>() == "function") {
+    event_callback_ = event_callback;
+  }
+}
+
+void EditorViewport::SendEvent(emscripten::val event) {
+  LogD("Send event: {}", event_callback_.typeOf().as<std::string>());
+  if (event_callback_.typeOf() == emscripten::val("function")) {
+    event_callback_(event);
+  }
 }
 
 void EditorViewport::Update(std::chrono::microseconds delta_time) {
