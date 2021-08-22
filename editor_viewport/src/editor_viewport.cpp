@@ -1,11 +1,35 @@
 #include <ovis/editor_viewport/editor_viewport.hpp>
+#include <ovis/editor_viewport/render_passes/transformation_tools_renderer.hpp>
 
 #if OVIS_EMSCRIPTEN
+#include <emscripten.h>
 #include <emscripten/html5.h>
+#include <emscripten/bind.h>
 #endif
+
+
+namespace {
+emscripten::val document = emscripten::val::undefined();
+
+bool SetScene(const std::string& serialized_scene) {
+  using namespace ovis::editor;
+  if (EditorViewport::instance() == nullptr) {
+    return false;
+  }
+
+  document = emscripten::val::global("JSON").call<emscripten::val>("parse", serialized_scene);
+
+  return EditorViewport::instance()->scene()->Deserialize(ovis::json::parse(serialized_scene));
+}
+}
 
 namespace ovis {
 namespace editor {
+
+
+EMSCRIPTEN_BINDINGS(editor_viewport_module) {
+  emscripten::function("viewportSetScene", &SetScene);
+}
 
 EditorViewport* EditorViewport::instance_ = nullptr;
 
@@ -18,12 +42,14 @@ EditorViewport::EditorViewport()
   AddRenderPass("SpriteRenderer");
 
   AddRenderPass(std::make_unique<SelectedObjectBoundingBox>());
+  AddRenderPass(std::make_unique<TransformationToolsRenderer>());
 
   SetCustomCameraMatrices(Matrix3x4::IdentityTransformation(),
                           Matrix4::FromOrthographicProjection(-10, 10, -10, 10, -10, 10));
 
-  AddController(&camera_controller_);
-  AddController(&object_selection_controller_);
+  AddController(camera_controller());
+  AddController(transformation_tools_controller());
+  AddController(object_selection_controller());
 }
 
 EditorViewport::~EditorViewport() {
@@ -78,6 +104,22 @@ void EditorViewport::ProcessEvent(Event* event) {
   
 void EditorViewport::AddController(ViewportController* controller) {
   controllers_.push_back(controller);
+}
+
+emscripten::val GetDocumentValueAtPath(std::string_view path) {
+  emscripten::val current = document;
+  size_t index;
+  while ((index = path.find('/')) != std::string_view::npos) {
+    std::string_view section = path.substr(0, index);
+    if (section.length() > 0) {
+      current = current[std::string(section)];
+    }
+    path = path.substr(index + 1);
+  }
+  if (path.length() > 0) {
+    current = current[std::string(path)];
+  }
+  return current;
 }
 
 }  // namespace editor

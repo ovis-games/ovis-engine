@@ -25,14 +25,6 @@ void EMSCRIPTEN_KEEPALIVE OvisEditorViewport_Quit() {
   SDL_PushEvent(&sdl_event);
 }
 
-bool EMSCRIPTEN_KEEPALIVE OvisEditorViewport_SetScene(const char* serialized_scene) {
-  if (EditorViewport::instance() == nullptr) {
-    return false;
-  }
-
-  return EditorViewport::instance()->scene()->Deserialize(ovis::json::parse(serialized_scene));
-}
-
 int EMSCRIPTEN_KEEPALIVE OvisEditorViewport_GetRegisteredSceneObjectComponentCount() {
   return ovis::SceneObjectComponent::GetRegisteredFactoriesCount();
 }
