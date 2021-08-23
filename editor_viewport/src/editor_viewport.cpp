@@ -26,9 +26,20 @@ bool SetScene(const std::string& serialized_scene) {
 namespace ovis {
 namespace editor {
 
+namespace {
+void SelectTransformType(int transform_type) {
+  EditorViewport::instance()->transformation_tools_controller()->SelectTransformationType(
+      static_cast<TransformationToolsController::TransformationType>(transform_type));
+}
+int GetTransformType() {
+  return static_cast<int>(EditorViewport::instance()->transformation_tools_controller()->transformation_type());
+}
+}
 
 EMSCRIPTEN_BINDINGS(editor_viewport_module) {
   emscripten::function("viewportSetScene", &SetScene);
+  emscripten::function("viewportSelectTransformType", &SelectTransformType);
+  emscripten::function("viewportGetTransformType", &GetTransformType);
 }
 
 EditorViewport* EditorViewport::instance_ = nullptr;

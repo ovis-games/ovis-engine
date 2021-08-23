@@ -19,7 +19,7 @@ class TransformationToolsController : public ViewportController {
  public:
   static constexpr std::string_view Name() { return "TransformationTools"; }
 
-  enum class TransformationType { MOVE, ROTATE, SCALE };
+  enum class TransformationType { MOVE = 0, ROTATE = 1, SCALE = 2 };
   enum class AxesSelection {
     NONE,
     X,

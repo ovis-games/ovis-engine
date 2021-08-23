@@ -1,6 +1,8 @@
 #include <ovis/editor_viewport/transformation_tools_controller.hpp>
 
 #include <imgui.h>
+#include <emscripten.h>
+#include <emscripten/bind.h>
 
 #include <ovis/utils/log.hpp>
 #include <ovis/core/intersection.hpp>
@@ -127,16 +129,37 @@ void TransformationToolsController::ProcessEvent(Event* event) {
       Transform* transform = scene_object->GetComponent<Transform>("Transform");
       SDL_assert(transform);
 
-      const auto property_path = fmt::format("{}/position", GetComponentPath(scene_object->path(), "Transform"));
+      std::string property_path;
+      emscripten::val value = emscripten::val::array();
+      switch (transformation_type()) {
+        case TransformationType::MOVE:
+          property_path = fmt::format("{}/position", GetComponentPath(scene_object->path(), "Transform"));
+          value.call<void>("push", transform->local_position().x);
+          value.call<void>("push", transform->local_position().y);
+          value.call<void>("push", transform->local_position().z);
+          break;
+
+        case TransformationType::ROTATE:
+          property_path = fmt::format("{}/rotation", GetComponentPath(scene_object->path(), "Transform"));
+          float yaw, pitch, roll;
+          transform->GetLocalYawPitchRoll(&yaw, &pitch, &roll);
+          value.call<void>("push", RadiansToDegreesFactor<float>() * pitch);
+          value.call<void>("push", RadiansToDegreesFactor<float>() * yaw);
+          value.call<void>("push", RadiansToDegreesFactor<float>() * roll);
+          break;
+
+        case TransformationType::SCALE:
+          property_path = fmt::format("{}/scale", GetComponentPath(scene_object->path(), "Transform"));
+          value.call<void>("push", transform->local_scale().x);
+          value.call<void>("push", transform->local_scale().y);
+          value.call<void>("push", transform->local_scale().z);
+          break;
+      }
 
       emscripten::val operation = emscripten::val::object();
       operation.set("op", "add");
       operation.set("path", property_path);
-      emscripten::val position = emscripten::val::array();
-      position.call<void>("push", transform->local_position().x);
-      position.call<void>("push", transform->local_position().y);
-      position.call<void>("push", transform->local_position().z);
-      operation.set("value", position);
+      operation.set("value", value);
 
       emscripten::val patch = emscripten::val::array();
       patch.call<void>("push", operation);
