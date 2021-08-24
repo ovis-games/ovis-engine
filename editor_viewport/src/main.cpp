@@ -55,10 +55,10 @@ int main(int argc, char* argv[]) {
   using namespace ovis::editor;
 
   Log::AddListener(ConsoleLogger);
-  Log::AddListener([](LogLevel level, const std::string& text) {
-    emscripten::val::global("window").call<void>("ovis_log", emscripten::val(GetLogLevelString(level)),
-                                                 emscripten::val(text.c_str()));
-  });
+  // Log::AddListener([](LogLevel level, const std::string& text) {
+  //   emscripten::val::global("window").call<void>("ovis_log", emscripten::val(GetLogLevelString(level)),
+  //                                                emscripten::val(text.c_str()));
+  // });
 
   Init();
 
