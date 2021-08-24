@@ -31,7 +31,7 @@ SceneObject::~SceneObject() {
 bool SceneObject::IsValidName(std::string_view name) {
   for (const char c : name) {
     if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == ' ' || (c >= '0' && c <= '9') || c == '.' ||
-        c == '-') {
+        c == '-' || c == '#') {
       // Character is allowed
       continue;
     }
