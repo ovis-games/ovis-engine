@@ -1,5 +1,6 @@
 #include <ovis/utils/log.hpp>
 #include <ovis/core/scripting.hpp>
+#include <ovis/core/asset_library.hpp>
 
 namespace ovis {
 
@@ -52,7 +53,7 @@ ScriptContext::ScriptContext() {
   RegisterFunction<multiply>("multiply", {"x", "y"}, {"result"});
   RegisterFunction<divide>("divide", {"x", "y"}, {"result"});
   RegisterFunction<negate>("negate", {"x"}, {"result"});
-  RegisterFunction<print>("print", {"value"}, {"result"});
+  RegisterFunction<print>("print", {"text"}, {"result"});
   RegisterFunction<print_number>("print_number", {"value"}, {"result"});
   RegisterFunction<print_bool>("print_bool", {"value"}, {"result"});
   RegisterFunction<is_greater>("is_greater", {"x", "y"}, {"result"});
@@ -75,6 +76,48 @@ const ScriptFunction* ScriptContext::GetFunction(std::string_view identifier) {
   } else {
     return &function->second;
   }
+}
+
+bool ScriptContext::LoadDocumentation(std::string_view language) {
+  if (!GetEngineAssetLibrary()) {
+    return false;
+  }
+
+  for (const auto& asset_id : GetEngineAssetLibrary()->GetAssetsWithType("script_documentation")) {
+    const auto doc_content = GetEngineAssetLibrary()->LoadAssetTextFile(asset_id, fmt::format("{}.json", language));
+
+    if (!doc_content.has_value()) {
+      LogW("Documentation of {} is not available for language {}", asset_id, language);
+      continue;
+    }
+
+    const auto documentation = json::parse(*doc_content);
+    if (!documentation.is_object()) {
+      LogE("Invalid documentation format: content must be an object (asset: {}, language: {})", asset_id, language);
+      continue;
+    }
+
+    if (documentation.contains("functions")) {
+      for (const auto& [function_identifier, function_documentation] : documentation["functions"].items()) {
+        if (!functions_.contains(function_identifier)) {
+          LogW("Found documentation for non-existing fuction `{}` (asset: {}, language: {})", function_identifier,
+               asset_id, language);
+        } else {
+          ScriptFunction* script_function = &functions_[function_identifier];
+
+          if (function_documentation.contains("text")) {
+            script_function->text = function_documentation["text"];
+            LogD("func text for {}: {}", function_identifier, function_documentation["text"]);
+          }
+          if (function_documentation.contains("description")) {
+            script_function->description = function_documentation["description"];
+          }
+        }
+      }
+    }
+  }
+  
+  return true;
 }
 
 // std::variant<ScriptError, std::vector<ScriptValue>> ScriptContext::Execute(std::string_view function_identifier,

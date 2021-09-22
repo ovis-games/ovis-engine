@@ -75,6 +75,8 @@ struct ScriptFunction {
   ScriptFunctionPointer function;
   std::vector<ScriptValueDefinition> inputs;
   std::vector<ScriptValueDefinition> outputs;
+  std::string text;
+  std::string description;
 
   size_t GetInputIndex(std::string_view input_identifier) const {
     for (const auto& input : IndexRange(inputs)) {
@@ -191,6 +193,7 @@ class ScriptContext {
                            std::string_view output_name = "");
 
   const ScriptFunction* GetFunction(std::string_view identifier);
+  auto function_identifiers() const { return Keys(functions_); }
 
   std::variant<ScriptError, std::vector<ScriptValue>> Execute(std::string_view function_identifier,
                                                               std::span<ScriptValue> arguments);
@@ -336,6 +339,8 @@ class ScriptContext {
     SDL_assert(end - begin >= 0);
     return {&stack_[stack_.size() + begin], static_cast<size_t>(end - begin)};
   }
+
+  bool LoadDocumentation(std::string_view language = "en-US");
 
  private:
   std::map<std::string, ScriptFunction, std::less<>> functions_;

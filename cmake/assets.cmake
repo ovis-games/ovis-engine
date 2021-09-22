@@ -74,3 +74,42 @@ function (target_include_assets target)
     )
   endif ()
 endfunction()
+
+function (target_embed_assets target)
+  extract_assets(asset_files ${target})
+  list(REMOVE_DUPLICATES asset_files)
+
+  if (OVIS_EMSCRIPTEN)
+    foreach(asset ${asset_files})
+      target_link_options(
+        ${target}
+        PUBLIC
+          "SHELL:--embed-file ${asset}@/ovis_assets/"
+      )
+      target_compile_options(
+        ${target}
+        PUBLIC
+          "SHELL:--embed-file ${asset}@/ovis_assets/"
+      )
+    endforeach()
+  else ()
+    foreach(asset ${asset_files})
+      get_filename_component(filename ${asset} NAME)
+      list(APPEND asset_output ${CMAKE_CURRENT_BINARY_DIR}/assets/${filename})
+    endforeach()
+
+    add_custom_command(
+      OUTPUT ${asset_output} ${CMAKE_CURRENT_BINARY_DIR}/assets.cpp
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/assets
+      COMMAND ${CMAKE_COMMAND} -E copy ${asset_files} ${CMAKE_CURRENT_BINARY_DIR}/assets
+      COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/assets.cpp
+      DEPENDS ${asset_files}
+    )
+
+    target_sources(
+      ${target}
+      PRIVATE
+        ${CMAKE_CURRENT_BINARY_DIR}/assets.cpp
+    )
+  endif ()
+endfunction()

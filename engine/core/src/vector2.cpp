@@ -296,7 +296,7 @@ void Vector2::RegisterType(ScriptContext* context) {
   // vector2_type["NEGATIVE_Z"] = sol::property(Vector2::NegativeZ);
 
   context->RegisterType<Vector2>("Vector2");
-  context->RegisterConstructor<Vector2, float, float>("create_vector2", {"x", "y"}, "vector");
+  context->RegisterConstructor<Vector2, float, float>("Create Vector2", {"x", "y"}, "Vector2");
   // vector2_type[sol::meta_function::equal_to] = static_cast<bool (*)(const Vector2&, const Vector2&)>(ovis::operator==);
   context->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator+)>("vector2_add", {"first vector", "second vector"}, {"vector"});
   context->RegisterFunction<static_cast<Vector2 (*)(const Vector2&)>(ovis::operator-)>("vector2_negate", {"vector"}, {"vector"});

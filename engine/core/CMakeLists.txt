@@ -44,8 +44,8 @@ target_link_libraries(
 target_add_assets(
   ovis-core
 
-  assets/core.schema.json
-  assets/core_definitions.script_definitions.json
+  assets/core.script_documentation.en-US.json
+  assets/vector2.script_documentation.en-US.json
 )
 
 if (OVIS_BUILD_TESTS)
@@ -82,6 +82,7 @@ if (OVIS_BUILD_TESTS)
       catch2
       ovis::core
   )
+  target_embed_assets(ovis-core-test)
 
   if (OVIS_EMSCRIPTEN)
     add_test(
