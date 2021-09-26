@@ -401,6 +401,10 @@ std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json
 
   for (const auto& indexed_action : IndexRange(actions)) {
     const json& action = indexed_action.value();
+    if (!action.contains("type")) {
+      continue;
+    }
+
     const std::string type = action["type"];
     const ScriptActionReference action_reference = parent / indexed_action.index();
     if (type == "function_call") {
@@ -439,8 +443,8 @@ std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json
       }
 
       for (const auto& input : function->inputs) {
-        if (!action.contains("inputs") || !action["inputs"].is_object() ||
-          !push_value(action["inputs"][input.identifier], &scope)) {
+        if (!action.contains(json::json_pointer(fmt::format("/inputs/{}", input.identifier))) ||
+            !push_value(action["inputs"][input.identifier], &scope)) {
           return ScriptError{.action = action_reference,
                              .message = fmt::format("No value for input '{}' provided", input.identifier)};
         }
