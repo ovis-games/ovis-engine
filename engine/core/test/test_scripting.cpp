@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 
 #include <ovis/utils/log.hpp>
-#include <ovis/core/scripting.hpp>
+#include <ovis/core/script_context.hpp>
 #include <ovis/core/asset_library.hpp>
 
 using namespace ovis;

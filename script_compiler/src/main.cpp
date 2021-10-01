@@ -64,20 +64,21 @@ emscripten::val GetDocumentation() {
 
 }
 
-std::optional<ScriptChunk> current_script;
+std::optional<ScriptChunk> chunk;
 val SetScript(const std::string& script) {
-  current_script.reset();
+  chunk.reset();
 
-  auto load_result = ScriptChunk::Load(json::parse(script));
   val result = val::object();
-  if (std::holds_alternative<ScriptError>(load_result)) {
-    const ScriptError& error = std::get<ScriptError>(load_result);
+  auto chunk_or_error = ScriptChunk::Load(global_script_context(), json::parse(script));
+  if (std::holds_alternative<ScriptError>(chunk_or_error)) {
+    const ScriptError& error = std::get<ScriptError>(chunk_or_error);
     val result_error = val::object();
     result_error.set("action", val(error.action.string));
     result_error.set("message", val(error.message));
     result.set("error", result_error);
   } else {
-    current_script.emplace(std::move(std::get<ScriptChunk>(load_result)));
+    chunk = std::move(std::get<ScriptChunk>(chunk_or_error));
+    chunk->Print();
   }
 
   return result;
@@ -86,17 +87,19 @@ val SetScript(const std::string& script) {
 val RunScript() {
   val result = val::object();
 
-  if (!current_script.has_value()) {
+  if (!chunk.has_value()) {
     val result_error = val::object();
     result_error.set("message", "Script has errors");
     result.set("error", result_error);
   } else {
-    const ScriptFunctionResult function_result = current_script->Execute({});
-    if (function_result.error.has_value()) {
+    const auto function_result = chunk->Call({});
+    if (std::holds_alternative<ScriptError>(function_result)) {
+      const ScriptError& error = std::get<ScriptError>(function_result);
       val result_error = val::object();
-      result_error.set("action", val(function_result.error->action.string));
-      result_error.set("message", val(function_result.error->message));
+      result_error.set("action", val(error.action.string));
+      result_error.set("message", val(error.message));
       result.set("error", result_error);
+      global_script_context()->PrintDebugInfo();
     }
   }
 

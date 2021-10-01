@@ -18,7 +18,6 @@ class VisualScriptSceneController : public SceneController {
   static void RegisterType(sol::table* module);
 
  private:
-  std::optional<ScriptChunk> update_;
 };
 
 std::unique_ptr<VisualScriptSceneController> LoadVisualScriptSceneController(

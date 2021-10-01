@@ -8,7 +8,7 @@
 
 #include <ovis/utils/json.hpp>
 #include <ovis/core/math_constants.hpp>
-#include <ovis/core/scripting.hpp>
+#include <ovis/core/script_context.hpp>
 
 namespace ovis {
 
