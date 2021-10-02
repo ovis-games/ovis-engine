@@ -2,7 +2,7 @@ name: Deploy Docker Image
 
 on:
   push:
-    branches: [ master ]
+    branches: [ 'feature/html-editor' ]
 
   workflow_dispatch:
 
@@ -21,4 +21,4 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: docker.pkg.github.com
           repository: ovis-games/ovis-engine/ovis-engine
-          tags: latest
+          tags: html5-editor
