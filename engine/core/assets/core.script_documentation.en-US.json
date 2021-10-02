@@ -23,10 +23,13 @@
       "text": "(x) < (y)"
     },
     "print": {
-      "text": "Print (value)"
+      "text": "Print (text)"
     },
     "print_bool": {
-      "text": "Print (value)"
+      "text": "Print Boolean (value)"
+    },
+    "print_number": {
+      "text": "Print Number (value)"
     },
     "is_greater": {
       "text": "(x) > (y)"
