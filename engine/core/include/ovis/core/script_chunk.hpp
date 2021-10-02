@@ -28,6 +28,7 @@ class ScriptChunk : public ScriptFunction {
   };
   struct PushStackValue {
     int position;
+    int frame;
   };
   struct AssignConstant {
     ScriptValue value;
