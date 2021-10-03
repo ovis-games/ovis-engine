@@ -37,7 +37,21 @@ void print_bool(bool x) {
 
 std::unique_ptr<ScriptContext> global_context = std::make_unique<ScriptContext>();
 
-void PrintInstruction(ScriptChunk::Instruction instruction) {
+std::string ScriptValueToString(ScriptContext* context, const ScriptValue& value) {
+  if (value.type == SCRIPT_TYPE_UNKNOWN) {
+    return "Unknown";
+  } else if (value.type == context->GetTypeId("Number")) {
+    return std::to_string(std::any_cast<double>(value.value));
+  } else if (value.type == context->GetTypeId("String")) {
+    return std::any_cast<std::string>(value.value);
+  } else if (value.type == context->GetTypeId("Boolean")) {
+    return std::to_string(std::any_cast<bool>(value.value));
+  } else {
+    return "ERROR";
+  }
+}
+
+void PrintInstruction(ScriptContext* context, ScriptChunk::Instruction instruction) {
   using InstructionType = ScriptChunk::InstructionType;
   using FunctionCall = ScriptChunk::FunctionCall;
   using PushConstant = ScriptChunk::PushConstant;
@@ -67,11 +81,7 @@ void PrintInstruction(ScriptChunk::Instruction instruction) {
 
     case InstructionType::PUSH_CONSTANT: {
       const PushConstant& push_constant = std::get<PushConstant>(instruction.data);
-      if (push_constant.value.value.has_value()) {
-        LogD("push_constant {} [+1]", std::any_cast<double>(push_constant.value.value));
-      } else {
-        LogD("push_constant None [+1]");
-      }
+      LogD("push_constant {} [+1]", ScriptValueToString(context, push_constant.value));
       break;
     }
 
@@ -112,20 +122,6 @@ void PrintInstruction(ScriptChunk::Instruction instruction) {
       LogD("jump_if_false {} [-1]", conditional_jump.instruction_offset);
       break;
     }
-  }
-}
-
-std::string ScriptValueToString(ScriptContext* context, const ScriptValue& value) {
-  if (value.type == SCRIPT_TYPE_UNKNOWN) {
-    return "Unknown";
-  } else if (value.type == context->GetTypeId("Number")) {
-    return std::to_string(std::any_cast<double>(value.value));
-  } else if (value.type == context->GetTypeId("String")) {
-    return std::any_cast<std::string>(value.value);
-  } else if (value.type == context->GetTypeId("Boolean")) {
-    return std::to_string(std::any_cast<bool>(value.value));
-  } else {
-    return "ERROR";
   }
 }
 
@@ -373,7 +369,7 @@ std::optional<ScriptError> ScriptChunk::Execute() {
   while (instruction_pointer < instructions_.size()) {
     const auto& instruction = instructions_[instruction_pointer];
 
-    PrintInstruction(instruction);
+    PrintInstruction(context_, instruction);
     switch (instruction.type) {
       case InstructionType::PUSH_STACK_FRAME: {
         context_->PushStackFrame();
@@ -496,7 +492,7 @@ std::vector<ScriptValueDefinition> ScriptChunk::GetVisibleLocalVariables(ScriptA
 
 void ScriptChunk::Print() {
   for (const auto& instruction : instructions_) {
-    PrintInstruction(instruction);
+    PrintInstruction(context_, instruction);
   }
 }
 
