@@ -142,9 +142,9 @@ ScriptContext::ScriptContext() {
   RegisterFunction<multiply>("multiply", {"x", "y"}, {"result"});
   RegisterFunction<divide>("divide", {"x", "y"}, {"result"});
   RegisterFunction<negate>("negate", {"x"}, {"result"});
-  RegisterFunction<print>("print", {"text"}, {"result"});
-  RegisterFunction<print_number>("print_number", {"value"}, {"result"});
-  RegisterFunction<print_bool>("print_bool", {"value"}, {"result"});
+  RegisterFunction<print>("print", {"text"}, {});
+  RegisterFunction<print_number>("print_number", {"value"}, {});
+  RegisterFunction<print_bool>("print_bool", {"value"}, {});
   RegisterFunction<is_greater>("is_greater", {"x", "y"}, {"result"});
 
   stack_.reserve(1000);
