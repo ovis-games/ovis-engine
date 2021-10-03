@@ -78,11 +78,13 @@ val SetScript(const std::string& script) {
   if (std::holds_alternative<ScriptError>(chunk_or_error)) {
     const ScriptError& error = std::get<ScriptError>(chunk_or_error);
     val result_error = val::object();
-    result_error.set("action", val(error.action.string));
+    // TODO: temporary hackfix, use the json path as action reference
+    result_error.set("action", val("/actions" + error.action.string));
     result_error.set("message", val(error.message));
     result.set("error", result_error);
   } else {
     chunk = std::move(std::get<ScriptChunk>(chunk_or_error));
+    LogD("Chunk instructions:");
     chunk->Print();
   }
 
@@ -101,7 +103,8 @@ val RunScript() {
     if (std::holds_alternative<ScriptError>(function_result)) {
       const ScriptError& error = std::get<ScriptError>(function_result);
       val result_error = val::object();
-      result_error.set("action", val(error.action.string));
+      // TODO: temporary hackfix, use the json path as action reference
+      result_error.set("action", val("/actions" + error.action.string));
       result_error.set("message", val(error.message));
       result.set("error", result_error);
       global_script_context()->PrintDebugInfo();
