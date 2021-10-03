@@ -18,6 +18,11 @@ using namespace ovis;
 using namespace emscripten;
 
 
+emscripten::val log_callback = emscripten::val::undefined();
+void SetLogCallback(emscripten::val callback) {
+  log_callback = callback;
+}
+
 emscripten::val GetFunctionInfo(const std::string& function_identifier) {
   const ScriptFunction* function = global_script_context()->GetFunction(function_identifier);
   if (function == nullptr) {
@@ -112,11 +117,17 @@ EMSCRIPTEN_BINDINGS(script_compiler_module) {
   function("scriptCompilerGetDocumentation", &GetDocumentation);
   function("scriptCompilerSetScript", &SetScript);
   function("scriptCompilerRunScript", &RunScript);
+  function("scriptCompilerSetLogCallback", &SetLogCallback);
 }
 
 
 int main(int argc, char* argv[]) {
-  Log::AddListener(ConsoleLogger);
+  // Log::AddListener(ConsoleLogger);
+  Log::AddListener([](LogLevel level, const std::string& text) {
+    if (log_callback.typeOf() == emscripten::val("function")) {
+      log_callback(emscripten::val(static_cast<int>(level)), emscripten::val(text));
+    }
+  });
 
   Init();
 

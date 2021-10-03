@@ -42,9 +42,14 @@ const char* EMSCRIPTEN_KEEPALIVE OvisEditorViewport_GetRegisteredSceneObjectComp
 void SetEventCallback(emscripten::val callback) {
   EditorViewport::instance()->SetEventCallback(callback);
 }
+emscripten::val log_callback = emscripten::val::undefined();
+void SetLogCallback(emscripten::val callback) {
+  log_callback = callback;
+}
 
 EMSCRIPTEN_BINDINGS(editor_viewport_module) {
   function("viewportSetEventCallback", &SetEventCallback);
+  function("viewportSetLogCallback", &SetLogCallback);
 }
 
 #endif
@@ -54,11 +59,12 @@ int main(int argc, char* argv[]) {
   using namespace ovis;
   using namespace ovis::editor;
 
-  Log::AddListener(ConsoleLogger);
-  // Log::AddListener([](LogLevel level, const std::string& text) {
-  //   emscripten::val::global("window").call<void>("ovis_log", emscripten::val(GetLogLevelString(level)),
-  //                                                emscripten::val(text.c_str()));
-  // });
+  // Log::AddListener(ConsoleLogger);
+  Log::AddListener([](LogLevel level, const std::string& text) {
+    if (log_callback.typeOf() == emscripten::val("function")) {
+      log_callback(emscripten::val(static_cast<int>(level)), emscripten::val(text));
+    }
+  });
 
   Init();
 
