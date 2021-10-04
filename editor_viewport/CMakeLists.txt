@@ -21,21 +21,19 @@ if (OVIS_EMSCRIPTEN)
   target_compile_options(
     ovis-editor-viewport
     PUBLIC
-    "SHELL:-s FETCH=1"
     "SHELL:-s --bind"
     "SHELL:-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0"
   )
   target_link_options(
     ovis-editor-viewport
     PUBLIC
-      "SHELL:-s FETCH=1"
       "SHELL:-s --bind"
       "SHELL:-s FORCE_FILESYSTEM=1"
       "SHELL:-s MODULARIZE=1"
       "SHELL:-s ALLOW_MEMORY_GROWTH=1"
       "SHELL:-s EXPORT_NAME=createEditorViewportModule"
-      "SHELL:-s EXTRA_EXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap']"
       "SHELL:-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0"
+      "SHELL:-s EXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap']"
   )
 endif (OVIS_EMSCRIPTEN)
 

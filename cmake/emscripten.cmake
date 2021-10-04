@@ -13,13 +13,11 @@ if (OVIS_EMSCRIPTEN)
       -g
       -O0
       "SHELL:-s DISABLE_EXCEPTION_CATCHING=0"
-      "SHELL:-s DEMANGLE_SUPPORT=1"
     )
     add_link_options(
       -g
       -O0
       "SHELL:-s DISABLE_EXCEPTION_CATCHING=0"
-      "SHELL:-s DEMANGLE_SUPPORT=1"
     )
   else ()
     add_compile_options(

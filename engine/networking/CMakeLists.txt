@@ -12,6 +12,12 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+target_link_options(
+  ovis-networking
+  PUBLIC
+    "SHELL:-s FETCH=1"
+)
+
 target_link_libraries(
   ovis-networking
   PUBLIC
