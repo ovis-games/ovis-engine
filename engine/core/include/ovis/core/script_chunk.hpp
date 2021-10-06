@@ -63,7 +63,8 @@ class ScriptChunk : public ScriptFunction {
 
   std::vector<ScriptValueDefinition> GetVisibleLocalVariables(ScriptActionReference action);
 
-  void Print();
+  void Print() const;
+  std::string GetInstructionsAsText() const;
 
  private:
   ScriptChunk(ScriptContext* context, std::vector<ScriptValueDefinition> inputs, std::vector<ScriptValueDefinition> outputs);

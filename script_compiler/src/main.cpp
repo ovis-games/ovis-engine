@@ -84,8 +84,7 @@ val SetScript(const std::string& script) {
     result.set("error", result_error);
   } else {
     chunk = std::move(std::get<ScriptChunk>(chunk_or_error));
-    LogD("Chunk instructions:");
-    chunk->Print();
+    result.set("instructions", val(chunk->GetInstructionsAsText()));
   }
 
   return result;

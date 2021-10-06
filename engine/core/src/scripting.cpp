@@ -51,7 +51,7 @@ std::string ScriptValueToString(ScriptContext* context, const ScriptValue& value
   }
 }
 
-void PrintInstruction(ScriptContext* context, ScriptChunk::Instruction instruction) {
+std::string GetInstructionText(ScriptContext* context, ScriptChunk::Instruction instruction) {
   using InstructionType = ScriptChunk::InstructionType;
   using FunctionCall = ScriptChunk::FunctionCall;
   using PushConstant = ScriptChunk::PushConstant;
@@ -63,66 +63,59 @@ void PrintInstruction(ScriptContext* context, ScriptChunk::Instruction instructi
 
   switch (instruction.type) {
     case InstructionType::PUSH_STACK_FRAME: {
-      LogD("push_stack_frame");
-      break;
+      return fmt::format("push_stack_frame");
     }
 
     case InstructionType::POP_STACK_FRAME: {
-      LogD("pop_stack_frame");
-      break;
+      return fmt::format("pop_stack_frame");
     }
 
     case InstructionType::FUNCTION_CALL: {
       const auto& function_call = std::get<FunctionCall>(instruction.data);
-      LogD("call {} {} {} [-{}]", (void*)function_call.function, function_call.input_count,
+      return fmt::format("call {} {} {} [-{}]", (void*)function_call.function, function_call.input_count,
            function_call.output_count, function_call.input_count);
-      break;
     }
 
     case InstructionType::PUSH_CONSTANT: {
       const PushConstant& push_constant = std::get<PushConstant>(instruction.data);
-      LogD("push_constant {} [+1]", ScriptValueToString(context, push_constant.value));
-      break;
+      return fmt::format("push_constant {} [+1]", ScriptValueToString(context, push_constant.value));
     }
 
     case InstructionType::PUSH_STACK_VARIABLE: {
       const PushStackValue& push_stack_value = std::get<PushStackValue>(instruction.data);
-      LogD("push_stack_value {}({}) [+1]", push_stack_value.position, push_stack_value.frame);
-      break;
+      return fmt::format("push_stack_value {}({}) [+1]", push_stack_value.position, push_stack_value.frame);
     }
 
     case InstructionType::POP: {
       const Pop& pop = std::get<Pop>(instruction.data);
-      LogD("pop [-{}]", pop.count);
-      break;
+      return fmt::format("pop [-{}]", pop.count);
     }
 
     case InstructionType::ASSIGN_CONSTANT: {
       const AssignConstant& assign_constant = std::get<AssignConstant>(instruction.data);
-      LogD("assign_constant {}->{} [0]", "some_value", assign_constant.position);
-      break;
+      return fmt::format("assign_constant {}->{} [0]", "some_value", assign_constant.position);
     }
 
     case InstructionType::ASSIGN_STACK_VARIABLE: {
       const AssignStackVariable& assign_stack_variable = std::get<AssignStackVariable>(instruction.data);
-      LogD("assign_stack_variable {}[{}]->{}[{}] [0]", assign_stack_variable.source_position,
+      return fmt::format("assign_stack_variable {}[{}]->{}[{}] [0]", assign_stack_variable.source_position,
            assign_stack_variable.source_frame, assign_stack_variable.destination_position,
            assign_stack_variable.destination_frame);
-      break;
     }
 
     case InstructionType::JUMP_IF_TRUE: {
       const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
-      LogD("jump_if_true {} [-1]", conditional_jump.instruction_offset);
-      break;
+      return fmt::format("jump_if_true {} [-1]", conditional_jump.instruction_offset);
     }
 
     case InstructionType::JUMP_IF_FALSE: {
       const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
-      LogD("jump_if_false {} [-1]", conditional_jump.instruction_offset);
-      break;
+      return fmt::format("jump_if_false {} [-1]", conditional_jump.instruction_offset);
     }
   }
+
+  // Do not use default case to get a warning when an instruction is missing
+  return "unknown_instruction";
 }
 
 }  // namespace
@@ -363,13 +356,9 @@ std::variant<ScriptError, std::vector<ScriptValue>> ScriptChunk::Call(std::span<
 std::optional<ScriptError> ScriptChunk::Execute() {
   size_t instruction_pointer = 0;
 
-  LogD("Start executing chunk!");
-  context_->PrintDebugInfo();
-
   while (instruction_pointer < instructions_.size()) {
     const auto& instruction = instructions_[instruction_pointer];
 
-    PrintInstruction(context_, instruction);
     switch (instruction.type) {
       case InstructionType::PUSH_STACK_FRAME: {
         context_->PushStackFrame();
@@ -471,10 +460,7 @@ std::optional<ScriptError> ScriptChunk::Execute() {
         break;
       }
     };
-
-    context_->PrintDebugInfo();
   }
-  LogD("Chunk execution finished!");
 
   return {};
 }
@@ -490,10 +476,19 @@ std::vector<ScriptValueDefinition> ScriptChunk::GetVisibleLocalVariables(ScriptA
   return visible_variables;
 }
 
-void ScriptChunk::Print() {
+void ScriptChunk::Print() const {
   for (const auto& instruction : instructions_) {
-    PrintInstruction(context_, instruction);
+    LogD("{}", GetInstructionText(context_, instruction));
   }
+}
+
+std::string ScriptChunk::GetInstructionsAsText() const {
+  std::string s;
+  for (const auto& instruction : instructions_) {
+    s += GetInstructionText(context_, instruction);
+    s += '\n';
+  }
+  return s;
 }
 
 ScriptChunk::ScriptChunk(ScriptContext* context, std::vector<ScriptValueDefinition> inputs,
