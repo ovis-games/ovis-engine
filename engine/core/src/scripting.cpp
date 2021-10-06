@@ -624,6 +624,12 @@ std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json
       if (std::holds_alternative<ScriptError>(if_scope_result)) {
         return std::get<ScriptError>(if_scope_result);
       }
+      if (!action.contains("condition")) {
+        return ScriptError {
+          .action = action_reference,
+          .message = "No condition provided",
+        };
+      }
       if (!push_value(action["condition"], &scope)) {
         // TODO: Return proper error
         return {};
