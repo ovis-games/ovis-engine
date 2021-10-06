@@ -7,6 +7,10 @@ namespace ovis {
 
 namespace {
 
+double number(double n) {
+  return n;
+}
+
 double add(double x, double y) {
   return x + y;
 }
@@ -59,7 +63,7 @@ std::string GetInstructionText(ScriptContext* context, ScriptChunk::Instruction 
   using Pop = ScriptChunk::Pop;
   using AssignConstant = ScriptChunk::AssignConstant;
   using AssignStackVariable = ScriptChunk::AssignStackVariable;
-  using ConditionalJump = ScriptChunk::ConditionalJump;
+  using Jump = ScriptChunk::Jump;
 
   switch (instruction.type) {
     case InstructionType::PUSH_STACK_FRAME: {
@@ -103,13 +107,18 @@ std::string GetInstructionText(ScriptContext* context, ScriptChunk::Instruction 
            assign_stack_variable.destination_frame);
     }
 
+    case InstructionType::JUMP: {
+      const auto& jump = std::get<Jump>(instruction.data);
+      return fmt::format("jump {} [0]", jump.instruction_offset);
+    }
+
     case InstructionType::JUMP_IF_TRUE: {
-      const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
+      const auto& conditional_jump = std::get<Jump>(instruction.data);
       return fmt::format("jump_if_true {} [-1]", conditional_jump.instruction_offset);
     }
 
     case InstructionType::JUMP_IF_FALSE: {
-      const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
+      const auto& conditional_jump = std::get<Jump>(instruction.data);
       return fmt::format("jump_if_false {} [-1]", conditional_jump.instruction_offset);
     }
   }
@@ -130,6 +139,7 @@ ScriptContext::ScriptContext() {
   RegisterType<bool>("Boolean");
   RegisterType<std::string>("String");
 
+  RegisterFunction<number>("number", {"value"}, {"number"});
   RegisterFunction<add>("add", {"x", "y"}, {"result"});
   RegisterFunction<subtract>("subtract", {"x", "y"}, {"result"});
   RegisterFunction<multiply>("multiply", {"x", "y"}, {"result"});
@@ -421,8 +431,15 @@ std::optional<ScriptError> ScriptChunk::Execute() {
         break;
       }
 
+      case InstructionType::JUMP: {
+        const auto& jump = std::get<Jump>(instruction.data);
+        instruction_pointer += jump.instruction_offset;
+        // TODO: maybe check for bounds here?
+        break;
+      }
+
       case InstructionType::JUMP_IF_TRUE: {
-        const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
+        const auto& conditional_jump = std::get<Jump>(instruction.data);
         const auto value_or_error = context_->GetValue<bool>(-1);
         if (std::holds_alternative<bool>(value_or_error)) [[likely]] {
           if (std::get<bool>(value_or_error)) {
@@ -442,7 +459,7 @@ std::optional<ScriptError> ScriptChunk::Execute() {
       }
 
       case InstructionType::JUMP_IF_FALSE: {
-        const auto& conditional_jump = std::get<ConditionalJump>(instruction.data);
+        const auto& conditional_jump = std::get<Jump>(instruction.data);
         const auto value_or_error = context_->GetValue<bool>(-1);
         if (std::holds_alternative<bool>(value_or_error)) [[likely]] {
           if (!std::get<bool>(value_or_error)) {
@@ -498,7 +515,7 @@ ScriptChunk::ScriptChunk(ScriptContext* context, std::vector<ScriptValueDefiniti
 std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json& actions, const ScriptActionReference& parent) {
   Scope scope;
 
-  auto push_value = [&](const json& value, Scope* scope) {
+  auto push_value = [&](const json& value, Scope* scope, int frame = 0) {
     // SDL_assert(scope != nullptr);
 
     if (value.is_string()) {
@@ -528,7 +545,7 @@ std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json
       } else {
         scope->instructions.push_back(
             Instruction{.type = InstructionType::PUSH_STACK_VARIABLE,
-                        .data = PushStackValue{.position = local_variable->position, .frame = -1}});
+                        .data = PushStackValue{.position = local_variable->position, .frame = frame}});
         // TODO: check expected type
         return true;
       }
@@ -584,7 +601,7 @@ std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json
 
       for (const auto& input : function->inputs) {
         if (!action.contains(json::json_pointer(fmt::format("/inputs/{}", input.identifier))) ||
-            !push_value(action["inputs"][input.identifier], &scope)) {
+            !push_value(action["inputs"][input.identifier], &scope, -1)) {
           return ScriptError{.action = action_reference,
                              .message = fmt::format("No value for input '{}' provided", input.identifier)};
         }
@@ -619,10 +636,10 @@ std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json
       }
       scope.instructions.push_back(Instruction{ .type = InstructionType::POP_STACK_FRAME });
       scope.instruction_to_action_mappings.push_back(action_reference);
-    } else if (type == "if") {
-      const auto if_scope_result = ParseScope(action["actions"], action_reference);
-      if (std::holds_alternative<ScriptError>(if_scope_result)) {
-        return std::get<ScriptError>(if_scope_result);
+    } else if (type == "if" || type == "while") {
+      auto sub_scope_result = ParseScope(action["actions"], action_reference);
+      if (std::holds_alternative<ScriptError>(sub_scope_result)) {
+        return std::get<ScriptError>(sub_scope_result);
       }
       if (!action.contains("condition")) {
         return ScriptError {
@@ -634,16 +651,22 @@ std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json
         // TODO: Return proper error
         return {};
       }
-      const auto& if_scope = std::get<Scope>(if_scope_result);
+      auto& sub_scope = std::get<Scope>(sub_scope_result);
+      if (type == "while") {
+        sub_scope.instructions.push_back(Instruction{InstructionType::JUMP,
+            Jump{static_cast<int>(-sub_scope.instructions.size() - 2)}});
+        sub_scope.instruction_to_action_mappings.push_back(action_reference);
+      }
+
       scope.instruction_to_action_mappings.push_back(action_reference);
       scope.instructions.push_back(Instruction{InstructionType::JUMP_IF_FALSE,
-                                               ConditionalJump{static_cast<int>(if_scope.instructions.size() + 1)}});
+                                               Jump{static_cast<int>(sub_scope.instructions.size() + 1)}});
       scope.instruction_to_action_mappings.push_back(action_reference);
 
-      scope.instructions.insert(scope.instructions.end(), if_scope.instructions.begin(), if_scope.instructions.end());
+      scope.instructions.insert(scope.instructions.end(), sub_scope.instructions.begin(), sub_scope.instructions.end());
       scope.instruction_to_action_mappings.insert(scope.instruction_to_action_mappings.end(),
-                                                  if_scope.instruction_to_action_mappings.begin(),
-                                                  if_scope.instruction_to_action_mappings.end());
+                                                  sub_scope.instruction_to_action_mappings.begin(),
+                                                  sub_scope.instruction_to_action_mappings.end());
     }
     assert(scope.instructions.size() == scope.instruction_to_action_mappings.size());
   }

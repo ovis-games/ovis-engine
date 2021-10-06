@@ -1,5 +1,9 @@
 {
   "functions": {
+    "number": {
+      "text": "Create Number (value)",
+      "description": "Creates number from a value"
+    },
     "add": {
       "text": "(x) + (y)",
       "description": "Adds the two numbers (x) and (y)"

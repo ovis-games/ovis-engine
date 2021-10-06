@@ -15,6 +15,7 @@ class ScriptChunk : public ScriptFunction {
     ASSIGN_CONSTANT,
     ASSIGN_STACK_VARIABLE,
     POP,
+    JUMP,
     JUMP_IF_TRUE,
     JUMP_IF_FALSE,
   };
@@ -43,12 +44,12 @@ class ScriptChunk : public ScriptFunction {
   struct Pop {
     int count;
   };
-  struct ConditionalJump {
+  struct Jump {
     int instruction_offset;
   };
   struct Instruction {
     InstructionType type;
-    std::variant<std::monostate, FunctionCall, PushConstant, PushStackValue, Pop, AssignConstant, AssignStackVariable, ConditionalJump> data;
+    std::variant<std::monostate, FunctionCall, PushConstant, PushStackValue, Pop, AssignConstant, AssignStackVariable, Jump> data;
   };
 
 
