@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ovis/core/color.hpp>
+#include <ovis/core/color.hpp>
 #include <ovis/core/scene_object_component.hpp>
 #include <ovis/core/vector.hpp>
 #include <ovis/graphics/texture2d.hpp>
@@ -12,18 +13,15 @@ class Shape2D : public SceneObjectComponent {
 
  public:
   enum class Type {
-    RECT,
-    CIRCLE,
+    RECTANGLE,
+    ELLIPSE,
   };
-  struct Rect {
+  struct Rectangle {
     Vector2 size;
   };
-  struct Circle {
+  struct Ellipse {
     Vector2 size;
     uint32_t num_segments;
-  };
-  struct Polygon {
-    std::vector<Vector2> vertices;
   };
   struct Vertex {
     float x;
@@ -35,16 +33,18 @@ class Shape2D : public SceneObjectComponent {
   explicit inline Shape2D(SceneObject* object) : SceneObjectComponent(object) {}
 
   Color color() const { return color_; }
+  Color outline_color() const { return outline_color_; }
+  float outline_width() const { return outline_width_; }
   Type type() const { return type_; }
-  Rect rect() const { SDL_assert(type_ == Type::RECT); return rect_; }
-  Circle circle() const { SDL_assert(type_ == Type::CIRCLE); return circle_; }
+  Rectangle rectangle() const { SDL_assert(type_ == Type::RECTANGLE); return rectangle_; }
+  Ellipse ellipse() const { SDL_assert(type_ == Type::ELLIPSE); return ellipse_; }
   std::string texture_asset() const { return texture_asset_; }
 
   std::span<const Vertex> vertices() const { return vertices_; }
 
   void SetColor(const Color& color);
-  void SetRect(const Rect& rect);
-  void SetCircle(const Circle& circle);
+  void SetRectangle(const Rectangle& rectangle);
+  void SetEllipse(const Ellipse& ellipse);
   void SetTexture(const std::string& texture_asset) { texture_asset_ = texture_asset; }
 
   json Serialize() const override;
@@ -54,17 +54,23 @@ class Shape2D : public SceneObjectComponent {
   static void RegisterType(sol::table* module);
 
  private:
-  Color color_ = {1.0, 1.0, 1.0, 1.0};
-  Type type_ = Type::RECT;
+  Color color_ = Color::White();
+  Type type_ = Type::RECTANGLE;
   union {
-    Rect rect_;
-    Circle circle_;
+    Rectangle rectangle_;
+    Ellipse ellipse_;
   };
+  float outline_width_ = 1.0f;
+  Color outline_color_ = Color::Black();
   std::string texture_asset_;
 
   std::vector<Vertex> vertices_;
 
   static const json schema;
+
+  void Update();
+  void UpdateRectangle();
+  void UpdateEllipse();
 };
 
 }  // namespace ovis

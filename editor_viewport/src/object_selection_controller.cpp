@@ -20,12 +20,13 @@ AxisAlignedBoundingBox3D GetComponentAABB(std::string_view id, SceneObjectCompon
   if (id == "Shape2D") {
     Shape2D* shape = down_cast<Shape2D*>(component);
     switch (shape->type()) {
-      case Shape2D::Type::RECT:
-        return AxisAlignedBoundingBox3D::FromCenterAndExtend(Vector3::Zero(), Vector3::FromVector2(shape->rect().size));
-
-      case Shape2D::Type::CIRCLE:
+      case Shape2D::Type::RECTANGLE:
         return AxisAlignedBoundingBox3D::FromCenterAndExtend(Vector3::Zero(),
-                                                             Vector3::FromVector2(shape->circle().size));
+                                                             Vector3::FromVector2(shape->rectangle().size));
+
+      case Shape2D::Type::ELLIPSE:
+        return AxisAlignedBoundingBox3D::FromCenterAndExtend(Vector3::Zero(),
+                                                             Vector3::FromVector2(shape->ellipse().size));
     }
   } else {
     return AxisAlignedBoundingBox3D::Empty();
