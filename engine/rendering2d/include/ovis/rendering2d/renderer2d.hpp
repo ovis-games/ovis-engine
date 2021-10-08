@@ -19,7 +19,7 @@ class Renderer2D : public RenderPass {
   void Render(const RenderContext& render_context) override;
 
  private:
-  static constexpr size_t VERTEX_BUFFER_ELEMENT_COUNT = 1024;
+  static constexpr size_t VERTEX_BUFFER_ELEMENT_COUNT = 64 * 1024;
   std::array<Shape2D::Vertex, VERTEX_BUFFER_ELEMENT_COUNT> shape_vertices_;
   size_t shape_vertex_count_ = 0;
   std::unique_ptr<VertexBuffer> vertex_buffer_;
