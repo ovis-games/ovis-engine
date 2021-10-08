@@ -289,7 +289,7 @@ std::vector<ScriptValueDefinition> ParseVariableDefinitions(ScriptContext* conte
                                                             const json& serialized_definitions) {
   std::vector<ScriptValueDefinition> definitions;
   for (const auto& definition : serialized_definitions.items()) {
-    const std::string type(definition.value()["type"]);
+    const std::string type = definition.value();
     definitions.push_back({context->GetTypeId(type), definition.key()});
   }
   return definitions;
