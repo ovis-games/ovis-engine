@@ -54,7 +54,7 @@ EditorViewport::EditorViewport()
   instance_ = this;
 
   AddRenderPass("ClearPass");
-  AddRenderPass("SpriteRenderer");
+  AddRenderPass("Renderer2D");
 
   AddRenderPass(std::make_unique<SelectedObjectBoundingBox>());
   AddRenderPass(std::make_unique<TransformationToolsRenderer>());

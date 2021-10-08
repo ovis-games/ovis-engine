@@ -9,7 +9,7 @@ namespace editor {
 
 TransformationToolsRenderer::TransformationToolsRenderer()
     : PrimitiveRenderer(Name()) {
-  RenderAfter("SpriteRenderer");
+  RenderAfter("Renderer2D");
   SetDrawSpace(DrawSpace::SCREEN);
   enable_alpha_blending_ = true;
 }

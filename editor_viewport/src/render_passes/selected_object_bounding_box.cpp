@@ -11,7 +11,7 @@ namespace editor {
 
 SelectedObjectBoundingBox::SelectedObjectBoundingBox()
     : PrimitiveRenderer(Name()) {
-  RenderAfter("SpriteRenderer");
+  RenderAfter("Renderer2D");
 }
 
 void SelectedObjectBoundingBox::Render(const RenderContext& render_context) {

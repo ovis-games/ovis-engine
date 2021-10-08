@@ -6,7 +6,7 @@
 
 #include <ovis/utils/log.hpp>
 #include <ovis/core/intersection.hpp>
-#include <ovis/rendering2d/sprite.hpp>
+#include <ovis/rendering2d/shape2d.hpp>
 #include <ovis/input/mouse_events.hpp>
 
 #include <ovis/editor_viewport/editor_viewport.hpp>
@@ -17,9 +17,16 @@ namespace editor {
 namespace {
 
 AxisAlignedBoundingBox3D GetComponentAABB(std::string_view id, SceneObjectComponent* component) {
-  if (id == "Sprite") {
-    Sprite* sprite = down_cast<Sprite*>(component);
-    return AxisAlignedBoundingBox3D::FromCenterAndExtend(Vector3::Zero(), Vector3::FromVector2(sprite->size()));
+  if (id == "Shape2D") {
+    Shape2D* shape = down_cast<Shape2D*>(component);
+    switch (shape->type()) {
+      case Shape2D::Type::RECT:
+        return AxisAlignedBoundingBox3D::FromCenterAndExtend(Vector3::Zero(), Vector3::FromVector2(shape->rect().size));
+
+      case Shape2D::Type::CIRCLE:
+        return AxisAlignedBoundingBox3D::FromCenterAndExtend(Vector3::Zero(),
+                                                             Vector3::FromVector2(shape->circle().size));
+    }
   } else {
     return AxisAlignedBoundingBox3D::Empty();
   }

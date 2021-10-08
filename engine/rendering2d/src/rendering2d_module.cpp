@@ -3,8 +3,8 @@
 #include <ovis/core/lua.hpp>
 #include <ovis/rendering/rendering_module.hpp>
 #include <ovis/rendering2d/rendering2d_module.hpp>
-#include <ovis/rendering2d/sprite.hpp>
-#include <ovis/rendering2d/sprite_renderer.hpp>
+#include <ovis/rendering2d/shape2d.hpp>
+#include <ovis/rendering2d/renderer2d.hpp>
 
 namespace ovis {
 
@@ -16,8 +16,6 @@ int LoadRendering2DModule(lua_State* l) {
   // @usage local rendering2d = require('ovis.rendering2d')
   sol::table rendering2d_module = state.create_table();
 
-  Sprite::RegisterType(&rendering2d_module);
-
   return rendering2d_module.push();
 }
 
@@ -27,8 +25,8 @@ bool LoadRendering2DModule() {
     LoadCoreModule();
     LoadRenderingModule();
 
-    SceneObjectComponent::Register("Sprite", [](SceneObject* object) { return std::make_unique<Sprite>(object); });
-    RenderPass::Register("SpriteRenderer", []() { return std::make_unique<SpriteRenderer>(); });
+    SceneObjectComponent::Register("Shape2D", [](SceneObject* object) { return std::make_unique<Shape2D>(object); });
+    RenderPass::Register("Renderer2D", []() { return std::make_unique<Renderer2D>(); });
 
     lua.require("ovis.rendering2d", &LoadRendering2DModule);
     module_loaded = true;
