@@ -69,13 +69,12 @@ class AssetProvider : public AssetLibrary {
     LogD("LoadAssetTextFile {} {}", asset_id, filename);
     const std::string asset_id_string(asset_id);
     const std::string filename_string(filename);
-    emscripten::val blob = assets_[asset_id_string]["files"][filename_string]["content"];
-    emscripten::val promise = blob.call<emscripten::val>("text");
-    emscripten::val text = promise.await();
-
-    LogD("Type: {}", text.typeOf().as<std::string>());
-
-    return text.as<std::string>();
+    emscripten::val content = assets_[asset_id_string]["files"][filename_string]["content"];
+    if (content.typeOf().as<std::string>() == "string") {
+      return content.as<std::string>();
+    } else {
+      return {};
+    }
   }
   std::optional<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view filename) const override final {
     LogD("LoadAssetBinaryFile {} {}", asset_id, filename);
