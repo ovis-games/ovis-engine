@@ -21,6 +21,17 @@ bool SetScene(const std::string& serialized_scene) {
 
   return EditorViewport::instance()->scene()->Deserialize(ovis::json::parse(serialized_scene));
 }
+
+void Play() {
+  using namespace ovis::editor;
+  EditorViewport::instance()->scene()->Play();
+}
+
+void Stop() {
+  using namespace ovis::editor;
+  EditorViewport::instance()->scene()->Stop();
+}
+
 }
 
 namespace ovis {
@@ -40,6 +51,8 @@ bool IsValidSceneObjectName(const std::string& name) {
 }
 
 EMSCRIPTEN_BINDINGS(editor_viewport_module) {
+  emscripten::function("viewportPlay", &Play);
+  emscripten::function("viewportStop", &Stop);
   emscripten::function("viewportSetScene", &SetScene);
   emscripten::function("viewportSelectTransformType", &SelectTransformType);
   emscripten::function("viewportGetTransformType", &GetTransformType);

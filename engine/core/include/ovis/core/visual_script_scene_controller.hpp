@@ -1,7 +1,7 @@
 #pragma once
 
 #include <ovis/core/scene_controller.hpp>
-#include <ovis/core/scripting.hpp>
+#include <ovis/core/script_chunk.hpp>
 
 namespace ovis {
 
@@ -18,6 +18,9 @@ class VisualScriptSceneController : public SceneController {
   static void RegisterType(sol::table* module);
 
  private:
+  std::optional<ScriptChunk> play_chunk_;
+  std::optional<ScriptChunk> stop_chunk_;
+  std::optional<ScriptChunk> update_chunk_;
 };
 
 std::unique_ptr<VisualScriptSceneController> LoadVisualScriptSceneController(

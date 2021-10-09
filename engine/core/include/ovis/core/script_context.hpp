@@ -351,5 +351,11 @@ void ScriptContext::RegisterConstructor(std::string_view identifier, std::vector
   RegisterFunction(identifier, &Wrapper::Execute, inputs, outputs);
 }
 
+template <typename... Inputs>
+std::variant<ScriptError, std::vector<ScriptValue>> ScriptChunk::Call(Inputs&&... inputs) {
+  std::array<ScriptValue, sizeof...(Inputs)> arguments = { context_->CreateScriptValue(inputs)... };
+  return Call(std::span<const ScriptValue>(arguments));
+}
+
 }
 

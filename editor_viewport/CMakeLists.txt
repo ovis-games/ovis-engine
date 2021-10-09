@@ -34,6 +34,7 @@ if (OVIS_EMSCRIPTEN)
       "SHELL:-s EXPORT_NAME=createEditorViewportModule"
       "SHELL:-s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0"
       "SHELL:-s EXPORTED_RUNTIME_METHODS=['FS','ccall','cwrap']"
+      "SHELL:-s ASYNCIFY"
   )
 endif (OVIS_EMSCRIPTEN)
 

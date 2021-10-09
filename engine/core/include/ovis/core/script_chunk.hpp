@@ -56,11 +56,7 @@ class ScriptChunk : public ScriptFunction {
   static std::variant<ScriptChunk, ScriptError> Load(ScriptContext* context, const json& definition);
 
   std::variant<ScriptError, std::vector<ScriptValue>> Call(std::span<const ScriptValue> input);
-  // template <typename... Inputs>
-  // ScriptFunctionResult Execute(Inputs&&... inputs) {
-  //   context_->PushValues(std::forward<Inputs>(inputs)...);
-  //   return Execute();
-  // }
+  template <typename... Inputs> std::variant<ScriptError, std::vector<ScriptValue>> Call(Inputs&&... inputs);
 
   std::vector<ScriptValueDefinition> GetVisibleLocalVariables(ScriptActionReference action);
 
@@ -95,5 +91,4 @@ class ScriptChunk : public ScriptFunction {
   std::optional<ScriptError> Execute();
 };
 
-}
-
+}  // namespace ovis
