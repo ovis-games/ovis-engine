@@ -76,7 +76,8 @@ void VisualScriptSceneController::Stop() {
 
 void VisualScriptSceneController::Update(std::chrono::microseconds delta_time) {
   if (update_chunk_.has_value()) {
-    const auto result = update_chunk_->Call(scene(), delta_time.count() / 1000000.0);
+    // TODO: pass scene here instead of delta time two times
+    const auto result = update_chunk_->Call(delta_time.count() / 1000000.0, delta_time.count() / 1000000.0);
     if (std::holds_alternative<ScriptError>(result)) {
       ScriptErrorEvent error_event(name(), std::get<ScriptError>(result));
       PostGlobalEvent(&error_event);
