@@ -4,8 +4,11 @@
 #include <limits>
 #include <string_view>
 #include <string>
+#include <ovis/utils/safe_pointer.hpp>
 
 namespace ovis {
+
+class ScriptContext;
 
 using ScriptTypeId = size_t;
 constexpr ScriptTypeId SCRIPT_TYPE_UNKNOWN = 0;
@@ -24,15 +27,23 @@ struct ScriptValueDefinition {
   std::string identifier;
 };
 
-struct ScriptValue {
-  ScriptTypeId type;
-  std::any value;
-};
-
 template <typename T>
 concept Number = (std::is_integral_v<std::remove_reference_t<std::remove_cv_t<T>>> &&
                   !std::is_same_v<std::remove_reference_t<std::remove_cv_t<T>>, bool>) ||
                  std::is_floating_point_v<std::remove_reference_t<std::remove_cv_t<T>>>;
+
+template <typename T>
+concept ScriptReferenceType = std::is_base_of_v<SafelyReferenceable, T>;
+
+template <typename T>
+concept SafelyReferenceableObjectPointer =
+    std::is_pointer_v<T> && std::is_base_of_v<SafelyReferenceable, std::remove_pointer_t<T>>;
+
+struct ScriptValue {
+  ScriptTypeId type;
+  std::any value;
+
+};
 
 
 }

@@ -553,6 +553,8 @@ void Scene::RegisterType(ScriptContext* context) {
       "scene_remove_object", {"scene", "object"}, {});
   context->RegisterFunction<static_cast<void (Scene::*)(std::string_view)>(&Scene::DeleteObject)>(
       "scene_remove_object_by_name", {"scene", "object name"}, {});
+  context->RegisterFunction<&Scene::ContainsObject>(
+      "scene_contains_object", {"scene", "object name"}, {});
 }
 
 }  // namespace ovis

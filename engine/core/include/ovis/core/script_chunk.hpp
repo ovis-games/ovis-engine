@@ -4,7 +4,25 @@
 
 namespace ovis {
 
+class ScriptChunk;
+
+class ScriptChunkArguments {
+  friend class ScriptChunk;
+
+ public:
+  inline ScriptChunkArguments(const ScriptChunk& chunk);
+
+  inline bool Add(std::string_view identifier, ScriptValue value);
+  template <typename T> inline bool Add(std::string_view identifier, T&& value);
+
+ private:
+  const ScriptChunk& chunk_;
+  std::vector<ScriptValue> arguments_;
+};
+
 class ScriptChunk : public ScriptFunction {
+  friend class ScriptChunkArguments;
+
  public:
   enum class InstructionType : uint8_t {
     PUSH_STACK_FRAME,
@@ -55,8 +73,8 @@ class ScriptChunk : public ScriptFunction {
 
   static std::variant<ScriptChunk, ScriptError> Load(ScriptContext* context, const json& definition);
 
-  std::variant<ScriptError, std::vector<ScriptValue>> Call(std::span<const ScriptValue> input);
-  template <typename... Inputs> std::variant<ScriptError, std::vector<ScriptValue>> Call(Inputs&&... inputs);
+  std::variant<ScriptError, std::vector<ScriptValue>> Call(const ScriptChunkArguments& arguments);
+  std::variant<ScriptError, std::vector<ScriptValue>> Call(std::span<const ScriptValue> arguments);
 
   std::vector<ScriptValueDefinition> GetVisibleLocalVariables(ScriptActionReference action);
 
@@ -92,3 +110,4 @@ class ScriptChunk : public ScriptFunction {
 };
 
 }  // namespace ovis
+

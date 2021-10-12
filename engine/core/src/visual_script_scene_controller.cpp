@@ -56,7 +56,9 @@ VisualScriptSceneController::~VisualScriptSceneController() {}
 
 void VisualScriptSceneController::Play() {
   if (play_chunk_.has_value()) {
-    const auto result = play_chunk_->Call(scene());
+    ScriptChunkArguments arguments(*play_chunk_);
+    arguments.Add("Scene", scene());
+    const auto result = play_chunk_->Call(arguments);
     if (std::holds_alternative<ScriptError>(result)) {
       ScriptErrorEvent error_event(name(), std::get<ScriptError>(result));
       PostGlobalEvent(&error_event);
@@ -66,7 +68,9 @@ void VisualScriptSceneController::Play() {
 
 void VisualScriptSceneController::Stop() {
   if (stop_chunk_.has_value()) {
-    const auto result = stop_chunk_->Call(scene());
+    ScriptChunkArguments arguments(*stop_chunk_);
+    arguments.Add("Scene", scene());
+    const auto result = stop_chunk_->Call(arguments);
     if (std::holds_alternative<ScriptError>(result)) {
       ScriptErrorEvent error_event(name(), std::get<ScriptError>(result));
       PostGlobalEvent(&error_event);
@@ -76,8 +80,10 @@ void VisualScriptSceneController::Stop() {
 
 void VisualScriptSceneController::Update(std::chrono::microseconds delta_time) {
   if (update_chunk_.has_value()) {
-    // TODO: pass scene here instead of delta time two times
-    const auto result = update_chunk_->Call(delta_time.count() / 1000000.0, delta_time.count() / 1000000.0);
+    ScriptChunkArguments arguments(*update_chunk_);
+    arguments.Add("Scene", scene());
+    arguments.Add("Delta Time", delta_time.count() / 1000000.0);
+    const auto result = update_chunk_->Call(arguments);
     if (std::holds_alternative<ScriptError>(result)) {
       ScriptErrorEvent error_event(name(), std::get<ScriptError>(result));
       PostGlobalEvent(&error_event);

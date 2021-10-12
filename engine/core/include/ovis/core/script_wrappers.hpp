@@ -5,6 +5,44 @@ namespace ovis {
 template <typename FunctionType>
 struct ScriptFunctionWrapper;
 
+namespace detail {
+
+template <int N, typename... T>
+bool FillValueTuple(std::tuple<T...>* values, ScriptContext* context, ScriptError* error) {
+  SDL_assert(error != nullptr);
+
+  if constexpr (N == sizeof...(T)) {
+    return true;
+  } else {
+    using Type = std::tuple_element_t<N, std::tuple<T...>>;
+    auto value = context->GetValue<Type>(N);
+    if (std::holds_alternative<Type>(value)) [[likely]] {
+      std::get<N>(*values) = std::move(std::get<Type>(value));
+      return FillValueTuple<N + 1>(values, context, error);
+    } else {
+      const auto& inner_error = std::get<ScriptError>(value);
+      error->action = inner_error.action;
+      error->message = fmt::format("{}: {}", N + 1, inner_error.message);
+      return false;
+    }
+  }
+}
+template <typename... T>
+std::variant<std::tuple<std::remove_cv_t<std::remove_reference_t<T>>...>, ScriptError> ConstructArgumentTuple(
+    ScriptContext* context) {
+  std::tuple<std::remove_cv_t<std::remove_reference_t<T>>...> values;
+
+  ScriptError error;
+  if (FillValueTuple<0>(&values, context, &error)) [[likely]] {
+    return values;
+  } else {
+    return error;
+  }
+}
+
+
+}
+
 template <typename ReturnType, typename... ArgumentTypes>
 struct ScriptFunctionWrapper<ReturnType(*)(ArgumentTypes...)> {
   using FunctionType = ReturnType (*)(ArgumentTypes...);
@@ -13,7 +51,7 @@ struct ScriptFunctionWrapper<ReturnType(*)(ArgumentTypes...)> {
 
   template <FunctionType FUNCTION>
   static std::optional<ScriptError> Execute(ScriptContext* context, int input_count, int output_count) {
-    const auto inputs = context->GetValues<ArgumentTypes...>(0);
+    const auto inputs = detail::ConstructArgumentTuple<ArgumentTypes...>(context);
     if (std::holds_alternative<ScriptError>(inputs)) [[unlikely]] {
       ScriptError error = std::get<ScriptError>(inputs);
       error.message = fmt::format("Parameter {}", error.message);
@@ -29,7 +67,7 @@ struct ScriptFunctionWrapper<ReturnType(*)(ArgumentTypes...)> {
   }
 
   static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {
-    return context->GetTypeIds<ArgumentTypes...>();
+    return { context->GetTypeId<ArgumentTypes>()... };
   }
 
   static std::array<ScriptTypeId, OUTPUT_COUNT> GetOutputTypeIds(ScriptContext* context) {
@@ -49,7 +87,7 @@ struct ScriptFunctionWrapper<ReturnType (ObjectType::*)(ArgumentTypes...)> {
 
   template <FunctionType FUNCTION>
   static std::optional<ScriptError> Execute(ScriptContext* context, int input_count, int output_count) {
-    const auto inputs = context->GetValues<ObjectType*, ArgumentTypes...>(0);
+    const auto inputs = detail::ConstructArgumentTuple<ObjectType*, ArgumentTypes...>(context);
     if (std::holds_alternative<ScriptError>(inputs)) [[unlikely]] {
       ScriptError error = std::get<ScriptError>(inputs);
       error.message = fmt::format("Parameter {}", error.message);
@@ -65,7 +103,7 @@ struct ScriptFunctionWrapper<ReturnType (ObjectType::*)(ArgumentTypes...)> {
   }
 
   static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {
-    return context->GetTypeIds<ObjectType*, ArgumentTypes...>();
+    return { context->GetTypeId<ObjectType*>(), context->GetTypeId<ArgumentTypes>()... };
   }
 
   static std::array<ScriptTypeId, OUTPUT_COUNT> GetOutputTypeIds(ScriptContext* context) {
@@ -83,7 +121,7 @@ struct ScriptConstructorWrapper {
   static constexpr size_t OUTPUT_COUNT = 1;
 
   static std::optional<ScriptError> Execute(ScriptContext* context, int input_count, int output_count) {
-    const auto inputs = context->GetValues<ConstructorArguments...>(0);
+    const auto inputs = detail::ConstructArgumentTuple<ConstructorArguments...>(context);
     if (std::holds_alternative<ScriptError>(inputs)) [[unlikely]] {
       ScriptError error = std::get<ScriptError>(inputs);
       error.message = fmt::format("Parameter {}", error.message);
@@ -94,7 +132,7 @@ struct ScriptConstructorWrapper {
   }
 
   static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {
-    return context->GetTypeIds<ConstructorArguments...>();
+    return { context->GetTypeId<ConstructorArguments>()... };
   }
 
   static std::array<ScriptTypeId, OUTPUT_COUNT> GetOutputTypeIds(ScriptContext* context) {

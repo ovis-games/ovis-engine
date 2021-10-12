@@ -339,6 +339,10 @@ std::variant<ScriptChunk, ScriptError> ScriptChunk::Load(ScriptContext* context,
   }
 }
 
+std::variant<ScriptError, std::vector<ScriptValue>> ScriptChunk::Call(const ScriptChunkArguments& arguments) {
+  return Call(arguments.arguments_);
+}
+
 std::variant<ScriptError, std::vector<ScriptValue>> ScriptChunk::Call(std::span<const ScriptValue> input_values) {
   if (input_values.size() != inputs.size()) {
     LogE("Input count does not match");

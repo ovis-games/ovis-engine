@@ -1,3 +1,4 @@
+#define private public
 #include <catch2/catch.hpp>
 
 #include <ovis/utils/log.hpp>
@@ -28,6 +29,40 @@ TEST_CASE("Simple functions", "[ovis][core][Scripting]") {
   }
 }
 
+TEST_CASE("Types", "[ovis][core][Scripting]") {
+  ScriptContext context;
+
+  SECTION("Register custom type") {
+    struct Foo {};
+    context.RegisterType<Foo>("Foo");
+    REQUIRE(context.GetTypeId<Foo>() == context.GetTypeId("Foo"));
+    // REQUIRE(context.GetTypeId<Foo>() == context.GetTypeId<Foo*>());
+  }
+
+  SECTION("Register SafelyReferanceable type") {
+    struct Foo : public SafelyReferenceable {};
+    context.RegisterType<Foo>("Foo");
+    REQUIRE(context.GetTypeId<Foo>() == context.GetTypeId("Foo"));
+    REQUIRE(context.GetTypeId<Foo>() == context.GetTypeId<Foo*>());
+
+    Foo foo;
+    context.PushStackFrame();
+    context.PushValue(foo);
+    REQUIRE(foo.references_.size() == 1);
+
+    ScriptValue& value = context.GetValue(-1);
+    REQUIRE(value.type == context.GetTypeId<Foo>());
+
+    // auto foo_value = context.GetValue<Foo>(-1);
+    // REQUIRE(std::holds_alternative<Foo>(foo_value));
+
+    auto foo_pointer_value = context.GetValue<Foo*>(-1);
+    REQUIRE(std::holds_alternative<Foo*>(foo_pointer_value ));
+
+    context.PopStackFrame();
+  }
+}
+
 TEST_CASE("Documentation", "[ovis][core][Scripting]") {
   Log::AddListener(ConsoleLogger);
   SetEngineAssetsDirectory("/ovis_assets");
@@ -39,3 +74,4 @@ TEST_CASE("Documentation", "[ovis][core][Scripting]") {
   REQUIRE(add_function->text == "(x) + (y)");
   REQUIRE(add_function->description == "Adds the two numbers (x) and (y)");
 }
+

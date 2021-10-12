@@ -103,6 +103,9 @@
     },
     "scene_remove_object_by_name": {
       "text": "Remove object named (object name) from (scene)"
+    },
+    "scene_contains_object": {
+      "text": "Does (scene) contain object named (object name)"
     }
   }
 }

@@ -86,6 +86,9 @@ class safe_ptr_base {
 };
 
 template <typename T>
+concept SafelyReferenceableObject = std::is_base_of_v<SafelyReferenceable, T>;
+
+template <typename T>
 class safe_ptr : public safe_ptr_base {
   // T must derive from SafelyReferenceable, however, the static_assert below
   // prevents the use of safe_ptr<T> as a member variable of T, because
