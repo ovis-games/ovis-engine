@@ -148,14 +148,6 @@ inline ScriptTypeId ScriptContext::GetTypeId() const {
   }
 }
 
-
-std::optional<ScriptError> RegisterFunction(std::string_view function_id, json definition);
-
-void RegisterFunction(std::string_view identifier, ScriptChunk script_chunk);
-
-void RegisterFunction(std::string_view identifier, ScriptFunctionPointer function,
-                      std::span<const ScriptValueDefinition> inputs, std::span<const ScriptValueDefinition> outputs);
-
 std::span<ScriptValue> ScriptContext::PushStack(size_t count) {
   if (stack_.size() + count > stack_.capacity()) {
     throw std::runtime_error("Script stack overflow");

@@ -99,6 +99,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   bool Update(const json& serialized_object) override;
 
   static void RegisterType(sol::table* module);
+  static void RegisterType(ScriptContext* context);
 
  private:
   Scene* scene_;  // No safe_ptr needed, scene is guaranteed to live longer and will (should?) not be moved

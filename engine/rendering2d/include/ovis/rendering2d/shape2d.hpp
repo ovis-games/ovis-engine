@@ -30,7 +30,7 @@ class Shape2D : public SceneObjectComponent {
   };
   static_assert(sizeof(Vertex) == 12);
 
-  explicit inline Shape2D(SceneObject* object) : SceneObjectComponent(object) {}
+  explicit inline Shape2D(SceneObject* object) : SceneObjectComponent(object) {Deserialize({});}
 
   Color color() const { return color_; }
   Color outline_color() const { return outline_color_; }
@@ -52,6 +52,7 @@ class Shape2D : public SceneObjectComponent {
   const json* GetSchema() const override { return &schema; }
 
   static void RegisterType(sol::table* module);
+  static void RegisterType(ScriptContext* context);
 
  private:
   Color color_ = Color::White();

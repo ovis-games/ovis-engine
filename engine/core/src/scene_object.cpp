@@ -380,4 +380,10 @@ void SceneObject::RegisterType(sol::table* module) {
   };
 }
 
+void SceneObject::RegisterType(ScriptContext* context) {
+  context->RegisterType<SceneObject>("Scene Object");
+  context->RegisterFunction<static_cast<SceneObjectComponent* (SceneObject::*)(const std::string&)>(
+      &SceneObject::AddComponent)>("scene_object_add_component", { "Object", "Component ID" });
+}
+
 }  // namespace ovis
