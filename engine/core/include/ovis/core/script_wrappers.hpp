@@ -1,6 +1,33 @@
 #pragma once
 
+#include <ovis/utils/safe_pointer.hpp>
+#include <ovis/core/script_type.hpp>
+
 namespace ovis {
+
+template <SafelyReferenceableObject BaseType, SafelyReferenceableObject DerivedType>
+ScriptValue ConvertBaseToDerived(ScriptContext* context, const ScriptValue& base_value) {
+  assert(context->GetTypeId<BaseType>() == base_value.type);
+  assert(context->GetType<DerivedType>()->base_type_id == context->GetTypeId<BaseType>());
+  assert(base_value.value.type() == typeid(BaseType*));
+  BaseType* base = std::get<BaseType*>(base_value.value);
+  return ScriptValue {
+    .value = down_cast<DerivedType*>(base),
+    .type = context->GetTypeId<DerivedType>(),
+  };
+}
+
+template <SafelyReferenceableObject BaseType, SafelyReferenceableObject DerivedType>
+ScriptValue ConvertDerivedToBase(ScriptContext* context, const ScriptValue& derived_value) {
+  assert(context->GetTypeId<DerivedType>() == derived_value.type);
+  assert(context->GetType<DerivedType>()->base_type_id == context->GetTypeId<BaseType>());
+  assert(derived_value.value.type() == typeid(DerivedType*));
+  BaseType* base = std::get<DerivedType*>(derived_value.value);
+  return ScriptValue {
+    .value = base,
+    .type = context->GetTypeId<BaseType>(),
+  };
+}
 
 template <typename FunctionType>
 struct ScriptFunctionWrapper;

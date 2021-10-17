@@ -104,6 +104,7 @@ class ScriptChunk : public ScriptFunction {
     std::vector<LocalVariable> local_variables_;
   };
   std::variant<Scope, ScriptError> ParseScope(const json& actions, const ScriptActionReference& parent = ScriptActionReference::Root());
+  bool PushValue(const json& value, ScriptChunk::Scope* scope, int frame = 0);
 
   std::optional<LocalVariable> GetLocalVariable(std::string_view name);
   std::optional<ScriptError> Execute();

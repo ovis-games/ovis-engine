@@ -59,12 +59,41 @@ emscripten::val GetFunctions() {
   }
 
   return functions;
+}
 
+emscripten::val GetTypeInfo(const std::string& type_name) {
+  const auto type = global_script_context()->GetType(type_name);
+
+  if (type == nullptr) {
+    return emscripten::val::null();
+  }
+
+  emscripten::val type_info = emscripten::val::object();
+  if (type->base_type_id != SCRIPT_TYPE_UNKNOWN) {
+    const auto base_type = global_script_context()->GetType(type->base_type_id);
+    type_info.set("base", emscripten::val(base_type->name));
+  }
+
+  return type_info;
+}
+
+emscripten::val GetTypes() {
+  val types = emscripten::val::object();
+
+  for (const auto& type_name : global_script_context()->type_names()) {
+    const auto type = GetTypeInfo(type_name);
+    if (type != val::null()) {
+      types.set(type_name, type_name);
+    }
+  }
+
+  return types;
 }
 
 emscripten::val GetDocumentation() {
   val doc = val::object();
   doc.set("functions", GetFunctions());
+  doc.set("types", GetTypes());
   return doc;
 
 }

@@ -29,7 +29,7 @@ double negate(double x) {
 bool is_greater(double x, double y) {
   return x > y;
 }
-void print(const std::string& text) {
+void print(std::string_view text) {
   LogI("{}", text);
 }
 void print_number(double x) {
@@ -134,7 +134,8 @@ ScriptContext* global_script_context() {
 }
 
 ScriptContext::ScriptContext() {
-  types_.push_back(ScriptType(0, "Unknown", false));
+  types_.push_back(ScriptType(ScriptTypeId{0}, "Unknown"));
+  RegisterType<ScriptTypeId>("Type");
   RegisterType<double>("Number");
   RegisterType<bool>("Boolean");
   RegisterType<std::string>("String");
@@ -512,36 +513,30 @@ std::string ScriptChunk::GetInstructionsAsText() const {
   return s;
 }
 
-ScriptChunk::ScriptChunk(ScriptContext* context, std::vector<ScriptValueDefinition> inputs,
-                         std::vector<ScriptValueDefinition> outputs)
-    : ScriptFunction(std::move(inputs), std::move(outputs)), context_(context) {}
-
-std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json& actions, const ScriptActionReference& parent) {
-  Scope scope;
-
-  auto push_value = [&](const json& value, Scope* scope, int frame = 0) {
-    // SDL_assert(scope != nullptr);
-
-    if (value.is_string()) {
-      const std::string& string = value;
-      scope->instructions.push_back(Instruction{
-          .type = InstructionType::PUSH_CONSTANT,
-          .data = PushConstant{.value = ScriptValue{.type = context_->GetTypeId<std::string>(), .value = string}}});
-      return true;
-    } else if (value.is_number()) {
-      const double number = value;
-      scope->instructions.push_back(Instruction{
-          .type = InstructionType::PUSH_CONSTANT,
-          .data = PushConstant{.value = ScriptValue{.type = context_->GetTypeId<double>(), .value = number}}});
-      return true;
-    } else if (value.is_boolean()) {
-      const bool boolean = value;
-      scope->instructions.push_back(Instruction{
-          .type = InstructionType::PUSH_CONSTANT,
-          .data = PushConstant{.value = ScriptValue{.type = context_->GetTypeId<bool>(), .value = boolean}}});
-      return true;
-    } else if (value.is_object()) {
-      const std::string& local_variable_name = value["local_variable"];
+bool ScriptChunk::PushValue(const json& value, ScriptChunk::Scope* scope, int frame) {
+  // TODO: refactor this function it's way too complicated
+  if (value.is_string()) {
+    const std::string& string = value;
+    scope->instructions.push_back(Instruction{
+        .type = InstructionType::PUSH_CONSTANT,
+        .data = PushConstant{.value = ScriptValue{.type = context_->GetTypeId<std::string>(), .value = string}}});
+    return true;
+  } else if (value.is_number()) {
+    const double number = value;
+    scope->instructions.push_back(Instruction{
+        .type = InstructionType::PUSH_CONSTANT,
+        .data = PushConstant{.value = ScriptValue{.type = context_->GetTypeId<double>(), .value = number}}});
+    return true;
+  } else if (value.is_boolean()) {
+    const bool boolean = value;
+    scope->instructions.push_back(Instruction{
+        .type = InstructionType::PUSH_CONSTANT,
+        .data = PushConstant{.value = ScriptValue{.type = context_->GetTypeId<bool>(), .value = boolean}}});
+    return true;
+  } else if (value.is_object() && value.contains("inputType")) {
+    const std::string& input_type = value["inputType"];
+    if (input_type == "local_variable") {
+      const std::string& local_variable_name = value["value"];
       const auto local_variable = GetLocalVariable(local_variable_name);
       if (!local_variable.has_value()) {
         LogE("Unknown variable: {}", local_variable_name);
@@ -553,10 +548,36 @@ std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json
         // TODO: check expected type
         return true;
       }
+    } else if (input_type == "constant") {
+      if (value.contains("type")) {
+        const std::string& constant_type = value["type"];
+        if (constant_type == "Type") {
+          const std::string& type_name = value["value"];
+          scope->instructions.push_back(
+              Instruction{.type = InstructionType::PUSH_CONSTANT,
+                          .data = PushConstant{.value = ScriptValue{.type = context_->GetTypeId<ScriptTypeId>(),
+                                                                    .value = context_->GetTypeId(type_name)}}});
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return PushValue(value["value"], scope, frame);
+      }
     } else {
       return false;
     }
-  };
+  } else {
+    return false;
+  }
+}
+
+ScriptChunk::ScriptChunk(ScriptContext* context, std::vector<ScriptValueDefinition> inputs,
+                         std::vector<ScriptValueDefinition> outputs)
+    : ScriptFunction(std::move(inputs), std::move(outputs)), context_(context) {}
+
+std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json& actions, const ScriptActionReference& parent) {
+  Scope scope;
 
   for (const auto& indexed_action : IndexRange(actions)) {
     const json& action = indexed_action.value();
@@ -605,7 +626,7 @@ std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json
 
       for (const auto& input : function->inputs) {
         if (!action.contains(json::json_pointer(fmt::format("/inputs/{}", input.identifier))) ||
-            !push_value(action["inputs"][input.identifier], &scope, -1)) {
+            !PushValue(action["inputs"][input.identifier], &scope, -1)) {
           return ScriptError{.action = action_reference,
                              .message = fmt::format("No value for input '{}' provided", input.identifier)};
         }
@@ -651,7 +672,7 @@ std::variant<ScriptChunk::Scope, ScriptError> ScriptChunk::ParseScope(const json
           .message = "No condition provided",
         };
       }
-      if (!push_value(action["condition"], &scope)) {
+      if (!PushValue(action["condition"], &scope)) {
         // TODO: Return proper error
         return {};
       }

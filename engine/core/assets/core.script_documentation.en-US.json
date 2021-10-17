@@ -108,7 +108,7 @@
       "text": "Does (scene) contain object named (object name)"
     },
     "scene_object_add_component": {
-      "text": "Add component (Component ID) to (Object)"
+      "text": "Add (Component) to (Object)"
     }
   }
 }

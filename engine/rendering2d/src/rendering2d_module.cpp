@@ -28,6 +28,8 @@ bool LoadRendering2DModule() {
     SceneObjectComponent::Register("Shape2D", [](SceneObject* object) { return std::make_unique<Shape2D>(object); });
     RenderPass::Register("Renderer2D", []() { return std::make_unique<Renderer2D>(); });
 
+    Shape2D::RegisterType(global_script_context());
+
     lua.require("ovis.rendering2d", &LoadRendering2DModule);
     module_loaded = true;
   }

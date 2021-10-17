@@ -2,6 +2,7 @@
 
 #include <string_view>
 
+#include <ovis/utils/safe_pointer.hpp>
 #include <ovis/core/script_function.hpp>
 #include <ovis/core/script_type.hpp>
 #include <ovis/core/script_chunk.hpp>
@@ -13,6 +14,8 @@ class ScriptContext {
   ScriptContext();
 
   template <typename T> inline ScriptType* RegisterType(std::string name);
+  template <SafelyReferenceableObject T, SafelyReferenceableObject BaseType>
+  inline ScriptType* RegisterType(std::string name);
 
   // With GetTypeId() you can get the type id (an integer) for a specific type either by giving its name
   // (GetTypeId("Number")) or its C++ type (GetType<int>()).
@@ -27,9 +30,11 @@ class ScriptContext {
   // * with type name as string: GetType("Number")
   // * with type id: GetType(SCRIPT_TYPE_UNKNOWN)
   // * with C++ type: GetType<int>()
-  const ScriptType* GetType(ScriptTypeId type_id) const { return &types_[type_id]; }
+  const ScriptType* GetType(ScriptTypeId type_id) const { return &types_[type_id.value]; }
   const ScriptType* GetType(std::string_view name) { return GetType(GetTypeId(name)); }
   template <typename T> const ScriptType* GetType() const { return GetType(GetTypeId<T>()); }
+
+  auto type_names() const { return Keys(type_names_); }
 
   std::optional<ScriptError> RegisterFunction(std::string_view function_id, json definition);
   void RegisterFunction(std::string_view identifier, ScriptChunk script_chunk);
@@ -103,11 +108,25 @@ namespace ovis {
 
 template <typename T>
 inline ScriptType* ScriptContext::RegisterType(std::string name) {
-  ScriptTypeId id = types_.size();
+  ScriptTypeId id { types_.size() };
   SDL_assert(type_names_.find(name) == type_names_.end());
   SDL_assert(type_indices_.find(typeid(T)) == type_indices_.end());
 
-  types_.emplace_back(id, name, false);
+  types_.emplace_back(id, name);
+  type_names_.insert(std::make_pair(name, id));
+  type_indices_.insert(std::make_pair(std::type_index(typeid(T)), id));
+
+  return &types_.back();
+}
+
+template <SafelyReferenceableObject T, SafelyReferenceableObject BaseType>
+inline ScriptType* ScriptContext::RegisterType(std::string name) {
+  ScriptTypeId id { types_.size() };
+  SDL_assert(type_names_.find(name) == type_names_.end());
+  SDL_assert(type_indices_.find(typeid(T)) == type_indices_.end());
+  SDL_assert(type_indices_.find(typeid(BaseType)) != type_indices_.end());
+
+  types_.emplace_back(id, name, GetTypeId<BaseType>(), &ConvertBaseToDerived<BaseType, T>, &ConvertDerivedToBase<BaseType, T>);
   type_names_.insert(std::make_pair(name, id));
   type_indices_.insert(std::make_pair(std::type_index(typeid(T)), id));
 
@@ -249,7 +268,7 @@ inline std::variant<std::string_view, ScriptError> ScriptContext::GetValue<std::
   const ScriptTypeId target_type_id = GetTypeId<std::string>();
   if (target_type_id == value.type) [[likely]] {
     assert(value.value.type() == typeid(std::string));
-    const std::string string_value = std::any_cast<std::string>(value.value);
+    const std::string& string_value = std::any_cast<const std::string&>(value.value);
     return std::string_view(string_value);
   } else {
     return ScriptError{.action = ScriptActionReference(),
