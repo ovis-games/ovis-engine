@@ -144,7 +144,7 @@ SceneObject* Scene::CreateObject(std::string_view base_name, SceneObject* parent
   if (ContainsObject(object_path)) {
     // If the name already exists append a number to the end. If there is already a number
     // at the end, increment it.
-    auto parse_result = SceneObject::ParseName(object_name);
+    auto parse_result = SceneObject::ParseName(base_name);
     unsigned int number = parse_result.second.has_value() ? *parse_result.second : 1;
     do {
       ++number;
