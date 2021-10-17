@@ -25,6 +25,14 @@ struct ScriptValue {
   std::any value;
 };
 
+template <size_t INPUT_INDEX, typename ValueType = ScriptValue>
+struct InputDependentScriptValue {
+  InputDependentScriptValue(ValueType&& value) : value(value) {}
+  InputDependentScriptValue(const ValueType& value) : value(value) {}
+
+  ValueType value;
+};
+
 struct ScriptType {
   using ConvertFunction = ScriptValue(*)(const ScriptValue& base_type_value);
   ScriptType(ScriptTypeId id, std::string_view name)

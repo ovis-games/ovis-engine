@@ -126,7 +126,7 @@ SceneObjectComponent* SceneObject::AddComponent(const std::string& component_id,
   return component;
 }
 
-SceneObjectComponent* SceneObject::AddComponent(ScriptTypeId component_type) {
+InputDependentScriptValue<1, SceneObjectComponent*> SceneObject::AddComponent(ScriptTypeId component_type) {
   const auto type = global_script_context()->GetType(component_type);
   return AddComponent(type->name);
 }
@@ -387,7 +387,7 @@ void SceneObject::RegisterType(sol::table* module) {
 
 void SceneObject::RegisterType(ScriptContext* context) {
   context->RegisterType<SceneObject>("Scene Object");
-  context->RegisterFunction<static_cast<SceneObjectComponent* (SceneObject::*)(ScriptTypeId)>(
+  context->RegisterFunction<static_cast<InputDependentScriptValue<1, SceneObjectComponent*> (SceneObject::*)(ScriptTypeId)>(
       &SceneObject::AddComponent)>("scene_object_add_component", { "Object", "Component" });
 }
 

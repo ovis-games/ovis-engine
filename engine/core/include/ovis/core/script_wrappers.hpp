@@ -54,6 +54,7 @@ bool FillValueTuple(std::tuple<T...>* values, ScriptContext* context, ScriptErro
     }
   }
 }
+
 template <typename... T>
 std::variant<std::tuple<std::remove_cv_t<std::remove_reference_t<T>>...>, ScriptError> ConstructArgumentTuple(
     ScriptContext* context) {
@@ -67,7 +68,43 @@ std::variant<std::tuple<std::remove_cv_t<std::remove_reference_t<T>>...>, Script
   }
 }
 
+template <typename ResultType, typename... ArgumentTypes>
+struct FunctionResult {
+  static std::optional<ScriptError> Push(ScriptContext* context, ResultType&& result,
+                                         const std::tuple<ArgumentTypes...>& inputs) {
+    context->PushValue(result);
+    return {};
+  }
+};
 
+template <size_t DEPENDANT_INPUT_INDEX, typename ResultBaseType, typename... ArgumentTypes>
+struct FunctionResult<InputDependentScriptValue<DEPENDANT_INPUT_INDEX, ResultBaseType>, ArgumentTypes...> {
+  static std::optional<ScriptError> Push(ScriptContext* context,
+                                         InputDependentScriptValue<DEPENDANT_INPUT_INDEX, ResultBaseType>&& result,
+                                         const std::tuple<ArgumentTypes...>& inputs) {
+    // TODO: cast value properly
+    context->PushValue(result.value);
+    return {};
+  }
+};
+
+template <auto FUNCTION, typename ResultType, typename... ArgumentTypes>
+std::optional<ScriptError> CallFunction(ScriptContext* context) {
+  const auto inputs = detail::ConstructArgumentTuple<ArgumentTypes...>(context);
+  if (std::holds_alternative<ScriptError>(inputs)) [[unlikely]] {
+    ScriptError error = std::get<ScriptError>(inputs);
+    error.message = fmt::format("Parameter {}", error.message);
+    return error;
+  }
+
+  if constexpr (std::is_same_v<ResultType, void>) {
+    std::apply(FUNCTION, std::get<0>(inputs));
+  } else {
+    const auto input_tuple = std::get<0>(inputs);
+    FunctionResult<ResultType, ArgumentTypes...>::Push(context, std::apply(FUNCTION, input_tuple), input_tuple);
+  }
+  return {};
+}
 }
 
 template <typename ReturnType, typename... ArgumentTypes>
@@ -78,19 +115,7 @@ struct ScriptFunctionWrapper<ReturnType(*)(ArgumentTypes...)> {
 
   template <FunctionType FUNCTION>
   static std::optional<ScriptError> Execute(ScriptContext* context, int input_count, int output_count) {
-    const auto inputs = detail::ConstructArgumentTuple<ArgumentTypes...>(context);
-    if (std::holds_alternative<ScriptError>(inputs)) [[unlikely]] {
-      ScriptError error = std::get<ScriptError>(inputs);
-      error.message = fmt::format("Parameter {}", error.message);
-      return error;
-    }
-
-    if constexpr (OUTPUT_COUNT == 0) {
-      std::apply(FUNCTION, std::get<0>(inputs));
-    } else {
-      context->PushValue(std::apply(FUNCTION, std::get<0>(inputs)));
-    }
-    return {};
+    return detail::CallFunction<FUNCTION, ReturnType, ArgumentTypes...>(context);
   }
 
   static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {
@@ -114,19 +139,7 @@ struct ScriptFunctionWrapper<ReturnType (ObjectType::*)(ArgumentTypes...)> {
 
   template <FunctionType FUNCTION>
   static std::optional<ScriptError> Execute(ScriptContext* context, int input_count, int output_count) {
-    const auto inputs = detail::ConstructArgumentTuple<ObjectType*, ArgumentTypes...>(context);
-    if (std::holds_alternative<ScriptError>(inputs)) [[unlikely]] {
-      ScriptError error = std::get<ScriptError>(inputs);
-      error.message = fmt::format("Parameter {}", error.message);
-      return error;
-    }
-
-    if constexpr (OUTPUT_COUNT == 0) {
-      std::apply(FUNCTION, std::get<0>(inputs));
-    } else {
-      context->PushValue(std::apply(FUNCTION, std::get<0>(inputs)));
-    }
-    return {};
+    return detail::CallFunction<FUNCTION, ReturnType, ObjectType*, ArgumentTypes...>(context);
   }
 
   static std::array<ScriptTypeId, INPUT_COUNT> GetInputTypeIds(ScriptContext* context) {
