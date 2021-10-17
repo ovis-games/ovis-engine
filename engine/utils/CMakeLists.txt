@@ -17,6 +17,7 @@ add_library(
   include/ovis/utils/small_vector.hpp src/small_vector.cpp
   include/ovis/utils/safe_pointer.hpp src/safe_pointer.cpp
   include/ovis/utils/static_factory.hpp src/static_factory.cpp
+  include/ovis/utils/reflection.hpp src/reflection.cpp
 )
 add_library(ovis::utils ALIAS ovis-utils)
 
@@ -91,6 +92,7 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/sparse_vector.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/string.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/reflection.cpp
   )
 
   target_link_libraries(
