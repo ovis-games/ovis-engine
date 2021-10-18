@@ -19,7 +19,7 @@ if (OVIS_EMSCRIPTEN)
       -O0
       "SHELL:-s DISABLE_EXCEPTION_CATCHING=0"
     )
-  else ()
+  elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(
       -O3
     )
