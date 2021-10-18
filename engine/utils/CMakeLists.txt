@@ -101,6 +101,11 @@ if (OVIS_BUILD_TESTS)
       catch2
       ovis::utils
   )
+  target_link_options(
+    ovis-utils-test
+    PRIVATE
+      "SHELL:-s NO_DISABLE_EXCEPTION_CATCHING"
+  )
 
   if (OVIS_EMSCRIPTEN)
     add_test(
