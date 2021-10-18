@@ -73,8 +73,8 @@ class Value {
  public:
    template <typename T> Value(T&& value);
 
-   template <typename T> T& Get();
-   template <typename T> T Get() const;
+   template <typename T> std::remove_cvref_t<T>& Get();
+   template <typename T> const std::remove_cvref_t<T>& Get() const;
 
    void SetProperty(std::string_view property_name, const Value& property_value);
    template <typename T> void SetProperty(std::string_view property_name, T&& property_value);
@@ -175,14 +175,14 @@ template <typename T>
 Value::Value(T&& value) : type_(Type::Get<T>()), data_(std::move(value)) {}
 
 template <typename T>
-T& Value::Get() {
+std::remove_cvref_t<T>& Value::Get() {
   assert(type_ == Type::Get<T>());
-  return std::any_cast<T&>(data_);
+  return std::any_cast<std::remove_cvref_t<T>&>(data_);
 }
 
 template <typename T>
-T Value::Get() const {
-  return std::any_cast<std::remove_cvref_t<T>>(data_);
+const std::remove_cvref_t<T>& Value::Get() const {
+  return std::any_cast<const std::remove_cvref_t<T>&>(data_);
 }
 
 inline void Value::SetProperty(std::string_view property_name, const Value& property_value) {
