@@ -4,36 +4,35 @@
 
 TEST_CASE("Register Type", "[ovis][utils][reflection]") {
   using namespace ovis;
-  Type::DeregisterAll();
-  Function::DeregisterAll();
+  Module test_module;
 
   SECTION("Basic Registration") {
     struct Foo {};
 
-    REQUIRE(Type::Get("Foo") == nullptr);
-    auto foo_type = Type::Register<Foo>("Foo");
+    REQUIRE(test_module.GetType("Foo") == nullptr);
+    auto foo_type = test_module.RegisterType<Foo>("Foo");
     REQUIRE(foo_type != nullptr);
-    REQUIRE(foo_type == Type::Get("Foo"));
+    REQUIRE(foo_type == test_module.GetType("Foo"));
     REQUIRE(foo_type == Type::Get<Foo>());
 
     Value foo(Foo{});
     REQUIRE(foo.type() == foo_type);
     Foo& foo2 = foo.Get<Foo>();
 
-    auto foo_type_again = Type::Register<Foo>("Foo2");
+    auto foo_type_again = test_module.RegisterType<Foo>("Foo2");
     REQUIRE(foo_type_again == nullptr);
 
     struct Bar {};
-    auto bar_as_foo = Type::Register<Bar>("Foo");
+    auto bar_as_foo = test_module.RegisterType<Bar>("Foo");
     REQUIRE(bar_as_foo == nullptr);
 
-    REQUIRE(Type::Deregister("Foo"));
-    REQUIRE(Type::Get("Foo") == nullptr);
-    REQUIRE(Type::Get<Foo>() == nullptr);
-    REQUIRE(foo_type == nullptr);
-    REQUIRE(foo.type() == nullptr);
+    // REQUIRE(Type::Deregister("Foo"));
+    // REQUIRE(test_module.GetType("Foo") == nullptr);
+    // REQUIRE(test_module.GetType<Foo>() == nullptr);
+    // REQUIRE(foo_type == nullptr);
+    // REQUIRE(foo.type() == nullptr);
 
-    REQUIRE(!Type::Deregister("Foo"));
+    // REQUIRE(!Type::Deregister("Foo"));
   }
 
   SECTION("Property Registration") {
@@ -41,8 +40,8 @@ TEST_CASE("Register Type", "[ovis][utils][reflection]") {
       int a;
     };
 
-    auto int_type = Type::Register<int>("Integer");
-    auto foo_type = Type::Register<Foo>("Foo");
+    auto int_type = test_module.RegisterType<int>("Integer");
+    auto foo_type = test_module.RegisterType<Foo>("Foo");
 
     REQUIRE(foo_type->properties().size() == 0);
     foo_type->RegisterProperty<&Foo::a>("a");
@@ -60,19 +59,19 @@ TEST_CASE("Register Type", "[ovis][utils][reflection]") {
     struct Foo {
       static int foo() { return 42; }
     };
-    Type::Register<int>("Integer");
+    test_module.RegisterType<int>("Integer");
 
-    REQUIRE(Function::Get("foo") == nullptr);
-    auto foo_function = Function::Register<&Foo::foo>("foo", {}, {"The answer"});
+    REQUIRE(test_module.GetFunction("foo") == nullptr);
+    auto foo_function = test_module.RegisterFunction<&Foo::foo>("foo", {}, {"The answer"});
     REQUIRE(foo_function != nullptr);
-    REQUIRE(Function::Get("foo") == foo_function);
+    REQUIRE(test_module.GetFunction("foo") == foo_function);
 
     auto results = foo_function->Call();
     REQUIRE(results.size() == 1);
     REQUIRE(results[0].type() == Type::Get<int>());
     REQUIRE(results[0].Get<int>() == 42);
 
-    auto results2 = Function::Call("foo");
+    auto results2 = test_module.CallFunction("foo");
     REQUIRE(results2.size() == 1);
     REQUIRE(results2[0].type() == Type::Get<int>());
     REQUIRE(results2[0].Get<int>() == 42);
@@ -82,12 +81,12 @@ TEST_CASE("Register Type", "[ovis][utils][reflection]") {
     struct Foo {
       static int foo(int i) { return i * 2; }
     };
-    Type::Register<int>("Integer");
+    test_module.RegisterType<int>("Integer");
 
-    REQUIRE(Function::Get("foo") == nullptr);
-    auto foo_function = Function::Register<&Foo::foo>("foo", {"An awesome parameter"}, {"The answer"});
+    REQUIRE(test_module.GetFunction("foo") == nullptr);
+    auto foo_function = test_module.RegisterFunction<&Foo::foo>("foo", {"An awesome parameter"}, {"The answer"});
     REQUIRE(foo_function != nullptr);
-    REQUIRE(Function::Get("foo") == foo_function);
+    REQUIRE(test_module.GetFunction("foo") == foo_function);
 
     auto results = foo_function->Call(std::vector{ Value(21) });
     REQUIRE(results.size() == 1);
@@ -99,15 +98,15 @@ TEST_CASE("Register Type", "[ovis][utils][reflection]") {
     struct Foo {
       static std::tuple<bool, int> foo() { return std::make_tuple(true, 42); }
     };
-    Type::Register<bool>("Boolean");
-    Type::Register<int>("Integer");
+    test_module.RegisterType<bool>("Boolean");
+    test_module.RegisterType<int>("Integer");
 
-    REQUIRE(Function::Get("foo") == nullptr);
-    auto foo_function = Function::Register<&Foo::foo>("foo", {}, {"Am I cool", "The answer"});
+    REQUIRE(test_module.GetFunction("foo") == nullptr);
+    auto foo_function = test_module.RegisterFunction<&Foo::foo>("foo", {}, {"Am I cool", "The answer"});
     REQUIRE(foo_function != nullptr);
-    REQUIRE(Function::Get("foo") == foo_function);
+    REQUIRE(test_module.GetFunction("foo") == foo_function);
 
-    auto results = Function::Call("foo");
+    auto results = test_module.CallFunction("foo");
     REQUIRE(results.size() == 2);
     REQUIRE(results[0].type() == Type::Get<bool>());
     REQUIRE(results[0].Get<bool>() == true);

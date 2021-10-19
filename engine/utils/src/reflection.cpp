@@ -1,7 +1,6 @@
 #include <ovis/utils/reflection.hpp>
 
 namespace ovis {
-std::vector<Type> Type::types;
-std::vector<Function> Function::functions;
+std::unordered_map<std::type_index, safe_ptr<Type>> Type::type_associations;
 }
 

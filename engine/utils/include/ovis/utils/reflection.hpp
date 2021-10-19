@@ -22,9 +22,11 @@ namespace ovis {
 class Type;
 class Value;
 class Function;
+class Module;
 
 class Type : public SafelyReferenceable {
   friend class Value;
+  friend class Module;
 
  public:
   struct Property {
@@ -37,33 +39,26 @@ class Type : public SafelyReferenceable {
     SetFunction setter;
   };
 
-  static safe_ptr<Type> Register(std::string_view name);
-  template <typename T, typename ParentType = void> static safe_ptr<Type> Register(std::string_view name);
-  static bool Deregister(std::string_view);
-  static void DeregisterAll() { types.clear(); } // Useful for testing
-  static safe_ptr<Type> Get(std::string_view name);
-  template <typename T> static safe_ptr<Type> Get();
-
   std::string_view name() const { return name_; }
   Type* parent() const { return parent_.get(); }
-  std::optional<std::type_index> associated_type() { return associated_type_; }
   std::span<const Property> properties() const { return properties_; }
 
   void RegisterProperty(std::string_view name, Type* type, Property::GetFunction getter,
                         Property::SetFunction setter = nullptr);
   template <auto PROPERTY> void RegisterProperty(std::string_view);
 
+  template <typename T>
+  static safe_ptr<Type> Get();
+
  private:
   Type(std::string_view name, Type* parent = nullptr);
-  Type(std::string_view name, const std::type_info& associated_type, Type* parent = nullptr);
 
   std::vector<Property> properties_;
 
   std::string name_; 
-  std::optional<std::type_index> associated_type_;
   safe_ptr<Type> parent_;
 
-  static std::vector<Type> types;
+  static std::unordered_map<std::type_index, safe_ptr<Type>> type_associations;
 };
 
 class Value {
@@ -88,22 +83,14 @@ class Value {
 };
 
 class Function : public SafelyReferenceable {
+  friend class Module;
+
  public:
   struct ValueDeclaration {
     std::string name;
     safe_ptr<Type> type;
   };
   using Pointer = void(*)(std::span<const Value> inputs, std::span<Value> outputs);
-
-  static safe_ptr<Function> Register(std::string_view name, Pointer function_pointer,
-                                     std::vector<ValueDeclaration> inputs, std::vector<ValueDeclaration> outputs);
-  template <auto FUNCTION>
-  static safe_ptr<Function> Register(std::string_view name, std::vector<std::string_view> input_names,
-                                     std::vector<std::string_view> output_names);
-  static void DeregisterAll() { functions.clear(); } // Useful for testing
-  static safe_ptr<Function> Get(std::string_view name);
-
-  static std::vector<Value> Call(std::string_view name, std::span<const Value> inputs = {});
 
   std::vector<Value> Call(std::span<const Value> inputs = {});
 
@@ -115,63 +102,52 @@ class Function : public SafelyReferenceable {
   Pointer function_pointer_;
   std::vector<ValueDeclaration> inputs_;
   std::vector<ValueDeclaration> outputs_;
-
-  static std::vector<Function> functions;
 };
 
+class Module : public SafelyReferenceable {
+ public:
+   // Types
+  safe_ptr<Type> RegisterType(std::string_view name);
+
+  template <typename T, typename ParentType = void>
+  safe_ptr<Type> RegisterType(std::string_view name, bool create_cpp_association = true);
+
+  safe_ptr<Type> GetType(std::string_view name);
+
+
+  // Functions
+  safe_ptr<Function> RegisterFunction(std::string_view name, Function::Pointer function_pointer,
+                                      std::vector<Function::ValueDeclaration> inputs,
+                                      std::vector<Function::ValueDeclaration> outputs);
+
+  template <auto FUNCTION>
+  safe_ptr<Function> RegisterFunction(std::string_view name, std::vector<std::string_view> input_names,
+                                      std::vector<std::string_view> output_names);
+
+  safe_ptr<Function> GetFunction(std::string_view name);
+
+  std::vector<Value> CallFunction(std::string_view name, std::span<const Value> inputs = {});
+
+ private:
+  std::string name_;
+  std::vector<Type> types_;
+  std::vector<Function> functions_;
+};
 }
 
 // Implementation
 namespace ovis {
 
+// Type
 inline Type::Type(std::string_view name, Type* parent) : name_(name), parent_(parent) {}
-inline Type::Type(std::string_view name, const std::type_info& associated_type, Type* parent)
-    : name_(name), associated_type_(associated_type), parent_(parent) {}
 
-inline safe_ptr<Type> Type::Register(std::string_view name) {
-  if (Get(name) != nullptr) {
-    return nullptr;
-  }
-
-  types.push_back(Type(name));
-  return safe_ptr(&types.back());
-}
-
-template <typename T, typename ParentType>
-inline safe_ptr<Type> Type::Register(std::string_view name) {
-  static_assert(std::is_same_v<ParentType, void>);
-  if (Get<T>() != nullptr) {
-    return nullptr;
-  }
-
-  auto type = Register(name);
-  if (type == nullptr) {
-    return nullptr;
-  }
-
-  type->associated_type_ = std::type_index(typeid(T));
-  return type;
-}
-
-inline bool Type::Deregister(std::string_view name) {
-  auto new_end = std::remove_if(types.begin(), types.end(), [name](const Type& type) { return type.name() == name; });
-  
-  if (new_end == types.end()) {
-    return false;
+template <typename T>
+inline safe_ptr<Type> Type::Get() {
+  if (auto it = type_associations.find(typeid(T)); it != type_associations.end()) {
+    return it->second;
   } else {
-    assert(types.end() - new_end == 1);
-    types.erase(new_end, types.end());
-    return true;
+    return nullptr;
   }
-}
-
-inline safe_ptr<Type> Type::Get(std::string_view name) {
-  for (auto& type : types) {
-    if (type.name() == name) {
-      return safe_ptr(&type);
-    }
-  }
-  return nullptr;
 }
 
 inline void Type::RegisterProperty(std::string_view name, Type* type, Property::GetFunction getter,
@@ -182,16 +158,6 @@ inline void Type::RegisterProperty(std::string_view name, Type* type, Property::
     .getter = getter,
     .setter = setter,
   });
-}
-
-template <typename T>
-inline safe_ptr<Type> Type::Get() {
-  for (auto& type : types) {
-    if (type.associated_type() == std::type_index(typeid(std::remove_cvref_t<T>))) {
-      return safe_ptr(&type);
-    }
-  }
-  return nullptr;
 }
 
 namespace detail {
@@ -221,6 +187,7 @@ inline void Type::RegisterProperty(std::string_view name) {
   detail::PropertyCallbacks<PROPERTY>::Register(this, name);
 }
 
+// Value
 template <typename T>
 Value::Value(T&& value) : type_(Type::Get<T>()), data_(std::move(value)) {}
 
@@ -266,15 +233,69 @@ inline T Value::GetProperty(std::string_view property_name) {
   return GetProperty(property_name).Get<T>();
 }
 
-inline safe_ptr<Function> Function::Register(std::string_view name, Pointer function_pointer,
-                                             std::vector<ValueDeclaration> inputs,
-                                             std::vector<ValueDeclaration> outputs) {
-  if (Get(name) != nullptr) {
+inline std::vector<Value> Function::Call(std::span<const Value> inputs) {
+  assert(inputs.size() == inputs_.size());
+
+  std::vector<Value> outputs(outputs_.size());
+  function_pointer_(inputs, outputs);
+  return outputs;
+}
+
+// Value
+inline Function::Function(std::string_view name, Pointer function_pointer, std::vector<ValueDeclaration> inputs,
+                          std::vector<ValueDeclaration> outputs)
+    : name_(name), function_pointer_(function_pointer), inputs_(inputs), outputs_(outputs) {}
+
+inline safe_ptr<Type> Module::RegisterType(std::string_view name) {
+  if (GetType(name) != nullptr) {
     return nullptr;
   }
-  functions.push_back(Function(name, function_pointer, std::forward<std::vector<ValueDeclaration>>(inputs),
-                               std::forward<std::vector<ValueDeclaration>>(outputs)));
-  return safe_ptr(&functions.back());
+
+  types_.push_back(Type(name));
+  return safe_ptr(&types_.back());
+}
+
+template <typename T, typename ParentType>
+inline safe_ptr<Type> Module::RegisterType(std::string_view name, bool create_cpp_association) {
+  static_assert(std::is_same_v<ParentType, void>);
+  if (Type::Get<T>() != nullptr) {
+    return nullptr;
+  }
+
+  if (create_cpp_association && Type::type_associations[typeid(T)] != nullptr) {
+    return nullptr;
+  }
+
+  auto type = RegisterType(name);
+  if (type == nullptr) {
+    return nullptr;
+  }
+
+  if (create_cpp_association) {
+    Type::type_associations[typeid(T)] = type;
+  }
+
+  return type;
+}
+
+inline safe_ptr<Type> Module::GetType(std::string_view name) {
+  for (auto& type : types_) {
+    if (type.name() == name) {
+      return safe_ptr(&type);
+    }
+  }
+  return nullptr;
+}
+
+inline safe_ptr<Function> Module::RegisterFunction(std::string_view name, Function::Pointer function_pointer,
+                                                   std::vector<Function::ValueDeclaration> inputs,
+                                                   std::vector<Function::ValueDeclaration> outputs) {
+  if (GetFunction(name) != nullptr) {
+    return nullptr;
+  }
+  functions_.push_back(Function(name, function_pointer, std::forward<std::vector<Function::ValueDeclaration>>(inputs),
+                                std::forward<std::vector<Function::ValueDeclaration>>(outputs)));
+  return safe_ptr(&functions_.back());
 }
 
 namespace detail {
@@ -338,16 +359,16 @@ struct FunctionWrapper<ReturnType(*)(ArgumentTypes...)> {
 }  // namespace detail
 
 template <auto FUNCTION>
-inline safe_ptr<Function> Function::Register(std::string_view name, std::vector<std::string_view> input_names,
+inline safe_ptr<Function> Module::RegisterFunction(std::string_view name, std::vector<std::string_view> input_names,
                                              std::vector<std::string_view> output_names) {
-  std::vector<ValueDeclaration> inputs(input_names.size());
-  std::vector<ValueDeclaration> outputs(output_names.size());
-  return Register(name, &detail::FunctionWrapper<decltype(FUNCTION)>::template Call<FUNCTION>, std::move(inputs),
-                  std::move(outputs));
+  std::vector<Function::ValueDeclaration> inputs(input_names.size());
+  std::vector<Function::ValueDeclaration> outputs(output_names.size());
+  return RegisterFunction(name, &detail::FunctionWrapper<decltype(FUNCTION)>::template Call<FUNCTION>,
+                          std::move(inputs), std::move(outputs));
 }
 
-inline safe_ptr<Function> Function::Get(std::string_view name) {
-  for (auto& function : functions) {
+inline safe_ptr<Function> Module::GetFunction(std::string_view name) {
+  for (auto& function : functions_) {
     if (function.name_ == name) {
       return safe_ptr(&function);
     }
@@ -355,23 +376,11 @@ inline safe_ptr<Function> Function::Get(std::string_view name) {
   return nullptr;
 }
 
-inline std::vector<Value> Function::Call(std::string_view name, std::span<const Value> inputs) {
-  auto function = Get(name);
+inline std::vector<Value> Module::CallFunction(std::string_view name, std::span<const Value> inputs) {
+  auto function = GetFunction(name);
   assert(function != nullptr);
   return function->Call(inputs);
 }
-
-inline std::vector<Value> Function::Call(std::span<const Value> inputs) {
-  assert(inputs.size() == inputs_.size());
-
-  std::vector<Value> outputs(outputs_.size());
-  function_pointer_(inputs, outputs);
-  return outputs;
-}
-
-inline Function::Function(std::string_view name, Pointer function_pointer, std::vector<ValueDeclaration> inputs,
-                          std::vector<ValueDeclaration> outputs)
-    : name_(name), function_pointer_(function_pointer), inputs_(inputs), outputs_(outputs) {}
 
 }  // namespace ovis
 
