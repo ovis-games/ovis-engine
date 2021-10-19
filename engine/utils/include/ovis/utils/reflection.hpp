@@ -277,7 +277,7 @@ inline safe_ptr<Function> Function::Register(std::string_view name, Pointer func
   return safe_ptr(&functions.back());
 }
 
-namespace  detail{
+namespace detail {
 
 template <std::size_t N, typename... Types>
 using nth_parameter_t = std::tuple_element_t<N, std::tuple<Types...>>;
@@ -335,7 +335,7 @@ struct FunctionWrapper<ReturnType(*)(ArgumentTypes...)> {
   }
 };
 
-}
+}  // namespace detail
 
 template <auto FUNCTION>
 inline safe_ptr<Function> Function::Register(std::string_view name, std::vector<std::string_view> input_names,
