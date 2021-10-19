@@ -5,6 +5,7 @@
 TEST_CASE("Register Type", "[ovis][utils][reflection]") {
   using namespace ovis;
   Type::DeregisterAll();
+  Function::DeregisterAll();
 
   SECTION("Basic Registration") {
     struct Foo {};
@@ -53,5 +54,64 @@ TEST_CASE("Register Type", "[ovis][utils][reflection]") {
 
     v.SetProperty("a", 200); // v["a"] = 200 ?
     REQUIRE(v.GetProperty<int>("a") == 200);
+  }
+
+  SECTION("Function Registration") {
+    struct Foo {
+      static int foo() { return 42; }
+    };
+    Type::Register<int>("Integer");
+
+    REQUIRE(Function::Get("foo") == nullptr);
+    auto foo_function = Function::Register<&Foo::foo>("foo", {}, {"The answer"});
+    REQUIRE(foo_function != nullptr);
+    REQUIRE(Function::Get("foo") == foo_function);
+
+    auto results = foo_function->Call();
+    REQUIRE(results.size() == 1);
+    REQUIRE(results[0].type() == Type::Get<int>());
+    REQUIRE(results[0].Get<int>() == 42);
+
+    auto results2 = Function::Call("foo");
+    REQUIRE(results2.size() == 1);
+    REQUIRE(results2[0].type() == Type::Get<int>());
+    REQUIRE(results2[0].Get<int>() == 42);
+  }
+
+  SECTION("Function with parameter") {
+    struct Foo {
+      static int foo(int i) { return i * 2; }
+    };
+    Type::Register<int>("Integer");
+
+    REQUIRE(Function::Get("foo") == nullptr);
+    auto foo_function = Function::Register<&Foo::foo>("foo", {"An awesome parameter"}, {"The answer"});
+    REQUIRE(foo_function != nullptr);
+    REQUIRE(Function::Get("foo") == foo_function);
+
+    auto results = foo_function->Call(std::vector{ Value(21) });
+    REQUIRE(results.size() == 1);
+    REQUIRE(results[0].type() == Type::Get<int>());
+    REQUIRE(results[0].Get<int>() == 42);
+  }
+
+  SECTION("Function with multiple return values") {
+    struct Foo {
+      static std::tuple<bool, int> foo() { return std::make_tuple(true, 42); }
+    };
+    Type::Register<bool>("Boolean");
+    Type::Register<int>("Integer");
+
+    REQUIRE(Function::Get("foo") == nullptr);
+    auto foo_function = Function::Register<&Foo::foo>("foo", {}, {"Am I cool", "The answer"});
+    REQUIRE(foo_function != nullptr);
+    REQUIRE(Function::Get("foo") == foo_function);
+
+    auto results = Function::Call("foo");
+    REQUIRE(results.size() == 2);
+    REQUIRE(results[0].type() == Type::Get<bool>());
+    REQUIRE(results[0].Get<bool>() == true);
+    REQUIRE(results[1].type() == Type::Get<int>());
+    REQUIRE(results[1].Get<int>() == 42);
   }
 }
