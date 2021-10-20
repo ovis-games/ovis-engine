@@ -13,7 +13,6 @@ struct FunctionCall {
   int input_count;
   int output_count;
 };
-static_assert(sizeof(FunctionCall) == 12);
 
 struct PushConstant {
   Value value;
@@ -60,8 +59,6 @@ using ScriptInstruction = std::variant<
   script_instructions::JumpIfFalse
 >;
 
-static_assert(sizeof(ScriptInstruction) == 28);
-
 }
 
 namespace fmt {
@@ -79,4 +76,6 @@ struct fmt::formatter<ovis::script_instructions::FunctionCall> {
     return format_to(ctx.out(), "function_call");
   }
 };
+
+}
 

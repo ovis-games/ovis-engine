@@ -5,9 +5,9 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
-#include <span>
 #include <type_traits>
 #include <typeindex>
 #include <typeinfo>
@@ -45,7 +45,8 @@ class Type : public SafelyReferenceable {
 
   void RegisterProperty(std::string_view name, Type* type, Property::GetFunction getter,
                         Property::SetFunction setter = nullptr);
-  template <auto PROPERTY> void RegisterProperty(std::string_view);
+  template <auto PROPERTY>
+  void RegisterProperty(std::string_view);
 
   template <typename T>
   static safe_ptr<Type> Get();
@@ -55,7 +56,7 @@ class Type : public SafelyReferenceable {
 
   std::vector<Property> properties_;
 
-  std::string name_; 
+  std::string name_;
   safe_ptr<Type> parent_;
 
   static std::unordered_map<std::type_index, safe_ptr<Type>> type_associations;
@@ -63,23 +64,28 @@ class Type : public SafelyReferenceable {
 
 class Value {
  public:
-   Value() : type_(nullptr) {}
-   template <typename T> Value(T&& value);
+  Value() : type_(nullptr) {}
+  template <typename T>
+  Value(T&& value);
 
-   template <typename T> std::remove_cvref_t<T>& Get();
-   template <typename T> const std::remove_cvref_t<T>& Get() const;
+  template <typename T>
+  std::remove_cvref_t<T>& Get();
+  template <typename T>
+  const std::remove_cvref_t<T>& Get() const;
 
-   void SetProperty(std::string_view property_name, const Value& property_value);
-   template <typename T> void SetProperty(std::string_view property_name, T&& property_value);
+  void SetProperty(std::string_view property_name, const Value& property_value);
+  template <typename T>
+  void SetProperty(std::string_view property_name, T&& property_value);
 
-   Value GetProperty(std::string_view property_name);
-   template <typename T> T GetProperty(std::string_view property_name);
+  Value GetProperty(std::string_view property_name);
+  template <typename T>
+  T GetProperty(std::string_view property_name);
 
-   Type* type() const { return type_.get(); }
+  Type* type() const { return type_.get(); }
 
  private:
-   safe_ptr<Type> type_;
-   std::any data_;
+  safe_ptr<Type> type_;
+  std::any data_;
 };
 
 class Function : public SafelyReferenceable {
@@ -90,7 +96,10 @@ class Function : public SafelyReferenceable {
     std::string name;
     safe_ptr<Type> type;
   };
-  using Pointer = void(*)(std::span<const Value> inputs, std::span<Value> outputs);
+  using Pointer = void (*)(std::span<const Value> inputs, std::span<Value> outputs);
+
+  std::span<const ValueDeclaration> inputs() const { return inputs_; }
+  std::span<const ValueDeclaration> outputs() const { return outputs_; }
 
   std::vector<Value> Call(std::span<const Value> inputs = {});
 
@@ -106,14 +115,16 @@ class Function : public SafelyReferenceable {
 
 class Module : public SafelyReferenceable {
  public:
-   // Types
+  static safe_ptr<Module> Register(std::string_view name);
+  static safe_ptr<Module> Get(std::string_view name);
+
+  // Types
   safe_ptr<Type> RegisterType(std::string_view name);
 
   template <typename T, typename ParentType = void>
   safe_ptr<Type> RegisterType(std::string_view name, bool create_cpp_association = true);
 
   safe_ptr<Type> GetType(std::string_view name);
-
 
   // Functions
   safe_ptr<Function> RegisterFunction(std::string_view name, Function::Pointer function_pointer,
@@ -133,7 +144,7 @@ class Module : public SafelyReferenceable {
   std::vector<Type> types_;
   std::vector<Function> functions_;
 };
-}
+}  // namespace ovis
 
 // Implementation
 namespace ovis {
@@ -153,22 +164,21 @@ inline safe_ptr<Type> Type::Get() {
 inline void Type::RegisterProperty(std::string_view name, Type* type, Property::GetFunction getter,
                                    Property::SetFunction setter) {
   properties_.push_back({
-    .type = safe_ptr(type),
-    .name = std::string(name),
-    .getter = getter,
-    .setter = setter,
+      .type = safe_ptr(type),
+      .name = std::string(name),
+      .getter = getter,
+      .setter = setter,
   });
 }
 
 namespace detail {
 
-template <auto PROPERTY> class PropertyCallbacks {};
+template <auto PROPERTY>
+class PropertyCallbacks {};
 
-template <typename T, typename PropertyType, PropertyType T::* PROPERTY>
+template <typename T, typename PropertyType, PropertyType T::*PROPERTY>
 struct PropertyCallbacks<PROPERTY> {
-  static Value PropertyGetter(const ovis::Value& object) {
-    return object.Get<T>().*PROPERTY;
-  }
+  static Value PropertyGetter(const ovis::Value& object) { return object.Get<T>().*PROPERTY; }
 
   static void PropertySetter(ovis::Value* object, const ovis::Value& property_value) {
     assert(property_value.type() == Type::template Get<PropertyType>());
@@ -316,12 +326,13 @@ std::tuple<ArgumentTypes...> ConstructArgumentTuple(std::span<const Value> input
   return ConstructArgumentTupleImpl<ArgumentTypes...>(inputs, Indices{});
 }
 
-template <typename... T,  std::size_t... I>
-inline void SetFunctionTupleOutputsImpl(std::span<Value> outputs, std::tuple<T...>&& values, std::index_sequence<I...>) {
+template <typename... T, std::size_t... I>
+inline void SetFunctionTupleOutputsImpl(std::span<Value> outputs, std::tuple<T...>&& values,
+                                        std::index_sequence<I...>) {
   assert(outputs.size() == sizeof...(T));
   ((outputs[I] = std::get<I>(values)), ...);
 }
-template <typename... T,  typename Indices = std::make_index_sequence<sizeof...(T)>>
+template <typename... T, typename Indices = std::make_index_sequence<sizeof...(T)>>
 inline void SetFunctionTupleOutputs(std::span<Value> outputs, std::tuple<T...>&& values) {
   SetFunctionTupleOutputsImpl(outputs, std::forward<std::tuple<T...>>(values), Indices{});
 }
@@ -337,10 +348,11 @@ inline void SetFunctionOutputs(std::span<Value> outputs, std::tuple<T...>&& valu
   SetFunctionTupleOutputs(outputs, std::forward<decltype(values)>(values));
 }
 
-template <typename FunctionType> struct FunctionWrapper;
+template <typename FunctionType>
+struct FunctionWrapper;
 
 template <typename ReturnType, typename... ArgumentTypes>
-struct FunctionWrapper<ReturnType(*)(ArgumentTypes...)> {
+struct FunctionWrapper<ReturnType (*)(ArgumentTypes...)> {
   using FunctionPointerType = ReturnType (*)(ArgumentTypes...);
   using ArgumentTuple = std::tuple<ArgumentTypes...>;
 
@@ -360,7 +372,7 @@ struct FunctionWrapper<ReturnType(*)(ArgumentTypes...)> {
 
 template <auto FUNCTION>
 inline safe_ptr<Function> Module::RegisterFunction(std::string_view name, std::vector<std::string_view> input_names,
-                                             std::vector<std::string_view> output_names) {
+                                                   std::vector<std::string_view> output_names) {
   std::vector<Function::ValueDeclaration> inputs(input_names.size());
   std::vector<Function::ValueDeclaration> outputs(output_names.size());
   return RegisterFunction(name, &detail::FunctionWrapper<decltype(FUNCTION)>::template Call<FUNCTION>,

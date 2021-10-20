@@ -7,7 +7,6 @@ add_library(
   include/ovis/core/scene.hpp src/scene.cpp
   include/ovis/core/scene_viewport.hpp src/scene_viewport.cpp
   include/ovis/core/scene_controller.hpp src/scene_controller.cpp
-  # include/ovis/core/script_scene_controller.hpp src/script_scene_controller.cpp
   include/ovis/core/scene_object.hpp src/scene_object.cpp
   include/ovis/core/scene_object_component.hpp src/scene_object_component.cpp
   include/ovis/core/camera.hpp src/camera.cpp
@@ -23,8 +22,9 @@ add_library(
   include/ovis/core/math_operations.hpp src/math_operations.cpp
   include/ovis/core/intersection.hpp src/intersection.cpp
   include/ovis/core/math.hpp src/math.cpp
-  # include/ovis/core/scripting.hpp src/scripting.cpp
-  # include/ovis/core/visual_script_scene_controller.hpp src/visual_script_scene_controller.cpp
+  include/ovis/core/script_function.hpp src/script_function.cpp
+  include/ovis/core/script_execution_context.hpp src/script_execution_context.cpp
+  include/ovis/core/script_instruction.hpp src/script_instruction.cpp
 )
 add_library(ovis::core ALIAS ovis-core)
 
