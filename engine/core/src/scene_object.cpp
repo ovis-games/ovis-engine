@@ -126,11 +126,6 @@ SceneObjectComponent* SceneObject::AddComponent(const std::string& component_id,
   return component;
 }
 
-InputDependentScriptValue<1, SceneObjectComponent*> SceneObject::AddComponent(ScriptTypeId component_type) {
-  const auto type = global_script_context()->GetType(component_type);
-  return AddComponent(type->name);
-}
-
 bool SceneObject::HasComponent(const std::string& component_id) const {
   return components_.count(component_id) != 0;
 }
@@ -383,12 +378,6 @@ void SceneObject::RegisterType(sol::table* module) {
     SceneObjectComponent* component = object->GetComponent(component_id);
     return component ? component->GetValue() : nullptr;
   };
-}
-
-void SceneObject::RegisterType(ScriptContext* context) {
-  context->RegisterType<SceneObject>("Scene Object");
-  context->RegisterFunction<static_cast<InputDependentScriptValue<1, SceneObjectComponent*> (SceneObject::*)(ScriptTypeId)>(
-      &SceneObject::AddComponent)>("scene_object_add_component", { "Object", "Component" });
 }
 
 }  // namespace ovis

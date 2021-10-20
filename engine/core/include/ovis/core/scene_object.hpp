@@ -63,7 +63,6 @@ class SceneObject : public Serializable, public SafelyReferenceable {
 
   SceneObjectComponent* AddComponent(const std::string& component_id);
   SceneObjectComponent* AddComponent(const std::string& component_id, const sol::table& component_properties);
-  InputDependentScriptValue<1, SceneObjectComponent*> AddComponent(ScriptTypeId component_type);
   bool HasComponent(const std::string& component_id) const;
 
   template <typename ComponentType = SceneObjectComponent>
@@ -100,7 +99,6 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   bool Update(const json& serialized_object) override;
 
   static void RegisterType(sol::table* module);
-  static void RegisterType(ScriptContext* context);
 
  private:
   Scene* scene_;  // No safe_ptr needed, scene is guaranteed to live longer and will (should?) not be moved

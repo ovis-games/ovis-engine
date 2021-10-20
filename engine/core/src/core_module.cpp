@@ -11,8 +11,6 @@
 #include <ovis/core/scene_controller.hpp>
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_object_component.hpp>
-#include <ovis/core/script_scene_controller.hpp>
-#include <ovis/core/scripting.hpp>
 #include <ovis/core/transform.hpp>
 
 namespace ovis {
@@ -78,7 +76,7 @@ int LoadCoreModule(lua_State* l) {
   Transform::RegisterType(&core_module);
   Camera::RegisterType(&core_module);
   SceneController::RegisterType(&core_module);
-  ScriptSceneController::RegisterType(&core_module);
+  // ScriptSceneController::RegisterType(&core_module);
   Transform::RegisterType(&core_module);
   Vector2::RegisterType(&core_module);
   Vector3::RegisterType(&core_module);
@@ -98,10 +96,10 @@ bool LoadCoreModule() {
 
     lua.require("ovis.core", &LoadCoreModule);
 
-    Vector2::RegisterType(global_script_context());
-    Vector3::RegisterType(global_script_context());
-    SceneObject::RegisterType(global_script_context());
-    Scene::RegisterType(global_script_context());
+    // Vector2::RegisterType(global_script_context());
+    // Vector3::RegisterType(global_script_context());
+    // SceneObject::RegisterType(global_script_context());
+    // Scene::RegisterType(global_script_context());
 
     module_loaded = true;
   }

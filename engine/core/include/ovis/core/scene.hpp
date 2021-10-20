@@ -106,7 +106,6 @@ class Scene : public Serializable, public SafelyReferenceable {
   const json* GetSchema() const override { return &schema_; }
 
   static void RegisterType(sol::table* module);
-  static void RegisterType(ScriptContext* context);
 
  private:
   void InvalidateControllerOrder();
