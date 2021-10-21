@@ -51,4 +51,8 @@ TEST_CASE("Script Function Parsing", "[ovis][core][script]") {
 
   const ScriptFunction::DebugInfo& debug_info = parser.debug_info;
   REQUIRE(debug_info.scope_info.size() == 1);
+  REQUIRE(debug_info.scope_info[0].variables.size() == 1);
+  REQUIRE(debug_info.scope_info[0].variables[0].declaration.type == Type::Get<double>());
+  REQUIRE(debug_info.scope_info[0].variables[0].declaration.name == "Awesome Variable");
+  REQUIRE(debug_info.scope_info[0].variables[0].position == 0);
 }
