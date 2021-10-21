@@ -28,6 +28,7 @@ bool LoadCoreModule() {
   static safe_ptr<Module> core_module;
   if (core_module == nullptr) {
     core_module = Module::Register("Core");
+    core_module->RegisterType<double>("Number");
     core_module->RegisterFunction<&Add>("Add", {"x", "y"}, {"result"});
 
     SceneObjectComponent::Register("Transform",
