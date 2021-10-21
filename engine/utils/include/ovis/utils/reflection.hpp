@@ -434,6 +434,19 @@ inline void SetFunctionOutputs(std::span<Value> outputs, std::tuple<T...>&& valu
   SetFunctionTupleOutputs(outputs, std::forward<decltype(values)>(values));
 }
 
+
+template <typename... T, std::size_t... I>
+inline std::vector<Function::ValueDeclaration> MakeVariableDeclarationsImpl(std::span<std::string_view> variable_names, std::index_sequence<I...>) {
+  assert(variable_names.size() == sizeof...(T));
+  return {
+    { std::string(variable_names[I]), Type::Get<T>() }...
+  };
+}
+template <typename... T, typename Indices = std::make_index_sequence<sizeof...(T)>>
+inline std::vector<Function::ValueDeclaration> MakeVariableDeclarations(std::span<std::string_view> variable_names) {
+  return MakeVariableDeclarationsImpl<T...>(variable_names, Indices{});
+}
+
 template <typename FunctionType>
 struct FunctionWrapper;
 
@@ -441,6 +454,14 @@ template <typename ReturnType, typename... ArgumentTypes>
 struct FunctionWrapper<ReturnType (*)(ArgumentTypes...)> {
   using FunctionPointerType = ReturnType (*)(ArgumentTypes...);
   using ArgumentTuple = std::tuple<ArgumentTypes...>;
+
+  static std::vector<Function::ValueDeclaration> GetInputDeclarations(std::span<std::string_view> input_names) {
+    return detail::MakeVariableDeclarations<ArgumentTypes...>(input_names);
+  }
+
+  static std::vector<Function::ValueDeclaration> GetOutputDeclarations(std::span<std::string_view> output_names) {
+    return detail::MakeVariableDeclarations<ReturnType>(output_names);
+  }
 
   template <FunctionPointerType FUNCTION>
   static void Call(std::span<const Value> inputs, std::span<Value> outputs) {
@@ -459,10 +480,11 @@ struct FunctionWrapper<ReturnType (*)(ArgumentTypes...)> {
 template <auto FUNCTION>
 inline safe_ptr<Function> Module::RegisterFunction(std::string_view name, std::vector<std::string_view> input_names,
                                                    std::vector<std::string_view> output_names) {
-  std::vector<Function::ValueDeclaration> inputs(input_names.size());
-  std::vector<Function::ValueDeclaration> outputs(output_names.size());
-  return RegisterFunction(name, &detail::FunctionWrapper<decltype(FUNCTION)>::template Call<FUNCTION>,
-                          std::move(inputs), std::move(outputs));
+  return RegisterFunction(
+      name,
+      &detail::FunctionWrapper<decltype(FUNCTION)>::template Call<FUNCTION>,
+      detail::FunctionWrapper<decltype(FUNCTION)>::GetInputDeclarations(input_names), 
+      detail::FunctionWrapper<decltype(FUNCTION)>::GetOutputDeclarations(output_names));
 }
 
 inline safe_ptr<Function> Module::GetFunction(std::string_view name) {
