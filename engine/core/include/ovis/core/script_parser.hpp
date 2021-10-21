@@ -24,8 +24,10 @@ class ScriptFunctionParser {
   void ParsePush(const json& value_definiion, safe_ptr<Type> required_type = nullptr);
   std::optional<int> GetOutputVariablePosition(std::string_view name, safe_ptr<Type> type, const std::string& path);
   std::optional<ScriptFunction::DebugInfo::Scope::Variable> GetLocalVariable(std::string_view name);
+  void PushScope();
+  void PopScope();
 
-  std::size_t current_scope_index;
+  std::size_t current_scope_index = std::numeric_limits<std::size_t>::max();
   ScriptFunction::DebugInfo::Scope& current_scope() { return debug_info.scope_info[current_scope_index]; }
 
  public:

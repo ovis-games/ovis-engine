@@ -9,9 +9,11 @@ ScriptFunctionParser::ScriptFunctionParser(const json& function_definition) {
         .path = "/",
     });
   } else {
+    PushScope();
     inputs = ParseInputOutputDeclarations(function_definition["inputs"]);
     outputs = ParseInputOutputDeclarations(function_definition["outputs"]);
     ParseActions(function_definition["actions"], "/actions");
+    PopScope();
   }
 }
 
@@ -136,7 +138,7 @@ void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::stri
             .message = fmt::format("Output '{}' not present for function.", output_name, function_reflection->name()),
             .path = path,
         });
-      } else if (const auto output_variable_position = GetOutputVariablePosition(static_cast<std::string>(local_variable), output_declaration->type, path); output_variable_position.has_value()) {
+      } else if (const auto output_variable_position = GetOutputVariablePosition(static_cast<std::string>(local_variable), output_declaration->type, path); !output_variable_position.has_value()) {
         errors.push_back({
             .message = fmt::format("Mismatched types."),
             .path = path,
@@ -307,6 +309,20 @@ std::optional<ScriptFunction::DebugInfo::Scope::Variable> ScriptFunctionParser::
   } while (scope_index != std::numeric_limits<std::size_t>::max());
 
   return {};
+}
+
+void ScriptFunctionParser::PushScope() {
+  debug_info.scope_info.push_back({
+      .parent_scope = current_scope_index,
+      .variables = {},
+      .position_offset = current_scope_index == std::numeric_limits<std::size_t>::max() ? 0 : static_cast<int>(current_scope().position_offset + current_scope().variables.size())
+  });
+  current_scope_index = debug_info.scope_info.size() - 1;
+}
+
+void ScriptFunctionParser::PopScope() {
+  assert(debug_info.scope_info.size() > 0);
+  current_scope_index = current_scope().parent_scope;
 }
 
 }
