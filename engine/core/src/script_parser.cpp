@@ -156,7 +156,7 @@ void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::stri
             .path = path,
         });
       } else {
-        ParsePush(*input_definition, input_declaration.type);
+        ParsePush(*input_definition, path, input_declaration.type);
       }
     }
 
@@ -210,7 +210,7 @@ void ScriptFunctionParser::ParseIf(const json& action, std::string path) {
         .path = path,
     });
   } else {
-    ParsePush(*condition, Type::Get<bool>());
+    ParsePush(*condition, path, Type::Get<bool>());
 
     const std::size_t instruction_count_before = instructions.size();
     instructions.push_back(script_instructions::JumpIfFalse{});
@@ -240,7 +240,7 @@ void ScriptFunctionParser::ParseWhile(const json& action, std::string path) {
         .path = path,
     });
   } else {
-    ParsePush(*condition, Type::Get<bool>());
+    ParsePush(*condition, path, Type::Get<bool>());
 
     const int instruction_count_before = instructions.size();
     instructions.push_back(script_instructions::JumpIfFalse{});
@@ -272,7 +272,80 @@ void ScriptFunctionParser::PushNone(const std::string& path) {
   });
 }
 
-void ScriptFunctionParser::ParsePush(const json& value_definiion, safe_ptr<Type> required_type) {}
+void ScriptFunctionParser::ParsePush(const json& value_definition, const std::string& path, safe_ptr<Type> required_type) {
+  auto push = [&](auto value) {
+    const auto input_type = Type::Get<decltype(value)>();
+    if (!required_type || required_type == input_type) {
+      instructions.push_back(script_instructions::PushConstant{
+          .value = value,
+      });
+      debug_info.instruction_info.push_back({
+          .scope = current_scope_index,
+          .action = path,
+      });
+    } else {
+      errors.push_back({
+          .message = fmt::format("Invalid input: expected '{}' got '{}'.", required_type->name(),
+                                 input_type ? input_type->name() : "Unknow"),
+          .path = path,
+      });
+    }
+  };
+
+  if (value_definition.is_string()) {
+    push(static_cast<std::string>(value_definition));
+  } else if (value_definition.is_number()) {
+    push(static_cast<double>(value_definition));
+  } else if (value_definition.is_boolean()) {
+    push(static_cast<bool>(value_definition));
+  } else if (value_definition.is_object() && value_definition.contains("inputType")) {
+    const std::string& input_type = value_definition["inputType"];
+
+    if (input_type == "local_variable" && value_definition.contains("name")) {
+      const std::string& local_variable_name = value_definition["name"];
+      const auto local_variable = GetLocalVariable(local_variable_name);
+      if (!local_variable.has_value()) {
+        errors.push_back({
+            .message = fmt::format("Cannot find local variable '{}'.", local_variable_name),
+            .path = path,
+        });
+      } else {
+        instructions.push_back(script_instructions::PushStackValue{
+            .position = local_variable->position,
+        });
+        debug_info.instruction_info.push_back({
+            .scope = current_scope_index,
+            .action = path,
+        });
+      }
+    } else if (input_type == "constant" && value_definition.contains("type") && value_definition.contains("value")) {
+      const std::string& type = value_definition["type"];
+      const json& value = value_definition["value"];
+      if (type == "Text" && value.is_string()) {
+        push(static_cast<std::string>(value));
+      } else if (type == "Number" && value.is_number()) {
+        push(static_cast<double>(value));
+      } else if (type == "Boolean" && value.is_boolean()) {
+        push(static_cast<bool>(value));
+      } else {
+        errors.push_back({
+            .message = fmt::format("Invalid constant type '{}' for value '{}'.", type, value.dump()),
+            .path = path,
+        });
+      }
+    } else {
+      errors.push_back({
+          .message = fmt::format("Invalid input definition."),
+          .path = path,
+      });
+    }
+  } else {
+    errors.push_back({
+        .message = fmt::format("Invalid input definition."),
+        .path = path,
+    });
+  }
+}
 
 std::optional<int> ScriptFunctionParser::GetOutputVariablePosition(std::string_view name, safe_ptr<Type> type, const std::string& path) {
   const auto local_variable = GetLocalVariable(name);

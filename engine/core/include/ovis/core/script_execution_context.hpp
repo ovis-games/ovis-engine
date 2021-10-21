@@ -13,8 +13,9 @@ class ScriptExecutionContext {
 
   std::size_t operator()(const script_instructions::FunctionCall& function_call);
   std::size_t operator()(const script_instructions::PushConstant& push_constant);
+  std::size_t operator()(const script_instructions::PushStackValue& push_stack_value);
   std::size_t operator()(const script_instructions::AssignConstant& assign_constant);
-  std::size_t operator()(const script_instructions::AssignStackValue& assign_stack_variable);
+  std::size_t operator()(const script_instructions::AssignStackValue& assign_stack_value);
   std::size_t operator()(const script_instructions::Pop& pop);
   std::size_t operator()(const script_instructions::Jump& jump);
   std::size_t operator()(const script_instructions::JumpIfTrue& jump);
@@ -22,6 +23,8 @@ class ScriptExecutionContext {
 
  private:
   std::vector<Value> stack_;
+
+  std::size_t GetAbsoluteStackPosition(int position);
 };
 
 }
@@ -43,15 +46,19 @@ inline std::size_t ScriptExecutionContext::operator()(const script_instructions:
   return 1;
 }
 
+inline std::size_t ScriptExecutionContext::operator()(const script_instructions::PushStackValue& push_stack_value) {
+  stack_.push_back(stack_[GetAbsoluteStackPosition(push_stack_value.position)]);
+  return 1;
+}
+
 inline std::size_t ScriptExecutionContext::operator()(const script_instructions::AssignConstant& assign_constant) {
   stack_[assign_constant.position] = assign_constant.value;
   return 1;
 }
 
 inline std::size_t ScriptExecutionContext::operator()(const script_instructions::AssignStackValue& assign_stack_variable) {
-  const size_t source_position = assign_stack_variable.source_position >= 0 ? assign_stack_variable.source_position : stack_.size() - assign_stack_variable.source_position;
-  const size_t destination_position = assign_stack_variable.destination_position >= 0 ? assign_stack_variable.destination_position : stack_.size() - assign_stack_variable.destination_position;
-  stack_[destination_position] = stack_[source_position];
+  stack_[GetAbsoluteStackPosition(assign_stack_variable.destination_position)] =
+      stack_[GetAbsoluteStackPosition(assign_stack_variable.source_position)];
   return 1;
 }
 
@@ -75,6 +82,10 @@ inline std::size_t ScriptExecutionContext::operator()(const script_instructions:
   const bool condition = stack_.back().Get<bool>();
   stack_.pop_back();
   return condition ? 1 : jump.instruction_offset;
+}
+
+inline std::size_t ScriptExecutionContext::GetAbsoluteStackPosition(int position) {
+  return position >= 0 ? position : stack_.size() - position;
 }
 
 }

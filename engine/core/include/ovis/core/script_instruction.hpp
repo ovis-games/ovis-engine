@@ -56,6 +56,7 @@ struct JumpIfFalse {
 using ScriptInstruction = std::variant<
   script_instructions::FunctionCall,
   script_instructions::PushConstant,
+  script_instructions::PushStackValue,
   script_instructions::AssignConstant,
   script_instructions::AssignStackValue,
   script_instructions::Pop,
