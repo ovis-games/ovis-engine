@@ -62,6 +62,7 @@ class Type : public SafelyReferenceable {
 
   static std::unordered_map<std::type_index, safe_ptr<Type>> type_associations;
 };
+std::ostream& operator<<(std::ostream& os, const safe_ptr<Type>& pointer);
 
 class Value {
  public:

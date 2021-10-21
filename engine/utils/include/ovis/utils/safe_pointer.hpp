@@ -176,6 +176,12 @@ inline SafelyReferenceable& SafelyReferenceable::operator=(SafelyReferenceable&&
   return *this;
 }
 
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const safe_ptr<T>& pointer) {
+  os << pointer.get();
+  return os;
+}
+
 }  // namespace ovis
 
 namespace sol {
