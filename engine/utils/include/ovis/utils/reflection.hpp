@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <ovis/utils/down_cast.hpp>
+#include <ovis/utils/range.hpp>
 #include <ovis/utils/safe_pointer.hpp>
 
 namespace ovis {
@@ -98,8 +99,18 @@ class Function : public SafelyReferenceable {
   };
   using Pointer = void (*)(std::span<const Value> inputs, std::span<Value> outputs);
 
+  std::string_view name() const { return name_; }
+  Pointer pointer() const { return function_pointer_; }
+
   std::span<const ValueDeclaration> inputs() const { return inputs_; }
+  std::optional<std::size_t> GetInputIndex(std::string_view input_name) const;
+  std::optional<ValueDeclaration> GetInput(std::string_view input_name) const;
+  std::optional<ValueDeclaration> GetInput(std::size_t input_index) const;
+
   std::span<const ValueDeclaration> outputs() const { return outputs_; }
+  std::optional<std::size_t> GetOutputIndex(std::string_view output_name) const;
+  std::optional<ValueDeclaration> GetOutput(std::string_view output_name) const;
+  std::optional<ValueDeclaration> GetOutput(std::size_t output_index) const;
 
   std::vector<Value> Call(std::span<const Value> inputs = {});
 
@@ -140,9 +151,13 @@ class Module : public SafelyReferenceable {
   std::vector<Value> CallFunction(std::string_view name, std::span<const Value> inputs = {});
 
  private:
+  Module(std::string_view name) : name_(name) {}
+
   std::string name_;
   std::vector<Type> types_;
   std::vector<Function> functions_;
+
+  static std::vector<Module> modules;
 };
 }  // namespace ovis
 
@@ -251,10 +266,81 @@ inline std::vector<Value> Function::Call(std::span<const Value> inputs) {
   return outputs;
 }
 
-// Value
+// Function
+inline std::optional<std::size_t> Function::GetInputIndex(std::string_view input_name) const {
+  for (const auto& input : IndexRange(inputs_)) {
+    if (input->name == input_name) {
+      return input.index();
+    }
+  }
+  return {};
+}
+
+inline std::optional<Function::ValueDeclaration> Function::GetInput(std::string_view input_name) const {
+  for (const auto& input : inputs_) {
+    if (input.name == input_name) {
+      return input;
+    }
+  }
+  return {};
+}
+
+inline std::optional<Function::ValueDeclaration> Function::GetInput(std::size_t input_index) const {
+  if (input_index < inputs_.size()) {
+    return inputs_[input_index];
+  } else {
+    return {};
+  }
+}
+
+inline std::optional<std::size_t> Function::GetOutputIndex(std::string_view output_name) const {
+  for (const auto& output : IndexRange(outputs_)) {
+    if (output->name == output_name) {
+      return output.index();
+    }
+  }
+  return {};
+}
+
+inline std::optional<Function::ValueDeclaration> Function::GetOutput(std::string_view output_name) const {
+  for (const auto& output : outputs_) {
+    if (output.name == output_name) {
+      return output;
+    }
+  }
+  return {};
+}
+
+inline std::optional<Function::ValueDeclaration> Function::GetOutput(std::size_t output_index) const {
+  if (output_index < outputs_.size()) {
+    return outputs_[output_index];
+  } else {
+    return {};
+  }
+}
+
 inline Function::Function(std::string_view name, Pointer function_pointer, std::vector<ValueDeclaration> inputs,
                           std::vector<ValueDeclaration> outputs)
     : name_(name), function_pointer_(function_pointer), inputs_(inputs), outputs_(outputs) {}
+
+// Module
+inline safe_ptr<Module> Module::Register(std::string_view name) {
+  if (Get(name) != nullptr) {
+    return nullptr;
+  }
+
+  modules.push_back(Module(name));
+  return safe_ptr(&modules.back());
+}
+
+inline safe_ptr<Module> Module::Get(std::string_view name) {
+  for (auto& module : modules) {
+    if (module.name_ == name) {
+      return safe_ptr(&module);
+    }
+  }
+  return nullptr;
+}
 
 inline safe_ptr<Type> Module::RegisterType(std::string_view name) {
   if (GetType(name) != nullptr) {
