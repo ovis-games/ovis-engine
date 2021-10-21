@@ -14,8 +14,13 @@ class ScriptFunction {
  public:
   struct DebugInfo {
     struct Scope {
+      struct Variable {
+        Function::ValueDeclaration declaration;
+        int position;
+      };
       std::size_t parent_scope;
-      std::vector<Function::ValueDeclaration> variables;
+      std::vector<Variable> variables;
+      int position_offset;
     };
     struct Instruction {
       std::size_t scope;

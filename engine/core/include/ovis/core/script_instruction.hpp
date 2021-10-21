@@ -28,7 +28,7 @@ struct AssignConstant {
   int position;
 };
 
-struct AssignStackVariable {
+struct AssignStackValue {
   int16_t source_position;
   int16_t source_frame;
   int16_t destination_position;
@@ -37,6 +37,10 @@ struct AssignStackVariable {
 
 struct Pop {
   int count;
+};
+
+struct Jump {
+  int instruction_offset;
 };
 
 struct JumpIfTrue {
@@ -53,8 +57,9 @@ using ScriptInstruction = std::variant<
   script_instructions::FunctionCall,
   script_instructions::PushConstant,
   script_instructions::AssignConstant,
-  script_instructions::AssignStackVariable,
+  script_instructions::AssignStackValue,
   script_instructions::Pop,
+  script_instructions::Jump,
   script_instructions::JumpIfTrue,
   script_instructions::JumpIfFalse
 >;

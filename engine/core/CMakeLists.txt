@@ -23,6 +23,7 @@ add_library(
   include/ovis/core/intersection.hpp src/intersection.cpp
   include/ovis/core/math.hpp src/math.cpp
   include/ovis/core/script_function.hpp src/script_function.cpp
+  include/ovis/core/script_parser.hpp src/script_parser.cpp
   include/ovis/core/script_execution_context.hpp src/script_execution_context.cpp
   include/ovis/core/script_instruction.hpp src/script_instruction.cpp
 )
