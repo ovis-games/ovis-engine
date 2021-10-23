@@ -16,6 +16,7 @@
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/range.hpp>
 #include <ovis/utils/safe_pointer.hpp>
+#include <ovis/utils/execution_context.hpp>
 
 namespace ovis {
 
@@ -86,13 +87,61 @@ class Value {
 
   Type* type() const { return type_.get(); }
 
+  static Value None() { return Value(); }
+
  private:
   safe_ptr<Type> type_;
   std::any data_;
 };
 
+class ExecutionContext {
+ public:
+  ExecutionContext(std::size_t reserved_stack_size = 100);
+
+  void PushValue(Value value);
+
+  // Push an arbitrary value onto the stack. In case T is a tuple, its members are packed onto the stack individually.
+  template <typename T> void PushValue(T&& value);
+
+  void PopValue();
+  void PopValues(std::size_t count);
+
+  void PushStackFrame();
+  void PopStackFrame();
+
+  Value& GetValue(std::size_t position);
+
+  // Returns an arbitrary value from the stack. In case T is a tuple it will be filled with the values at positions
+  // [position, position + tuple_size_v<T>).
+  template <typename T> T GetValue(std::size_t position);
+
+  Value& GetTopValue(std::size_t offset_from_top = 0);
+  // Returns an arbitrary value from the top of the stack. In case T is a tuple it will be filled with the values at
+  // offsets: (offset_from_top + tuple_size_v<T>, offset_from_top).
+  template <typename T> T GetTopValue(std::size_t offset_from_top = 0);
+
+  static ExecutionContext* global_context() { return &global; }
+
+ private:
+  struct StackFrame {
+    std::size_t base_position;
+  };
+
+  std::vector<Value> stack_;
+  // Every exuction frame always has the base stack frame that cannot be popped
+  // which simplifies the code
+  std::vector<StackFrame> stack_frames_;
+
+  static ExecutionContext global;
+};
+
 class Function : public SafelyReferenceable {
   friend class Module;
+
+  template <typename... T> struct Result { using type = std::tuple<T...>; };
+  template <typename T> struct Result<T> { using type = T; };
+  template <> struct Result<> { using type = void; };
+  template <typename... T> using result_t = typename Result<T...>::type;
 
  public:
   struct ValueDeclaration {
@@ -114,7 +163,10 @@ class Function : public SafelyReferenceable {
   std::optional<ValueDeclaration> GetOutput(std::string_view output_name) const;
   std::optional<ValueDeclaration> GetOutput(std::size_t output_index) const;
 
-  std::vector<Value> Call(std::span<const Value> inputs = {});
+  template <typename... OutputTypes, typename... InputsTypes>
+  result_t<OutputTypes...> Call(InputsTypes&&... inputs);
+  template <typename... OutputTypes, typename... InputsTypes>
+  result_t<OutputTypes...> Call(ExecutionContext* context, InputsTypes&&... inputs);
 
  private:
   Function(std::string_view name, Pointer function_pointer, std::vector<ValueDeclaration> inputs,
@@ -129,6 +181,7 @@ class Function : public SafelyReferenceable {
 class Module : public SafelyReferenceable {
  public:
   static safe_ptr<Module> Register(std::string_view name);
+  static void Deregister(std::string_view name);
   static safe_ptr<Module> Get(std::string_view name);
 
   // Types
@@ -149,8 +202,6 @@ class Module : public SafelyReferenceable {
                                       std::vector<std::string_view> output_names);
 
   safe_ptr<Function> GetFunction(std::string_view name);
-
-  std::vector<Value> CallFunction(std::string_view name, std::span<const Value> inputs = {});
 
  private:
   Module(std::string_view name) : name_(name) {}
@@ -260,12 +311,152 @@ inline T Value::GetProperty(std::string_view property_name) {
   return GetProperty(property_name).Get<T>();
 }
 
-inline std::vector<Value> Function::Call(std::span<const Value> inputs) {
-  assert(inputs.size() == inputs_.size());
+template <typename... OutputTypes, typename... InputTypes>
+inline Function::result_t<OutputTypes...> Function::Call(InputTypes&&... inputs) {
+  return Call<OutputTypes...>(ExecutionContext::global_context(), std::forward<InputTypes>(inputs)...);
+}
 
-  std::vector<Value> outputs(outputs_.size());
-  function_pointer_(inputs, outputs);
-  return outputs;
+template <typename... OutputTypes, typename... InputTypes>
+inline Function::result_t<OutputTypes...> Function::Call(ExecutionContext* context, InputTypes&&... inputs) {
+  assert(sizeof...(InputTypes) == inputs_.size());
+  // TODO: validate input/output types
+  context->PushStackFrame();
+  ((context->PushValue(std::forward<InputTypes>(inputs))), ...);
+  function_pointer_(context);
+  if constexpr (sizeof...(OutputTypes) == 0) {
+    context->PopStackFrame();
+  } else {
+    auto result = context->GetTopValue<result_t<OutputTypes...>>();
+    context->PopStackFrame();
+    return result;
+  }
+}
+
+// ExecutionContext
+inline ExecutionContext::ExecutionContext(std::size_t reserved_stack_size) {
+  stack_.reserve(reserved_stack_size);
+  PushStackFrame();
+}
+
+namespace detail {
+
+template <std::size_t N, typename... Types>
+using nth_parameter_t = std::tuple_element_t<N, std::tuple<Types...>>;
+static_assert(std::is_same_v<void, nth_parameter_t<0, void, bool, int>>);
+static_assert(std::is_same_v<bool, nth_parameter_t<1, void, bool, int>>);
+static_assert(std::is_same_v<int, nth_parameter_t<2, void, bool, int>>);
+
+template <typename T>
+struct ValueHelper {
+  static void Push(ExecutionContext* context, T&& value) {
+    context->PushValue(Value(std::forward<T>(value)));
+  }
+
+  static T Get(ExecutionContext* context, std::size_t position) {
+    return context->GetValue(position).Get<T>();
+  }
+
+  static T GetTop(ExecutionContext* context, std::size_t offset_from_top) {
+    return context->GetTopValue(offset_from_top).Get<T>();
+  }
+};
+
+template <typename... T>
+struct ValueHelper<std::tuple<T...>> {
+  template <std::size_t... I>
+  static void PushTupleImpl(ExecutionContext* context, std::tuple<T...>&& values, std::index_sequence<I...>) {
+    ((context->PushValue(std::get<I>(values))), ...);
+  }
+  template <typename Indices = std::make_index_sequence<sizeof...(T)>>
+  static void PushTuple(ExecutionContext* context, std::tuple<T...>&& values) {
+    PushTupleImpl(context, std::forward<std::tuple<T...>>(values), Indices{});
+  }
+  static void Push(ExecutionContext* context, std::tuple<T...>&& value) {
+    PushTuple(context, std::forward<std::tuple<T...>>(value));
+  }
+
+  template <std::size_t... I>
+  static std::tuple<T...> GetTupleValueImpl(ExecutionContext* context, std::size_t base_position, std::index_sequence<I...>) {
+    return std::make_tuple(context->GetValue<nth_parameter_t<I, T...>>(base_position + I)...);
+  }
+  template <typename Indices = std::make_index_sequence<sizeof...(T)>>
+  static std::tuple<T...> GetTupleValue(ExecutionContext* context, std::size_t base_position) {
+    return GetTupleValueImpl(context, base_position, Indices{});
+  }
+
+  static std::tuple<T...> Get(ExecutionContext* context, std::size_t position) {
+    return GetTupleValue(context, position);
+  }
+
+  template <std::size_t... I>
+  static std::tuple<T...> GetTopTupleImpl(ExecutionContext* context, std::size_t offset_from_top, std::index_sequence<I...>) {
+    return std::make_tuple(context->GetTopValue(offset_from_top + sizeof...(I) - I - 1).Get<nth_parameter_t<I, T...>>()...);
+  }
+  template <typename Indices = std::make_index_sequence<sizeof...(T)>>
+  static std::tuple<T...> GetTopTuple(ExecutionContext* context, std::size_t offset_from_top) {
+    return GetTopTupleImpl(context, offset_from_top, Indices{});
+  }
+  static std::tuple<T...> GetTop(ExecutionContext* context, std::size_t offset_from_top) {
+    return GetTopTuple(context, offset_from_top);
+  }
+};
+
+}
+
+inline void ExecutionContext::PushValue(Value value) {
+  stack_.push_back(std::move(value));
+}
+
+template <typename T>
+inline void ExecutionContext::PushValue(T&& value) {
+  detail::ValueHelper<T>::Push(this, std::forward<T>(value));
+}
+
+inline void ExecutionContext::PopValue() {
+  assert(stack_frames_.back().base_position < stack_.size());
+  stack_.pop_back();
+}
+
+inline void ExecutionContext::PopValues(std::size_t count) {
+  assert(stack_frames_.size() > 1);
+  assert(count <= stack_.size());
+  assert(stack_frames_.back().base_position <= stack_.size() - count);
+  stack_.erase(stack_.end() - count, stack_.end());
+}
+
+inline void ExecutionContext::PushStackFrame() {
+  stack_frames_.push_back({
+      .base_position = stack_.size()
+  });
+}
+
+inline void ExecutionContext::PopStackFrame() {
+  assert(stack_frames_.size() > 1);
+  stack_.resize(stack_frames_.back().base_position);
+  stack_frames_.pop_back();
+}
+
+inline Value& ExecutionContext::GetValue(std::size_t position) {
+  assert(stack_frames_.size() > 0);
+  assert(stack_frames_.back().base_position + position < stack_.size());
+  return stack_[stack_frames_.back().base_position + position];
+}
+
+template <typename T>
+inline T ExecutionContext::GetValue(std::size_t position) {
+  return detail::ValueHelper<T>::Get(this, position);
+}
+
+inline Value& ExecutionContext::GetTopValue(std::size_t offset_from_top) {
+  assert(stack_frames_.size() > 0);
+  assert(offset_from_top < stack_.size());
+  assert(offset_from_top < stack_.size() - stack_frames_.back().base_position);
+  return *(stack_.rbegin() + offset_from_top);
+}
+
+template <typename T>
+inline T ExecutionContext::GetTopValue(std::size_t offset_from_top) {
+  return detail::ValueHelper<T>::GetTop(this, offset_from_top);
 }
 
 // Function
@@ -335,6 +526,12 @@ inline safe_ptr<Module> Module::Register(std::string_view name) {
   return safe_ptr(&modules.back());
 }
 
+inline void Module::Deregister(std::string_view name) {
+  std::erase_if(modules, [name](const Module& module) {
+    return module.name_ == name;
+  });
+}
+
 inline safe_ptr<Module> Module::Get(std::string_view name) {
   for (auto& module : modules) {
     if (module.name_ == name) {
@@ -398,56 +595,23 @@ inline safe_ptr<Function> Module::RegisterFunction(std::string_view name, Functi
 
 namespace detail {
 
-template <std::size_t N, typename... Types>
-using nth_parameter_t = std::tuple_element_t<N, std::tuple<Types...>>;
-static_assert(std::is_same_v<void, nth_parameter_t<0, void, bool, int>>);
-static_assert(std::is_same_v<bool, nth_parameter_t<1, void, bool, int>>);
-static_assert(std::is_same_v<int, nth_parameter_t<2, void, bool, int>>);
-
-// ConstructArgumentTuple()
-template <typename... ArgumentTypes, std::size_t... I>
-std::tuple<ArgumentTypes...> ConstructArgumentTupleImpl(std::span<const Value> inputs, std::index_sequence<I...>) {
-  return std::make_tuple(inputs[I].Get<nth_parameter_t<I, ArgumentTypes...>>()...);
-}
-template <typename... ArgumentTypes, typename Indices = std::make_index_sequence<sizeof...(ArgumentTypes)>>
-std::tuple<ArgumentTypes...> ConstructArgumentTuple(std::span<const Value> inputs) {
-  return ConstructArgumentTupleImpl<ArgumentTypes...>(inputs, Indices{});
-}
-
-template <typename... T, std::size_t... I>
-inline void SetFunctionTupleOutputsImpl(std::span<Value> outputs, std::tuple<T...>&& values,
-                                        std::index_sequence<I...>) {
-  assert(outputs.size() == sizeof...(T));
-  ((outputs[I] = std::get<I>(values)), ...);
-}
-template <typename... T, typename Indices = std::make_index_sequence<sizeof...(T)>>
-inline void SetFunctionTupleOutputs(std::span<Value> outputs, std::tuple<T...>&& values) {
-  SetFunctionTupleOutputsImpl(outputs, std::forward<std::tuple<T...>>(values), Indices{});
-}
 
 template <typename T>
-inline void SetFunctionOutputs(std::span<Value> outputs, T&& value) {
-  assert(outputs.size() == 1);
-  outputs[0] = std::move(value);
-}
-
+struct VariableDeclarationsHelper {
+  static void Insert(std::vector<Function::ValueDeclaration>* declarations, std::span<std::string_view> variable_names) {
+    assert(declarations->size() < variable_names.size());
+    declarations->push_back({
+        std::string(variable_names[declarations->size()]),
+        Type::Get<T>()
+    });
+  }
+};
 template <typename... T>
-inline void SetFunctionOutputs(std::span<Value> outputs, std::tuple<T...>&& values) {
-  SetFunctionTupleOutputs(outputs, std::forward<decltype(values)>(values));
-}
-
-
-template <typename... T, std::size_t... I>
-inline std::vector<Function::ValueDeclaration> MakeVariableDeclarationsImpl(std::span<std::string_view> variable_names, std::index_sequence<I...>) {
-  assert(variable_names.size() == sizeof...(T));
-  return {
-    { std::string(variable_names[I]), Type::Get<T>() }...
-  };
-}
-template <typename... T, typename Indices = std::make_index_sequence<sizeof...(T)>>
-inline std::vector<Function::ValueDeclaration> MakeVariableDeclarations(std::span<std::string_view> variable_names) {
-  return MakeVariableDeclarationsImpl<T...>(variable_names, Indices{});
-}
+struct VariableDeclarationsHelper<std::tuple<T...>> {
+  static void Insert(std::vector<Function::ValueDeclaration>* declarations, std::span<std::string_view> variable_names) {
+    ((VariableDeclarationsHelper<T>::Insert(declarations, variable_names)), ...);
+  }
+};
 
 template <typename FunctionType>
 struct FunctionWrapper;
@@ -458,21 +622,25 @@ struct FunctionWrapper<ReturnType (*)(ArgumentTypes...)> {
   using ArgumentTuple = std::tuple<ArgumentTypes...>;
 
   static std::vector<Function::ValueDeclaration> GetInputDeclarations(std::span<std::string_view> input_names) {
-    return detail::MakeVariableDeclarations<ArgumentTypes...>(input_names);
+    std::vector<Function::ValueDeclaration> input_declarations;
+    VariableDeclarationsHelper<ArgumentTuple>::Insert(&input_declarations, input_names);
+    assert(input_declarations.size() == input_names.size());
+    return input_declarations;
   }
 
   static std::vector<Function::ValueDeclaration> GetOutputDeclarations(std::span<std::string_view> output_names) {
-    return detail::MakeVariableDeclarations<ReturnType>(output_names);
+    std::vector<Function::ValueDeclaration> output_declarations;
+    VariableDeclarationsHelper<ReturnType>::Insert(&output_declarations, output_names);
+    assert(output_declarations.size() == output_names.size());
+    return output_declarations;
   }
 
   template <FunctionPointerType FUNCTION>
-  static void Call(std::span<const Value> inputs, std::span<Value> outputs) {
-    assert(inputs.size() == sizeof...(ArgumentTypes));
+  static void Call(ExecutionContext* context) {
     if constexpr (std::is_same_v<ReturnType, void>) {
-      assert(outputs.size() == 0);
-      std::apply(FUNCTION, ConstructArgumentTuple<ArgumentTypes...>(inputs));
+      std::apply(FUNCTION, context->GetValue<ArgumentTuple>(0));
     } else {
-      SetFunctionOutputs(outputs, std::apply(FUNCTION, ConstructArgumentTuple<ArgumentTypes...>(inputs)));
+      context->PushValue(std::apply(FUNCTION, context->GetValue<ArgumentTuple>(0)));
     }
   }
 };
@@ -496,12 +664,6 @@ inline safe_ptr<Function> Module::GetFunction(std::string_view name) {
     }
   }
   return nullptr;
-}
-
-inline std::vector<Value> Module::CallFunction(std::string_view name, std::span<const Value> inputs) {
-  auto function = GetFunction(name);
-  assert(function != nullptr);
-  return function->Call(inputs);
 }
 
 }  // namespace ovis
