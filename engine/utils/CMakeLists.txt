@@ -18,6 +18,7 @@ add_library(
   include/ovis/utils/safe_pointer.hpp src/safe_pointer.cpp
   include/ovis/utils/static_factory.hpp src/static_factory.cpp
   include/ovis/utils/reflection.hpp src/reflection.cpp
+  include/ovis/utils/execution_context.hpp src/execution_context.cpp
 )
 add_library(ovis::utils ALIAS ovis-utils)
 

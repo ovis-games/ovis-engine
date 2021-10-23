@@ -56,3 +56,7 @@ TEST_CASE("Script Function Parsing", "[ovis][core][script]") {
   REQUIRE(debug_info.scope_info[0].variables[0].declaration.name == "Awesome Variable");
   REQUIRE(debug_info.scope_info[0].variables[0].position == 0);
 }
+
+TEST_CASE("Registering script function", "[ovis][core][script]") {
+}
+

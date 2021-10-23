@@ -3,23 +3,11 @@
 #include <vector>
 
 #include <ovis/utils/reflection.hpp>
-#include <ovis/core/script_instruction.hpp>
 
 namespace ovis {
-
 class ScriptExecutionContext {
  public:
   ScriptExecutionContext(std::size_t reserved_stack_size = 100) { stack_.reserve(reserved_stack_size); }
-
-  std::size_t operator()(const script_instructions::FunctionCall& function_call);
-  std::size_t operator()(const script_instructions::PushConstant& push_constant);
-  std::size_t operator()(const script_instructions::PushStackValue& push_stack_value);
-  std::size_t operator()(const script_instructions::AssignConstant& assign_constant);
-  std::size_t operator()(const script_instructions::AssignStackValue& assign_stack_value);
-  std::size_t operator()(const script_instructions::Pop& pop);
-  std::size_t operator()(const script_instructions::Jump& jump);
-  std::size_t operator()(const script_instructions::JumpIfTrue& jump);
-  std::size_t operator()(const script_instructions::JumpIfFalse& jump);
 
  private:
   std::vector<Value> stack_;

@@ -24,6 +24,7 @@ class Type;
 class Value;
 class Function;
 class Module;
+class ExecutionContext;
 
 class Type : public SafelyReferenceable {
   friend class Value;
@@ -98,7 +99,7 @@ class Function : public SafelyReferenceable {
     std::string name;
     safe_ptr<Type> type;
   };
-  using Pointer = void (*)(std::span<const Value> inputs, std::span<Value> outputs);
+  using Pointer = void (*)(ExecutionContext*);
 
   std::string_view name() const { return name_; }
   Pointer pointer() const { return function_pointer_; }
