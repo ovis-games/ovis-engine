@@ -1,4 +1,5 @@
 #include <ovis/core/script_parser.hpp>
+#include <ovis/core/script_function.hpp>
 
 namespace ovis {
 
@@ -10,14 +11,52 @@ ScriptFunctionParser::ScriptFunctionParser(const json& function_definition) {
     });
   } else {
     PushScope();
-    inputs = ParseInputOutputDeclarations(function_definition["inputs"]);
-    outputs = ParseInputOutputDeclarations(function_definition["outputs"]);
+    inputs = ParseInputOutputDeclarations(function_definition["inputs"], "/inputs");
+    outputs = ParseInputOutputDeclarations(function_definition["outputs"], "/outputs");
     ParseActions(function_definition["actions"], "/actions");
     PopScope();
   }
 }
 
-std::vector<Function::ValueDeclaration> ScriptFunctionParser::ParseInputOutputDeclarations(const json& value_declarations) { return {}; }
+std::vector<vm::Function::ValueDeclaration> ScriptFunctionParser::ParseInputOutputDeclarations(
+    const json& value_declarations, std::string path) {
+  if (!value_declarations.is_array()) {
+    errors.push_back({
+        .message = "Value declarations must be an array.",
+        .path = path,
+    });
+    return {};
+  } else {
+    std::vector<vm::Function::ValueDeclaration> declarations;
+    for (const auto& declaration : value_declarations) {
+      const auto parsed_declaration = ParseInputOutputDeclaration(declaration, path);
+      if (parsed_declaration.has_value()) {
+        declarations.push_back(std::move(*parsed_declaration));
+      }
+    }
+    return declarations;
+  }
+}
+
+std::optional<vm::Function::ValueDeclaration> ScriptFunctionParser::ParseInputOutputDeclaration(
+    const json& value_declaration, std::string path) {
+  if (!value_declaration.is_object()) {
+    errors.push_back({
+        .message = "Value declaration must be an object.",
+        .path = path,
+    });
+    return {};
+  } else {
+    const std::string module = value_declaration["module"];
+    const std::string type = value_declaration["type"];
+    const std::string name = value_declaration["name"];
+
+    return vm::Function::ValueDeclaration {
+      .name = name,
+      .type = vm::Module::Get(module)->GetType(type),
+    };
+  }
+}
 
 void ScriptFunctionParser::ParseActions(const json& actions, std::string path) {
   if (!actions.is_array()) {
@@ -54,6 +93,8 @@ void ScriptFunctionParser::ParseAction(const json& action, std::string path) {
     ParseIf(action, path);
   } else if (*type_it == "while") {
     ParseWhile(action, path);
+  } else if (*type_it == "return") {
+    ParseReturn(action, path);
   } else {
     errors.push_back({
         .message = fmt::format("Unknown value for action type: '{}'", *type_it),
@@ -94,12 +135,12 @@ void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::stri
         .message = fmt::format("Function key 'module' must be of type string."),
         .path = path,
     });
-  } else if (safe_ptr<Module> module = Module::Get(static_cast<std::string>(*function_module)); module == nullptr) {
+  } else if (safe_ptr<vm::Module> module = vm::Module::Get(static_cast<std::string>(*function_module)); module == nullptr) {
     errors.push_back({
         .message = fmt::format("Module {} not found.", *function_module),
         .path = path,
     });
-  } else if (safe_ptr<Function> function_reflection = module->GetFunction(static_cast<std::string>(*function_name)); function_reflection == nullptr) {
+  } else if (safe_ptr<vm::Function> function_reflection = module->GetFunction(static_cast<std::string>(*function_name)); function_reflection == nullptr) {
     errors.push_back({
         .message = fmt::format("Function {} not found in module {}.", *function_name, *function_module),
         .path = path,
@@ -149,6 +190,12 @@ void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::stri
       }
     }
 
+    instructions.push_back(vm::instructions::PushStackFrame {});
+    debug_info.instruction_info.push_back({
+      .scope = current_scope_index,
+      .action = path,
+    });
+
     for (const auto& input_declaration : function_reflection->inputs()) {
       if (const auto& input_definition = inputs->find(input_declaration.name); input_definition == inputs->end()) {
         errors.push_back({
@@ -160,25 +207,28 @@ void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::stri
       }
     }
 
-    for (const auto& output : function_reflection->outputs()) {
-      PushNone(path);
-    }
-
-    instructions.push_back(script_instructions::FunctionCall {
+    instructions.push_back(vm::instructions::NativeFunctionCall {
         .function_pointer = function_reflection->pointer(),
-        .input_count = static_cast<int>(function_reflection->inputs().size()),
-        .output_count = static_cast<int>(function_reflection->outputs().size()),
     });
     debug_info.instruction_info.push_back({
       .scope = current_scope_index,
       .action = path,
     });
 
-    for (const auto& output_position : IndexRange(output_positions)) {
-      if (output_position->has_value()) {
-        instructions.push_back(script_instructions::AssignStackValue {
-            .source_position = static_cast<int16_t>(static_cast<int16_t>(output_position.index()) - static_cast<int16_t>(output_positions.size())),
-            .destination_position = static_cast<int16_t>(**output_position),
+    // TODO: Use ranges::reverse
+    for (auto it = output_positions.rbegin(); it != output_positions.rend(); ++it) {
+      const auto& output_position = *it;
+      if (output_position.has_value()) {
+        instructions.push_back(vm::instructions::AssignToParentScope {
+            .position = *output_position,
+        });
+        debug_info.instruction_info.push_back({
+          .scope = current_scope_index,
+          .action = path,
+        });
+      } else {
+        instructions.push_back(vm::instructions::Pop {
+            .count = 1,
         });
         debug_info.instruction_info.push_back({
           .scope = current_scope_index,
@@ -186,10 +236,7 @@ void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::stri
         });
       }
     }
-
-    instructions.push_back(script_instructions::Pop {
-        .count = static_cast<int>(function_reflection->inputs().size() + function_reflection->outputs().size())
-    });
+    instructions.push_back(vm::instructions::PopStackFrame {});
     debug_info.instruction_info.push_back({
       .scope = current_scope_index,
       .action = path,
@@ -210,10 +257,10 @@ void ScriptFunctionParser::ParseIf(const json& action, std::string path) {
         .path = path,
     });
   } else {
-    ParsePush(*condition, path, Type::Get<bool>());
+    ParsePush(*condition, path, vm::Type::Get<bool>());
 
     const std::size_t instruction_count_before = instructions.size();
-    instructions.push_back(script_instructions::JumpIfFalse{});
+    instructions.push_back(vm::instructions::JumpIfFalse{});
     debug_info.instruction_info.push_back({
       .scope = current_scope_index,
       .action = path,
@@ -222,7 +269,7 @@ void ScriptFunctionParser::ParseIf(const json& action, std::string path) {
     const std::size_t instruction_count_after = instructions.size();
 
     assert(instruction_count_after >= instruction_count_before);
-    std::get<script_instructions::JumpIfFalse>(instructions[instruction_count_before]).instruction_offset =
+    std::get<vm::instructions::JumpIfFalse>(instructions[instruction_count_before]).instruction_offset =
         instruction_count_after - instruction_count_before;
   }
 }
@@ -240,16 +287,16 @@ void ScriptFunctionParser::ParseWhile(const json& action, std::string path) {
         .path = path,
     });
   } else {
-    ParsePush(*condition, path, Type::Get<bool>());
+    ParsePush(*condition, path, vm::Type::Get<bool>());
 
     const int instruction_count_before = instructions.size();
-    instructions.push_back(script_instructions::JumpIfFalse{});
+    instructions.push_back(vm::instructions::JumpIfFalse{});
     debug_info.instruction_info.push_back({
       .scope = current_scope_index,
       .action = path,
     });
     ParseActions(*actions, fmt::format("{}/actions", path));
-    instructions.push_back(script_instructions::Jump {
+    instructions.push_back(vm::instructions::Jump {
         .instruction_offset = static_cast<std::ptrdiff_t>(instruction_count_before) - static_cast<std::ptrdiff_t>(instructions.size()),
     });
     debug_info.instruction_info.push_back({
@@ -257,14 +304,44 @@ void ScriptFunctionParser::ParseWhile(const json& action, std::string path) {
       .action = path,
     });
 
-    std::get<script_instructions::JumpIfFalse>(instructions[instruction_count_before]).instruction_offset =
+    std::get<vm::instructions::JumpIfFalse>(instructions[instruction_count_before]).instruction_offset =
         instructions.size() - instruction_count_before;
+  }
+}
+void ScriptFunctionParser::ParseReturn(const json& action, std::string path) {
+  assert(action.is_object()); // Should have already been checked before
+  if (const auto returned_outputs = action.find("outputs"); returned_outputs == action.end()) {
+    if (outputs.size() == 0) {
+    } else {
+      errors.push_back({
+          .message = fmt::format("Return requires key 'outputs' if function has at least one output."),
+          .path = path,
+      });
+    }
+  } else {
+    for (const auto& output : this->outputs) {
+      const auto& returned_output = returned_outputs->find(output.name);
+      if (returned_output == returned_outputs->end()) {
+        errors.push_back({
+            .message = fmt::format("Missing return value for '{}'", output.name),
+            .path = path,
+        });
+        PushNone(path);
+      } else {
+        ParsePush(*returned_output, path, output.type);
+      }
+    }
+    instructions.push_back(vm::instructions::Return {});
+    debug_info.instruction_info.push_back({
+      .scope = current_scope_index,
+      .action = path,
+    });
   }
 }
 
 void ScriptFunctionParser::PushNone(const std::string& path) {
-  instructions.push_back(script_instructions::PushConstant {
-      .value = Value{}
+  instructions.push_back(vm::instructions::PushConstant {
+      .value = vm::Value{}
   });
   debug_info.instruction_info.push_back({
       .scope = current_scope_index,
@@ -272,11 +349,11 @@ void ScriptFunctionParser::PushNone(const std::string& path) {
   });
 }
 
-void ScriptFunctionParser::ParsePush(const json& value_definition, const std::string& path, safe_ptr<Type> required_type) {
+void ScriptFunctionParser::ParsePush(const json& value_definition, const std::string& path, safe_ptr<vm::Type> required_type) {
   auto push = [&](auto value) {
-    const auto input_type = Type::Get<decltype(value)>();
+    const auto input_type = vm::Type::Get<decltype(value)>();
     if (!required_type || required_type == input_type) {
-      instructions.push_back(script_instructions::PushConstant{
+      instructions.push_back(vm::instructions::PushConstant{
           .value = value,
       });
       debug_info.instruction_info.push_back({
@@ -286,7 +363,7 @@ void ScriptFunctionParser::ParsePush(const json& value_definition, const std::st
     } else {
       errors.push_back({
           .message = fmt::format("Invalid input: expected '{}' got '{}'.", required_type->name(),
-                                 input_type ? input_type->name() : "Unknow"),
+                                 input_type ? input_type->name() : "Unknown"),
           .path = path,
       });
     }
@@ -310,7 +387,7 @@ void ScriptFunctionParser::ParsePush(const json& value_definition, const std::st
             .path = path,
         });
       } else {
-        instructions.push_back(script_instructions::PushStackValue{
+        instructions.push_back(vm::instructions::PushStackValue{
             .position = local_variable->position,
         });
         debug_info.instruction_info.push_back({
@@ -347,7 +424,7 @@ void ScriptFunctionParser::ParsePush(const json& value_definition, const std::st
   }
 }
 
-std::optional<int> ScriptFunctionParser::GetOutputVariablePosition(std::string_view name, safe_ptr<Type> type, const std::string& path) {
+std::optional<int> ScriptFunctionParser::GetOutputVariablePosition(std::string_view name, safe_ptr<vm::Type> type, const std::string& path) {
   const auto local_variable = GetLocalVariable(name);
   if (local_variable.has_value()) {
     if (local_variable->declaration.type == type) {

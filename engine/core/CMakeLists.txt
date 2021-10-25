@@ -25,6 +25,7 @@ add_library(
   include/ovis/core/script_function.hpp src/script_function.cpp
   include/ovis/core/script_parser.hpp src/script_parser.cpp
   include/ovis/core/script_instruction.hpp src/script_instruction.cpp
+  include/ovis/core/virtual_machine.hpp src/virtual_machine.cpp
 )
 add_library(ovis::core ALIAS ovis-core)
 
@@ -57,6 +58,7 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_intersection.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scene_object.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/virtual_machine.cpp
   )
 
   target_add_ldoc_test(

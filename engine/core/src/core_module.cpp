@@ -3,7 +3,7 @@
 #include <sol/sol.hpp>
 
 #include <ovis/utils/log.hpp>
-#include <ovis/utils/reflection.hpp>
+#include <ovis/core/visual_script_scene_controller.hpp>
 #include <ovis/core/camera.hpp>
 #include <ovis/core/core_module.hpp>
 #include <ovis/core/event.hpp>
@@ -25,9 +25,9 @@ double Add(double x, double y) {
 }
 
 bool LoadCoreModule() {
-  static safe_ptr<Module> core_module;
+  static safe_ptr<vm::Module> core_module;
   if (core_module == nullptr) {
-    core_module = Module::Register("Core");
+    core_module = vm::Module::Register("Core");
     core_module->RegisterType<double>("Number");
     core_module->RegisterFunction<&Add>("Add", {"x", "y"}, {"result"});
 

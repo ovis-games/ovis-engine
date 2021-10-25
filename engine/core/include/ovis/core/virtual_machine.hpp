@@ -16,9 +16,9 @@
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/range.hpp>
 #include <ovis/utils/safe_pointer.hpp>
-#include <ovis/utils/execution_context.hpp>
 
 namespace ovis {
+namespace vm {
 
 // Forward declarations
 class Type;
@@ -94,6 +94,57 @@ class Value {
   std::any data_;
 };
 
+namespace instructions {
+struct NativeFunctionCall {
+  void (*function_pointer)(ExecutionContext*);
+};
+struct PushConstant {
+  Value value;
+};
+struct PushStackValue {
+  int position;
+};
+struct Assign {
+  int position;
+};
+struct AssignToParentScope {
+  int position;
+};
+struct Pop {
+  int count;
+};
+struct Jump {
+  int instruction_offset;
+};
+struct JumpIfTrue {
+  int instruction_offset;
+};
+struct JumpIfFalse {
+  int instruction_offset;
+};
+struct PushStackFrame {
+};
+struct PopStackFrame {
+};
+struct Return {
+};
+}  // namespace instructions
+
+using Instruction = std::variant<
+  instructions::NativeFunctionCall,
+  instructions::PushConstant,
+  instructions::PushStackValue,
+  instructions::Assign,
+  instructions::AssignToParentScope,
+  instructions::Pop,
+  instructions::Jump,
+  instructions::JumpIfTrue,
+  instructions::JumpIfFalse,
+  instructions::PushStackFrame,
+  instructions::PopStackFrame,
+  instructions::Return
+>;
+
 class ExecutionContext {
  public:
   ExecutionContext(std::size_t reserved_stack_size = 100);
@@ -120,6 +171,19 @@ class ExecutionContext {
   // offsets: (offset_from_top + tuple_size_v<T>, offset_from_top).
   template <typename T> T GetTopValue(std::size_t offset_from_top = 0);
 
+  std::optional<std::ptrdiff_t> operator()(const instructions::NativeFunctionCall& native_function_call);
+  std::optional<std::ptrdiff_t> operator()(const instructions::PushConstant& push_constant);
+  std::optional<std::ptrdiff_t> operator()(const instructions::PushStackValue& push_stack_value);
+  std::optional<std::ptrdiff_t> operator()(const instructions::Assign& assign);
+  std::optional<std::ptrdiff_t> operator()(const instructions::AssignToParentScope& assign_to_parent_scope);
+  std::optional<std::ptrdiff_t> operator()(const instructions::Pop& pop);
+  std::optional<std::ptrdiff_t> operator()(const instructions::Jump& jump);
+  std::optional<std::ptrdiff_t> operator()(const instructions::JumpIfTrue& jump);
+  std::optional<std::ptrdiff_t> operator()(const instructions::JumpIfFalse& jump);
+  std::optional<std::ptrdiff_t> operator()(const instructions::PushStackFrame& push_scope);
+  std::optional<std::ptrdiff_t> operator()(const instructions::PopStackFrame& pop_scope);
+  std::optional<std::ptrdiff_t> operator()(const instructions::Return& jump);
+
   static ExecutionContext* global_context() { return &global; }
 
  private:
@@ -135,45 +199,46 @@ class ExecutionContext {
   static ExecutionContext global;
 };
 
+using FunctionPointer = void (*)(ExecutionContext*);
+
+template <typename... T> struct FunctionResult { using type = std::tuple<T...>; };
+template <typename T> struct FunctionResult <T> { using type = T; };
+template <> struct FunctionResult <> { using type = void; };
+template <typename... T> using FunctionResultType = typename FunctionResult<T...>::type;
+
 class Function : public SafelyReferenceable {
   friend class Module;
-
-  template <typename... T> struct Result { using type = std::tuple<T...>; };
-  template <typename T> struct Result<T> { using type = T; };
-  template <> struct Result<> { using type = void; };
-  template <typename... T> using result_t = typename Result<T...>::type;
 
  public:
   struct ValueDeclaration {
     std::string name;
     safe_ptr<Type> type;
   };
-  using Pointer = void (*)(ExecutionContext*);
 
   std::string_view name() const { return name_; }
-  Pointer pointer() const { return function_pointer_; }
+  FunctionPointer pointer() const { return function_pointer_; }
 
   std::span<const ValueDeclaration> inputs() const { return inputs_; }
   std::optional<std::size_t> GetInputIndex(std::string_view input_name) const;
   std::optional<ValueDeclaration> GetInput(std::string_view input_name) const;
-  std::optional<ValueDeclaration> GetInput(std::size_t input_index) const;
 
+  std::optional<ValueDeclaration> GetInput(std::size_t input_index) const;
   std::span<const ValueDeclaration> outputs() const { return outputs_; }
   std::optional<std::size_t> GetOutputIndex(std::string_view output_name) const;
   std::optional<ValueDeclaration> GetOutput(std::string_view output_name) const;
   std::optional<ValueDeclaration> GetOutput(std::size_t output_index) const;
 
   template <typename... OutputTypes, typename... InputsTypes>
-  result_t<OutputTypes...> Call(InputsTypes&&... inputs);
+  FunctionResultType<OutputTypes...> Call(InputsTypes&&... inputs);
   template <typename... OutputTypes, typename... InputsTypes>
-  result_t<OutputTypes...> Call(ExecutionContext* context, InputsTypes&&... inputs);
+  FunctionResultType<OutputTypes...> Call(ExecutionContext* context, InputsTypes&&... inputs);
 
  private:
-  Function(std::string_view name, Pointer function_pointer, std::vector<ValueDeclaration> inputs,
+  Function(std::string_view name, FunctionPointer function_pointer, std::vector<ValueDeclaration> inputs,
            std::vector<ValueDeclaration> outputs);
 
   std::string name_;
-  Pointer function_pointer_;
+  FunctionPointer function_pointer_;
   std::vector<ValueDeclaration> inputs_;
   std::vector<ValueDeclaration> outputs_;
 };
@@ -193,7 +258,7 @@ class Module : public SafelyReferenceable {
   safe_ptr<Type> GetType(std::string_view name);
 
   // Functions
-  safe_ptr<Function> RegisterFunction(std::string_view name, Function::Pointer function_pointer,
+  safe_ptr<Function> RegisterFunction(std::string_view name, FunctionPointer function_pointer,
                                       std::vector<Function::ValueDeclaration> inputs,
                                       std::vector<Function::ValueDeclaration> outputs);
 
@@ -212,10 +277,12 @@ class Module : public SafelyReferenceable {
 
   static std::vector<Module> modules;
 };
+}  // namespace vm
 }  // namespace ovis
 
 // Implementation
 namespace ovis {
+namespace vm {
 
 // Type
 inline Type::Type(std::string_view name, Type* parent) : name_(name), parent_(parent) {}
@@ -246,9 +313,9 @@ class PropertyCallbacks {};
 
 template <typename T, typename PropertyType, PropertyType T::*PROPERTY>
 struct PropertyCallbacks<PROPERTY> {
-  static Value PropertyGetter(const ovis::Value& object) { return object.Get<T>().*PROPERTY; }
+  static Value PropertyGetter(const ovis::vm::Value& object) { return object.Get<T>().*PROPERTY; }
 
-  static void PropertySetter(ovis::Value* object, const ovis::Value& property_value) {
+  static void PropertySetter(ovis::vm::Value* object, const ovis::vm::Value& property_value) {
     assert(property_value.type() == Type::template Get<PropertyType>());
     object->Get<T>().*PROPERTY = property_value.Get<PropertyType>();
   }
@@ -312,12 +379,12 @@ inline T Value::GetProperty(std::string_view property_name) {
 }
 
 template <typename... OutputTypes, typename... InputTypes>
-inline Function::result_t<OutputTypes...> Function::Call(InputTypes&&... inputs) {
+inline FunctionResultType<OutputTypes...> Function::Call(InputTypes&&... inputs) {
   return Call<OutputTypes...>(ExecutionContext::global_context(), std::forward<InputTypes>(inputs)...);
 }
 
 template <typename... OutputTypes, typename... InputTypes>
-inline Function::result_t<OutputTypes...> Function::Call(ExecutionContext* context, InputTypes&&... inputs) {
+inline FunctionResultType<OutputTypes...> Function::Call(ExecutionContext* context, InputTypes&&... inputs) {
   assert(sizeof...(InputTypes) == inputs_.size());
   // TODO: validate input/output types
   context->PushStackFrame();
@@ -326,7 +393,7 @@ inline Function::result_t<OutputTypes...> Function::Call(ExecutionContext* conte
   if constexpr (sizeof...(OutputTypes) == 0) {
     context->PopStackFrame();
   } else {
-    auto result = context->GetTopValue<result_t<OutputTypes...>>();
+    auto result = context->GetTopValue<FunctionResultType<OutputTypes...>>();
     context->PopStackFrame();
     return result;
   }
@@ -459,6 +526,69 @@ inline T ExecutionContext::GetTopValue(std::size_t offset_from_top) {
   return detail::ValueHelper<T>::GetTop(this, offset_from_top);
 }
 
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::NativeFunctionCall& native_function_call) {
+  native_function_call.function_pointer(this);
+  return 1;
+}
+
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::PushConstant& push_constant) {
+  stack_.push_back(push_constant.value);
+  return 1;
+}
+
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::PushStackValue& push_stack_value) {
+  PushValue(GetValue(push_stack_value.position));
+  return 1;
+}
+
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::Assign& assign_stack_variable) {
+  GetValue(assign_stack_variable.position) = GetTopValue(0);
+  PopValue();
+  return 1;
+}
+
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::AssignToParentScope& assign_to_parent_scope) {
+  assert(stack_frames_.size() > 2);
+  stack_[stack_frames_[stack_frames_.size() - 2].base_position + assign_to_parent_scope.position] = GetTopValue();
+  PopValue();
+  return 1;
+}
+
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::Pop& pop) {
+  PopValue();
+  return 1;
+}
+
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::Jump& jump) {
+  return jump.instruction_offset;
+}
+
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::JumpIfTrue& jump) {
+  const bool condition = GetTopValue<bool>();
+  PopValue();
+  return condition ? jump.instruction_offset : 1;
+}
+
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::JumpIfFalse& jump) {
+  const bool condition = GetTopValue<bool>();
+  PopValue();
+  return condition ? 1 : jump.instruction_offset;
+}
+
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::PushStackFrame& push_scope) {
+  PushStackFrame();
+  return 1;
+}
+
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::PopStackFrame& pop_scope) {
+  PopStackFrame();
+  return 1;
+}
+
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::Return&) {
+  return {};
+}
+
 // Function
 inline std::optional<std::size_t> Function::GetInputIndex(std::string_view input_name) const {
   for (const auto& input : IndexRange(inputs_)) {
@@ -512,7 +642,7 @@ inline std::optional<Function::ValueDeclaration> Function::GetOutput(std::size_t
   }
 }
 
-inline Function::Function(std::string_view name, Pointer function_pointer, std::vector<ValueDeclaration> inputs,
+inline Function::Function(std::string_view name, FunctionPointer function_pointer, std::vector<ValueDeclaration> inputs,
                           std::vector<ValueDeclaration> outputs)
     : name_(name), function_pointer_(function_pointer), inputs_(inputs), outputs_(outputs) {}
 
@@ -582,7 +712,7 @@ inline safe_ptr<Type> Module::GetType(std::string_view name) {
   return nullptr;
 }
 
-inline safe_ptr<Function> Module::RegisterFunction(std::string_view name, Function::Pointer function_pointer,
+inline safe_ptr<Function> Module::RegisterFunction(std::string_view name, FunctionPointer function_pointer,
                                                    std::vector<Function::ValueDeclaration> inputs,
                                                    std::vector<Function::ValueDeclaration> outputs) {
   if (GetFunction(name) != nullptr) {
@@ -666,5 +796,6 @@ inline safe_ptr<Function> Module::GetFunction(std::string_view name) {
   return nullptr;
 }
 
+}  // namespace vm
 }  // namespace ovis
 

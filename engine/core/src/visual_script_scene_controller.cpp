@@ -3,7 +3,6 @@
 #include <ovis/utils/log.hpp>
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/scene.hpp>
-#include <ovis/core/script_error.hpp>
 #include <ovis/core/visual_script_scene_controller.hpp>
 
 namespace ovis {

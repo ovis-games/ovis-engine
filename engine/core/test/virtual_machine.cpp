@@ -1,16 +1,17 @@
 #include <catch2/catch.hpp>
 
-#include <ovis/utils/reflection.hpp>
+#include <ovis/core/virtual_machine.hpp>
 
-ovis::safe_ptr<ovis::Module> RegisterTestModule() {
-  if (ovis::Module::Get("Test") != nullptr) {
-    ovis::Module::Deregister("Test");
+ovis::safe_ptr<ovis::vm::Module> RegisterTestModule() {
+  if (ovis::vm::Module::Get("Test") != nullptr) {
+    ovis::vm::Module::Deregister("Test");
   }
-  return ovis::Module::Register("Test");
+  return ovis::vm::Module::Register("Test");
 }
 
 TEST_CASE("Register Type", "[ovis][utils][reflection]") {
   using namespace ovis;
+  using namespace ovis::vm;
   safe_ptr<Module> test_module = RegisterTestModule();
 
   SECTION("Basic Registration") {
@@ -124,7 +125,7 @@ TEST_CASE("Register Type", "[ovis][utils][reflection]") {
     REQUIRE(foo_function->GetOutput(0)->type == Type::Get<int>());
 
     REQUIRE(foo_function->Call<int>(21, 21) == 42);
-    // REQUIRE(foo_function->Call<int>(1337, 42) == 1379);
+    REQUIRE(foo_function->Call<int>(1337, 42) == 1379);
   }
 
   SECTION("Function with multiple return values") {
