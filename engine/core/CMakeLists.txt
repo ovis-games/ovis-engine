@@ -24,7 +24,6 @@ add_library(
   include/ovis/core/math.hpp src/math.cpp
   include/ovis/core/script_function.hpp src/script_function.cpp
   include/ovis/core/script_parser.hpp src/script_parser.cpp
-  include/ovis/core/script_instruction.hpp src/script_instruction.cpp
   include/ovis/core/virtual_machine.hpp src/virtual_machine.cpp
 )
 add_library(ovis::core ALIAS ovis-core)

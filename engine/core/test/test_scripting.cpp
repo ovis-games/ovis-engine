@@ -1,11 +1,11 @@
+#include <iostream>
+
 #include <catch2/catch.hpp>
 
 #include <ovis/utils/log.hpp>
-#include <ovis/core/script_instruction.hpp>
 #include <ovis/core/core_module.hpp>
 #include <ovis/core/script_function.hpp>
 #include <ovis/core/script_parser.hpp>
-#include <ovis/core/script_function.hpp>
 
 using namespace ovis;
 using namespace ovis::vm;

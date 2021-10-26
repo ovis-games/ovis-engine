@@ -4,7 +4,6 @@
 #include <vector>
 
 #include <ovis/utils/json.hpp>
-#include <ovis/core/script_instruction.hpp>
 #include <ovis/core/virtual_machine.hpp>
 #include <ovis/core/script_function.hpp>
 
