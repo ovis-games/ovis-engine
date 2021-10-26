@@ -1,4 +1,3 @@
-#define private public
 #include <catch2/catch.hpp>
 
 #include <ovis/utils/log.hpp>

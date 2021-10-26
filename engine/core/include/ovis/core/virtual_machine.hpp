@@ -102,25 +102,25 @@ struct PushConstant {
   Value value;
 };
 struct PushStackValue {
-  int position;
+  std::ptrdiff_t position;
 };
 struct Assign {
-  int position;
+  std::ptrdiff_t position;
 };
 struct AssignToParentScope {
-  int position;
+  std::ptrdiff_t position;
 };
 struct Pop {
-  int count;
+  std::ptrdiff_t count;
 };
 struct Jump {
-  int instruction_offset;
+  std::ptrdiff_t instruction_offset;
 };
 struct JumpIfTrue {
-  int instruction_offset;
+  std::ptrdiff_t instruction_offset;
 };
 struct JumpIfFalse {
-  int instruction_offset;
+  std::ptrdiff_t instruction_offset;
 };
 struct PushStackFrame {
 };

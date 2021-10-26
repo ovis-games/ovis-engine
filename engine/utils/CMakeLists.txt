@@ -1,4 +1,3 @@
-
 add_library(
   ovis-utils
   
@@ -98,11 +97,6 @@ if (OVIS_BUILD_TESTS)
     PRIVATE
       catch2
       ovis::utils
-  )
-  target_link_options(
-    ovis-utils-test
-    PRIVATE
-      "SHELL:-s NO_DISABLE_EXCEPTION_CATCHING"
   )
 
   if (OVIS_EMSCRIPTEN)
