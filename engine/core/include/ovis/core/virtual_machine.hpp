@@ -149,8 +149,6 @@ class ExecutionContext {
  public:
   ExecutionContext(std::size_t reserved_stack_size = 100);
 
-  void PushValue(Value value);
-
   // Push an arbitrary value onto the stack. In case T is a tuple, its members are packed onto the stack individually.
   template <typename T> void PushValue(T&& value);
 
@@ -470,13 +468,13 @@ struct ValueHelper<std::tuple<T...>> {
 
 }
 
-inline void ExecutionContext::PushValue(Value value) {
-  stack_.push_back(std::move(value));
-}
-
 template <typename T>
 inline void ExecutionContext::PushValue(T&& value) {
-  detail::ValueHelper<T>::Push(this, std::forward<T>(value));
+  if constexpr (std::is_same_v<std::remove_reference_t<T>, Value>) {
+    stack_.push_back(std::move(value));
+  } else {
+    detail::ValueHelper<T>::Push(this, std::forward<T>(value));
+  }
 }
 
 inline void ExecutionContext::PopValue() {
