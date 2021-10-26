@@ -366,6 +366,7 @@ inline Value Value::GetProperty(std::string_view property_name) {
     }
   }
   assert(false);
+  return {};
 }
 
 template <typename T>
