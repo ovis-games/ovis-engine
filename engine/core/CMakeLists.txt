@@ -95,3 +95,21 @@ if (OVIS_BUILD_TESTS)
     add_test(ovis-core-test ovis-core-test)
   endif ()
 endif ()
+
+if (OVIS_BUILD_BENCHMARKS)
+  add_executable(
+    ovis-core-benchmark
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/bench_scripting.cpp
+  )
+
+  target_link_libraries(
+    ovis-core-benchmark
+    PRIVATE
+      benchmark::benchmark
+      ovis::core
+      Lua
+      sol2_single
+  )
+  target_embed_assets(ovis-core-benchmark)
+endif ()

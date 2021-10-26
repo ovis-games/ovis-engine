@@ -9,3 +9,6 @@ add_subdirectory(stb)
 add_subdirectory(microtar)
 add_subdirectory(box2d)
 add_subdirectory(catch2)
+
+SET(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Don't include testing for google benchmark (requires google test)")
+add_subdirectory(benchmark)

@@ -271,5 +271,7 @@ TEST_CASE("Factorial", "[ovis][core][script]") {
   REQUIRE(factorial.Call<double>(2.0) == 2);
   REQUIRE(factorial.Call<double>(3.0) == 6);
   REQUIRE(factorial.Call<double>(4.0) == 24);
+  REQUIRE(factorial.Call<double>(5.0) == 120);
+  REQUIRE(factorial.Call<double>(18.0) == 6402373705728000); // Max factorial that's still a safe integer
 }
 
