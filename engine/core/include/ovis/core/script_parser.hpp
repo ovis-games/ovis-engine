@@ -24,8 +24,8 @@ class ScriptFunctionParser {
   void ParseWhile(const json& action, std::string path);
   void ParseReturn(const json& action, std::string path);
   void PushNone(const std::string& path);
-  void ParsePush(const json& value_definiion, const std::string& path, safe_ptr<vm::Type> required_type = nullptr);
-  std::optional<int> GetOutputVariablePosition(std::string_view name, safe_ptr<vm::Type> type, const std::string& path);
+  void ParsePush(const json& value_definiion, const std::string& path, safe_ptr<vm::Type> required_type = nullptr, std::size_t stack_frame_offset = 0);
+  std::optional<std::size_t> GetOutputVariablePosition(std::string_view name, safe_ptr<vm::Type> type, const std::string& path);
   std::optional<ScriptFunction::DebugInfo::Scope::Variable> GetLocalVariable(std::string_view name);
   void PushScope();
   void PopScope();

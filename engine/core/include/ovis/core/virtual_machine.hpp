@@ -102,16 +102,15 @@ struct PushConstant {
   Value value;
 };
 struct PushStackValue {
-  std::ptrdiff_t position;
+  std::size_t position;
+  std::size_t stack_frame_offset;
 };
 struct Assign {
-  std::ptrdiff_t position;
-};
-struct AssignToParentScope {
-  std::ptrdiff_t position;
+  std::size_t position;
+  std::size_t stack_frame_offset;
 };
 struct Pop {
-  std::ptrdiff_t count;
+  std::size_t count;
 };
 struct Jump {
   std::ptrdiff_t instruction_offset;
@@ -135,7 +134,6 @@ using Instruction = std::variant<
   instructions::PushConstant,
   instructions::PushStackValue,
   instructions::Assign,
-  instructions::AssignToParentScope,
   instructions::Pop,
   instructions::Jump,
   instructions::JumpIfTrue,
@@ -158,11 +156,11 @@ class ExecutionContext {
   void PushStackFrame();
   void PopStackFrame();
 
-  Value& GetValue(std::size_t position);
+  Value& GetValue(std::size_t position, std::size_t stack_frame_offset = 0);
 
   // Returns an arbitrary value from the stack. In case T is a tuple it will be filled with the values at positions
   // [position, position + tuple_size_v<T>).
-  template <typename T> T GetValue(std::size_t position);
+  template <typename T> T GetValue(std::size_t position, std::size_t stack_frame_offset = 0);
 
   Value& GetTopValue(std::size_t offset_from_top = 0);
   // Returns an arbitrary value from the top of the stack. In case T is a tuple it will be filled with the values at
@@ -173,7 +171,6 @@ class ExecutionContext {
   std::optional<std::ptrdiff_t> operator()(const instructions::PushConstant& push_constant);
   std::optional<std::ptrdiff_t> operator()(const instructions::PushStackValue& push_stack_value);
   std::optional<std::ptrdiff_t> operator()(const instructions::Assign& assign);
-  std::optional<std::ptrdiff_t> operator()(const instructions::AssignToParentScope& assign_to_parent_scope);
   std::optional<std::ptrdiff_t> operator()(const instructions::Pop& pop);
   std::optional<std::ptrdiff_t> operator()(const instructions::Jump& jump);
   std::optional<std::ptrdiff_t> operator()(const instructions::JumpIfTrue& jump);
@@ -417,8 +414,8 @@ struct ValueHelper {
     context->PushValue(Value(std::forward<T>(value)));
   }
 
-  static T Get(ExecutionContext* context, std::size_t position) {
-    return context->GetValue(position).Get<T>();
+  static T Get(ExecutionContext* context, std::size_t position, std::size_t stack_frame_offset) {
+    return context->GetValue(position, stack_frame_offset).Get<T>();
   }
 
   static T GetTop(ExecutionContext* context, std::size_t offset_from_top) {
@@ -441,16 +438,17 @@ struct ValueHelper<std::tuple<T...>> {
   }
 
   template <std::size_t... I>
-  static std::tuple<T...> GetTupleValueImpl(ExecutionContext* context, std::size_t base_position, std::index_sequence<I...>) {
-    return std::make_tuple(context->GetValue<nth_parameter_t<I, T...>>(base_position + I)...);
+  static std::tuple<T...> GetTupleValueImpl(ExecutionContext* context, std::size_t base_position,
+                                            std::size_t stack_frame_offset, std::index_sequence<I...>) {
+    return std::make_tuple(context->GetValue<nth_parameter_t<I, T...>>(base_position + I, stack_frame_offset)...);
   }
   template <typename Indices = std::make_index_sequence<sizeof...(T)>>
-  static std::tuple<T...> GetTupleValue(ExecutionContext* context, std::size_t base_position) {
-    return GetTupleValueImpl(context, base_position, Indices{});
+  static std::tuple<T...> GetTupleValue(ExecutionContext* context, std::size_t base_position, std::size_t stack_frame_offset) {
+    return GetTupleValueImpl(context, base_position, stack_frame_offset, Indices{});
   }
 
-  static std::tuple<T...> Get(ExecutionContext* context, std::size_t position) {
-    return GetTupleValue(context, position);
+  static std::tuple<T...> Get(ExecutionContext* context, std::size_t position, std::size_t stack_frame_offset) {
+    return GetTupleValue(context, position, stack_frame_offset);
   }
 
   template <std::size_t... I>
@@ -471,7 +469,7 @@ struct ValueHelper<std::tuple<T...>> {
 template <typename T>
 inline void ExecutionContext::PushValue(T&& value) {
   if constexpr (std::is_same_v<std::remove_reference_t<T>, Value>) {
-    stack_.push_back(std::move(value));
+    stack_.push_back(value);
   } else {
     detail::ValueHelper<T>::Push(this, std::forward<T>(value));
   }
@@ -501,15 +499,18 @@ inline void ExecutionContext::PopStackFrame() {
   stack_frames_.pop_back();
 }
 
-inline Value& ExecutionContext::GetValue(std::size_t position) {
+inline Value& ExecutionContext::GetValue(std::size_t position, std::size_t stack_frame_offset) {
   assert(stack_frames_.size() > 0);
-  assert(stack_frames_.back().base_position + position < stack_.size());
-  return stack_[stack_frames_.back().base_position + position];
+  assert(stack_frame_offset < stack_frames_.size());
+  const auto& stack_frame = *(stack_frames_.rbegin() + stack_frame_offset);
+  assert(stack_frame.base_position + position < stack_.size());
+  
+  return stack_[stack_frame.base_position + position];
 }
 
 template <typename T>
-inline T ExecutionContext::GetValue(std::size_t position) {
-  return detail::ValueHelper<T>::Get(this, position);
+inline T ExecutionContext::GetValue(std::size_t position, std::size_t stack_frame_offset) {
+  return detail::ValueHelper<T>::Get(this, position, stack_frame_offset);
 }
 
 inline Value& ExecutionContext::GetTopValue(std::size_t offset_from_top) {
@@ -535,19 +536,12 @@ inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instruct
 }
 
 inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::PushStackValue& push_stack_value) {
-  PushValue(GetValue(push_stack_value.position));
+  PushValue(GetValue(push_stack_value.position, push_stack_value.stack_frame_offset));
   return 1;
 }
 
-inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::Assign& assign_stack_variable) {
-  GetValue(assign_stack_variable.position) = GetTopValue(0);
-  PopValue();
-  return 1;
-}
-
-inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::AssignToParentScope& assign_to_parent_scope) {
-  assert(stack_frames_.size() > 2);
-  stack_[stack_frames_[stack_frames_.size() - 2].base_position + assign_to_parent_scope.position] = GetTopValue();
+inline std::optional<std::ptrdiff_t> ExecutionContext::operator()(const instructions::Assign& assign_stack_value) {
+  GetValue(assign_stack_value.position, assign_stack_value.stack_frame_offset) = GetTopValue(0);
   PopValue();
   return 1;
 }

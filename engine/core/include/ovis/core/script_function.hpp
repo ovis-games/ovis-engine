@@ -17,7 +17,7 @@ class ScriptFunction {
     struct Scope {
       struct Variable {
         vm::Function::ValueDeclaration declaration;
-        int position;
+        std::size_t position;
       };
       std::size_t parent_scope;
       std::vector<Variable> variables;

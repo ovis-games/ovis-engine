@@ -18,8 +18,38 @@ namespace ovis {
 
 namespace {
 
+double CreateNumber(double value) {
+  return value;
+}
 double Add(double x, double y) {
   return x + y;
+}
+double Subtract(double x, double y) {
+  return x - y;
+}
+double Multiply(double x, double y) {
+  return x * y;
+}
+double Divide(double x, double y) {
+  return x / y;
+}
+bool IsEqual(double x, double y) {
+  return x == y;
+}
+bool IsNotEqual(double x, double y) {
+  return x != y;
+}
+bool IsGreater(double x, double y) {
+  return x > y;
+}
+bool IsGreaterOrEqual(double x, double y) {
+  return x >= y;
+}
+bool IsLess(double x, double y) {
+  return x < y;
+}
+bool IsLessOrEqual(double x, double y) {
+  return x <= y;
 }
 
 }
@@ -28,8 +58,19 @@ bool LoadCoreModule() {
   static safe_ptr<vm::Module> core_module;
   if (core_module == nullptr) {
     core_module = vm::Module::Register("Core");
+    core_module->RegisterType<bool>("Boolean");
     core_module->RegisterType<double>("Number");
+    core_module->RegisterFunction<&CreateNumber>("Create Number", {"value"}, {"result"});
     core_module->RegisterFunction<&Add>("Add", {"x", "y"}, {"result"});
+    core_module->RegisterFunction<&Subtract>("Subtract", {"x", "y"}, {"result"});
+    core_module->RegisterFunction<&Multiply>("Multiply", {"x", "y"}, {"result"});
+    core_module->RegisterFunction<&Divide>("Divide", {"x", "y"}, {"result"});
+    core_module->RegisterFunction<&IsEqual>("Is equal", {"x", "y"}, {"result"});
+    core_module->RegisterFunction<&IsNotEqual>("Is not equal", {"x", "y"}, {"result"});
+    core_module->RegisterFunction<&IsGreater>("Is greater", {"x", "y"}, {"result"});
+    core_module->RegisterFunction<&IsGreaterOrEqual>("Is greater or equal", {"x", "y"}, {"result"});
+    core_module->RegisterFunction<&IsLess>("Is less", {"x", "y"}, {"result"});
+    core_module->RegisterFunction<&IsLessOrEqual>("Is less or equal", {"x", "y"}, {"result"});
 
     SceneObjectComponent::Register("Transform",
                                    [](SceneObject* object) { return std::make_unique<Transform>(object); });

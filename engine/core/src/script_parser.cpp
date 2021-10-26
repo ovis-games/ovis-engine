@@ -12,6 +12,12 @@ ScriptFunctionParser::ScriptFunctionParser(const json& function_definition) {
   } else {
     PushScope();
     inputs = ParseInputOutputDeclarations(function_definition["inputs"], "/inputs");
+    for (const auto& input : IndexRange(inputs)) {
+      debug_info.scope_info[0].variables.push_back({
+          .declaration = *input,
+          .position = input.index(),
+      });
+    }
     outputs = ParseInputOutputDeclarations(function_definition["outputs"], "/outputs");
     ParseActions(function_definition["actions"], "/actions");
     PopScope();
@@ -166,7 +172,7 @@ void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::stri
         .path = path,
     });
   } else {
-    std::vector<std::optional<int>> output_positions(function_reflection->outputs().size());
+    std::vector<std::optional<std::size_t>> output_positions(function_reflection->outputs().size());
 
     for (const auto& [output_name, local_variable] : outputs->items()) {
       if (!local_variable.is_string()) {
@@ -203,7 +209,7 @@ void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::stri
             .path = path,
         });
       } else {
-        ParsePush(*input_definition, path, input_declaration.type);
+        ParsePush(*input_definition, path, input_declaration.type, 1);
       }
     }
 
@@ -219,8 +225,9 @@ void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::stri
     for (auto it = output_positions.rbegin(); it != output_positions.rend(); ++it) {
       const auto& output_position = *it;
       if (output_position.has_value()) {
-        instructions.push_back(vm::instructions::AssignToParentScope {
+        instructions.push_back(vm::instructions::Assign {
             .position = *output_position,
+            .stack_frame_offset = 1,
         });
         debug_info.instruction_info.push_back({
           .scope = current_scope_index,
@@ -287,9 +294,10 @@ void ScriptFunctionParser::ParseWhile(const json& action, std::string path) {
         .path = path,
     });
   } else {
+    const std::ptrdiff_t instruction_count_before_push = instructions.size();
     ParsePush(*condition, path, vm::Type::Get<bool>());
+    const std::ptrdiff_t instruction_count_after_push = instructions.size();
 
-    const int instruction_count_before = instructions.size();
     instructions.push_back(vm::instructions::JumpIfFalse{});
     debug_info.instruction_info.push_back({
       .scope = current_scope_index,
@@ -297,15 +305,15 @@ void ScriptFunctionParser::ParseWhile(const json& action, std::string path) {
     });
     ParseActions(*actions, fmt::format("{}/actions", path));
     instructions.push_back(vm::instructions::Jump {
-        .instruction_offset = static_cast<std::ptrdiff_t>(instruction_count_before) - static_cast<std::ptrdiff_t>(instructions.size()),
+        .instruction_offset = instruction_count_before_push - static_cast<std::ptrdiff_t>(instructions.size()),
     });
     debug_info.instruction_info.push_back({
       .scope = current_scope_index,
       .action = path,
     });
 
-    std::get<vm::instructions::JumpIfFalse>(instructions[instruction_count_before]).instruction_offset =
-        instructions.size() - instruction_count_before;
+    std::get<vm::instructions::JumpIfFalse>(instructions[instruction_count_after_push]).instruction_offset =
+        instructions.size() - instruction_count_after_push;
   }
 }
 void ScriptFunctionParser::ParseReturn(const json& action, std::string path) {
@@ -349,7 +357,7 @@ void ScriptFunctionParser::PushNone(const std::string& path) {
   });
 }
 
-void ScriptFunctionParser::ParsePush(const json& value_definition, const std::string& path, safe_ptr<vm::Type> required_type) {
+void ScriptFunctionParser::ParsePush(const json& value_definition, const std::string& path, safe_ptr<vm::Type> required_type, std::size_t stack_frame_offset) {
   auto push = [&](auto value) {
     const auto input_type = vm::Type::Get<decltype(value)>();
     if (!required_type || required_type == input_type) {
@@ -389,6 +397,7 @@ void ScriptFunctionParser::ParsePush(const json& value_definition, const std::st
       } else {
         instructions.push_back(vm::instructions::PushStackValue{
             .position = local_variable->position,
+            .stack_frame_offset = stack_frame_offset,
         });
         debug_info.instruction_info.push_back({
             .scope = current_scope_index,
@@ -424,7 +433,7 @@ void ScriptFunctionParser::ParsePush(const json& value_definition, const std::st
   }
 }
 
-std::optional<int> ScriptFunctionParser::GetOutputVariablePosition(std::string_view name, safe_ptr<vm::Type> type, const std::string& path) {
+std::optional<std::size_t> ScriptFunctionParser::GetOutputVariablePosition(std::string_view name, safe_ptr<vm::Type> type, const std::string& path) {
   const auto local_variable = GetLocalVariable(name);
   if (local_variable.has_value()) {
     if (local_variable->declaration.type == type) {
@@ -434,7 +443,7 @@ std::optional<int> ScriptFunctionParser::GetOutputVariablePosition(std::string_v
     }
   } else {
     PushNone(path);
-    const int position = current_scope().position_offset + current_scope().variables.size();
+    const std::size_t position = current_scope().position_offset + current_scope().variables.size();
     current_scope().variables.push_back({
         .declaration = {
           .name = std::string(name),
