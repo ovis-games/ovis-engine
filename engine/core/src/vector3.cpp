@@ -1,5 +1,7 @@
 #include <ovis/core/vector.hpp>
 
+#include <ovis/core/virtual_machine.hpp>
+
 namespace ovis {
 
 void Vector3::RegisterType(sol::table* module) {
@@ -315,7 +317,7 @@ void Vector3::RegisterType(sol::table* module) {
   // clang-format off
 }
 
-// void Vector3::RegisterType(ScriptContext* context) {
+void Vector3::RegisterType(vm::Module* module) {
   // vector3_type["x"] = &Vector3::x;
   // vector3_type["y"] = &Vector3::y;
   // vector3_type["z"] = &Vector3::z;
@@ -328,24 +330,24 @@ void Vector3::RegisterType(sol::table* module) {
   // vector3_type["POSITIVE_Z"] = sol::property(Vector3::PositiveZ);
   // vector3_type["NEGATIVE_Z"] = sol::property(Vector3::NegativeZ);
 
-  // context->RegisterType<Vector3>("Vector3");
-  // context->RegisterConstructor<Vector3, float, float, float>("create_vector3", {"x", "y", "z"}, "vector");
+  module->RegisterType<Vector3>("Vector3");
+  // module->RegisterConstructor<Vector3, float, float, float>("create_vector3", {"x", "y", "z"}, "vector");
   // vector3_type[sol::meta_function::equal_to] = static_cast<bool (*)(const Vector3&, const Vector3&)>(ovis::operator==);
-  // context->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator+)>("vector3_add", {"first vector", "second vector"}, {"vector"});
-  // context->RegisterFunction<static_cast<Vector3 (*)(const Vector3&)>(ovis::operator-)>("vector3_negate", {"vector"}, {"vector"});
-  // context->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator-)>("vector3_subtract", {"first vector", "second vector"}, {"vector"});
-  // context->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator*)>("vector3_multiply", {"first vector", "second vector"}, {"vector"});
-  // context->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, float)>(ovis::operator*)>("vector3_multiply_scalar", {"vector", "scalar"}, {"vector"});
-  // const auto vector3_to_string = [](const Vector3& vector) { return fmt::format("{}", vector); };
-  // context->RegisterFunction<static_cast<std::string(*)(const Vector3&)>(vector3_to_string)>("vector3_to_string", {"vector"}, {"string"});
-  // context->RegisterFunction<&ovis::min<Vector3>>("vector3_min", {"first vector", "second vector"}, {"minimum"});
-  // context->RegisterFunction<&ovis::max<Vector3>>("vector3_max", {"first vector", "second vector"}, {"maximum"});
-  // context->RegisterFunction<&ovis::clamp<Vector3>>("vector3_clamp", {"vector", "min", "max"}, {"clamped vector"});
-  // context->RegisterFunction<&SquaredLength<Vector3>>("vector3_squared_length", {"vector"}, {"squared length"});
-  // context->RegisterFunction<&Length<Vector3>>("vector3_length", {"vector"}, {"length"});
-  // context->RegisterFunction<&Normalize<Vector3>>("vector3_normalize", {"vector"}, {"normalized vector"});
-  // context->RegisterFunction<&Dot<Vector3>>("vector3_dot", {"first vector", "second vector"}, {"dot product"});
-  // context->RegisterFunction<&Cross>("vector3_cross", {"first vector", "second vector"}, {"cross product"});
-// }
+  module->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator+)>("vector3_add", {"first vector", "second vector"}, {"vector"});
+  module->RegisterFunction<static_cast<Vector3 (*)(const Vector3&)>(ovis::operator-)>("vector3_negate", {"vector"}, {"vector"});
+  module->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator-)>("vector3_subtract", {"first vector", "second vector"}, {"vector"});
+  module->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator*)>("vector3_multiply", {"first vector", "second vector"}, {"vector"});
+  module->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, float)>(ovis::operator*)>("vector3_multiply_scalar", {"vector", "scalar"}, {"vector"});
+  const auto vector3_to_string = [](const Vector3& vector) { return fmt::format("{}", vector); };
+  module->RegisterFunction<static_cast<std::string(*)(const Vector3&)>(vector3_to_string)>("vector3_to_string", {"vector"}, {"string"});
+  module->RegisterFunction<&ovis::min<Vector3>>("vector3_min", {"first vector", "second vector"}, {"minimum"});
+  module->RegisterFunction<&ovis::max<Vector3>>("vector3_max", {"first vector", "second vector"}, {"maximum"});
+  module->RegisterFunction<&ovis::clamp<Vector3>>("vector3_clamp", {"vector", "min", "max"}, {"clamped vector"});
+  module->RegisterFunction<&SquaredLength<Vector3>>("vector3_squared_length", {"vector"}, {"squared length"});
+  module->RegisterFunction<&Length<Vector3>>("vector3_length", {"vector"}, {"length"});
+  module->RegisterFunction<&Normalize<Vector3>>("vector3_normalize", {"vector"}, {"normalized vector"});
+  module->RegisterFunction<&Dot<Vector3>>("vector3_dot", {"first vector", "second vector"}, {"dot product"});
+  module->RegisterFunction<&Cross>("vector3_cross", {"first vector", "second vector"}, {"cross product"});
+}
 
 }

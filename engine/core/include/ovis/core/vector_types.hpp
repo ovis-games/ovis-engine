@@ -11,6 +11,10 @@
 
 namespace ovis {
 
+namespace vm {
+class Module;
+}
+
 template <int ELEMENT_COUNT>
 struct VectorTypes;
 
@@ -50,7 +54,7 @@ union alignas(sizeof(float) * 2) Vector2 {
   };
 
   static void RegisterType(sol::table* module);
-  // static void RegisterType(ScriptContext* context);
+  static void RegisterType(vm::Module* module);
 };
 static_assert(sizeof(Vector2) == 8);
 static_assert(std::is_trivially_copyable<Vector2>());
@@ -110,7 +114,7 @@ union alignas(sizeof(float) * 4) Vector3 {
   };
 
   static void RegisterType(sol::table* module);
-  // static void RegisterType(ScriptContext* context);
+  static void RegisterType(vm::Module* module);
 };
 static_assert(sizeof(Vector3) == 16);
 static_assert(std::is_trivially_copyable<Vector3>());

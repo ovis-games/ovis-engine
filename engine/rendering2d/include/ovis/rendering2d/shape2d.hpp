@@ -1,9 +1,11 @@
 #pragma once
 
-#include <ovis/core/color.hpp>
+#include <span>
+
 #include <ovis/core/color.hpp>
 #include <ovis/core/scene_object_component.hpp>
 #include <ovis/core/vector.hpp>
+#include <ovis/core/virtual_machine.hpp>
 #include <ovis/graphics/texture2d.hpp>
 
 namespace ovis {
@@ -52,7 +54,7 @@ class Shape2D : public SceneObjectComponent {
   const json* GetSchema() const override { return &schema; }
 
   static void RegisterType(sol::table* module);
-  static void RegisterType(ScriptContext* context);
+  static void RegisterType(vm::Module* module);
 
  private:
   Color color_ = Color::White();

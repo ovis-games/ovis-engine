@@ -18,8 +18,24 @@ namespace ovis {
 
 namespace {
 
+bool CreateBoolean(bool value) {
+  return value;
+}
+bool Not(bool value) {
+  return !value;
+}
+bool And(bool a, bool b) {
+  return a && b;
+}
+bool Or(bool a, bool b) {
+  return a || b;
+}
+
 double CreateNumber(double value) {
   return value;
+}
+double Negate(double value) {
+  return -value;
 }
 double Add(double x, double y) {
   return x + y;
@@ -58,9 +74,16 @@ bool LoadCoreModule() {
   static safe_ptr<vm::Module> core_module;
   if (core_module == nullptr) {
     core_module = vm::Module::Register("Core");
+
     core_module->RegisterType<bool>("Boolean");
+    core_module->RegisterFunction<&CreateBoolean>("Create Boolean", {"value"}, {"result"});
+    core_module->RegisterFunction<&Not>("Not", {"value"}, {"result"});
+    core_module->RegisterFunction<&And>("And", {"a", "b"}, {"result"});
+    core_module->RegisterFunction<&Or>("Or", {"a", "b"}, {"result"});
+
     core_module->RegisterType<double>("Number");
     core_module->RegisterFunction<&CreateNumber>("Create Number", {"value"}, {"result"});
+    core_module->RegisterFunction<&Negate>("Negate", {"value"}, {"result"});
     core_module->RegisterFunction<&Add>("Add", {"x", "y"}, {"result"});
     core_module->RegisterFunction<&Subtract>("Subtract", {"x", "y"}, {"result"});
     core_module->RegisterFunction<&Multiply>("Multiply", {"x", "y"}, {"result"});
@@ -77,7 +100,7 @@ bool LoadCoreModule() {
     SceneObjectComponent::Register("Camera", [](SceneObject* object) { return std::make_unique<Camera>(object); });
 
 
-    // Vector2::RegisterType(global_script_context());
+    Vector2::RegisterType(core_module.get());
     // Vector3::RegisterType(global_script_context());
     // SceneObject::RegisterType(global_script_context());
     // Scene::RegisterType(global_script_context());

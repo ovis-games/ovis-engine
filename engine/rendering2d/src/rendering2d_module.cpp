@@ -20,18 +20,18 @@ int LoadRendering2DModule(lua_State* l) {
 }
 
 bool LoadRendering2DModule() {
-  static bool module_loaded = false;
-  if (!module_loaded) {
+  static safe_ptr<vm::Module> rendering2d_module;
+  if (!rendering2d_module) {
     LoadCoreModule();
     LoadRenderingModule();
+    rendering2d_module = vm::Module::Register("Rendering2D");
 
     SceneObjectComponent::Register("Shape2D", [](SceneObject* object) { return std::make_unique<Shape2D>(object); });
     RenderPass::Register("Renderer2D", []() { return std::make_unique<Renderer2D>(); });
 
-    Shape2D::RegisterType(global_script_context());
+    Shape2D::RegisterType(rendering2d_module.get());
 
     lua.require("ovis.rendering2d", &LoadRendering2DModule);
-    module_loaded = true;
   }
 
   return true;
