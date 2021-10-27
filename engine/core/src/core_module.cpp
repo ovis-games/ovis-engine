@@ -1,9 +1,9 @@
 #include "ovis/core/math_operations.hpp"
+
 #include <middleclass.hpp>
 #include <sol/sol.hpp>
 
 #include <ovis/utils/log.hpp>
-#include <ovis/core/visual_script_scene_controller.hpp>
 #include <ovis/core/camera.hpp>
 #include <ovis/core/core_module.hpp>
 #include <ovis/core/event.hpp>
@@ -13,6 +13,8 @@
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_object_component.hpp>
 #include <ovis/core/transform.hpp>
+#include <ovis/core/virtual_machine.hpp>
+#include <ovis/core/visual_script_scene_controller.hpp>
 
 namespace ovis {
 
@@ -75,13 +77,18 @@ bool LoadCoreModule() {
   if (core_module == nullptr) {
     core_module = vm::Module::Register("Core");
 
-    core_module->RegisterType<bool>("Boolean");
+    auto boolean_type = core_module->RegisterType<bool>("Boolean");
+    assert(boolean_type != nullptr);
+
     core_module->RegisterFunction<&CreateBoolean>("Create Boolean", {"value"}, {"result"});
     core_module->RegisterFunction<&Not>("Not", {"value"}, {"result"});
     core_module->RegisterFunction<&And>("And", {"a", "b"}, {"result"});
     core_module->RegisterFunction<&Or>("Or", {"a", "b"}, {"result"});
 
-    core_module->RegisterType<double>("Number");
+    auto number_type = core_module->RegisterType<double>("Number");
+    assert(number_type != nullptr);
+    assert(vm::Type::Get<double>() != nullptr);
+
     core_module->RegisterFunction<&CreateNumber>("Create Number", {"value"}, {"result"});
     core_module->RegisterFunction<&Negate>("Negate", {"value"}, {"result"});
     core_module->RegisterFunction<&Add>("Add", {"x", "y"}, {"result"});

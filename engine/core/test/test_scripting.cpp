@@ -74,8 +74,14 @@ TEST_CASE("Simple return", "[ovis][core][script]") {
     }
   )");
   LoadCoreModule();
+  REQUIRE(vm::Module::Get("Core") != nullptr);
+  REQUIRE(vm::Module::Get("Core")->GetType("Number") != nullptr);
+  REQUIRE(vm::Type::Get<double>() != nullptr);
 
   ScriptFunctionParser parser(return_10);
+  for (const auto& error : parser.errors) {
+    std::cout << error.message;
+  }
   REQUIRE(parser.errors.size() == 0);
   REQUIRE(parser.inputs.size() == 0);
   REQUIRE(parser.outputs.size() == 1);

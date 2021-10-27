@@ -19,11 +19,11 @@ class SafelyReferenceable {
 
  protected:
   inline SafelyReferenceable();
-  inline SafelyReferenceable(const SafelyReferenceable& other);
+  SafelyReferenceable(const SafelyReferenceable& other) = delete;
   inline SafelyReferenceable(SafelyReferenceable&& other);
   inline ~SafelyReferenceable();
 
-  inline SafelyReferenceable& operator=(const SafelyReferenceable& other);
+  SafelyReferenceable& operator=(const SafelyReferenceable& other) = delete;
   inline SafelyReferenceable& operator=(SafelyReferenceable&& other);
 
  private:
@@ -151,7 +151,7 @@ template <typename T>
 safe_ptr(T* pointer) -> safe_ptr<T>;
 
 inline SafelyReferenceable::SafelyReferenceable() {}
-inline SafelyReferenceable::SafelyReferenceable(const SafelyReferenceable& other) {}
+// inline SafelyReferenceable::SafelyReferenceable(const SafelyReferenceable& other) {}
 inline SafelyReferenceable::SafelyReferenceable(SafelyReferenceable&& other) {
   std::swap(references_, other.references_);
   for (safe_ptr_base* reference : references_) {
@@ -164,9 +164,9 @@ inline SafelyReferenceable::~SafelyReferenceable() {
   }
 }
 
-inline SafelyReferenceable& SafelyReferenceable::operator=(const SafelyReferenceable& other) {
-  return *this;
-}
+// inline SafelyReferenceable& SafelyReferenceable::operator=(const SafelyReferenceable& other) {
+//   return *this;
+// }
 inline SafelyReferenceable& SafelyReferenceable::operator=(SafelyReferenceable&& other) {
   for (safe_ptr_base* reference : other.references_) {
     reference->pointer_ = this;
