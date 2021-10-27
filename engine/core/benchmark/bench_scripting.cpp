@@ -139,6 +139,46 @@ const std::string factorial_lua = R"(
     end
 )";
 
+double CallMe(double value1, double value2) {
+  return value1 * value2;
+}
+
+double __attribute__ ((noinline)) CallMeNoInline(double value1, double value2) {
+  return value1 * value2;
+}
+
+static void BM_FunctionCallCPP(benchmark::State& state) {
+  for (auto _ : state) {
+    benchmark::DoNotOptimize(CallMeNoInline(3.0, 4.0));
+  }
+}
+
+static void BM_FunctionCallVM(benchmark::State& state) {
+  ovis::LoadCoreModule();
+  auto module = ovis::vm::Module::Get("Benchmark");
+  if (module == nullptr) {
+    module = ovis::vm::Module::Register("Benchmark");
+  }
+  auto call_me = module->GetFunction("Call Me");
+  if (call_me == nullptr) {
+    call_me = module->RegisterFunction<&CallMe>("Call Me", { "value", "value2" }, { "result" });
+  }
+
+  for (auto _ : state) {
+    benchmark::DoNotOptimize(call_me->Call<double>(3.0, 4.0));
+  }
+}
+
+static void BM_FunctionCallLua(benchmark::State& state) {
+  sol::state lua;
+  lua["CallMe"] = &CallMe;
+  auto call_me = lua["CallMe"];
+
+  for (auto _ : state) {
+    benchmark::DoNotOptimize(call_me(3.0, 4.0));
+  }
+}
+
 static void BM_ParseFactorialFunctionVM(benchmark::State& state) {
   ovis::LoadCoreModule();
 
@@ -191,6 +231,9 @@ static void BM_CalculateFactorialLua(benchmark::State& state) {
   }
 }
 
+BENCHMARK(BM_FunctionCallCPP);
+BENCHMARK(BM_FunctionCallVM);
+BENCHMARK(BM_FunctionCallLua);
 BENCHMARK(BM_ParseFactorialFunctionVM);
 BENCHMARK(BM_ParseFactorialFunctionLua);
 BENCHMARK(BM_CalculateFactorialCPP)->Range(1, 18);
