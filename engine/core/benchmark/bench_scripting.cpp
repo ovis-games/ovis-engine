@@ -139,45 +139,120 @@ const std::string factorial_lua = R"(
     end
 )";
 
-double CallMe(double value1, double value2) {
-  return value1 * value2;
+template <typename... T>
+double Product(T... values) {
+  static_assert((... && std::is_same_v<T, double>));
+  return (values * ... * 1.0);
 }
 
-double __attribute__ ((noinline)) CallMeNoInline(double value1, double value2) {
-  return value1 * value2;
+template <typename... T>
+double __attribute__((noinline)) ProductNoInline(T... values) {
+  static_assert((... && std::is_same_v<T, double>));
+  return (values * ... * 1.0);
 }
 
-static void BM_FunctionCallCPP(benchmark::State& state) {
+template <int... Values>
+void BM_FunctionCallCPP(benchmark::State& state) {
   for (auto _ : state) {
-    benchmark::DoNotOptimize(CallMeNoInline(3.0, 4.0));
+    benchmark::DoNotOptimize(ProductNoInline(static_cast<double>(Values)...));
   }
 }
+auto BM_FunctionCallCPP0 = &BM_FunctionCallCPP<>;
+auto BM_FunctionCallCPP1 = &BM_FunctionCallCPP<1>;
+auto BM_FunctionCallCPP2 = &BM_FunctionCallCPP<1, 2>;
+auto BM_FunctionCallCPP3 = &BM_FunctionCallCPP<1, 2, 3>;
+auto BM_FunctionCallCPP4 = &BM_FunctionCallCPP<1, 2, 3, 4>;
+auto BM_FunctionCallCPP5 = &BM_FunctionCallCPP<1, 2, 3, 4, 5>;
+auto BM_FunctionCallCPP6 = &BM_FunctionCallCPP<1, 2, 3, 4, 5, 6>;
+auto BM_FunctionCallCPP7 = &BM_FunctionCallCPP<1, 2, 3, 4, 5, 6, 7>;
+auto BM_FunctionCallCPP8 = &BM_FunctionCallCPP<1, 2, 3, 4, 5, 6, 7, 8>;
+auto BM_FunctionCallCPP9 = &BM_FunctionCallCPP<1, 2, 3, 4, 5, 6, 7, 8, 9>;
+auto BM_FunctionCallCPP10 = &BM_FunctionCallCPP<1, 2, 3, 4, 5, 6, 7, 8, 9, 10>;
+BENCHMARK(BM_FunctionCallCPP0);
+BENCHMARK(BM_FunctionCallCPP1);
+BENCHMARK(BM_FunctionCallCPP2);
+BENCHMARK(BM_FunctionCallCPP3);
+BENCHMARK(BM_FunctionCallCPP4);
+BENCHMARK(BM_FunctionCallCPP5);
+BENCHMARK(BM_FunctionCallCPP6);
+BENCHMARK(BM_FunctionCallCPP7);
+BENCHMARK(BM_FunctionCallCPP8);
+BENCHMARK(BM_FunctionCallCPP9);
+BENCHMARK(BM_FunctionCallCPP10);
 
+template <int... Values>
 static void BM_FunctionCallVM(benchmark::State& state) {
   ovis::LoadCoreModule();
   auto module = ovis::vm::Module::Get("Benchmark");
   if (module == nullptr) {
     module = ovis::vm::Module::Register("Benchmark");
   }
-  auto call_me = module->GetFunction("Call Me");
-  if (call_me == nullptr) {
-    call_me = module->RegisterFunction<&CallMe>("Call Me", { "value", "value2" }, { "result" });
+  const std::string function_name = fmt::format("Product{}", sizeof...(Values));
+  auto product = module->GetFunction(function_name);
+  if (product == nullptr) {
+    std::vector<std::string_view> parameter_names(sizeof...(Values), "");
+    product = module->RegisterFunction<&Product<decltype(static_cast<double>(Values))...>>(function_name, parameter_names, { "result" });
   }
 
   for (auto _ : state) {
-    benchmark::DoNotOptimize(call_me->Call<double>(3.0, 4.0));
+    benchmark::DoNotOptimize(product->Call<double>(static_cast<double>(Values)...));
   }
 }
+auto BM_FunctionCallVM0 = &BM_FunctionCallVM<>;
+auto BM_FunctionCallVM1 = &BM_FunctionCallVM<1>;
+auto BM_FunctionCallVM2 = &BM_FunctionCallVM<1, 2>;
+auto BM_FunctionCallVM3 = &BM_FunctionCallVM<1, 2, 3>;
+auto BM_FunctionCallVM4 = &BM_FunctionCallVM<1, 2, 3, 4>;
+auto BM_FunctionCallVM5 = &BM_FunctionCallVM<1, 2, 3, 4, 5>;
+auto BM_FunctionCallVM6 = &BM_FunctionCallVM<1, 2, 3, 4, 5, 6>;
+auto BM_FunctionCallVM7 = &BM_FunctionCallVM<1, 2, 3, 4, 5, 6, 7>;
+auto BM_FunctionCallVM8 = &BM_FunctionCallVM<1, 2, 3, 4, 5, 6, 7, 8>;
+auto BM_FunctionCallVM9 = &BM_FunctionCallVM<1, 2, 3, 4, 5, 6, 7, 8, 9>;
+auto BM_FunctionCallVM10 = &BM_FunctionCallVM<1, 2, 3, 4, 5, 6, 7, 8, 9, 10>;
+BENCHMARK(BM_FunctionCallVM0);
+BENCHMARK(BM_FunctionCallVM1);
+BENCHMARK(BM_FunctionCallVM2);
+BENCHMARK(BM_FunctionCallVM3);
+BENCHMARK(BM_FunctionCallVM4);
+BENCHMARK(BM_FunctionCallVM5);
+BENCHMARK(BM_FunctionCallVM6);
+BENCHMARK(BM_FunctionCallVM7);
+BENCHMARK(BM_FunctionCallVM8);
+BENCHMARK(BM_FunctionCallVM9);
+BENCHMARK(BM_FunctionCallVM10);
 
+template <int... Values>
 static void BM_FunctionCallLua(benchmark::State& state) {
   sol::state lua;
-  lua["CallMe"] = &CallMe;
-  auto call_me = lua["CallMe"];
+  lua["Product"] = &Product<decltype(static_cast<double>(Values))...>;
+  auto product = lua["Product"];
 
   for (auto _ : state) {
-    benchmark::DoNotOptimize(call_me(3.0, 4.0));
+    benchmark::DoNotOptimize(product(static_cast<double>(Values)...));
   }
 }
+auto BM_FunctionCallLua0 = &BM_FunctionCallLua<>;
+auto BM_FunctionCallLua1 = &BM_FunctionCallLua<1>;
+auto BM_FunctionCallLua2 = &BM_FunctionCallLua<1, 2>;
+auto BM_FunctionCallLua3 = &BM_FunctionCallLua<1, 2, 3>;
+auto BM_FunctionCallLua4 = &BM_FunctionCallLua<1, 2, 3, 4>;
+auto BM_FunctionCallLua5 = &BM_FunctionCallLua<1, 2, 3, 4, 5>;
+auto BM_FunctionCallLua6 = &BM_FunctionCallLua<1, 2, 3, 4, 5, 6>;
+auto BM_FunctionCallLua7 = &BM_FunctionCallLua<1, 2, 3, 4, 5, 6, 7>;
+auto BM_FunctionCallLua8 = &BM_FunctionCallLua<1, 2, 3, 4, 5, 6, 7, 8>;
+auto BM_FunctionCallLua9 = &BM_FunctionCallLua<1, 2, 3, 4, 5, 6, 7, 8, 9>;
+auto BM_FunctionCallLua10 = &BM_FunctionCallLua<1, 2, 3, 4, 5, 6, 7, 8, 9, 10>;
+BENCHMARK(BM_FunctionCallLua0);
+BENCHMARK(BM_FunctionCallLua1);
+BENCHMARK(BM_FunctionCallLua2);
+BENCHMARK(BM_FunctionCallLua3);
+BENCHMARK(BM_FunctionCallLua4);
+BENCHMARK(BM_FunctionCallLua5);
+BENCHMARK(BM_FunctionCallLua6);
+BENCHMARK(BM_FunctionCallLua7);
+BENCHMARK(BM_FunctionCallLua8);
+BENCHMARK(BM_FunctionCallLua9);
+BENCHMARK(BM_FunctionCallLua10);
 
 static void BM_ParseFactorialFunctionVM(benchmark::State& state) {
   ovis::LoadCoreModule();
@@ -231,9 +306,6 @@ static void BM_CalculateFactorialLua(benchmark::State& state) {
   }
 }
 
-BENCHMARK(BM_FunctionCallCPP);
-BENCHMARK(BM_FunctionCallVM);
-BENCHMARK(BM_FunctionCallLua);
 BENCHMARK(BM_ParseFactorialFunctionVM);
 BENCHMARK(BM_ParseFactorialFunctionLua);
 BENCHMARK(BM_CalculateFactorialCPP)->Range(1, 18);
