@@ -39,12 +39,12 @@ val GetTypeInfo(safe_ptr<vm::Type> type) {
   return type_info;
 }
 
-// val GetDeclarationInfo(const vm::Function::ValueDeclaration& declaration) {
-//   val declaration_info = val::object();
-//   type_info.set("name", val(declaration->name);
-//   type_info.set("type", GetTypeInfo(declaration.type))
-//   return type_info;
-// }
+val GetDeclarationInfo(const vm::Function::ValueDeclaration& declaration) {
+  val declaration_info = val::object();
+  declaration_info.set("name", val(declaration.name));
+  declaration_info.set("type", GetTypeInfo(declaration.type));
+  return declaration_info ;
+}
 
 emscripten::val GetFunctionInfo(const vm::Function& function) {
   emscripten::val function_info = emscripten::val::object();
@@ -52,15 +52,15 @@ emscripten::val GetFunctionInfo(const vm::Function& function) {
   function_info.set("text", val(std::string(function.text())));
   // function_info.set("description", val(function->description));
   
-  val inputs = val::object();
+  val inputs = val::array();
   for (const auto& input : function.inputs()) {
-    inputs.set(input.name, GetTypeInfo(input.type));
+    inputs.call<void>("push", GetDeclarationInfo(input));
   }
   function_info.set("inputs", inputs);
 
-  val outputs = val::object();
+  val outputs = val::array();
   for (const auto& output : function.outputs()) {
-    outputs.set(output.name, GetTypeInfo(output.type));
+    outputs.call<void>("push", GetDeclarationInfo(output));
   }
   function_info.set("outputs", outputs);
 
@@ -79,23 +79,16 @@ emscripten::val GetFunctions(const vm::Module& module) {
 
 emscripten::val GetTypeInfo(const vm::Type& type) {
   emscripten::val type_info = emscripten::val::object();
-  // if (type->base_type_id != SCRIPT_TYPE_UNKNOWN) {
-  //   const auto base_type = global_script_context()->GetType(type->base_type_id);
-  //   type_info.set("base", emscripten::val(base_type->name));
-  // }
 
   return type_info;
 }
 
-emscripten::val GetTypes() {
+emscripten::val GetTypes(const vm::Module& module) {
   val types = emscripten::val::object();
 
-  // for (const auto& type_name : global_script_context()->type_names()) {
-  //   const auto type = GetTypeInfo(type_name);
-  //   if (type != val::null()) {
-  //     types.set(type_name, type_name);
-  //   }
-  // }
+  for (const auto& type : module.types()) {
+    types.set(std::string(type.name()), GetTypeInfo(type));
+  }
 
   return types;
 }
@@ -104,7 +97,7 @@ val GetModuleInfo(const vm::Module& module) {
   val module_info = val::object();
 
   module_info.set("functions", GetFunctions(module));
-  // doc.set("types", GetTypes());
+  module_info.set("types", GetTypes(module));
 
   return module_info;
 }
