@@ -745,6 +745,11 @@ struct VariableDeclarationsHelper {
     });
   }
 };
+template <>
+struct VariableDeclarationsHelper<void> {
+  static void Insert(std::vector<Function::ValueDeclaration>* declarations, std::span<std::string_view> variable_names) {
+  }
+};
 template <typename... T>
 struct VariableDeclarationsHelper<std::tuple<T...>> {
   static void Insert(std::vector<Function::ValueDeclaration>* declarations, std::span<std::string_view> variable_names) {
