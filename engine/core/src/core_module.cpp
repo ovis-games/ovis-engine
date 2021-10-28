@@ -70,6 +70,13 @@ bool IsLessOrEqual(double x, double y) {
   return x <= y;
 }
 
+std::string CreateString(std::string value) {
+  return std::move(value);
+}
+void LogText(std::string text) {
+  LogI("{}", text);
+}
+
 }
 
 bool LoadCoreModule() {
@@ -102,6 +109,10 @@ bool LoadCoreModule() {
     core_module->RegisterFunction<&IsGreaterOrEqual>("Is greater or equal", {"x", "y"}, {"result"});
     core_module->RegisterFunction<&IsLess>("Is less", {"x", "y"}, {"result"});
     core_module->RegisterFunction<&IsLessOrEqual>("Is less or equal", {"x", "y"}, {"result"});
+
+    auto string_type = core_module->RegisterType<std::string>("String");
+    core_module->RegisterFunction<&CreateString>("Create String", {"value"}, {"result"});
+    core_module->RegisterFunction<&LogText>("Log", {"text"}, {});
 
     SceneObjectComponent::Register("Transform",
                                    [](SceneObject* object) { return std::make_unique<Transform>(object); });
