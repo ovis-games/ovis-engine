@@ -14,6 +14,10 @@ TEST_CASE("Register Type", "[ovis][utils][reflection]") {
   using namespace ovis::vm;
   safe_ptr<Module> test_module = RegisterTestModule();
 
+  SECTION("Check Module Registration") {
+    REQUIRE(test_module->name() == "Test");
+  }
+
   SECTION("Basic Registration") {
     struct Foo {};
 

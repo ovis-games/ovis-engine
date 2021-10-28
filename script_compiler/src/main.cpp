@@ -7,7 +7,11 @@
 #endif
 
 #include <ovis/utils/log.hpp>
+#include <ovis/core/core_module.hpp>
 #include <ovis/core/asset_library.hpp>
+#include <ovis/core/virtual_machine.hpp>
+#include <ovis/core/script_function.hpp>
+#include <ovis/core/script_parser.hpp>
 #include <ovis/rendering/clear_pass.hpp>
 #include <ovis/application/application.hpp>
 #include <ovis/application/window.hpp>
@@ -23,56 +27,62 @@ void SetLogCallback(emscripten::val callback) {
   log_callback = callback;
 }
 
-emscripten::val GetFunctionInfo(const std::string& function_identifier) {
-  const ScriptFunction* function = global_script_context()->GetFunction(function_identifier);
-  if (function == nullptr) {
-    return emscripten::val::null();
+val GetTypeInfo(safe_ptr<vm::Type> type) {
+  if (type == nullptr) {
+    return val::null();
   }
 
+  val type_info = val::object();
+  type_info.set("name", val(std::string(type->name())));
+  assert(type->module() != nullptr);
+  type_info.set("module", val(std::string(type->module()->name())));
+  return type_info;
+}
+
+// val GetDeclarationInfo(const vm::Function::ValueDeclaration& declaration) {
+//   val declaration_info = val::object();
+//   type_info.set("name", val(declaration->name);
+//   type_info.set("type", GetTypeInfo(declaration.type))
+//   return type_info;
+// }
+
+emscripten::val GetFunctionInfo(const vm::Function& function) {
   emscripten::val function_info = emscripten::val::object();
-  function_info.set("text", val(function->text));
-  function_info.set("description", val(function->description));
+  function_info.set("name", val(std::string(function.name())));
+  function_info.set("text", val(std::string(function.text())));
+  // function_info.set("description", val(function->description));
   
   val inputs = val::object();
-  for (const auto& input : function->inputs) {
-    inputs.set(input.identifier, val(global_script_context()->GetType(input.type)->name));
+  for (const auto& input : function.inputs()) {
+    inputs.set(input.name, GetTypeInfo(input.type));
   }
   function_info.set("inputs", inputs);
 
   val outputs = val::object();
-  for (const auto& output : function->outputs) {
-    outputs.set(output.identifier, val(global_script_context()->GetType(output.type)->name));
+  for (const auto& output : function.outputs()) {
+    outputs.set(output.name, GetTypeInfo(output.type));
   }
   function_info.set("outputs", outputs);
 
   return function_info;
 }
 
-emscripten::val GetFunctions() {
+emscripten::val GetFunctions(const vm::Module& module) {
   val functions = emscripten::val::object();
 
-  for (const auto& function_identifier : global_script_context()->function_identifiers()) {
-    const auto function = GetFunctionInfo(function_identifier);
-    if (function != val::null()) {
-      functions.set(function_identifier, function);
-    }
+  for (const auto& function : module.functions()) {
+    functions.set(std::string(function.name()), GetFunctionInfo(function));
   }
 
   return functions;
 }
 
-emscripten::val GetTypeInfo(const std::string& type_name) {
-  const auto type = global_script_context()->GetType(type_name);
-
-  if (type == nullptr) {
-    return emscripten::val::null();
-  }
-
+emscripten::val GetTypeInfo(const vm::Type& type) {
   emscripten::val type_info = emscripten::val::object();
-  if (type->base_type_id != SCRIPT_TYPE_UNKNOWN) {
-    const auto base_type = global_script_context()->GetType(type->base_type_id);
-    type_info.set("base", emscripten::val(base_type->name));
-  }
+  // if (type->base_type_id != SCRIPT_TYPE_UNKNOWN) {
+  //   const auto base_type = global_script_context()->GetType(type->base_type_id);
+  //   type_info.set("base", emscripten::val(base_type->name));
+  // }
 
   return type_info;
 }
@@ -80,40 +90,57 @@ emscripten::val GetTypeInfo(const std::string& type_name) {
 emscripten::val GetTypes() {
   val types = emscripten::val::object();
 
-  for (const auto& type_name : global_script_context()->type_names()) {
-    const auto type = GetTypeInfo(type_name);
-    if (type != val::null()) {
-      types.set(type_name, type_name);
-    }
-  }
+  // for (const auto& type_name : global_script_context()->type_names()) {
+  //   const auto type = GetTypeInfo(type_name);
+  //   if (type != val::null()) {
+  //     types.set(type_name, type_name);
+  //   }
+  // }
 
   return types;
 }
 
-emscripten::val GetDocumentation() {
-  val doc = val::object();
-  doc.set("functions", GetFunctions());
-  doc.set("types", GetTypes());
-  return doc;
+val GetModuleInfo(const vm::Module& module) {
+  val module_info = val::object();
 
+  module_info.set("functions", GetFunctions(module));
+  // doc.set("types", GetTypes());
+
+  return module_info;
 }
 
-std::optional<ScriptChunk> chunk;
+val GetModules() {
+  val modules = val::object();
+  for (const auto& module : vm::Module::registered_modules()) {
+    modules.set(std::string(module.name()), GetModuleInfo(module));
+  }
+  return modules;
+}
+
+emscripten::val GetDocumentation() {
+  val doc = val::object();
+
+  doc.set("modules", GetModules());
+  // doc.set("types", GetTypes());
+
+  return doc;
+}
+
+std::optional<ScriptFunction> script_function;
 val SetScript(const std::string& script) {
-  chunk.reset();
+  ScriptFunctionParser parser(json::parse(script));
 
   val result = val::object();
-  auto chunk_or_error = ScriptChunk::Load(global_script_context(), json::parse(script));
-  if (std::holds_alternative<ScriptError>(chunk_or_error)) {
-    const ScriptError& error = std::get<ScriptError>(chunk_or_error);
+  val errors = val::array();
+  for (const auto& error : parser.errors) {
     val result_error = val::object();
-    // TODO: temporary hackfix, use the json path as action reference
-    result_error.set("action", val("/actions" + error.action.string));
+    result_error.set("path", val(error.path));
     result_error.set("message", val(error.message));
-    result.set("error", result_error);
-  } else {
-    chunk = std::move(std::get<ScriptChunk>(chunk_or_error));
-    result.set("instructions", val(chunk->GetInstructionsAsText()));
+    errors.call<void>("push", result_error);
+  }
+  result.set("errors", errors);
+  if (parser.errors.size() == 0) {
+    script_function.emplace(parser);
   }
 
   return result;
@@ -122,29 +149,29 @@ val SetScript(const std::string& script) {
 val RunScript() {
   val result = val::object();
 
-  if (!chunk.has_value()) {
+  if (!script_function.has_value()) {
     val result_error = val::object();
     result_error.set("message", "Script has errors");
     result.set("error", result_error);
   } else {
-    const auto function_result = chunk->Call({});
-    if (std::holds_alternative<ScriptError>(function_result)) {
-      const ScriptError& error = std::get<ScriptError>(function_result);
-      val result_error = val::object();
-      // TODO: temporary hackfix, use the json path as action reference
-      result_error.set("action", val("/actions" + error.action.string));
-      result_error.set("message", val(error.message));
-      result.set("error", result_error);
-      global_script_context()->PrintDebugInfo();
-    }
+    script_function->Call();
+    // const auto function_result = chunk->Call({});
+    // if (std::holds_alternative<ScriptError>(function_result)) {
+    //   const ScriptError& error = std::get<ScriptError>(function_result);
+    //   val result_error = val::object();
+    //   // TODO: temporary hackfix, use the json path as action reference
+    //   result_error.set("action", val("/actions" + error.action.string));
+    //   result_error.set("message", val(error.message));
+    //   result.set("error", result_error);
+    //   global_script_context()->PrintDebugInfo();
+    // }
   }
 
   return result;
 }
 
 EMSCRIPTEN_BINDINGS(script_compiler_module) {
-  function("scriptCompilerGetFunctios", &GetFunctions);
-  function("scriptCompilerGetFunctionInfo", &GetFunctionInfo);
+  function("scriptCompilerGetFunctions", &GetFunctions);
   function("scriptCompilerGetDocumentation", &GetDocumentation);
   function("scriptCompilerSetScript", &SetScript);
   function("scriptCompilerRunScript", &RunScript);
@@ -165,8 +192,6 @@ int main(int argc, char* argv[]) {
 #if OVIS_EMSCRIPTEN
   SetEngineAssetsDirectory("/ovis_assets");
 #endif
-
-  global_script_context()->LoadDocumentation();
 
   // In theory not necessary, but i'll keep it here just for now
   Run();

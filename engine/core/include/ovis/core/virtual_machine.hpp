@@ -45,6 +45,7 @@ class Type : public SafelyReferenceable {
   std::string_view name() const { return name_; }
   Type* parent() const { return parent_.get(); }
   std::span<const Property> properties() const { return properties_; }
+  Module* module() const { return module_.get(); }
 
   void RegisterProperty(std::string_view name, Type* type, Property::GetFunction getter,
                         Property::SetFunction setter = nullptr);
@@ -55,12 +56,13 @@ class Type : public SafelyReferenceable {
   static safe_ptr<Type> Get();
 
  private:
-  Type(std::string_view name, Type* parent = nullptr);
+  Type(Module* module, std::string_view name, Type* parent = nullptr);
 
   std::vector<Property> properties_;
 
   std::string name_;
   safe_ptr<Type> parent_;
+  safe_ptr<Module> module_;
 
   static std::unordered_map<std::type_index, safe_ptr<Type>> type_associations;
 };
@@ -211,6 +213,7 @@ class Function : public SafelyReferenceable {
   };
 
   std::string_view name() const { return name_; }
+  std::string_view text() const { return text_; }
   FunctionPointer pointer() const { return function_pointer_; }
 
   std::span<const ValueDeclaration> inputs() const { return inputs_; }
@@ -233,6 +236,7 @@ class Function : public SafelyReferenceable {
            std::vector<ValueDeclaration> outputs);
 
   std::string name_;
+  std::string text_;
   FunctionPointer function_pointer_;
   std::vector<ValueDeclaration> inputs_;
   std::vector<ValueDeclaration> outputs_;
@@ -243,6 +247,9 @@ class Module : public SafelyReferenceable {
   static safe_ptr<Module> Register(std::string_view name);
   static void Deregister(std::string_view name);
   static safe_ptr<Module> Get(std::string_view name);
+  static std::span<Module> registered_modules() { return modules; }
+
+  std::string_view name() const { return name_; }
 
   // Types
   safe_ptr<Type> RegisterType(std::string_view name);
@@ -251,6 +258,8 @@ class Module : public SafelyReferenceable {
   safe_ptr<Type> RegisterType(std::string_view name, bool create_cpp_association = true);
 
   safe_ptr<Type> GetType(std::string_view name);
+  std::span<Type> types() { return types_; }
+  std::span<const Type> types() const { return types_; }
 
   // Functions
   safe_ptr<Function> RegisterFunction(std::string_view name, FunctionPointer function_pointer,
@@ -262,6 +271,8 @@ class Module : public SafelyReferenceable {
                                       std::vector<std::string_view> output_names);
 
   safe_ptr<Function> GetFunction(std::string_view name);
+  std::span<Function> functions() { return functions_; }
+  std::span<const Function> functions() const { return functions_; }
 
  private:
   Module(std::string_view name) : name_(name) {}
@@ -280,7 +291,7 @@ namespace ovis {
 namespace vm {
 
 // Type
-inline Type::Type(std::string_view name, Type* parent) : name_(name), parent_(parent) {}
+inline Type::Type(Module* module, std::string_view name, Type* parent) : module_(module), name_(name), parent_(parent) {}
 
 template <typename T>
 inline safe_ptr<Type> Type::Get() {
@@ -637,7 +648,12 @@ inline std::optional<Function::ValueDeclaration> Function::GetOutput(std::size_t
 
 inline Function::Function(std::string_view name, FunctionPointer function_pointer, std::vector<ValueDeclaration> inputs,
                           std::vector<ValueDeclaration> outputs)
-    : name_(name), function_pointer_(function_pointer), inputs_(inputs), outputs_(outputs) {}
+    : name_(name), function_pointer_(function_pointer), inputs_(inputs), outputs_(outputs) {
+  text_ = name_;
+  for (const auto input: inputs_) {
+    text_ += fmt::format(" ({})", input.name);
+  }
+}
 
 // Module
 inline safe_ptr<Module> Module::Register(std::string_view name) {
@@ -669,7 +685,7 @@ inline safe_ptr<Type> Module::RegisterType(std::string_view name) {
     return nullptr;
   }
 
-  types_.push_back(Type(name));
+  types_.push_back(Type(this, name));
   return safe_ptr(&types_.back());
 }
 
