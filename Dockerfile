@@ -2,8 +2,9 @@ FROM emscripten/emsdk:2.0.31
 
 COPY . /ovis-engine
 WORKDIR /ovis-engine/build
-RUN emcmake cmake -DCMAKE_INSTALL_PREFIX=/ovis-engine/install ..
+RUN emcmake cmake -DCMAKE_INSTALL_PREFIX=/ovis-engine/install -DOVIS_BUILD_BENCHMARKS=OFF ..
 RUN emmake make -j
+RUN ctest --verbose
 RUN emmake make install
 
 FROM tianon/true
