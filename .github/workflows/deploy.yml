@@ -2,7 +2,7 @@ name: Deploy Docker Image
 
 on:
   push:
-    branches: [ 'feature/html5-editor' ]
+    branches: [ 'master' ]
 
   workflow_dispatch:
 
