@@ -1,6 +1,8 @@
 #include <catch2/catch.hpp>
 
+#include <ovis/core/scene.hpp>
 #include <ovis/core/scene_object.hpp>
+#include <ovis/core/transform.hpp>
 
 using namespace ovis;
 
@@ -30,4 +32,39 @@ TEST_CASE("Parse object name", "[ovis][core][SceneObject]") {
     REQUIRE(result.second.has_value());
     REQUIRE(result.second == 123);
   }
+}
+
+TEST_CASE("Create Scene Object", "[ovis][core][SceneObject]") {
+  Scene test_scene;
+  SceneObject* object = test_scene.CreateObject("TestObject", R"({
+    "components": {
+      "Transform": {
+        "scale": [2, 1, 2]
+      }
+    }
+  })"_json);
+
+  REQUIRE(object != nullptr);
+  Transform* transform = object->GetComponent<Transform>("Transform");
+  REQUIRE(transform != nullptr);
+  REQUIRE(transform->local_position() == Vector3::Zero());
+  REQUIRE(transform->local_scale() == Vector3(2.0, 1.0, 2.0));
+}
+
+TEST_CASE("Create Scene Object with Template", "[ovis][core][SceneObject]") {
+  Scene test_scene;
+  SceneObject* object = test_scene.CreateObject("TestObject", R"({
+    "template": "template",
+    "components": {
+      "Transform": {
+        "scale": [2, 1, 2]
+      }
+    }
+  })"_json);
+
+  REQUIRE(object != nullptr);
+  Transform* transform = object->GetComponent<Transform>("Transform");
+  REQUIRE(transform != nullptr);
+  REQUIRE(transform->local_position() == Vector3(1.0, 2.0, 3.0));
+  REQUIRE(transform->local_scale() == Vector3(2.0, 1.0, 2.0));
 }

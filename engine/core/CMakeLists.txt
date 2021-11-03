@@ -83,6 +83,11 @@ if (OVIS_BUILD_TESTS)
       catch2
       ovis::core
   )
+  target_add_assets(
+    ovis-core-test
+
+    test/assets/template.scene_object.json
+  )
   target_embed_assets(ovis-core-test)
 
   if (OVIS_EMSCRIPTEN)
