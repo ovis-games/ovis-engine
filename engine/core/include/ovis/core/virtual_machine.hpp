@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <ovis/utils/down_cast.hpp>
+#include <ovis/utils/json.hpp>
 #include <ovis/utils/range.hpp>
 #include <ovis/utils/safe_pointer.hpp>
 
@@ -54,6 +55,8 @@ class Type : public SafelyReferenceable {
 
   template <typename T>
   static safe_ptr<Type> Get();
+
+  static safe_ptr<Type> Deserialize(const json& data);
 
  private:
   Type(Module* module, std::string_view name, Type* parent = nullptr);
@@ -300,6 +303,28 @@ inline safe_ptr<Type> Type::Get() {
   } else {
     return nullptr;
   }
+}
+
+inline safe_ptr<Type> Type::Deserialize(const json& data) {
+  if (!data.contains("module")) {
+    return nullptr;
+  }
+  const auto& module_json = data.at("module");
+  if (!module_json.is_string()) {
+    return nullptr;
+  }
+  const safe_ptr<vm::Module> module = Module::Get(module_json.get_ref<const std::string&>());
+  if (module == nullptr) {
+    return nullptr;
+  }
+  if (!data.contains("name")) {
+    return nullptr;
+  }
+  const auto& name_json = data.at("name");
+  if (!name_json.is_string()) {
+    return nullptr;
+  }
+  return module->GetType(name_json.get_ref<const std::string&>());
 }
 
 inline void Type::RegisterProperty(std::string_view name, Type* type, Property::GetFunction getter,
