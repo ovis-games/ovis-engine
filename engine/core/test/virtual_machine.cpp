@@ -18,7 +18,7 @@ TEST_CASE("Register Type", "[ovis][utils][reflection]") {
     REQUIRE(test_module->name() == "Test");
   }
 
-  SECTION("Basic Registration") {
+  SECTION("Basic type Registration") {
     struct Foo {};
 
     REQUIRE(test_module->GetType("Foo") == nullptr);
@@ -45,6 +45,46 @@ TEST_CASE("Register Type", "[ovis][utils][reflection]") {
     // REQUIRE(foo.type() == nullptr);
 
     // REQUIRE(!Type::Deregister("Foo"));
+  }
+
+  SECTION("Type serialization") {
+    struct Foo {
+      static json Serialize(const vm::Value& value) {
+        assert(value.type() == vm::Type::Get<Foo>().get());
+        const auto& foo = value.Get<Foo>();
+        return foo.number;
+      }
+
+      static vm::Value Deserialize(const json& data) {
+        if (!data.is_number()) {
+          LogE("'data' is not a number");
+          return {};
+        }
+        return Foo {
+          .number = data,
+        };
+      }
+
+      double number;
+    };
+
+    auto foo_type = test_module->RegisterType<Foo>("Foo");
+    REQUIRE(foo_type != nullptr);
+    REQUIRE(foo_type->CreateValue(json(1337)).type() == nullptr);
+  
+    foo_type->SetSerializeFunction(&Foo::Serialize);
+    foo_type->SetDeserializeFunction(&Foo::Deserialize);
+
+    Value value = foo_type->CreateValue(json(1337));
+    REQUIRE(value.type() == foo_type);
+    REQUIRE(value.Get<Foo>().number == 1337);
+    REQUIRE(value.Serialize() == json(1337));
+
+    foo_type->SetSerializeFunction(nullptr);
+    REQUIRE(value.Serialize().is_null());
+
+    Value value2;
+    REQUIRE(value2.Serialize().is_null());
   }
 
   SECTION("Property Registration") {

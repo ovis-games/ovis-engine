@@ -33,6 +33,9 @@ class Type : public SafelyReferenceable {
   friend class Module;
 
  public:
+  using SerializeFunction = json(*)(const Value& value);
+  using DeserializeFunction = Value(*)(const json& value);
+
   struct Property {
     using GetFunction = std::add_pointer_t<Value(const Value& object)>;
     using SetFunction = std::add_pointer_t<void(Value* object, const Value& property_value)>;
@@ -45,13 +48,21 @@ class Type : public SafelyReferenceable {
 
   std::string_view name() const { return name_; }
   Type* parent() const { return parent_.get(); }
-  std::span<const Property> properties() const { return properties_; }
   Module* module() const { return module_.get(); }
+
+  void SetSerializeFunction(SerializeFunction function) { serialize_function_ = function; }
+  SerializeFunction serialize_function() const { return serialize_function_; }
+
+  void SetDeserializeFunction(DeserializeFunction function) { deserialize_function_ = function; }
+  DeserializeFunction deserialize_function() const { return deserialize_function_; }
 
   void RegisterProperty(std::string_view name, Type* type, Property::GetFunction getter,
                         Property::SetFunction setter = nullptr);
   template <auto PROPERTY>
   void RegisterProperty(std::string_view);
+  std::span<const Property> properties() const { return properties_; }
+
+  Value CreateValue(const json& data);
 
   template <typename T>
   static safe_ptr<Type> Get();
@@ -66,6 +77,8 @@ class Type : public SafelyReferenceable {
   std::string name_;
   safe_ptr<Type> parent_;
   safe_ptr<Module> module_;
+  SerializeFunction serialize_function_;
+  DeserializeFunction deserialize_function_;
 
   static std::unordered_map<std::type_index, safe_ptr<Type>> type_associations;
 };
@@ -89,6 +102,8 @@ class Value {
   Value GetProperty(std::string_view property_name);
   template <typename T>
   T GetProperty(std::string_view property_name);
+
+  json Serialize() const;
 
   Type* type() const { return type_.get(); }
 
@@ -294,7 +309,8 @@ namespace ovis {
 namespace vm {
 
 // Type
-inline Type::Type(Module* module, std::string_view name, Type* parent) : module_(module), name_(name), parent_(parent) {}
+inline Type::Type(Module* module, std::string_view name, Type* parent)
+    : module_(module), name_(name), parent_(parent), serialize_function_(nullptr), deserialize_function_(nullptr) {}
 
 template <typename T>
 inline safe_ptr<Type> Type::Get() {
@@ -363,6 +379,14 @@ inline void Type::RegisterProperty(std::string_view name) {
   detail::PropertyCallbacks<PROPERTY>::Register(this, name);
 }
 
+inline Value Type::CreateValue(const json& data) {
+  if (deserialize_function_) {
+    return deserialize_function_(data);
+  } else {
+    return Value::None();
+  }
+}
+
 // Value
 template <typename T>
 Value::Value(T&& value) : type_(Type::Get<T>()), data_(std::move(value)) {}
@@ -409,6 +433,16 @@ template <typename T>
 inline T Value::GetProperty(std::string_view property_name) {
   return GetProperty(property_name).Get<T>();
 }
+
+inline json Value::Serialize() const {
+  if (type() && type()->serialize_function()) {
+    return type()->serialize_function()(*this);
+  } else {
+    return json();
+  }
+}
+
+// Function
 
 template <typename... OutputTypes, typename... InputTypes>
 inline FunctionResultType<OutputTypes...> Function::Call(InputTypes&&... inputs) {
