@@ -88,6 +88,7 @@ if (OVIS_BUILD_TESTS)
     ovis-core-test
 
     test/assets/template.scene_object.json
+    test/assets/animation_test.scene_object.json
   )
   target_embed_assets(ovis-core-test)
 

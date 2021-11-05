@@ -16,6 +16,7 @@
 namespace ovis {
 
 class Scene;
+class SceneObjectAnimation;
 
 class SceneObject : public Serializable, public SafelyReferenceable {
   MAKE_NON_COPYABLE(SceneObject);
@@ -98,6 +99,8 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   bool Deserialize(const json& serialized_object) override;
   bool Update(const json& serialized_object) override;
 
+  static SceneObjectAnimation* GetAnimation(std::string_view template_asset_id, std::string_view animation_name);
+
   static void RegisterType(sol::table* module);
 
  private:
@@ -109,8 +112,12 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   std::vector<safe_ptr<SceneObject>> children_;
   std::unordered_map<std::string, std::unique_ptr<SceneObjectComponent>> components_;
 
+  std::optional<json> ConstructObjectFromTemplate(std::string_view template_asset) const;
   std::vector<safe_ptr<SceneObject>>::const_iterator FindChild(std::string_view name) const;
   std::vector<safe_ptr<SceneObject>>::iterator FindChild(std::string_view name);
+
+  // Maps (scene_object_template, animation_name) -> animation
+  static std::map<std::pair<std::string, std::string>, SceneObjectAnimation, std::less<>> template_animations;
 };
 
 template <typename T>

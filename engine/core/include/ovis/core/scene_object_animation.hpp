@@ -21,7 +21,7 @@ struct SceneObjectAnimationChannel {
   std::string component;
   std::string property;
   safe_ptr<vm::Type> type;
-  safe_ptr<vm::Function> interpolator;
+  safe_ptr<vm::Function> interpolate_function;
   std::vector<SceneObjectAnimationKeyframe> keyframes;
 };
 
@@ -35,7 +35,7 @@ class SceneObjectAnimation : public Serializable, public SafelyReferenceable {
   std::uint32_t duration() const { return end_ - start_; }
   float speed() const { return speed_; }
 
-  void Animate(float frame, SceneObject* objet);
+  void Animate(float frame, SceneObject* object);
 
   json Serialize() const override;
   bool Deserialize(const json& data) override;

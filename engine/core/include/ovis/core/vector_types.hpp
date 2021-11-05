@@ -116,6 +116,7 @@ union alignas(sizeof(float) * 4) Vector3 {
   static void RegisterType(sol::table* module);
   static void RegisterType(vm::Module* module);
 };
+std::ostream& operator<<(std::ostream& stream, const Vector3& vector);
 static_assert(sizeof(Vector3) == 16);
 static_assert(std::is_trivially_copyable<Vector3>());
 static_assert(std::is_standard_layout<Vector3>());

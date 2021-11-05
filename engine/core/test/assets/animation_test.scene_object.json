@@ -6,7 +6,7 @@
   "animations": {
     "Some Movement": {
       "start": 0,
-      "end": 100,
+      "end": 200,
       "speed": 24,
       "channels": [
         {
@@ -17,13 +17,17 @@
             "name": "Vector3",
             "module": "Core"
           },
+          "interpolateFunction": {
+            "name": "Linear Interpolate Vector3",
+            "module": "Core"
+          },
           "keyframes": [
             {
-              "frame": 0,
+              "frame": 50,
               "value": [0, 0, 0]
             },
             {
-              "frame": 100,
+              "frame": 150,
               "value": [100, 0, -10]
             }
           ]

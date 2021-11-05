@@ -62,7 +62,7 @@ class Type : public SafelyReferenceable {
   void RegisterProperty(std::string_view);
   std::span<const Property> properties() const { return properties_; }
 
-  Value CreateValue(const json& data);
+  Value CreateValue(const json& data) const;
 
   template <typename T>
   static safe_ptr<Type> Get();
@@ -249,6 +249,8 @@ class Function : public SafelyReferenceable {
   template <typename... OutputTypes, typename... InputsTypes>
   FunctionResultType<OutputTypes...> Call(ExecutionContext* context, InputsTypes&&... inputs);
 
+  static safe_ptr<Function> Deserialize(const json& data);
+
  private:
   Function(std::string_view name, FunctionPointer function_pointer, std::vector<ValueDeclaration> inputs,
            std::vector<ValueDeclaration> outputs);
@@ -379,7 +381,7 @@ inline void Type::RegisterProperty(std::string_view name) {
   detail::PropertyCallbacks<PROPERTY>::Register(this, name);
 }
 
-inline Value Type::CreateValue(const json& data) {
+inline Value Type::CreateValue(const json& data) const {
   if (deserialize_function_) {
     return deserialize_function_(data);
   } else {
@@ -463,6 +465,28 @@ inline FunctionResultType<OutputTypes...> Function::Call(ExecutionContext* conte
     context->PopStackFrame();
     return result;
   }
+}
+
+inline safe_ptr<Function> Function::Deserialize(const json& data) {
+  if (!data.contains("module")) {
+    return nullptr;
+  }
+  const auto& module_json = data.at("module");
+  if (!module_json.is_string()) {
+    return nullptr;
+  }
+  const safe_ptr<vm::Module> module = Module::Get(module_json.get_ref<const std::string&>());
+  if (module == nullptr) {
+    return nullptr;
+  }
+  if (!data.contains("name")) {
+    return nullptr;
+  }
+  const auto& name_json = data.at("name");
+  if (!name_json.is_string()) {
+    return nullptr;
+  }
+  return module->GetFunction(name_json.get_ref<const std::string&>());
 }
 
 // ExecutionContext
