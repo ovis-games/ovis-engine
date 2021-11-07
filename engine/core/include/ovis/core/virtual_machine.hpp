@@ -547,6 +547,15 @@ inline json Value::Serialize() const {
   }
 }
 
+inline Value Value::CastToBase(const Value& value, safe_ptr<Type> target_type) {
+  assert(value.type()->IsDerivedFrom(target_type));
+  if (target_type == value.type()) {
+    return value;
+  } else {
+    return CastToBase(value.type()->to_base_(value), target_type);
+  }
+}
+
 // Function
 
 template <typename... OutputTypes, typename... InputTypes>
@@ -924,7 +933,7 @@ inline safe_ptr<Type> Module::RegisterType(std::string_view name, bool create_cp
   if constexpr (std::is_same_v<ParentType, void>) {
     type = RegisterType(name);
   } else {
-    type = RegisterType(name, Type::Get<ParentType>(), &detail::FromBase<ParentType, T>, &detail::ToBase<ParentType, T>);
+    type = RegisterType(name, Type::Get<ParentType>(), nullptr, &detail::ToBase<ParentType, T>);
   }
   if (type == nullptr) {
     return nullptr;

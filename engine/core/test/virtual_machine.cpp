@@ -51,26 +51,38 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     struct Base {
       int i;
     };
-    struct Derived : public Base {
-    };
+    struct Derived : public Base {};
+    struct DerivedSquared : public Derived {};
     struct Foo : public Base {};
     struct Functions {
-      static void UseBase(const Base& b) {}
+      static int UseBase(const Base& b) {
+        return 2 * b.i;
+      }
     };
 
     auto base_type = test_module->RegisterType<Base>("Base");
     auto derived_type = test_module->RegisterType<Derived, Base>("Derived");
+    auto derived_squared_type = test_module->RegisterType<DerivedSquared, Derived>("Derived Squared");
     auto foo_type = test_module->RegisterType<Foo>("Foo");
     REQUIRE(derived_type->IsDerivedFrom(base_type));
     REQUIRE(derived_type->IsDerivedFrom<Base>());
     REQUIRE(!base_type->IsDerivedFrom(derived_type));
     REQUIRE(!base_type->IsDerivedFrom<Derived>());
+    REQUIRE(derived_squared_type->IsDerivedFrom(derived_type));
+    REQUIRE(derived_squared_type->IsDerivedFrom<Derived>());
+    REQUIRE(derived_squared_type->IsDerivedFrom(base_type));
+    REQUIRE(derived_squared_type->IsDerivedFrom<Base>());
     REQUIRE(!foo_type->IsDerivedFrom(derived_type));
     REQUIRE(!foo_type->IsDerivedFrom<Derived>());
 
-    auto use_base = test_module->RegisterFunction<&Functions::UseBase>("Use Base", { "base" }, {});
+    auto use_base = test_module->RegisterFunction<&Functions::UseBase>("Use Base", { "base" }, { "result" });
     Derived d;
-    use_base->Call<>(d);
+    d.i = 1337;
+    REQUIRE(use_base->Call<int>(d) == 2674);
+
+    DerivedSquared ds;
+    ds.i = 69;
+    REQUIRE(use_base->Call<int>(ds) == 138);
   }
 
   SECTION("Type serialization") {
