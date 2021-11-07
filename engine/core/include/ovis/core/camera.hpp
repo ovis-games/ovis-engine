@@ -78,12 +78,12 @@ class Camera : public SceneObjectComponent {
   }
 
   inline Vector3 WorldSpacePositionToViewSpace(Vector3 world_space_coordinates) const {
-    const Transform* transform = scene_object()->GetComponent<Transform>("Transform");
+    const Transform* transform = scene_object()->GetComponent<Transform>();
     return transform ? transform->WorldDirectionToLocal(world_space_coordinates) : world_space_coordinates;
   }
 
   inline Vector3 ViewSpacePositionToWorldSpace(Vector3 view_space_coordinates) const {
-    const Transform* transform = scene_object()->GetComponent<Transform>("Transform");
+    const Transform* transform = scene_object()->GetComponent<Transform>();
     return transform ? transform->LocalDirectionToWorld(view_space_coordinates) : view_space_coordinates;
   }
 
@@ -96,12 +96,12 @@ class Camera : public SceneObjectComponent {
   }
 
   inline Vector3 WorldSpaceDirectionToViewSpace(Vector3 world_space_direction) const {
-    const Transform* transform = scene_object()->GetComponent<Transform>("Transform");
+    const Transform* transform = scene_object()->GetComponent<Transform>();
     return transform ? transform->WorldDirectionToLocal(world_space_direction) : world_space_direction;
   }
 
   inline Vector3 ViewSpaceDirectionToWorldSpace(Vector3 view_space_direction) const {
-    const Transform* transform = scene_object()->GetComponent<Transform>("Transform");
+    const Transform* transform = scene_object()->GetComponent<Transform>();
     return transform ? transform->LocalDirectionToWorld(view_space_direction) : view_space_direction;
   }
 

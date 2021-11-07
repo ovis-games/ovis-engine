@@ -70,7 +70,6 @@ class Scene : public Serializable, public SafelyReferenceable {
 
   SceneObject* CreateObject(std::string_view object_name, SceneObject* parent = nullptr);
   SceneObject* CreateObject(std::string_view object_name, const json& serialized_object, SceneObject* parent = nullptr);
-  SceneObject* CreateObject(std::string_view object_name, const sol::table& properties, SceneObject* parent = nullptr);
   void DeleteObject(std::string_view object_path);
   void DeleteObject(SceneObject* object);
   void ClearObjects();
@@ -81,15 +80,6 @@ class Scene : public Serializable, public SafelyReferenceable {
   }
   inline auto root_objects() const {
     return FilterRange(objects(), [](const SceneObject* object) { return !object->has_parent(); });
-  }
-
-  // TODO: create proper iterator here
-  void GetSceneObjectsWithComponent(const std::string& component_id, std::vector<SceneObject*>* scene_objects) const;
-
-  inline std::vector<SceneObject*> GetSceneObjectsWithComponent(const std::string& component_id) const {
-    std::vector<SceneObject*> scene_objects;
-    GetSceneObjectsWithComponent(component_id, &scene_objects);
-    return scene_objects;
   }
 
   void Play();

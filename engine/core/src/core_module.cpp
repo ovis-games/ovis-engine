@@ -120,9 +120,9 @@ bool LoadCoreModule() {
 
 
     Vector2::RegisterType(core_module.get());
-    // Vector3::RegisterType(global_script_context());
-    // SceneObject::RegisterType(global_script_context());
-    // Scene::RegisterType(global_script_context());
+    Vector3::RegisterType(core_module.get());
+    SceneObjectComponent::RegisterType(core_module.get());
+    Transform::RegisterType(core_module.get());
   }
 
   return true;

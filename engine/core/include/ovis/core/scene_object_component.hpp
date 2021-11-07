@@ -16,6 +16,7 @@
 namespace ovis {
 
 class SceneObject;
+namespace vm { class Module; }
 
 class SceneObjectComponent
     : public Serializable,
@@ -31,6 +32,7 @@ class SceneObjectComponent
   inline SceneObject* scene_object() const { return scene_object_; }
 
   static void RegisterType(sol::table* module);
+  static void RegisterType(vm::Module* module);
 
  private:
   SceneObject* scene_object_;

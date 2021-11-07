@@ -71,10 +71,6 @@ SceneObject* SceneObject::CreateChildObject(std::string_view object_name, const 
   return scene_->CreateObject(object_name, serialized_object, this);
 }
 
-SceneObject* SceneObject::CreateChildObject(std::string_view object_name, const sol::table& component_properties) {
-  return scene_->CreateObject(object_name, component_properties, this);
-}
-
 void SceneObject::DeleteChildObject(std::string_view object_name) {
   auto child_iterator = FindChild(object_name);
   if (child_iterator != children_.end()) {
@@ -97,53 +93,64 @@ bool SceneObject::ContainsChildObject(std::string_view object_name) {
   return FindChild(object_name) != children_.end();
 }
 
-SceneObjectComponent* SceneObject::AddComponent(const std::string& component_id) {
-  if (HasComponent(component_id)) {
-    LogE("Object '{}' already has the component '{}'.", name_, component_id);
+SceneObjectComponent* SceneObject::AddComponent(safe_ptr<vm::Type> type) {
+  if (!type) {
+    LogE("Invalid object component");
+    return nullptr;
+  }
+  if (!type->IsDerivedFrom<SceneObjectComponent>()) {
+    LogE("{} does not derived from SceneObjectComponent");
+    return nullptr;
+  }
+
+  if (HasComponent(type)) {
+    LogE("Object '{}' already has the component '{}'.", path(), type->name());
     return nullptr;
   } else {
-    std::optional<std::unique_ptr<SceneObjectComponent>> component = SceneObjectComponent::Create(component_id, this);
-    if (!component.has_value()) {
-      LogE("Component '{}' not registered or failed to create", component_id);
+    components_.push_back(type->Construct(this));
+    if (components_.back().type() != type) {
+      LogE("Failed to construct component");
+      components_.pop_back();
       return nullptr;
     } else {
-      SDL_assert(*component != nullptr);
-      return components_.insert(std::make_pair(component_id, std::move(*component))).first->second.get();
+      return components_.back().Get<SceneObjectComponent*>();
     }
   }
 }
 
-SceneObjectComponent* SceneObject::AddComponent(const std::string& component_id, const sol::table& properties) {
-  SceneObjectComponent* component = AddComponent(component_id);
-
-  if (component != nullptr) {
-    sol::table lua_component = component->GetValue().as<sol::table>();
-    for (const auto& [key, value] : properties) {
-      lua_component[key] = value;
-    }
-  }
-
-  return component;
-}
-
-bool SceneObject::HasComponent(const std::string& component_id) const {
-  return components_.count(component_id) != 0;
-}
-
-void SceneObject::GetComponentIds(std::vector<std::string>* component_ids) const {
-  SDL_assert(component_ids != nullptr);
-
-  component_ids->clear();
-  component_ids->reserve(components_.size());
+SceneObjectComponent* SceneObject::GetComponent(safe_ptr<vm::Type> type) {
   for (const auto& component : components_) {
-    component_ids->push_back(component.first);
+    if (component.type() == type) {
+      return component.Get<SceneObjectComponent*>();
+    }
   }
+  return nullptr;
 }
 
-void SceneObject::RemoveComponent(const std::string& component_id) {
-  if (components_.erase(component_id) == 0) {
-    LogE("Failed to erase component '{}' from '{}': component does not exist.");
+const SceneObjectComponent* SceneObject::GetComponent(safe_ptr<vm::Type> type) const {
+  for (const auto& component : components_) {
+    if (component.type() == type) {
+      return component.Get<const SceneObjectComponent*>();
+    }
   }
+  return nullptr;
+}
+
+bool SceneObject::HasComponent(safe_ptr<vm::Type> type) const {
+  for (const auto& component : components_) {
+    if (component.type() == type) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool SceneObject::RemoveComponent(safe_ptr<vm::Type> type) {
+  const auto erased_count = std::erase_if(components_, [type](const auto& component) {
+      return component.type() == type;
+  });
+  assert(erased_count <= 1);
+  return erased_count > 0;
 }
 
 void SceneObject::ClearComponents() {
@@ -201,9 +208,10 @@ json SceneObject::Serialize() const {
 
   auto& components = serialized_object["components"] = json::object();
   for (const auto& component : components_) {
-    const auto serialized_component = component.second->Serialize();
+    assert(component.type() != nullptr);
+    const auto serialized_component = component.Serialize();
 
-    json::json_pointer component_pointer(fmt::format("/components/{}", component.first));
+    json::json_pointer component_pointer(fmt::format("/components/{}", component.type()->name()));
     if (object_template.contains(component_pointer)) {
       const auto& component_template = object_template[component_pointer];
       json changed_attributes = json::object();
@@ -215,9 +223,9 @@ json SceneObject::Serialize() const {
         }
       }
 
-      components[component.first] = changed_attributes;
+      // components[component.first] = changed_attributes;
     } else {
-      components[component.first] = component.second->Serialize();
+      // components[component.first] = component.second->Serialize();
     }
   }
   auto& children = serialized_object["children"] = json::object();
@@ -263,18 +271,18 @@ bool SceneObject::Update(const json& serialized_object) {
             component.key());
         return false;
       }
-      if (auto object_component = GetComponent(component.key()); object_component != nullptr) {
-        if (!GetComponent(component.key())->Update(component.value())) {
-          LogE("Failed to deserialize scene object, could not update component `{}`", component.key());
-          return false;
-        }
-      } else {
-        if (auto object_component = AddComponent(component.key());
-            object_component == nullptr || !object_component->Deserialize(component.value())) {
-          LogE("Failed to deserialize scene object, could not add component `{}`", component.key());
-          return false;
-        }
-      }
+      // if (auto object_component = GetComponent(component.key()); object_component != nullptr) {
+      //   if (!GetComponent(component.key())->Update(component.value())) {
+      //     LogE("Failed to deserialize scene object, could not update component `{}`", component.key());
+      //     return false;
+      //   }
+      // } else {
+      //   if (auto object_component = AddComponent(component.key());
+      //       object_component == nullptr || !object_component->Deserialize(component.value())) {
+      //     LogE("Failed to deserialize scene object, could not add component `{}`", component.key());
+      //     return false;
+      //   }
+      // }
     }
   } else {
     LogV("SceneObject deserialization: no 'components' property available!");
@@ -316,68 +324,6 @@ std::vector<safe_ptr<SceneObject>>::iterator SceneObject::FindChild(std::string_
 }
 
 void SceneObject::RegisterType(sol::table* module) {
-  /// Represents an object in a scene
-  // @classmod ovis.core.SceneObject
-  // @testinginclude <ovis/core/scene.hpp>
-  // @cppsetup ovis::Scene scene;
-  // @cppsetup ovis::lua["some_scene"] = &scene;
-  // @usage local core = require "ovis.core"
-  // local some_object = some_scene:add_object("Some Object")
-  sol::usertype<SceneObject> scene_object_type = module->new_usertype<SceneObject>("SceneObject", sol::no_constructor);
-
-  /// The name of the object.
-  // Names of objects with the same parent must be unique.
-  // @see 02-scene-structure.md
-  // @usage assert(some_object.name == "Some Object")
-  scene_object_type["name"] = sol::property(&SceneObject::name);
-
-  /// Adds a component to the object.
-  // @function add_component
-  // @param id The id of the component.
-  // @return The newly added component
-  // @usage local transform = some_object:add_component("Transform")
-  // assert(transform ~= nil)
-  scene_object_type["add_component"] = sol::overload(
-      [](SceneObject* object, const std::string& component_id) {
-        SceneObjectComponent* component = object->AddComponent(component_id);
-        return component ? component->GetValue() : nullptr;
-      },
-      [](SceneObject* object, const std::string& component_id, const sol::table& properties) -> sol::lua_value {
-        SceneObjectComponent* component = object->AddComponent(component_id, properties);
-        return component ? component->GetValue() : nullptr;
-      });
-
-  /// Checks whether a component is attached to an object.
-  // @function has_component
-  // @param id The id of the component.
-  // @treturn bool
-  // @usage assert(not some_object:has_component("Transform"))
-  // some_object:add_component("Transform")
-  // assert(some_object:has_component("Transform"))
-  scene_object_type["has_component"] = &SceneObject::HasComponent;
-
-  /// Removes a component from the object.
-  // @function remove_component
-  // @param id The id of the component to remove.
-  // @usage assert(not some_object:has_component("Transform"))
-  // some_object:add_component("Transform")
-  // assert(some_object:has_component("Transform"))
-  // some_object:remove_component("Transform")
-  // assert(not some_object:has_component("Transform"))
-  scene_object_type["remove_component"] = &SceneObject::RemoveComponent;
-
-  /// Returns a component.
-  // @function get_component
-  // @param id The id of the component.
-  // @usage local transform = some_object:get_component("Transform")
-  // assert(transform == nil)
-  // some_object:add_component("Transform")
-  // transform = some_object:get_component("Transform")
-  // assert(transform ~= nil)
-  scene_object_type["get_component"] = [](SceneObject* object, const std::string& component_id) {
-    SceneObjectComponent* component = object->GetComponent(component_id);
-    return component ? component->GetValue() : nullptr;
-  };
 }
 
 }  // namespace ovis
