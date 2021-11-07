@@ -4,19 +4,30 @@
 #include <ovis/core/core_module.hpp>
 #include <ovis/core/asset_library.hpp>
 
-int main( int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
   ovis::Log::AddListener(ovis::ConsoleLogger);
   ovis::LoadCoreModule();
-  ovis::SetEngineAssetsDirectory("/ovis_assets");
 
   Catch::Session session;
- 
+
+  std::string assets_directory = ".";
+  auto cli = session.cli() | Catch::clara::Opt(assets_directory, "assets directory")["--assets-directory"](
+                                 "The directory containing the assets for the test.");
+  session.cli(cli);
+
   // writing to session.configData() here sets defaults
   // this is the preferred way to set them
     
   int returnCode = session.applyCommandLine( argc, argv );
-  if( returnCode != 0 ) // Indicates a command line error
-        return returnCode;
+  if( returnCode != 0 ) {
+    return returnCode;
+  }
+
+#if OVIS_EMSCRIPTEN
+  ovis::SetEngineAssetsDirectory("/ovis_assets");
+#else
+  ovis::SetEngineAssetsDirectory(assets_directory);
+#endif
  
   // writing to session.configData() or session.Config() here 
   // overrides command line args
