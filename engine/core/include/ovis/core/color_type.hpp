@@ -50,7 +50,7 @@ struct is_color : public std::integral_constant<bool, std::is_same<T, Color>::va
 namespace fmt {
 
 template <>
-struct fmt::formatter<ovis::Color> {
+struct formatter<ovis::Color> {
   char presentation = 'f';
 
   // Parses format specifications of the form ['f' | 'e'].

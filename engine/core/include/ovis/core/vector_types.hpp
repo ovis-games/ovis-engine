@@ -203,8 +203,6 @@ struct is_vector : public std::integral_constant<bool, std::is_same<T, Vector2>(
 
 }  // namespace ovis
 
-namespace fmt {
-
 template <>
 struct fmt::formatter<ovis::Vector2> {
   char presentation = 'f';
@@ -261,8 +259,6 @@ struct fmt::formatter<ovis::Vector4> {
                      vector.x, vector.y, vector.z, vector.w);
   }
 };
-
-}  // namespace fmt
 
 namespace nlohmann {
 

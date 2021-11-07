@@ -43,8 +43,6 @@ struct is_quaternion : public std::integral_constant<bool, std::is_same<T, Quate
 
 }  // namespace ovis
 
-namespace fmt {
-
 template <>
 struct fmt::formatter<ovis::Quaternion> {
   char presentation = 'f';
@@ -64,8 +62,6 @@ struct fmt::formatter<ovis::Quaternion> {
                      quaternion.w, quaternion.x, quaternion.y, quaternion.z);
   }
 };
-
-}  // namespace fmt
 
 namespace nlohmann {
 

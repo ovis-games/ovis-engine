@@ -284,6 +284,10 @@ void Vector2::RegisterType(sol::table* module) {
   // clang-format on
 }
 
+std::string VectorToString(Vector2 v) {
+  return fmt::format("{}", v);
+}
+
 void Vector2::RegisterType(vm::Module* module) {
   // vector2_type["x"] = &Vector2::x;
   // vector2_type["y"] = &Vector2::y;
@@ -305,8 +309,7 @@ void Vector2::RegisterType(vm::Module* module) {
   module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator-)>("vector2_subtract", {"first vector", "second vector"}, {"vector"});
   module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator*)>("vector2_multiply", {"first vector", "second vector"}, {"vector"});
   module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, float)>(ovis::operator*)>("vector2_multiply_scalar", {"vector", "scalar"}, {"vector"});
-  const auto vector2_to_string = [](const Vector2& vector) { return fmt::format("{}", vector); };
-  module->RegisterFunction<static_cast<std::string(*)(const Vector2&)>(vector2_to_string)>("vector2_to_string", {"vector"}, {"string"});
+  module->RegisterFunction<&VectorToString>("vector2_to_string", {"vector"}, {"string"});
   module->RegisterFunction<&ovis::min<Vector2>>("vector2_min", {"first vector", "second vector"}, {"minimum"});
   module->RegisterFunction<&ovis::max<Vector2>>("vector2_max", {"first vector", "second vector"}, {"maximum"});
   module->RegisterFunction<&ovis::clamp<Vector2>>("vector2_clamp", {"vector", "min", "max"}, {"clamped vector"});

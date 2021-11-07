@@ -317,6 +317,19 @@ void Vector3::RegisterType(sol::table* module) {
   // clang-format off
 }
 
+std::string VectorToString(Vector3 v) {
+  return fmt::format("{}", v);
+}
+
+Vector3 LinearInterpolateVector3(Vector3 a, Vector3 b, float t) {
+  // TODO: references
+  return (1.0f - t) * a + t * b;
+}
+vm::Value DeserializeVector3(const json& data) {
+  Vector3 value = data;
+  return value;
+}
+
 void Vector3::RegisterType(vm::Module* module) {
   // vector3_type["x"] = &Vector3::x;
   // vector3_type["y"] = &Vector3::y;
@@ -338,8 +351,7 @@ void Vector3::RegisterType(vm::Module* module) {
   module->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator-)>("vector3_subtract", {"first vector", "second vector"}, {"vector"});
   module->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator*)>("vector3_multiply", {"first vector", "second vector"}, {"vector"});
   module->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, float)>(ovis::operator*)>("vector3_multiply_scalar", {"vector", "scalar"}, {"vector"});
-  const auto vector3_to_string = [](const Vector3& vector) { return fmt::format("{}", vector); };
-  module->RegisterFunction<static_cast<std::string(*)(const Vector3&)>(vector3_to_string)>("vector3_to_string", {"vector"}, {"string"});
+  module->RegisterFunction<&VectorToString>("vector3_to_string", {"vector"}, {"string"});
   module->RegisterFunction<&ovis::min<Vector3>>("vector3_min", {"first vector", "second vector"}, {"minimum"});
   module->RegisterFunction<&ovis::max<Vector3>>("vector3_max", {"first vector", "second vector"}, {"maximum"});
   module->RegisterFunction<&ovis::clamp<Vector3>>("vector3_clamp", {"vector", "min", "max"}, {"clamped vector"});
