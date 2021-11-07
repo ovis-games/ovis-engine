@@ -9,7 +9,7 @@ ovis::safe_ptr<ovis::vm::Module> RegisterTestModule() {
   return ovis::vm::Module::Register("Test");
 }
 
-TEST_CASE("Register Type", "[ovis][utils][reflection]") {
+TEST_CASE("Register Type", "[ovis][core][vm]") {
   using namespace ovis;
   using namespace ovis::vm;
   safe_ptr<Module> test_module = RegisterTestModule();
@@ -45,6 +45,32 @@ TEST_CASE("Register Type", "[ovis][utils][reflection]") {
     // REQUIRE(foo.type() == nullptr);
 
     // REQUIRE(!Type::Deregister("Foo"));
+  }
+
+  SECTION("Basic type registration with base") {
+    struct Base {
+      int i;
+    };
+    struct Derived : public Base {
+    };
+    struct Foo : public Base {};
+    struct Functions {
+      static void UseBase(const Base& b) {}
+    };
+
+    auto base_type = test_module->RegisterType<Base>("Base");
+    auto derived_type = test_module->RegisterType<Derived, Base>("Derived");
+    auto foo_type = test_module->RegisterType<Foo>("Foo");
+    REQUIRE(derived_type->IsDerivedFrom(base_type));
+    REQUIRE(derived_type->IsDerivedFrom<Base>());
+    REQUIRE(!base_type->IsDerivedFrom(derived_type));
+    REQUIRE(!base_type->IsDerivedFrom<Derived>());
+    REQUIRE(!foo_type->IsDerivedFrom(derived_type));
+    REQUIRE(!foo_type->IsDerivedFrom<Derived>());
+
+    auto use_base = test_module->RegisterFunction<&Functions::UseBase>("Use Base", { "base" }, {});
+    Derived d;
+    use_base->Call<>(d);
   }
 
   SECTION("Type serialization") {
@@ -85,6 +111,27 @@ TEST_CASE("Register Type", "[ovis][utils][reflection]") {
 
     Value value2;
     REQUIRE(value2.Serialize().is_null());
+  }
+
+  SECTION("Constructor Registration") {
+    struct Foo {
+      Foo(int a) : a(a) {}
+      int a;
+    };
+
+    auto int_type = test_module->RegisterType<int>("Integer");
+    auto foo_type = test_module->RegisterType<Foo>("Foo");
+
+    auto constructor = test_module->RegisterFunction<Constructor<Foo, int>>("Create Foo", { "a" }, { "foo" });
+    REQUIRE(constructor != nullptr);
+
+    Foo f = constructor->Call<Foo>(100);
+    REQUIRE(f.a == 100);
+
+    foo_type->RegisterConstructorFunction(constructor);
+    Value f2_value = foo_type->Construct(100);
+    REQUIRE(f2_value.type() == foo_type);
+    REQUIRE(f2_value.Get<Foo>().a == 100);
   }
 
   SECTION("Property Registration") {

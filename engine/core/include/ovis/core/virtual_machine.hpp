@@ -33,6 +33,7 @@ class Type : public SafelyReferenceable {
   friend class Module;
 
  public:
+  using ConversionFunction = Value(*)(const Value& value);
   using SerializeFunction = json(*)(const Value& value);
   using DeserializeFunction = Value(*)(const json& value);
 
@@ -50,19 +51,24 @@ class Type : public SafelyReferenceable {
   Type* parent() const { return parent_.get(); }
   Module* module() const { return module_.get(); }
 
+  bool IsDerivedFrom(safe_ptr<Type> type) const;
+  template <typename T> bool IsDerivedFrom() const;
+
+  void RegisterConstructorFunction(safe_ptr<Function> function);
+  template <typename... Args> Value Construct(Args&&... args) const;
+
   void SetSerializeFunction(SerializeFunction function) { serialize_function_ = function; }
   SerializeFunction serialize_function() const { return serialize_function_; }
 
   void SetDeserializeFunction(DeserializeFunction function) { deserialize_function_ = function; }
   DeserializeFunction deserialize_function() const { return deserialize_function_; }
 
+  Value CreateValue(const json& data);
   void RegisterProperty(std::string_view name, Type* type, Property::GetFunction getter,
                         Property::SetFunction setter = nullptr);
   template <auto PROPERTY>
   void RegisterProperty(std::string_view);
   std::span<const Property> properties() const { return properties_; }
-
-  Value CreateValue(const json& data);
 
   template <typename T>
   static safe_ptr<Type> Get();
@@ -70,15 +76,19 @@ class Type : public SafelyReferenceable {
   static safe_ptr<Type> Deserialize(const json& data);
 
  private:
-  Type(Module* module, std::string_view name, Type* parent = nullptr);
+  Type(Module* module, std::string_view name);
+  Type(Module* module, std::string_view name, Type* parent, ConversionFunction from_base, ConversionFunction to_base);
 
   std::vector<Property> properties_;
 
   std::string name_;
   safe_ptr<Type> parent_;
   safe_ptr<Module> module_;
+  ConversionFunction from_base_;
+  ConversionFunction to_base_;
   SerializeFunction serialize_function_;
   DeserializeFunction deserialize_function_;
+  std::vector<safe_ptr<Function>> constructor_functions_;
 
   static std::unordered_map<std::type_index, safe_ptr<Type>> type_associations;
 };
@@ -87,13 +97,18 @@ std::ostream& operator<<(std::ostream& os, const safe_ptr<Type>& pointer);
 class Value {
  public:
   Value() : type_(nullptr) {}
-  template <typename T>
-  Value(T&& value);
+  Value(Value& other) : type_(other.type_), data_(other.data_) {}
+  Value(const Value& other) : type_(other.type_), data_(other.data_) {}
+  Value(Value&& other) : type_(std::move(other.type_)), data_(std::move(other.data_)) {}
 
-  template <typename T>
-  std::remove_cvref_t<T>& Get();
-  template <typename T>
-  const std::remove_cvref_t<T>& Get() const;
+  template <SafelyReferenceableObject T> Value(T* value);
+  template <typename T> Value(T&& value);
+
+  Value& operator=(const Value& other) = default;
+  Value& operator=(Value&& other) = default;
+
+  template <typename T> std::remove_cvref_t<T>& Get();
+  template <typename T> const std::remove_cvref_t<T>& Get() const;
 
   void SetProperty(std::string_view property_name, const Value& property_value);
   template <typename T>
@@ -112,6 +127,9 @@ class Value {
  private:
   safe_ptr<Type> type_;
   std::any data_;
+
+  static Value CastToDerived(const Value& value, safe_ptr<Type> target_type);
+  static Value CastToBase(const Value& value, safe_ptr<Type> target_type);
 };
 
 namespace instructions {
@@ -244,6 +262,8 @@ class Function : public SafelyReferenceable {
   std::optional<ValueDeclaration> GetOutput(std::string_view output_name) const;
   std::optional<ValueDeclaration> GetOutput(std::size_t output_index) const;
 
+  template <typename... InputTypes> bool IsCallableWithArguments() const;
+
   template <typename... OutputTypes, typename... InputsTypes>
   FunctionResultType<OutputTypes...> Call(InputsTypes&&... inputs);
   template <typename... OutputTypes, typename... InputsTypes>
@@ -271,6 +291,8 @@ class Module : public SafelyReferenceable {
 
   // Types
   safe_ptr<Type> RegisterType(std::string_view name);
+  safe_ptr<Type> RegisterType(std::string_view name, safe_ptr<Type> parent_type, Type::ConversionFunction from_base,
+                              Type::ConversionFunction to_base);
 
   template <typename T, typename ParentType = void>
   safe_ptr<Type> RegisterType(std::string_view name, bool create_cpp_association = true);
@@ -309,8 +331,70 @@ namespace ovis {
 namespace vm {
 
 // Type
-inline Type::Type(Module* module, std::string_view name, Type* parent)
-    : module_(module), name_(name), parent_(parent), serialize_function_(nullptr), deserialize_function_(nullptr) {}
+inline Type::Type(Module* module, std::string_view name)
+    : module_(module), name_(name), parent_(nullptr), serialize_function_(nullptr), deserialize_function_(nullptr) {}
+
+inline Type::Type(Module* module, std::string_view name, Type* parent, ConversionFunction from_base,
+                  ConversionFunction to_base)
+    : Type(module, name) {
+  parent_ = parent;
+  from_base_ = from_base;
+  to_base_ = to_base;
+}
+
+inline bool Type::IsDerivedFrom(safe_ptr<Type> type) const {
+  if (type.get() == this) {
+    return true;
+  } else {
+    return parent_ != nullptr && parent_->IsDerivedFrom(type);
+  }
+}
+
+template <typename T>
+inline bool Type::IsDerivedFrom() const {
+  return IsDerivedFrom(Get<T>());
+}
+
+inline void Type::RegisterConstructorFunction(safe_ptr<Function> constructor) {
+  if (!constructor) {
+    return;
+  }
+
+  // Output must be the current type
+  if (constructor->outputs().size() != 1 || constructor->outputs()[0].type != this) {
+    return;
+  }
+  
+  // Check if there is already a constructor with these parameters registered.
+  for (const auto& function : constructor_functions_) {
+    if (function->inputs().size() != constructor->inputs().size()) {
+      continue;
+    }
+    bool arguments_different = false;
+    for (auto i : IRange(function->inputs().size())) {
+      if (function->inputs()[i].type != constructor->inputs()[i].type) {
+        arguments_different = true;
+        break;
+      }
+    }
+    if (!arguments_different) {
+      return;
+    }
+  }
+
+  constructor_functions_.push_back(constructor);
+}
+
+template <typename... Args>
+inline Value Type::Construct(Args&&... args) const {
+  for (const auto& function : constructor_functions_) {
+    if (function->IsCallableWithArguments<Args...>()) {
+      return function->Call<Value>(std::forward<Args>(args)...);
+    }
+  }
+
+  return Value::None();
+}
 
 template <typename T>
 inline safe_ptr<Type> Type::Get() {
@@ -388,18 +472,39 @@ inline Value Type::CreateValue(const json& data) {
 }
 
 // Value
+template <SafelyReferenceableObject T>
+Value::Value(T* value) {
+}
+
 template <typename T>
-Value::Value(T&& value) : type_(Type::Get<T>()), data_(std::move(value)) {}
+Value::Value(T&& value) : type_(Type::Get<T>()), data_(std::forward<T>(value)) {
+}
 
 template <typename T>
 std::remove_cvref_t<T>& Value::Get() {
-  assert(type_ == Type::Get<T>());
-  return std::any_cast<std::remove_cvref_t<T>&>(data_);
+  if constexpr (std::is_same_v<std::remove_cvref_t<T>, Value>) {
+    return *this;
+  } else {
+    const auto requested_type = Type::Get<T>();
+    if (type_ == Type::Get<T>()) {
+      return std::any_cast<std::remove_cvref_t<T>&>(data_);
+    } else if (type_->IsDerivedFrom(requested_type)) {
+      Value base_type_value = CastToBase(*this, requested_type);
+      return base_type_value.Get<T>();
+    } else {
+      assert(false && "Invalid type requested");
+    }
+  }
 }
 
 template <typename T>
 const std::remove_cvref_t<T>& Value::Get() const {
-  return std::any_cast<const std::remove_cvref_t<T>&>(data_);
+  if constexpr (std::is_same_v<std::remove_cvref_t<T>, Value>) {
+    return *this;
+  } else {
+    assert(type_ == Type::Get<T>());
+    return std::any_cast<const std::remove_cvref_t<T>&>(data_);
+  }
 }
 
 inline void Value::SetProperty(std::string_view property_name, const Value& property_value) {
@@ -491,6 +596,22 @@ struct ValueHelper {
 
   static T GetTop(ExecutionContext* context, std::size_t offset_from_top) {
     return context->GetTopValue(offset_from_top).Get<T>();
+  }
+};
+
+template <>
+struct ValueHelper<Value> {
+  static void Push(ExecutionContext* context, Value value) {
+    context->PushValue(std::move(value));
+  }
+
+  static Value Get(ExecutionContext* context, std::size_t position, std::size_t stack_frame_offset) {
+    assert(false);
+    return context->GetValue(position, stack_frame_offset);
+  }
+
+  static Value GetTop(ExecutionContext* context, std::size_t offset_from_top) {
+    return context->GetTopValue(offset_from_top);
   }
 };
 
@@ -705,6 +826,23 @@ inline std::optional<Function::ValueDeclaration> Function::GetOutput(std::size_t
   }
 }
 
+template <typename... InputTypes>
+inline bool Function::IsCallableWithArguments() const {
+  if (inputs_.size() != sizeof...(InputTypes)) {
+    return false;
+  }
+  std::array<safe_ptr<Type>, sizeof...(InputTypes)> input_types = {
+    Type::Get<InputTypes>()...
+  };
+
+  for (auto i : IRange(sizeof...(InputTypes))) {
+    if (inputs_[i].type != input_types[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 inline Function::Function(std::string_view name, FunctionPointer function_pointer, std::vector<ValueDeclaration> inputs,
                           std::vector<ValueDeclaration> outputs)
     : name_(name), function_pointer_(function_pointer), inputs_(inputs), outputs_(outputs) {
@@ -748,9 +886,32 @@ inline safe_ptr<Type> Module::RegisterType(std::string_view name) {
   return safe_ptr(&types_.back());
 }
 
+inline safe_ptr<Type> Module::RegisterType(std::string_view name, safe_ptr<Type> parent_type, Type::ConversionFunction from_base,
+                              Type::ConversionFunction to_base) {
+  if (GetType(name) != nullptr) {
+    return nullptr;
+  }
+
+  types_.push_back(Type(this, name, parent_type.get(), from_base, to_base));
+  return safe_ptr(&types_.back());
+}
+
+namespace detail {
+
+template <typename Base, typename Derived>
+Value FromBase(const Value& base) {
+  return Value(down_cast<Derived>(base.Get<Base>()));
+}
+
+template <typename Base, typename Derived>
+Value ToBase(const Value& derived) {
+  return Value(static_cast<Base>(derived.Get<Derived>()));
+}
+
+}
+
 template <typename T, typename ParentType>
 inline safe_ptr<Type> Module::RegisterType(std::string_view name, bool create_cpp_association) {
-  static_assert(std::is_same_v<ParentType, void>);
   if (Type::Get<T>() != nullptr) {
     return nullptr;
   }
@@ -759,7 +920,12 @@ inline safe_ptr<Type> Module::RegisterType(std::string_view name, bool create_cp
     return nullptr;
   }
 
-  auto type = RegisterType(name);
+  safe_ptr<Type> type;
+  if constexpr (std::is_same_v<ParentType, void>) {
+    type = RegisterType(name);
+  } else {
+    type = RegisterType(name, Type::Get<ParentType>(), &detail::FromBase<ParentType, T>, &detail::ToBase<ParentType, T>);
+  }
   if (type == nullptr) {
     return nullptr;
   }
@@ -790,9 +956,7 @@ inline safe_ptr<Function> Module::RegisterFunction(std::string_view name, Functi
                                 std::forward<std::vector<Function::ValueDeclaration>>(outputs)));
   return safe_ptr(&functions_.back());
 }
-
 namespace detail {
-
 
 template <typename T>
 struct VariableDeclarationsHelper {
@@ -848,7 +1012,40 @@ struct FunctionWrapper<ReturnType (*)(ArgumentTypes...)> {
   }
 };
 
+template <typename T, typename... ConstructorArguments>
+struct ConstructorWrapper {
+  static_assert(std::is_constructible_v<T, ConstructorArguments...>);
+};
+template <typename T, typename... ArgumentTypes>
+struct FunctionWrapper<ConstructorWrapper<T, ArgumentTypes...>> {
+  using FunctionPointerType = T (*)(ArgumentTypes...);
+  using ArgumentTuple = std::tuple<ArgumentTypes...>;
+
+  static std::vector<Function::ValueDeclaration> GetInputDeclarations(std::span<std::string_view> input_names) {
+    std::vector<Function::ValueDeclaration> input_declarations;
+    VariableDeclarationsHelper<ArgumentTuple>::Insert(&input_declarations, input_names);
+    assert(input_declarations.size() == input_names.size());
+    return input_declarations;
+  }
+
+  static std::vector<Function::ValueDeclaration> GetOutputDeclarations(std::span<std::string_view> output_names) {
+    std::vector<Function::ValueDeclaration> output_declarations;
+    VariableDeclarationsHelper<T>::Insert(&output_declarations, output_names);
+    assert(output_declarations.size() == output_names.size());
+    return output_declarations;
+  }
+
+  template <ConstructorWrapper<T, ArgumentTypes...> CONSTRUCTOR>
+  static void Call(ExecutionContext* context) {
+    context->PushValue(std::make_from_tuple<T>(context->GetValue<ArgumentTuple>(0)));
+  }
+};
+
 }  // namespace detail
+
+template <typename T, typename... ConstructorArguments>
+inline constexpr detail::ConstructorWrapper<T, ConstructorArguments...> Constructor{};
+
 
 template <auto FUNCTION>
 inline safe_ptr<Function> Module::RegisterFunction(std::string_view name, std::vector<std::string_view> input_names,
