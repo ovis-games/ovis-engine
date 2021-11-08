@@ -226,6 +226,24 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     REQUIRE(foo_function->Call<int>(1337) == 2674);
   }
 
+  SECTION("Function with reference parameter") {
+    struct Foo {
+      static void foo(int& i) { i *= 2; }
+    };
+
+    test_module->RegisterType<int>("Integer");
+    auto foo_function = test_module->RegisterFunction<&Foo::foo>("foo", {"An awesome parameter"}, {});
+
+    Value x(42);
+    REQUIRE(x.type() == Type::Get<int>());
+    REQUIRE(x.Get<int>() == 42);
+
+    foo_function->Call(x);
+
+    REQUIRE(x.type() == Type::Get<int>());
+    REQUIRE(x.Get<int>() == 84);
+  }
+
   SECTION("Function with tuple parameter") {
     struct Foo {
       static int foo(std::tuple<int, int> value) { return std::get<0>(value) + std::get<1>(value); }
