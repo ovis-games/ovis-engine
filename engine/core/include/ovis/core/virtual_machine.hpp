@@ -94,6 +94,13 @@ class Type : public SafelyReferenceable {
 };
 std::ostream& operator<<(std::ostream& os, const safe_ptr<Type>& pointer);
 
+template <typename T> constexpr bool is_reference_type_v = std::is_base_of_v<SafelyReferenceable, T>;
+template <typename T> constexpr bool is_pointer_to_reference_type_v = std::is_pointer_v<T> && std::is_base_of_v<SafelyReferenceable, std::remove_pointer_t<T>>;
+template <typename T> constexpr bool is_non_reference_type_v = !std::is_base_of_v<SafelyReferenceable, T> && !std::is_pointer_v<T>;
+template <typename T> concept ReferenceType = is_reference_type_v<T>;
+template <typename T> concept PointerToReferenceType = is_pointer_to_reference_type_v<T>;
+template <typename T> concept NonReferenceType = is_non_reference_type_v<T>;
+
 class Value {
  public:
   Value() : type_(nullptr) {}
@@ -101,14 +108,17 @@ class Value {
   Value(const Value& other) : type_(other.type_), data_(other.data_) {}
   Value(Value&& other) : type_(std::move(other.type_)), data_(std::move(other.data_)) {}
 
-  template <SafelyReferenceableObject T> Value(T* value);
-  template <typename T> Value(T&& value);
+  template <ReferenceType T> Value(T& value);
+  template <ReferenceType T> Value(T* value);
+  template <NonReferenceType T> Value(T&& value);
 
   Value& operator=(const Value& other) = default;
   Value& operator=(Value&& other) = default;
 
-  template <typename T> std::remove_cvref_t<T>& Get();
-  template <typename T> const std::remove_cvref_t<T>& Get() const;
+  template <PointerToReferenceType T> T Get();
+  template <PointerToReferenceType T> T Get() const;
+  template <NonReferenceType T> std::remove_cvref_t<T>& Get();
+  template <NonReferenceType T> const std::remove_cvref_t<T>& Get() const;
 
   void SetProperty(std::string_view property_name, const Value& property_value);
   template <typename T>
@@ -472,15 +482,25 @@ inline Value Type::CreateValue(const json& data) {
 }
 
 // Value
-template <SafelyReferenceableObject T>
-Value::Value(T* value) {
+template <ReferenceType T>
+Value::Value(T& value) : type_(Type::Get<T>()), data_(safe_ptr<T>(&value)) {}
+
+template <ReferenceType T>
+Value::Value(T* value) : type_(Type::Get<T>()), data_(safe_ptr<T>(value)) {}
+
+template <NonReferenceType T>
+Value::Value(T&& value) : type_(Type::Get<T>()), data_(std::forward<T>(value)) {}
+
+template <PointerToReferenceType T>
+T Value::Get() {
+  using ReferenceType = std::remove_pointer_t<T>;
+  assert(type_ == Type::Get<ReferenceType>());
+  return std::any_cast<safe_ptr<ReferenceType>>(data_).get();
 }
 
-template <typename T>
-Value::Value(T&& value) : type_(Type::Get<T>()), data_(std::forward<T>(value)) {
-}
+// template <PointerToReferenceType T> T Get() const;
 
-template <typename T>
+template <NonReferenceType T>
 std::remove_cvref_t<T>& Value::Get() {
   if constexpr (std::is_same_v<std::remove_cvref_t<T>, Value>) {
     return *this;
@@ -497,13 +517,20 @@ std::remove_cvref_t<T>& Value::Get() {
   }
 }
 
-template <typename T>
+template <NonReferenceType T>
 const std::remove_cvref_t<T>& Value::Get() const {
   if constexpr (std::is_same_v<std::remove_cvref_t<T>, Value>) {
     return *this;
   } else {
-    assert(type_ == Type::Get<T>());
-    return std::any_cast<const std::remove_cvref_t<T>&>(data_);
+    const auto requested_type = Type::Get<T>();
+    if (type_ == Type::Get<T>()) {
+      return std::any_cast<const std::remove_cvref_t<T>&>(data_);
+    } else if (type_->IsDerivedFrom(requested_type)) {
+      Value base_type_value = CastToBase(*this, requested_type);
+      return base_type_value.Get<T>();
+    } else {
+      assert(false && "Invalid type requested");
+    }
   }
 }
 

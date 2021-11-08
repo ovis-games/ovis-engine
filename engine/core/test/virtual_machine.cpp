@@ -47,6 +47,25 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     // REQUIRE(!Type::Deregister("Foo"));
   }
 
+  SECTION("Register reference type") {
+    struct Foo : public SafelyReferenceable {};
+
+    auto foo_type = test_module->RegisterType<Foo>("Foo");
+
+    std::unique_ptr<Foo> foo = std::make_unique<Foo>();
+    Value foo_value(foo.get());
+    REQUIRE(foo_value.type() == foo_type);
+    REQUIRE(foo_value.Get<Foo*>() == foo.get());
+    Value foo_value2(*foo.get());
+    REQUIRE(foo_value2.type() == foo_type);
+    REQUIRE(foo_value2.Get<Foo*>() == foo.get());
+
+    foo.reset();
+
+    REQUIRE(foo_value.Get<Foo*>() == nullptr);
+    REQUIRE(foo_value2.Get<Foo*>() == nullptr);
+  }
+
   SECTION("Basic type registration with base") {
     struct Base {
       int i;
