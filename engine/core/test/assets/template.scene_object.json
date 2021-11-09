@@ -1,6 +1,6 @@
 {
   "components": {
-    "Transform": {
+    "Core.Transform": {
       "position": [1, 2, 3]
     }
   },

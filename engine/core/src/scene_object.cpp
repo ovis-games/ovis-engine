@@ -107,21 +107,24 @@ SceneObjectComponent* SceneObject::AddComponent(safe_ptr<vm::Type> type) {
     LogE("Object '{}' already has the component '{}'.", path(), type->name());
     return nullptr;
   } else {
-    components_.push_back(type->Construct(this));
-    if (components_.back().type() != type) {
-      LogE("Failed to construct component");
-      components_.pop_back();
-      return nullptr;
+    auto component = SceneObjectComponent::Create(std::string(type->full_reference()), this);
+    if (component.has_value()) {
+      components_.push_back({
+        .type = type,
+        .pointer = std::move(*component),
+      });
+      return components_.back().pointer.get();
     } else {
-      return components_.back().Get<SceneObjectComponent*>();
+      LogE("Failed to construct component");
+      return nullptr;
     }
   }
 }
 
 SceneObjectComponent* SceneObject::GetComponent(safe_ptr<vm::Type> type) {
   for (const auto& component : components_) {
-    if (component.type() == type) {
-      return component.Get<SceneObjectComponent*>();
+    if (component.type == type) {
+      return component.pointer.get();
     }
   }
   return nullptr;
@@ -129,8 +132,8 @@ SceneObjectComponent* SceneObject::GetComponent(safe_ptr<vm::Type> type) {
 
 const SceneObjectComponent* SceneObject::GetComponent(safe_ptr<vm::Type> type) const {
   for (const auto& component : components_) {
-    if (component.type() == type) {
-      return component.Get<const SceneObjectComponent*>();
+    if (component.type == type) {
+      return component.pointer.get();
     }
   }
   return nullptr;
@@ -138,7 +141,7 @@ const SceneObjectComponent* SceneObject::GetComponent(safe_ptr<vm::Type> type) c
 
 bool SceneObject::HasComponent(safe_ptr<vm::Type> type) const {
   for (const auto& component : components_) {
-    if (component.type() == type) {
+    if (component.type == type) {
       return true;
     }
   }
@@ -147,7 +150,7 @@ bool SceneObject::HasComponent(safe_ptr<vm::Type> type) const {
 
 bool SceneObject::RemoveComponent(safe_ptr<vm::Type> type) {
   const auto erased_count = std::erase_if(components_, [type](const auto& component) {
-      return component.type() == type;
+      return component.type == type;
   });
   assert(erased_count <= 1);
   return erased_count > 0;
@@ -208,10 +211,10 @@ json SceneObject::Serialize() const {
 
   auto& components = serialized_object["components"] = json::object();
   for (const auto& component : components_) {
-    assert(component.type() != nullptr);
-    const auto serialized_component = component.Serialize();
+    assert(component.type != nullptr);
+    const auto serialized_component = component.pointer->Serialize();
 
-    json::json_pointer component_pointer(fmt::format("/components/{}", component.type()->name()));
+    json::json_pointer component_pointer(fmt::format("/components/{}", component.type->name()));
     if (object_template.contains(component_pointer)) {
       const auto& component_template = object_template[component_pointer];
       json changed_attributes = json::object();
@@ -271,18 +274,19 @@ bool SceneObject::Update(const json& serialized_object) {
             component.key());
         return false;
       }
-      // if (auto object_component = GetComponent(component.key()); object_component != nullptr) {
-      //   if (!GetComponent(component.key())->Update(component.value())) {
-      //     LogE("Failed to deserialize scene object, could not update component `{}`", component.key());
-      //     return false;
-      //   }
-      // } else {
-      //   if (auto object_component = AddComponent(component.key());
-      //       object_component == nullptr || !object_component->Deserialize(component.value())) {
-      //     LogE("Failed to deserialize scene object, could not add component `{}`", component.key());
-      //     return false;
-      //   }
-      // }
+      const auto type = vm::Type::Deserialize(component.key());
+      if (auto object_component = GetComponent(type); object_component != nullptr) {
+        if (!GetComponent(type)->Update(component.value())) {
+          LogE("Failed to deserialize scene object, could not update component `{}`", component.key());
+          return false;
+        }
+      } else {
+        if (auto object_component = AddComponent(type);
+            object_component == nullptr || !object_component->Deserialize(component.value())) {
+          LogE("Failed to deserialize scene object, could not add component `{}`", component.key());
+          return false;
+        }
+      }
     }
   } else {
     LogV("SceneObject deserialization: no 'components' property available!");

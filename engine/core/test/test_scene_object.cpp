@@ -38,7 +38,7 @@ TEST_CASE("Create Scene Object", "[ovis][core][SceneObject]") {
   Scene test_scene;
   SceneObject* object = test_scene.CreateObject("TestObject", R"({
     "components": {
-      "Transform": {
+      "Core.Transform": {
         "scale": [2, 1, 2]
       }
     }
@@ -70,7 +70,7 @@ TEST_CASE("Create Scene Object with Template", "[ovis][core][SceneObject]") {
   SceneObject* object = test_scene.CreateObject("TestObject", R"({
     "template": "template",
     "components": {
-      "Transform": {
+      "Core.Transform": {
         "scale": [2, 1, 2]
       }
     }

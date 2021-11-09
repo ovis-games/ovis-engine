@@ -65,13 +65,13 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   template <typename ComponentType> ComponentType* GetComponent();
   template <typename ComponentType> const ComponentType* GetComponent() const;
 
-  std::span<vm::Value> components() { return components_; }
-  std::span<const vm::Value> components() const { return components_; }
+  // std::span<vm::Value> components() { return components_; }
+  // std::span<const vm::Value> components() const { return components_; }
 
   bool HasComponent(safe_ptr<vm::Type> type) const;
   template <typename ComponentType> bool HasComponent() const;
 
-  auto component_types() const { return TransformRange(components_, [](const auto& value) { return value.type(); }); }
+  auto component_types() const { return TransformRange(components_, [](const auto& component) { return component.type; }); }
 
   bool RemoveComponent(safe_ptr<vm::Type> type);
   template <typename ComponentType> bool RemoveComponent();
@@ -90,12 +90,11 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   std::string name_;
   std::string template_;
   std::vector<safe_ptr<SceneObject>> children_;
-  std::vector<vm::Value> components_;
-  // struct TypedComponent {
-  //   safe_ptr<vm::Type> type;
-  //   std::unique_ptr<SceneObjectComponent> component;
-  // };
-  // std::vector<TypedComponent> components_;
+  struct TypedComponent {
+    safe_ptr<vm::Type> type;
+    std::unique_ptr<SceneObjectComponent> pointer;
+  };
+  std::vector<TypedComponent> components_;
 
   std::vector<safe_ptr<SceneObject>>::const_iterator FindChild(std::string_view name) const;
   std::vector<safe_ptr<SceneObject>>::iterator FindChild(std::string_view name);

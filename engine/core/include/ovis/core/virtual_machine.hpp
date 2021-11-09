@@ -48,6 +48,7 @@ class Type : public SafelyReferenceable {
   };
 
   std::string_view name() const { return name_; }
+  std::string_view full_reference() const { return full_reference_; }
   Type* parent() const { return parent_.get(); }
   Module* module() const { return module_.get(); }
 
@@ -82,6 +83,7 @@ class Type : public SafelyReferenceable {
   std::vector<Property> properties_;
 
   std::string name_;
+  std::string full_reference_;
   safe_ptr<Type> parent_;
   safe_ptr<Module> module_;
   ConversionFunction from_base_;

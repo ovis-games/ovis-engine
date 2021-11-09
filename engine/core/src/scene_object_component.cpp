@@ -17,7 +17,7 @@ void SceneObjectComponent::RegisterType(sol::table* module) {
 }
 
 void SceneObjectComponent::RegisterType(vm::Module* module) {
-  module->RegisterType<SceneObjectComponent*>("Scene Object Component");
+  module->RegisterType<SceneObjectComponent>("Scene Object Component");
 }
 
 }  // namespace ovis
