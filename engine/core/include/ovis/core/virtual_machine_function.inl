@@ -11,7 +11,7 @@ inline FunctionResultType<OutputTypes...> Function::Call(ExecutionContext* conte
   assert(sizeof...(InputTypes) == inputs_.size());
   // TODO: validate input/output types
   context->PushStackFrame();
-  ((context->PushValue(std::forward<InputTypes>(inputs))), ...);
+  ((context->PushValue2(Value::CreateViewIfPossible(std::forward<InputTypes>(inputs)))), ...);
   function_pointer_(context);
   if constexpr (sizeof...(OutputTypes) == 0) {
     context->PopStackFrame();

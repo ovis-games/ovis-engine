@@ -1,14 +1,84 @@
 namespace ovis {
 namespace vm {
 
-template <ReferenceType T>
-Value::Value(T& value) : type_(Type::Get<T>()), data_(safe_ptr<T>(&value)) {}
 
 template <ReferenceType T>
-Value::Value(T* value) : type_(Type::Get<T>()), data_(safe_ptr<T>(value)) {}
+Value Value::Create(T& value) {
+  return Value(Type::Get<T>(), safe_ptr<T>(&value), false);
+}
 
-template <NonReferenceType T>
-Value::Value(T&& value) : type_(Type::Get<T>()), data_(std::forward<T>(value)) {}
+template <ReferenceType T>
+Value Value::Create(T* value) {
+  return Value(Type::Get<T>(), safe_ptr<T>(value), false);
+}
+
+template <ValueType T>
+Value Value::Create(T&& value) {
+  return Value(Type::Get<T>(), std::forward<T>(value), false);
+}
+
+template <ValueType T>
+Value Value::Create(T* value) {
+  return Value(Type::Get<T>(), *value, false);
+}
+
+template <ReferenceType T>
+Value Value::CreateView(T& value) {
+}
+
+template <ReferenceType T>
+Value Value::CreateView(T* value) {
+}
+
+template <ValueType T>
+Value Value::CreateView(T& value) {
+  return Value(Type::Get<T>(), &value, true);
+}
+
+template <ValueType T>
+Value Value::CreateView(T* value) {
+  return Value(Type::Get<T>(), value, true);
+}
+
+template <typename T>
+Value Value::CreateViewIfPossible(T&& value) {
+  if constexpr (
+      std::is_same_v<T, Value> ||
+      (
+        std::is_reference_v<T> &&
+        std::is_same_v<std::remove_reference_t<T>, Value> &&
+        std::is_const_v<std::remove_reference_t<T>>
+      )
+  ) {
+    return std::forward<T>(value);
+  } else if constexpr (
+    (
+      std::is_reference_v<T> &&
+      std::is_same_v<std::remove_reference_t<T>, Value> &&
+      !std::is_const_v<std::remove_reference_t<T>>
+    ) || (
+      std::is_pointer_v<T> &&
+      std::is_same_v<std::remove_pointer_t<T>, Value> &&
+      !std::is_const_v<std::remove_pointer_t<T>>
+    )
+  ) {
+    assert(false);
+    return None();
+  } else if constexpr (
+      std::is_pointer_v<T> &&
+      std::is_same_v<std::remove_pointer_t<T>, Value> && 
+      std::is_const_v<std::remove_pointer_t<T>>
+  ) {
+    return Value(*value);
+  } else if constexpr (
+      is_reference_type_v<T> || 
+      (std::is_pointer_v<T> && !std::is_const_v<std::remove_pointer_t<T>>) ||
+      (std::is_reference_v<T> && !std::is_const_v<std::remove_reference_t<T>>)) {
+    return CreateView(std::forward<T>(value));
+  } else {
+    return Value::Create(std::forward<T>(value));
+  }
+}
 
 template <PointerToReferenceType T>
 T Value::Get() {
@@ -19,70 +89,52 @@ T Value::Get() {
 
 // template <PointerToReferenceType T> T Get() const;
 
-template <NonReferenceType T>
+template <ValueType T>
 std::remove_cvref_t<T>& Value::Get() {
   if constexpr (std::is_same_v<std::remove_cvref_t<T>, Value>) {
     return *this;
   } else {
     const auto requested_type = Type::Get<T>();
     if (type_ == Type::Get<T>()) {
-      return std::any_cast<std::remove_cvref_t<T>&>(data_);
+      return is_view_ ? *std::any_cast<std::remove_cvref_t<T>*>(data_) : std::any_cast<std::remove_cvref_t<T>&>(data_);
     } else if (type_->IsDerivedFrom(requested_type)) {
-      Value base_type_value = CastToBase(*this, requested_type);
+      Value base_type_value = CastToBase(requested_type);
       return base_type_value.Get<T>();
     } else {
       assert(false && "Invalid type requested");
     }
   }
-}
-
-template <NonReferenceType T>
-const std::remove_cvref_t<T>& Value::Get() const {
-  if constexpr (std::is_same_v<std::remove_cvref_t<T>, Value>) {
-    return *this;
-  } else {
-    const auto requested_type = Type::Get<T>();
-    if (type_ == Type::Get<T>()) {
-      return std::any_cast<const std::remove_cvref_t<T>&>(data_);
-    } else if (type_->IsDerivedFrom(requested_type)) {
-      Value base_type_value = CastToBase(*this, requested_type);
-      return base_type_value.Get<T>();
-    } else {
-      assert(false && "Invalid type requested");
-    }
-  }
-}
-
-inline void Value::SetProperty(std::string_view property_name, const Value& property_value) {
-  for (const auto& property : type_->properties_) {
-    if (property.name == property_name) {
-      assert(property.type == property_value.type());
-      property.setter(this, property_value);
-      return;
-    }
-  }
-  assert(false);
 }
 
 template <typename T>
 inline void Value::SetProperty(std::string_view property_name, T&& property_value) {
-  const Value value = Value{std::forward<T>(property_value)};
-  SetProperty(property_name, value);
-}
-
-inline Value Value::GetProperty(std::string_view property_name) {
-  for (const auto& property : type_->properties_) {
-    if (property.name == property_name) {
-      return property.getter(*this);
+  if constexpr (std::is_same_v<Value, T>) {
+    for (const auto& property : type_->properties_) {
+      if (property.name == property_name) {
+        assert(property.type == property_value.type());
+        property.setter(this, property_value);
+        return;
+      }
     }
+    assert(false);
+  } else {
+    SetProperty(property_name, Value::CreateViewIfPossible(std::forward<T>(property_value)));
   }
-  assert(false);
-  return {};
 }
 
 template <typename T>
 inline T Value::GetProperty(std::string_view property_name) {
-  return GetProperty(property_name).Get<T>();
+  if constexpr (std::is_same_v<Value, T>) {
+    for (const auto& property : type_->properties_) {
+      if (property.name == property_name) {
+        return property.getter(*this);
+      }
+    }
+    assert(false);
+    return None();
+  } else {
+    return GetProperty(property_name).Get<T>();
+  }
 }
 
 inline json Value::Serialize() const {
@@ -93,12 +145,18 @@ inline json Value::Serialize() const {
   }
 }
 
-inline Value Value::CastToBase(const Value& value, safe_ptr<Type> target_type) {
-  assert(value.type()->IsDerivedFrom(target_type));
-  if (target_type == value.type()) {
-    return value;
+inline Value Value::CastToBase(safe_ptr<Type> target_type) {
+  assert(type()->IsDerivedFrom(target_type));
+  if (target_type == type()) {
+    // TODO: create view
+    return *this;
   } else {
-    return CastToBase(value.type()->to_base_(value), target_type);
+    auto to_base = type()->to_base_;
+    if (to_base) {
+      return to_base(*this).CastToBase(target_type);
+    } else {
+      return Value::None();
+    }
   }
 }
 

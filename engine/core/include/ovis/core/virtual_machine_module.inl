@@ -34,26 +34,27 @@ inline safe_ptr<Type> Module::RegisterType(std::string_view name) {
   return safe_ptr(&types_.back());
 }
 
-inline safe_ptr<Type> Module::RegisterType(std::string_view name, safe_ptr<Type> parent_type, Type::ConversionFunction from_base,
-                              Type::ConversionFunction to_base) {
+inline safe_ptr<Type> Module::RegisterType(std::string_view name, safe_ptr<Type> parent_type, Type::ConversionFunction to_base,
+                              Type::ConversionFunction from_base) {
   if (GetType(name) != nullptr) {
     return nullptr;
   }
 
-  types_.push_back(Type(this, name, parent_type.get(), from_base, to_base));
+  types_.push_back(Type(this, name, parent_type.get(), to_base, from_base));
   return safe_ptr(&types_.back());
 }
 
 namespace detail {
 
 template <typename Base, typename Derived>
-Value FromBase(const Value& base) {
-  return Value(down_cast<Derived>(base.Get<Base>()));
+Value FromBase(Value& base) {
+  assert(base.is_view()); // If the value is not a view it cannot be something else
+  return Value::CreateView(down_cast<Derived&>(base.Get<Base>()));
 }
 
 template <typename Base, typename Derived>
-Value ToBase(const Value& derived) {
-  return Value(static_cast<Base>(derived.Get<Derived>()));
+Value ToBase(Value& derived) {
+  return Value::CreateView(static_cast<Base&>(derived.Get<Derived>()));
 }
 
 }
@@ -72,7 +73,7 @@ inline safe_ptr<Type> Module::RegisterType(std::string_view name, bool create_cp
   if constexpr (std::is_same_v<ParentType, void>) {
     type = RegisterType(name);
   } else {
-    type = RegisterType(name, Type::Get<ParentType>(), nullptr, &detail::ToBase<ParentType, T>);
+    type = RegisterType(name, Type::Get<ParentType>(), &detail::ToBase<ParentType, T>, &detail::FromBase<ParentType, T>);
   }
   if (type == nullptr) {
     return nullptr;

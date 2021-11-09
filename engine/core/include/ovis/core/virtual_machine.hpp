@@ -33,7 +33,7 @@ class Type : public SafelyReferenceable {
   friend class Module;
 
  public:
-  using ConversionFunction = Value(*)(const Value& value);
+  using ConversionFunction = Value(*)(Value& value);
   using SerializeFunction = json(*)(const Value& value);
   using DeserializeFunction = Value(*)(const json& value);
 
@@ -96,50 +96,76 @@ std::ostream& operator<<(std::ostream& os, const safe_ptr<Type>& pointer);
 
 template <typename T> constexpr bool is_reference_type_v = std::is_base_of_v<SafelyReferenceable, T>;
 template <typename T> constexpr bool is_pointer_to_reference_type_v = std::is_pointer_v<T> && std::is_base_of_v<SafelyReferenceable, std::remove_pointer_t<T>>;
-template <typename T> constexpr bool is_non_reference_type_v = !std::is_base_of_v<SafelyReferenceable, T> && !std::is_pointer_v<T>;
+template <typename T> constexpr bool is_value_type_v = !std::is_base_of_v<SafelyReferenceable, T> && !std::is_pointer_v<T>;
+template <typename T> constexpr bool is_pointer_to_value_type_v = std::is_pointer_v<T> && is_value_type_v<std::remove_pointer_t<T>>;
+
 template <typename T> concept ReferenceType = is_reference_type_v<T>;
 template <typename T> concept PointerToReferenceType = is_pointer_to_reference_type_v<T>;
-template <typename T> concept NonReferenceType = is_non_reference_type_v<T>;
+template <typename T> concept ValueType = is_value_type_v<T>;
+template <typename T> concept PointerToValueType = is_value_type_v<T>;
 
 class Value {
  public:
-  Value() : type_(nullptr) {}
-  Value(Value& other) : type_(other.type_), data_(other.data_) {}
-  Value(const Value& other) : type_(other.type_), data_(other.data_) {}
-  Value(Value&& other) : type_(std::move(other.type_)), data_(std::move(other.data_)) {}
+  Value(const Value& other) = default;
+  Value(Value&& other) : type_(std::move(other.type_)), data_(std::move(other.data_)), is_view_(other.is_view_) {}
 
-  template <ReferenceType T> Value(T& value);
-  template <ReferenceType T> Value(T* value);
-  template <NonReferenceType T> Value(T&& value);
+  // Named constructor
+  static Value None() { return Value(nullptr, {}, false); }
+
+  template <ReferenceType T>
+  static Value Create(T& value);
+
+  template <ReferenceType T>
+  static Value Create(T* value);
+
+  template <ValueType T>
+  static Value Create(T&& value);
+
+  template <ValueType T>
+  static Value Create(T* value);
+
+  template <ReferenceType T>
+  static Value CreateView(T& value);
+
+  template <ReferenceType T>
+  static Value CreateView(T* value);
+
+  template <ValueType T>
+  static Value CreateView(T& value);
+
+  template <ValueType T>
+  static Value CreateView(T* value);
+
+  template <typename T> 
+  static Value CreateViewIfPossible(T&& value);
 
   Value& operator=(const Value& other) = default;
   Value& operator=(Value&& other) = default;
 
   template <PointerToReferenceType T> T Get();
-  template <PointerToReferenceType T> T Get() const;
-  template <NonReferenceType T> std::remove_cvref_t<T>& Get();
-  template <NonReferenceType T> const std::remove_cvref_t<T>& Get() const;
+  template <ValueType T> std::remove_cvref_t<T>& Get();
+  template <typename T> auto Get() const { return const_cast<Value*>(this)->Get<T>(); }
 
-  void SetProperty(std::string_view property_name, const Value& property_value);
   template <typename T>
   void SetProperty(std::string_view property_name, T&& property_value);
 
-  Value GetProperty(std::string_view property_name);
-  template <typename T>
+  template <typename T = Value>
   T GetProperty(std::string_view property_name);
 
   json Serialize() const;
 
   Type* type() const { return type_.get(); }
-
-  static Value None() { return Value(); }
+  bool is_view() const { return is_view_; }
 
  private:
+  Value(safe_ptr<Type> type, std::any data, bool is_view) : type_(type), data_(std::move(data)), is_view_(is_view) {}
+
   safe_ptr<Type> type_;
   std::any data_;
+  bool is_view_;
 
-  static Value CastToDerived(const Value& value, safe_ptr<Type> target_type);
-  static Value CastToBase(const Value& value, safe_ptr<Type> target_type);
+  Value CastToDerived(safe_ptr<Type> target_type);
+  Value CastToBase(safe_ptr<Type> target_type);
 };
 
 namespace instructions {
@@ -203,7 +229,9 @@ class ExecutionContext {
   ExecutionContext(std::size_t reserved_stack_size = 100);
 
   // Push an arbitrary value onto the stack. In case T is a tuple, its members are packed onto the stack individually.
+  void PushValue2(Value value);
   template <typename T> void PushValue(T&& value);
+  template <typename T> void PushValueView(T&& value);
 
   void PopValue();
   void PopValues(std::size_t count);

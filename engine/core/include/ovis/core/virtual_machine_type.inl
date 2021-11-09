@@ -6,8 +6,8 @@ namespace vm {
 inline Type::Type(Module* module, std::string_view name)
     : module_(module), name_(name), parent_(nullptr), serialize_function_(nullptr), deserialize_function_(nullptr) {}
 
-inline Type::Type(Module* module, std::string_view name, Type* parent, ConversionFunction from_base,
-                  ConversionFunction to_base)
+inline Type::Type(Module* module, std::string_view name, Type* parent, ConversionFunction to_base,
+                  ConversionFunction from_base)
     : Type(module, name) {
   parent_ = parent;
   from_base_ = from_base;
@@ -116,7 +116,7 @@ class PropertyCallbacks {};
 
 template <typename T, typename PropertyType, PropertyType T::*PROPERTY>
 struct PropertyCallbacks<PROPERTY> {
-  static Value PropertyGetter(const ovis::vm::Value& object) { return object.Get<T>().*PROPERTY; }
+  static Value PropertyGetter(const ovis::vm::Value& object) { return Value::Create(object.Get<T>().*PROPERTY); }
 
   static void PropertySetter(ovis::vm::Value* object, const ovis::vm::Value& property_value) {
     assert(property_value.type() == Type::template Get<PropertyType>());

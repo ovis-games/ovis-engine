@@ -326,8 +326,7 @@ Vector3 LinearInterpolateVector3(Vector3 a, Vector3 b, float t) {
   return (1.0f - t) * a + t * b;
 }
 vm::Value DeserializeVector3(const json& data) {
-  Vector3 value = data;
-  return value;
+  return vm::Value::Create(Vector3(data));
 }
 
 void Vector3::RegisterType(vm::Module* module) {

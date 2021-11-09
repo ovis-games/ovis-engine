@@ -16,8 +16,12 @@ static_assert(std::is_same_v<int, nth_parameter_t<2, void, bool, int>>);
 
 template <typename T>
 struct ValueHelper {
-  static void Push(ExecutionContext* context, T&& value) {
-    context->PushValue(Value(std::forward<T>(value)));
+  static void PushValue(ExecutionContext* context, T&& value) {
+    context->PushValue(Value::Create(std::forward<T>(value)));
+  }
+
+  static void PushValueView(ExecutionContext* context, T&& value) {
+    context->PushValue(Value::CreateViewIfPossible(std::forward<T>(value)));
   }
 
   static WrappedType<T> Get(ExecutionContext* context, std::size_t position, std::size_t stack_frame_offset) {
@@ -31,7 +35,12 @@ struct ValueHelper {
 
 template <>
 struct ValueHelper<Value> {
-  static void Push(ExecutionContext* context, Value value) {
+  static void PushValue(ExecutionContext* context, Value value) {
+    context->PushValue(std::move(value));
+  }
+
+  static void PushValueView(ExecutionContext* context, Value value) {
+    // TODO: is this the correct behavior?
     context->PushValue(std::move(value));
   }
 
@@ -48,15 +57,27 @@ struct ValueHelper<Value> {
 template <typename... T>
 struct ValueHelper<std::tuple<T...>> {
   template <std::size_t... I>
-  static void PushTupleImpl(ExecutionContext* context, std::tuple<T...>&& values, std::index_sequence<I...>) {
+  static void PushTupleValuesImpl(ExecutionContext* context, std::tuple<T...>&& values, std::index_sequence<I...>) {
     ((context->PushValue(std::get<I>(values))), ...);
   }
   template <typename Indices = std::make_index_sequence<sizeof...(T)>>
-  static void PushTuple(ExecutionContext* context, std::tuple<T...>&& values) {
-    PushTupleImpl(context, std::forward<std::tuple<T...>>(values), Indices{});
+  static void PushTupleValues(ExecutionContext* context, std::tuple<T...>&& values) {
+    PushTupleValuesImpl(context, std::forward<std::tuple<T...>>(values), Indices{});
   }
-  static void Push(ExecutionContext* context, std::tuple<T...>&& value) {
-    PushTuple(context, std::forward<std::tuple<T...>>(value));
+  static void PushValue(ExecutionContext* context, std::tuple<T...>&& value) {
+    PushTupleValues(context, std::forward<std::tuple<T...>>(value));
+  }
+
+  template <std::size_t... I>
+  static void PushTupleValueViewsImpl(ExecutionContext* context, std::tuple<T...>&& values, std::index_sequence<I...>) {
+    ((context->PushValue(std::get<I>(values))), ...);
+  }
+  template <typename Indices = std::make_index_sequence<sizeof...(T)>>
+  static void PushTupleValueViews(ExecutionContext* context, std::tuple<T...>&& values) {
+    PushTupleValueViewsImpl(context, std::forward<std::tuple<T...>>(values), Indices{});
+  }
+  static void PushValueView(ExecutionContext* context, std::tuple<T...>&& value) {
+    PushTupleValueViews(context, std::forward<std::tuple<T...>>(value));
   }
 
   template <std::size_t... I>
@@ -88,13 +109,22 @@ struct ValueHelper<std::tuple<T...>> {
 
 }
 
+inline void ExecutionContext::PushValue2(Value value) {
+  stack_.push_back(std::move(value));
+}
+
 template <typename T>
 inline void ExecutionContext::PushValue(T&& value) {
   if constexpr (std::is_same_v<std::remove_reference_t<T>, Value>) {
     stack_.push_back(value);
   } else {
-    detail::ValueHelper<T>::Push(this, std::forward<T>(value));
+    detail::ValueHelper<T>::PushValue(this, std::forward<T>(value));
   }
+}
+
+template <typename T>
+inline void ExecutionContext::PushValueView(T&& value) {
+  detail::ValueHelper<T>::PushValueView(this, std::forward<T>(value));
 }
 
 inline void ExecutionContext::PopValue() {
@@ -117,7 +147,7 @@ inline void ExecutionContext::PushStackFrame() {
 
 inline void ExecutionContext::PopStackFrame() {
   assert(stack_frames_.size() > 1);
-  stack_.resize(stack_frames_.back().base_position);
+  stack_.resize(stack_frames_.back().base_position, Value::None());
   stack_frames_.pop_back();
 }
 
