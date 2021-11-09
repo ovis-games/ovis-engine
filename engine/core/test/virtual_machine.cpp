@@ -27,7 +27,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     REQUIRE(foo_type == test_module->GetType("Foo"));
     REQUIRE(foo_type == Type::Get<Foo>());
 
-    Value foo(Foo{});
+    Value foo = Value::Create(Foo{});
     REQUIRE(foo.type() == foo_type);
     Foo& foo2 = foo.Get<Foo>();
 
@@ -37,14 +37,95 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     struct Bar {};
     auto bar_as_foo = test_module->RegisterType<Bar>("Foo");
     REQUIRE(bar_as_foo == nullptr);
+  }
 
-    // REQUIRE(Type::Deregister("Foo"));
-    // REQUIRE(test_module->GetType("Foo") == nullptr);
-    // REQUIRE(test_module->GetType<Foo>() == nullptr);
-    // REQUIRE(foo_type == nullptr);
-    // REQUIRE(foo.type() == nullptr);
+  SECTION("Register reference type") {
+    struct Foo : public SafelyReferenceable {};
 
-    // REQUIRE(!Type::Deregister("Foo"));
+    auto foo_type = test_module->RegisterType<Foo>("Foo");
+
+    std::unique_ptr<Foo> foo = std::make_unique<Foo>();
+    Value foo_value = Value::Create(foo.get());
+    REQUIRE(foo_value.type() == foo_type);
+    REQUIRE(foo_value.Get<Foo*>() == foo.get());
+    Value foo_value2 = vm::Value::Create(*foo.get());
+    REQUIRE(foo_value2.type() == foo_type);
+    REQUIRE(foo_value2.Get<Foo*>() == foo.get());
+
+    foo.reset();
+
+    REQUIRE(foo_value.Get<Foo*>() == nullptr);
+    REQUIRE(foo_value2.Get<Foo*>() == nullptr);
+  }
+
+  SECTION("Push value") {
+    auto int_type = test_module->RegisterType<int>("Integer");
+    {
+      ExecutionContext::global_context()->PushValue2(Value::CreateViewIfPossible(10));
+      Value v = ExecutionContext::global_context()->GetTopValue();
+      REQUIRE(v.type() == int_type);
+      REQUIRE(v.is_view() == false);
+      REQUIRE(v.Get<int>() == 10);
+      ExecutionContext::global_context()->PopValue();
+    }
+
+    {
+      int i = 10;
+      ExecutionContext::global_context()->PushValue2(Value::CreateViewIfPossible(i));
+      Value v = ExecutionContext::global_context()->GetTopValue();
+      REQUIRE(v.type() == int_type);
+      REQUIRE(v.is_view() == true);
+      REQUIRE(v.Get<int>() == 10);
+      i = 11;
+      REQUIRE(v.Get<int>() == 11);
+      ExecutionContext::global_context()->PopValue();
+    }
+  }
+
+  SECTION("Basic type registration with base") {
+    struct Base {
+      int i;
+    };
+    struct Derived : public Base {};
+    struct DerivedSquared : public Derived {};
+    struct Foo : public Base {};
+    struct Functions {
+      static int UseBase(const Base& b) {
+        return 2 * b.i;
+      }
+    };
+
+    auto base_type = test_module->RegisterType<Base>("Base");
+    auto derived_type = test_module->RegisterType<Derived, Base>("Derived");
+    auto derived_squared_type = test_module->RegisterType<DerivedSquared, Derived>("Derived Squared");
+    auto foo_type = test_module->RegisterType<Foo>("Foo");
+    REQUIRE(derived_type->IsDerivedFrom(base_type));
+    REQUIRE(derived_type->IsDerivedFrom<Base>());
+    REQUIRE(!base_type->IsDerivedFrom(derived_type));
+    REQUIRE(!base_type->IsDerivedFrom<Derived>());
+    REQUIRE(derived_squared_type->IsDerivedFrom(derived_type));
+    REQUIRE(derived_squared_type->IsDerivedFrom<Derived>());
+    REQUIRE(derived_squared_type->IsDerivedFrom(base_type));
+    REQUIRE(derived_squared_type->IsDerivedFrom<Base>());
+    REQUIRE(!foo_type->IsDerivedFrom(derived_type));
+    REQUIRE(!foo_type->IsDerivedFrom<Derived>());
+
+    auto use_base = test_module->RegisterFunction<&Functions::UseBase>("Use Base", { "base" }, { "result" });
+    Derived d;
+    d.i = 1336;
+    Value test = Value::CreateViewIfPossible(d);
+    REQUIRE(test.Get<Derived>().i == 1336);
+    d.i = 1337;
+    REQUIRE(test.Get<Derived>().i == 1337);
+
+    Base& b = test.Get<Base>();
+    REQUIRE(b.i == 1337);
+
+    REQUIRE(use_base->Call<int>(d) == 2674);
+
+    DerivedSquared ds;
+    ds.i = 69;
+    REQUIRE(use_base->Call<int>(ds) == 138);
   }
 
   SECTION("Basic type registration with base") {
@@ -84,11 +165,11 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
       static vm::Value Deserialize(const json& data) {
         if (!data.is_number()) {
           LogE("'data' is not a number");
-          return {};
+          return Value::None();
         }
-        return Foo {
+        return Value::Create(Foo{
           .number = data,
-        };
+        });
       }
 
       double number;
@@ -109,7 +190,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     foo_type->SetSerializeFunction(nullptr);
     REQUIRE(value.Serialize().is_null());
 
-    Value value2;
+    Value value2 = Value::None();
     REQUIRE(value2.Serialize().is_null());
   }
 
@@ -147,7 +228,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     REQUIRE(foo_type->properties().size() == 1);
     REQUIRE(foo_type->properties()[0].name == "a");
 
-    Value v(Foo{ .a = 100 });
+    Value v = Value::Create(Foo{ .a = 100 });
     REQUIRE(v.GetProperty<int>("a") == 100); // v["a"].Get<int>() == 100 ?
 
     v.SetProperty("a", 200); // v["a"] = 200 ?
@@ -193,6 +274,30 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     REQUIRE(foo_function->Call<int>(21) == 42);
     REQUIRE(foo_function->Call<int>(210) == 420);
     REQUIRE(foo_function->Call<int>(1337) == 2674);
+  }
+
+  SECTION("Function with reference parameter") {
+    struct Foo {
+      static void foo(int& i) { i *= 2; }
+    };
+
+    test_module->RegisterType<int>("Integer");
+    auto foo_function = test_module->RegisterFunction<&Foo::foo>("foo", {"An awesome parameter"}, {});
+    REQUIRE(foo_function != nullptr);
+
+    int y = 42;
+    foo_function->Call(y);
+    REQUIRE(y == 84);
+
+    // ValueView from value not implemented yet.
+    // Value x = Value::Create(42);
+    // REQUIRE(x.type() == Type::Get<int>());
+    // REQUIRE(x.Get<int>() == 42);
+
+    // foo_function->Call(x);
+
+    // REQUIRE(x.type() == Type::Get<int>());
+    // REQUIRE(x.Get<int>() == 84);
   }
 
   SECTION("Function with tuple parameter") {
