@@ -53,24 +53,37 @@ function (target_include_assets target)
           "SHELL:--preload-file ${asset}@/ovis_assets/"
       )
     endforeach()
+
+    target_sources(
+      ${target}
+      PRIVATE
+        ${asset_files}
+    )
   else ()
+    set(base_dir ${CMAKE_CURRENT_BINARY_DIR}/assets/${target})
     foreach(asset ${asset_files})
       get_filename_component(filename ${asset} NAME)
-      list(APPEND asset_output ${CMAKE_CURRENT_BINARY_DIR}/assets/${filename})
+      list(APPEND asset_output ${base_dir}/${filename})
     endforeach()
 
     add_custom_command(
-      OUTPUT ${asset_output} ${CMAKE_CURRENT_BINARY_DIR}/assets.cpp
-      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/assets
-      COMMAND ${CMAKE_COMMAND} -E copy ${asset_files} ${CMAKE_CURRENT_BINARY_DIR}/assets
-      COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/assets.cpp
+      OUTPUT ${asset_output}
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${base_dir}
+      COMMAND ${CMAKE_COMMAND} -E copy ${asset_files} ${base_dir}
+      DEPENDS ${asset_files}
+    )
+
+    set(assets_dummy_cpp ${CMAKE_CURRENT_BINARY_DIR}/${target}_assets.cpp)
+    add_custom_command(
+      OUTPUT ${assets_dummy_cpp}
+      COMMAND ${CMAKE_COMMAND} -E touch ${assets_dummy_cpp}
       DEPENDS ${asset_files}
     )
 
     target_sources(
       ${target}
       PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}/assets.cpp
+        ${assets_dummy_cpp}
     )
   endif ()
 endfunction()
@@ -92,24 +105,37 @@ function (target_embed_assets target)
           "SHELL:--embed-file ${asset}@/ovis_assets/"
       )
     endforeach()
-  else ()
-    foreach(asset ${asset_files})
-      get_filename_component(filename ${asset} NAME)
-      list(APPEND asset_output ${CMAKE_CURRENT_BINARY_DIR}/assets/${filename})
-    endforeach()
 
+    set(assets_dummy_cpp ${CMAKE_CURRENT_BINARY_DIR}/${target}_assets.cpp)
     add_custom_command(
-      OUTPUT ${asset_output} ${CMAKE_CURRENT_BINARY_DIR}/assets.cpp
-      COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/assets
-      COMMAND ${CMAKE_COMMAND} -E copy ${asset_files} ${CMAKE_CURRENT_BINARY_DIR}/assets
-      COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/assets.cpp
+      OUTPUT ${assets_dummy_cpp}
+      COMMAND ${CMAKE_COMMAND} -E touch ${assets_dummy_cpp}
       DEPENDS ${asset_files}
     )
 
     target_sources(
       ${target}
       PRIVATE
-        ${CMAKE_CURRENT_BINARY_DIR}/assets.cpp
+        ${assets_dummy_cpp}
+    )
+  else ()
+    set(base_dir ${CMAKE_CURRENT_BINARY_DIR}/assets/${target})
+    foreach(asset ${asset_files})
+      get_filename_component(filename ${asset} NAME)
+      list(APPEND asset_output ${base_dir}/${filename})
+    endforeach()
+
+    add_custom_command(
+      OUTPUT ${asset_output}
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${base_dir}
+      COMMAND ${CMAKE_COMMAND} -E copy ${asset_files} ${base_dir}
+      DEPENDS ${asset_files}
+    )
+
+    target_sources(
+      ${target}
+      PRIVATE
+        ${asset_output}
     )
   endif ()
 endfunction()

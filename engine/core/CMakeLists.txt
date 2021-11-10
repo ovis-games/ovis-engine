@@ -98,7 +98,10 @@ if (OVIS_BUILD_TESTS)
       ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-core-test.js
     )
   else ()
-    add_test(ovis-core-test ovis-core-test)
+    add_test(
+      NAME ovis-core-test
+      COMMAND ovis-core-test --assets-directory ${CMAKE_CURRENT_BINARY_DIR}/assets/ovis-core-test/
+    )
   endif ()
 endif ()
 

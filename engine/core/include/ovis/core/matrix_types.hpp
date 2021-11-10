@@ -139,8 +139,6 @@ struct is_matrix : public std::integral_constant<bool, std::is_same<T, Matrix2>(
 
 }  // namespace ovis
 
-namespace fmt {
-
 template <>
 struct fmt::formatter<ovis::Matrix2> {
   char presentation = 'f';
@@ -224,5 +222,3 @@ struct fmt::formatter<ovis::Matrix4> {
     return ctx.out();
   }
 };
-
-}  // namespace fmt

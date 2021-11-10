@@ -349,7 +349,7 @@ void ScriptFunctionParser::ParseReturn(const json& action, std::string path) {
 
 void ScriptFunctionParser::PushNone(const std::string& path) {
   instructions.push_back(vm::instructions::PushConstant {
-      .value = vm::Value{}
+      .value = vm::Value::None()
   });
   debug_info.instruction_info.push_back({
       .scope = current_scope_index,
@@ -362,7 +362,7 @@ void ScriptFunctionParser::ParsePush(const json& value_definition, const std::st
     const auto input_type = vm::Type::Get<decltype(value)>();
     if (!required_type || required_type == input_type) {
       instructions.push_back(vm::instructions::PushConstant{
-          .value = value,
+          .value = vm::Value::Create(value),
       });
       debug_info.instruction_info.push_back({
           .scope = current_scope_index,
