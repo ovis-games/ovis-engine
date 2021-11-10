@@ -184,6 +184,7 @@ void Transform::RegisterType(sol::table* module) {
 
 void Transform::RegisterType(vm::Module* module) {
   auto transform_type = module->RegisterType<Transform, SceneObjectComponent>("Transform");
+  transform_type->RegisterProperty<&Transform::local_position, &Transform::SetLocalPosition>("Local Position");
   
   // auto transform_constructor = module->RegisterFunction<vm::Constructor<Transform, SceneObject*>>("Create Transform", { "object" }, { "transform" });
 }
