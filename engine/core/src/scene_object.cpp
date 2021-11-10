@@ -93,19 +93,19 @@ bool SceneObject::ContainsChildObject(std::string_view object_name) {
   return FindChild(object_name) != children_.end();
 }
 
-SceneObjectComponent* SceneObject::AddComponent(safe_ptr<vm::Type> type) {
+vm::Value SceneObject::AddComponent(safe_ptr<vm::Type> type) {
   if (!type) {
     LogE("Invalid object component");
-    return nullptr;
+    return vm::Value::None();
   }
   if (!type->IsDerivedFrom<SceneObjectComponent>()) {
     LogE("{} does not derived from SceneObjectComponent");
-    return nullptr;
+    return vm::Value::None();
   }
 
   if (HasComponent(type)) {
     LogE("Object '{}' already has the component '{}'.", path(), type->name());
-    return nullptr;
+    return vm::Value::None();
   } else {
     auto component = SceneObjectComponent::Create(std::string(type->full_reference()), this);
     if (component.has_value()) {
@@ -113,30 +113,30 @@ SceneObjectComponent* SceneObject::AddComponent(safe_ptr<vm::Type> type) {
         .type = type,
         .pointer = std::move(*component),
       });
-      return components_.back().pointer.get();
+      return vm::Value::CreateView(components_.back().pointer.get(), type);
     } else {
       LogE("Failed to construct component");
-      return nullptr;
+      return vm::Value::None();
     }
   }
 }
 
-SceneObjectComponent* SceneObject::GetComponent(safe_ptr<vm::Type> type) {
+vm::Value SceneObject::GetComponent(safe_ptr<vm::Type> type) {
   for (const auto& component : components_) {
     if (component.type == type) {
-      return component.pointer.get();
+      return vm::Value::CreateView(component.pointer.get(), type);
     }
   }
-  return nullptr;
+  return vm::Value::None();
 }
 
-const SceneObjectComponent* SceneObject::GetComponent(safe_ptr<vm::Type> type) const {
+vm::Value SceneObject::GetComponent(safe_ptr<vm::Type> type) const {
   for (const auto& component : components_) {
     if (component.type == type) {
-      return component.pointer.get();
+      return vm::Value::CreateView(component.pointer.get(), type);
     }
   }
-  return nullptr;
+  return vm::Value::None();
 }
 
 bool SceneObject::HasComponent(safe_ptr<vm::Type> type) const {
@@ -275,14 +275,14 @@ bool SceneObject::Update(const json& serialized_object) {
         return false;
       }
       const auto type = vm::Type::Deserialize(component.key());
-      if (auto object_component = GetComponent(type); object_component != nullptr) {
-        if (!GetComponent(type)->Update(component.value())) {
+      if (auto object_component = GetComponent(type); !object_component.is_none()) {
+        if (!object_component.Get<SceneObjectComponent*>()->Update(component.value())) {
           LogE("Failed to deserialize scene object, could not update component `{}`", component.key());
           return false;
         }
       } else {
         if (auto object_component = AddComponent(type);
-            object_component == nullptr || !object_component->Deserialize(component.value())) {
+            object_component.is_none() || !object_component.Get<SceneObjectComponent*>()->Deserialize(component.value())) {
           LogE("Failed to deserialize scene object, could not add component `{}`", component.key());
           return false;
         }

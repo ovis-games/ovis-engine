@@ -98,7 +98,7 @@ std::ostream& operator<<(std::ostream& os, const safe_ptr<Type>& pointer);
 
 template <typename T> constexpr bool is_reference_type_v = std::is_base_of_v<SafelyReferenceable, T>;
 template <typename T> constexpr bool is_pointer_to_reference_type_v = std::is_pointer_v<T> && std::is_base_of_v<SafelyReferenceable, std::remove_pointer_t<T>>;
-template <typename T> constexpr bool is_value_type_v = !std::is_base_of_v<SafelyReferenceable, T> && !std::is_pointer_v<T>;
+template <typename T> constexpr bool is_value_type_v = !std::is_base_of_v<SafelyReferenceable, T> && !std::is_pointer_v<T> && !std::is_same_v<std::remove_cvref_t<T>, Value>;
 template <typename T> constexpr bool is_pointer_to_value_type_v = std::is_pointer_v<T> && is_value_type_v<std::remove_pointer_t<T>>;
 
 template <typename T> concept ReferenceType = is_reference_type_v<T>;
@@ -138,6 +138,11 @@ class Value {
   template <ValueType T>
   static Value CreateView(T* value);
 
+  static Value CreateView(Value& value);
+
+  template <typename T>
+  static Value CreateView(T&& value, safe_ptr<Type> actual_type);
+
   template <typename T> 
   static Value CreateViewIfPossible(T&& value);
 
@@ -160,6 +165,7 @@ class Value {
 
   Type* type() const { return type_.get(); }
   bool is_view() const { return is_view_; }
+  bool is_none() const { return type_ == nullptr; }
 
  private:
   Value(safe_ptr<Type> type, std::any data, bool is_view) : type_(type), data_(std::move(data)), is_view_(is_view) {}

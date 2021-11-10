@@ -57,11 +57,11 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   template <typename T>
   void ForEachChild(bool recursive, T&& functor);
 
-  SceneObjectComponent* AddComponent(safe_ptr<vm::Type> type);
+  vm::Value AddComponent(safe_ptr<vm::Type> type);
   template <typename ComponentType> ComponentType* AddComponent();
 
-  SceneObjectComponent* GetComponent(safe_ptr<vm::Type> type);
-  const SceneObjectComponent* GetComponent(safe_ptr<vm::Type> type) const;
+  vm::Value GetComponent(safe_ptr<vm::Type> type);
+  vm::Value GetComponent(safe_ptr<vm::Type> type) const;
   template <typename ComponentType> ComponentType* GetComponent();
   template <typename ComponentType> const ComponentType* GetComponent() const;
 
