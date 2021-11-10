@@ -135,6 +135,8 @@ class Value {
   template <ValueType T>
   static Value Create(T* value);
 
+  static Value Create(const Value& value);
+
   template <ReferenceType T>
   static Value CreateView(T& value);
 

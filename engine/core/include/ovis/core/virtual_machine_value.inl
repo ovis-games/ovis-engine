@@ -22,6 +22,10 @@ Value Value::Create(T* value) {
   return Value(Type::Get<T>(), *value, false);
 }
 
+inline Value Value::Create(const Value& value) {
+  return value;
+}
+
 template <ReferenceType T>
 Value Value::CreateView(T& value) {
   return Create(value);
