@@ -1,6 +1,6 @@
 {
   "components": {
-    "Transform": {}
+    "Core.Transform": {}
   },
   "children": {},
   "animations": {
@@ -11,13 +11,9 @@
       "channels": [
         {
           "object": "/",
-          "component": "Transform",
-          "property": "Position",
-          "type": {
-            "name": "Vector3",
-            "module": "Core"
-          },
-          "interpolateFunction": {
+          "component": "Core.Transform",
+          "property": "Local Position",
+          "interpolationFunction": {
             "name": "Linear Interpolate Vector3",
             "module": "Core"
           },

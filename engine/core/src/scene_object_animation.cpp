@@ -17,15 +17,18 @@ SceneObjectAnimationKeyframe ParseKeyframe(const vm::Type& type, const json& dat
 SceneObjectAnimationChannel ParseChannel(const json& data) {
   SceneObjectAnimationChannel channel;
   channel.object_path = data.at("object");
-  channel.component = data.at("component");
+  channel.component_type = vm::Type::Deserialize(data.at("component"));
+  assert(channel.component_type != nullptr);
   channel.property = data.at("property");
-  channel.type = vm::Type::Deserialize(data.at("type"));
-  assert(channel.type != nullptr);
-  channel.interpolate_function = vm::Function::Deserialize(data.at("interpolateFunction"));
-  assert(channel.interpolate_function != nullptr);
+  auto property = channel.component_type->GetProperty(channel.property);
+  assert(property != nullptr);
+  channel.interpolation_function = vm::Function::Deserialize(data.at("interpolationFunction"));
+  assert(channel.interpolation_function != nullptr);
   channel.keyframes.reserve(data.at("keyframes").size());
+
+  const auto property_type = property->type;
   for (const auto& keyframe : data.at("keyframes")) {
-    channel.keyframes.push_back(ParseKeyframe(*channel.type.get(), keyframe));
+    channel.keyframes.push_back(ParseKeyframe(*property_type.get(), keyframe));
   }
   // Sort keyframes by frame
   std::sort(channel.keyframes.begin(), channel.keyframes.end(), [](const auto& lhs, const auto& rhs) {
@@ -47,9 +50,9 @@ void SceneObjectAnimation::Animate(float frame, SceneObject* object) {
     SceneObject* sub_object = object; // TODO: change this
     assert(sub_object);
 
-    Transform* component = sub_object->GetComponent<Transform>(channel.component); // Change type
+    vm::Value component = sub_object->GetComponent(channel.component_type);
     if (channel.keyframes.size() == 1) {
-      component->SetLocalPosition(channel.keyframes[0].value.Get<Vector3>()); // Change
+      component.SetProperty(channel.property, channel.keyframes[0].value);
     } else if (channel.keyframes.size() > 1) {
       auto value_a_it = channel.keyframes.cbegin();
       auto value_b_it = std::next(value_a_it);
@@ -61,8 +64,8 @@ void SceneObjectAnimation::Animate(float frame, SceneObject* object) {
       Vector3 value_a = value_a_it->value.Get<Vector3>();
       Vector3 value_b = value_b_it->value.Get<Vector3>();
       const float t =  (frame - value_a_it->frame) / (value_b_it->frame - value_a_it->frame);
-      const Vector3 result = channel.interpolate_function->Call<Vector3>(value_a, value_b, t);
-      component->SetLocalPosition(result);
+      const vm::Value result = channel.interpolation_function->Call<vm::Value>(value_a, value_b, t);
+      component.SetProperty(channel.property, result);
     }
   }
 }

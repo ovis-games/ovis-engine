@@ -97,14 +97,14 @@ TEST_CASE("Create Scene Object with Animation", "[ovis][core][SceneObject]") {
   SceneObject* object = test_scene.CreateObject("TestObject", R"({
     "template": "animation_test",
     "components": {
-      "Transform": {
+      "Core.Transform": {
         "scale": [2, 1, 2]
       }
     }
   })"_json);
 
   REQUIRE(object != nullptr);
-  Transform* transform = object->GetComponent<Transform>("Transform");
+  Transform* transform = object->GetComponent<Transform>();
   REQUIRE(transform != nullptr);
   REQUIRE(transform->local_scale() == Vector3(2.0, 1.0, 2.0));
   REQUIRE(SceneObject::GetAnimation("animation_test", "Some Movement") != nullptr);

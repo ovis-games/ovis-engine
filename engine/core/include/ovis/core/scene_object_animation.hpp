@@ -18,10 +18,9 @@ struct SceneObjectAnimationKeyframe {
 
 struct SceneObjectAnimationChannel {
   std::string object_path;
-  std::string component;
+  safe_ptr<vm::Type> component_type;
   std::string property;
-  safe_ptr<vm::Type> type;
-  safe_ptr<vm::Function> interpolate_function;
+  safe_ptr<vm::Function> interpolation_function;
   std::vector<SceneObjectAnimationKeyframe> keyframes;
 };
 
