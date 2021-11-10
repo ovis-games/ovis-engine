@@ -48,6 +48,7 @@ class Type : public SafelyReferenceable {
   };
 
   std::string_view name() const { return name_; }
+  std::string_view full_reference() const { return full_reference_; }
   Type* parent() const { return parent_.get(); }
   Module* module() const { return module_.get(); }
 
@@ -82,6 +83,7 @@ class Type : public SafelyReferenceable {
   std::vector<Property> properties_;
 
   std::string name_;
+  std::string full_reference_;
   safe_ptr<Type> parent_;
   safe_ptr<Module> module_;
   ConversionFunction from_base_;
@@ -96,13 +98,13 @@ std::ostream& operator<<(std::ostream& os, const safe_ptr<Type>& pointer);
 
 template <typename T> constexpr bool is_reference_type_v = std::is_base_of_v<SafelyReferenceable, T>;
 template <typename T> constexpr bool is_pointer_to_reference_type_v = std::is_pointer_v<T> && std::is_base_of_v<SafelyReferenceable, std::remove_pointer_t<T>>;
-template <typename T> constexpr bool is_value_type_v = !std::is_base_of_v<SafelyReferenceable, T> && !std::is_pointer_v<T>;
+template <typename T> constexpr bool is_value_type_v = !std::is_base_of_v<SafelyReferenceable, T> && !std::is_pointer_v<T> && !std::is_same_v<std::remove_cvref_t<T>, Value>;
 template <typename T> constexpr bool is_pointer_to_value_type_v = std::is_pointer_v<T> && is_value_type_v<std::remove_pointer_t<T>>;
 
 template <typename T> concept ReferenceType = is_reference_type_v<T>;
 template <typename T> concept PointerToReferenceType = is_pointer_to_reference_type_v<T>;
 template <typename T> concept ValueType = is_value_type_v<T>;
-template <typename T> concept PointerToValueType = is_value_type_v<T>;
+template <typename T> concept PointerToValueType = is_pointer_to_value_type_v<T>;
 
 class Value {
  public:
@@ -136,14 +138,21 @@ class Value {
   template <ValueType T>
   static Value CreateView(T* value);
 
+  static Value CreateView(Value& value);
+
+  template <typename T>
+  static Value CreateView(T&& value, safe_ptr<Type> actual_type);
+
   template <typename T> 
   static Value CreateViewIfPossible(T&& value);
 
   Value& operator=(const Value& other) = default;
   Value& operator=(Value&& other) = default;
 
+  template <ReferenceType T> T& Get();
   template <PointerToReferenceType T> T Get();
   template <ValueType T> std::remove_cvref_t<T>& Get();
+  template <PointerToValueType T> T Get();
   template <typename T> auto Get() const { return const_cast<Value*>(this)->Get<T>(); }
 
   template <typename T>
@@ -156,6 +165,7 @@ class Value {
 
   Type* type() const { return type_.get(); }
   bool is_view() const { return is_view_; }
+  bool is_none() const { return type_ == nullptr; }
 
  private:
   Value(safe_ptr<Type> type, std::any data, bool is_view) : type_(type), data_(std::move(data)), is_view_(is_view) {}

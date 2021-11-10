@@ -128,6 +128,32 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     REQUIRE(use_base->Call<int>(ds) == 138);
   }
 
+  SECTION("Basic type registration with base") {
+    struct Base {
+      int i;
+    };
+    struct Derived : public Base {
+    };
+    struct Foo : public Base {};
+    struct Functions {
+      static void UseBase(const Base& b) {}
+    };
+
+    auto base_type = test_module->RegisterType<Base>("Base");
+    auto derived_type = test_module->RegisterType<Derived, Base>("Derived");
+    auto foo_type = test_module->RegisterType<Foo>("Foo");
+    REQUIRE(derived_type->IsDerivedFrom(base_type));
+    REQUIRE(derived_type->IsDerivedFrom<Base>());
+    REQUIRE(!base_type->IsDerivedFrom(derived_type));
+    REQUIRE(!base_type->IsDerivedFrom<Derived>());
+    REQUIRE(!foo_type->IsDerivedFrom(derived_type));
+    REQUIRE(!foo_type->IsDerivedFrom<Derived>());
+
+    auto use_base = test_module->RegisterFunction<&Functions::UseBase>("Use Base", { "base" }, {});
+    Derived d;
+    use_base->Call<>(d);
+  }
+
   SECTION("Type serialization") {
     struct Foo {
       static json Serialize(const vm::Value& value) {

@@ -164,17 +164,6 @@ SceneObject* Scene::CreateObject(std::string_view object_name, const json& seria
   return object;
 }
 
-SceneObject* Scene::CreateObject(std::string_view object_name, const sol::table& component_properties,
-                                 SceneObject* parent) {
-  auto object = CreateObject(object_name, parent);
-
-  for (const auto& [key, value] : component_properties) {
-    object->AddComponent(key.as<std::string>(), value.as<sol::table>());
-  }
-
-  return object;
-}
-
 void Scene::DeleteObject(std::string_view object_path) {
   SDL_assert(objects_.count(std::string(object_path)) == 1);
   objects_.erase(std::string(object_path));
@@ -205,19 +194,6 @@ SceneObject* Scene::GetObject(std::string_view object_path) {
 
 bool Scene::ContainsObject(std::string_view object_reference) {
   return objects_.count(std::string(object_reference));
-}
-
-void Scene::GetSceneObjectsWithComponent(const std::string& component_id,
-                                         std::vector<SceneObject*>* scene_objects) const {
-  SDL_assert(scene_objects != nullptr);
-  scene_objects->clear();
-
-  for (auto& name_object_pair : objects_) {
-    SceneObject* scene_object = name_object_pair.second.get();
-    if (scene_object->HasComponent(component_id)) {
-      scene_objects->push_back(scene_object);
-    }
-  }
 }
 
 void Scene::Play() {
@@ -341,8 +317,8 @@ bool Scene::Deserialize(const json& serialized_object) {
       // conversion to std::string_view
       const std::string camera_object_reference = serialized_object.at("camera");
       SceneObject* object = GetObject(camera_object_reference);
-      if (object != nullptr && object->HasComponent("Camera")) {
-        main_viewport()->SetCamera(object->GetComponent<Camera>("Camera"));
+      if (object != nullptr && object->HasComponent<Camera>()) {
+        main_viewport()->SetCamera(object->GetComponent<Camera>());
         LogD("Setting Camera");
       } else {
         main_viewport()->SetCamera(nullptr);
@@ -450,13 +426,13 @@ void Scene::RegisterType(sol::table* module) {
   // assert(first_object.name == "object")
   // local second_object = scene:add_object("object")
   // assert(second_object.name == "object2")
-  scene_type["add_object"] = sol::overload(
-    [](Scene* scene, const std::string& name) {
-      return safe_ptr(scene->CreateObject(name));
-    },
-    [](Scene* scene, const std::string& name, const sol::table& component_properties) {
-      return safe_ptr(scene->CreateObject(name, component_properties));
-    });
+  // scene_type["add_object"] = sol::overload(
+  //   [](Scene* scene, const std::string& name) {
+  //     return safe_ptr(scene->CreateObject(name));
+  //   },
+  //   [](Scene* scene, const std::string& name, const sol::table& component_properties) {
+  //     return safe_ptr(scene->CreateObject(name, component_properties));
+  //   });
 
   /// Returns an object of the scene.
   // @function Scene:get_object

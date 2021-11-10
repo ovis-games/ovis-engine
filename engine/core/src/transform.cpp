@@ -3,6 +3,7 @@
 
 #include <ovis/utils/log.hpp>
 #include <ovis/core/transform.hpp>
+#include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
 
@@ -181,6 +182,12 @@ void Transform::RegisterType(sol::table* module) {
   transform_type["world_position_to_local"] = &Transform::WorldPositionToLocal;
 }
 
+void Transform::RegisterType(vm::Module* module) {
+  auto transform_type = module->RegisterType<Transform, SceneObjectComponent>("Transform");
+  
+  // auto transform_constructor = module->RegisterFunction<vm::Constructor<Transform, SceneObject*>>("Create Transform", { "object" }, { "transform" });
+}
+
 void Transform::CalculateMatrices() const {
   const Matrix3x4 local_to_parent = Matrix3x4::FromTransformation(position_, scale_, rotation_);
   local_to_world_ = AffineCombine(FindParentToWorldMatrix(), local_to_parent);
@@ -194,8 +201,8 @@ void Transform::FlagAsDirty() {
 }
 
 void Transform::FlagAsDirty(SceneObject* object) {
-  if (object->HasComponent("Transform")) {
-    object->GetComponent<Transform>("Transform")->dirty_ = true;
+  if (object->HasComponent<Transform>()) {
+    object->GetComponent<Transform>()->dirty_ = true;
   }
 }
 

@@ -116,6 +116,7 @@ class Transform : public SceneObjectComponent {
   const json* GetSchema() const override;
 
   static void RegisterType(sol::table* module);
+  static void RegisterType(vm::Module* module);
 
  private:
   Vector3 position_ = Vector3::Zero();
@@ -143,7 +144,7 @@ class Transform : public SceneObjectComponent {
 const Transform* Transform::FindParentTransform() const {
   const SceneObject* parent = scene_object()->parent();
   while (parent) {
-    const Transform* parent_transform = parent->GetComponent<Transform>("Transform");
+    const Transform* parent_transform = parent->GetComponent<Transform>();
     if (parent_transform) {
       return parent_transform;
     } else {

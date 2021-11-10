@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iterator>
 #include <optional>
 #include <type_traits>
 #include <utility>
@@ -30,6 +31,15 @@ template <typename BeginIteratorType, typename EndIteratorType = BeginIteratorTy
 Range<BeginIteratorType, EndIteratorType> make_range(BeginIteratorType&& begin, EndIteratorType&& end) {
   return Range<BeginIteratorType, EndIteratorType>(std::forward<BeginIteratorType>(begin),
                                                    std::forward<EndIteratorType>(end));
+}
+
+template <typename T>
+inline auto ReverseRange(T& container) {
+  return make_range(std::rbegin(container), std::rend(container));
+}
+template <typename T>
+inline auto ReverseRange(const T& container) {
+  return make_range(std::rbegin(container), std::rend(container));
 }
 
 template <typename T>

@@ -4,7 +4,12 @@ namespace ovis {
 namespace vm {
 
 inline Type::Type(Module* module, std::string_view name)
-    : module_(module), name_(name), parent_(nullptr), serialize_function_(nullptr), deserialize_function_(nullptr) {}
+    : module_(module),
+      name_(name),
+      full_reference_(fmt::format("{}.{}", module->name(), name)),
+      parent_(nullptr),
+      serialize_function_(nullptr),
+      deserialize_function_(nullptr) {}
 
 inline Type::Type(Module* module, std::string_view name, Type* parent, ConversionFunction to_base,
                   ConversionFunction from_base)
@@ -78,25 +83,43 @@ inline safe_ptr<Type> Type::Get() {
 }
 
 inline safe_ptr<Type> Type::Deserialize(const json& data) {
-  if (!data.contains("module")) {
+  std::string_view module_name;
+  std::string_view type_name;
+
+  if (data.is_string()) {
+    std::string_view type_string = data.get_ref<const std::string&>();
+    auto period_position = type_string.find('.');
+    if (period_position == std::string_view::npos) {
+      return nullptr;
+    }
+    module_name = type_string.substr(0, period_position);
+    type_name = type_string.substr(period_position + 1);
+  } else if (data.is_object()) {
+    if (!data.contains("module")) {
+      return nullptr;
+    }
+    const auto& module_json = data.at("module");
+    if (!module_json.is_string()) {
+      return nullptr;
+    }
+    module_name = module_json.get_ref<const std::string&>();
+    if (!data.contains("name")) {
+      return nullptr;
+    }
+    const auto& name_json = data.at("name");
+    if (!name_json.is_string()) {
+      return nullptr;
+    }
+    type_name = name_json.get_ref<const std::string&>();
+  } else {
     return nullptr;
   }
-  const auto& module_json = data.at("module");
-  if (!module_json.is_string()) {
-    return nullptr;
-  }
-  const safe_ptr<vm::Module> module = Module::Get(module_json.get_ref<const std::string&>());
+
+  const safe_ptr<vm::Module> module = Module::Get(module_name);
   if (module == nullptr) {
     return nullptr;
   }
-  if (!data.contains("name")) {
-    return nullptr;
-  }
-  const auto& name_json = data.at("name");
-  if (!name_json.is_string()) {
-    return nullptr;
-  }
-  return module->GetType(name_json.get_ref<const std::string&>());
+  return module->GetType(type_name);
 }
 
 inline void Type::RegisterProperty(std::string_view name, Type* type, Property::GetFunction getter,

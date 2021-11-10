@@ -114,15 +114,15 @@ bool LoadCoreModule() {
     core_module->RegisterFunction<&CreateString>("Create String", {"value"}, {"result"});
     core_module->RegisterFunction<&LogText>("Log", {"text"}, {});
 
-    SceneObjectComponent::Register("Transform",
+    SceneObjectComponent::Register("Core.Transform",
                                    [](SceneObject* object) { return std::make_unique<Transform>(object); });
     SceneObjectComponent::Register("Camera", [](SceneObject* object) { return std::make_unique<Camera>(object); });
 
 
     Vector2::RegisterType(core_module.get());
     Vector3::RegisterType(core_module.get());
-    // SceneObject::RegisterType(global_script_context());
-    // Scene::RegisterType(global_script_context());
+    SceneObjectComponent::RegisterType(core_module.get());
+    Transform::RegisterType(core_module.get());
   }
 
   return true;

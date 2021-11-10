@@ -4,12 +4,12 @@ namespace vm {
 
 template <ReferenceType T>
 Value Value::Create(T& value) {
-  return Value(Type::Get<T>(), safe_ptr<T>(&value), false);
+  return Value(Type::Get<T>(), safe_ptr<T>(&value), true);
 }
 
 template <ReferenceType T>
 Value Value::Create(T* value) {
-  return Value(Type::Get<T>(), safe_ptr<T>(value), false);
+  return Value(Type::Get<T>(), safe_ptr<T>(value), true);
 }
 
 template <ValueType T>
@@ -24,10 +24,12 @@ Value Value::Create(T* value) {
 
 template <ReferenceType T>
 Value Value::CreateView(T& value) {
+  return Create(value);
 }
 
 template <ReferenceType T>
 Value Value::CreateView(T* value) {
+  return Create(value);
 }
 
 template <ValueType T>
@@ -38,6 +40,16 @@ Value Value::CreateView(T& value) {
 template <ValueType T>
 Value Value::CreateView(T* value) {
   return Value(Type::Get<T>(), value, true);
+}
+
+inline Value Value::CreateView(Value& value) {
+  assert(value.is_view() && "Cannot be implemented yet");
+  return Value(safe_ptr(value.type()), value.data_, value.is_view_);
+}
+
+template <typename T>
+Value Value::CreateView(T&& value, safe_ptr<Type> actual_type) {
+  return Value::CreateView(std::forward<T>(value)).CastToDerived(actual_type);
 }
 
 template <typename T>
@@ -80,14 +92,26 @@ Value Value::CreateViewIfPossible(T&& value) {
   }
 }
 
+template <ReferenceType T>
+T& Value::Get() {
+  if (type_ == Type::Get<T>()) {
+    return *std::any_cast<safe_ptr<T>>(data_).get();
+  } else {
+    return CastToBase(Type::Get<T>()).template Get<T>();
+  }
+}
+
 template <PointerToReferenceType T>
 T Value::Get() {
   using ReferenceType = std::remove_pointer_t<T>;
-  assert(type_ == Type::Get<ReferenceType>());
-  return std::any_cast<safe_ptr<ReferenceType>>(data_).get();
+  if (type_ == nullptr) {
+    return nullptr;
+  } else if (type_ == Type::Get<ReferenceType>()) {
+    return std::any_cast<safe_ptr<ReferenceType>>(data_).get();
+  } else {
+    return CastToBase(Type::Get<ReferenceType>()).template Get<T>();
+  }
 }
-
-// template <PointerToReferenceType T> T Get() const;
 
 template <ValueType T>
 std::remove_cvref_t<T>& Value::Get() {
@@ -104,6 +128,11 @@ std::remove_cvref_t<T>& Value::Get() {
       assert(false && "Invalid type requested");
     }
   }
+}
+
+template <PointerToValueType T>
+T Value::Get() {
+  return &Get<std::remove_pointer_t<T>>();
 }
 
 template <typename T>
@@ -146,6 +175,7 @@ inline json Value::Serialize() const {
 }
 
 inline Value Value::CastToBase(safe_ptr<Type> target_type) {
+  assert(target_type);
   assert(type()->IsDerivedFrom(target_type));
   if (target_type == type()) {
     // TODO: create view
@@ -157,6 +187,26 @@ inline Value Value::CastToBase(safe_ptr<Type> target_type) {
     } else {
       return Value::None();
     }
+  }
+}
+
+inline Value Value::CastToDerived(safe_ptr<Type> target_type) {
+  assert(target_type);
+  assert(target_type->IsDerivedFrom(safe_ptr(type())));
+  if (target_type == type()) {
+    // TODO: create view
+    return *this;
+  } else {
+    std::vector<Type*> types;
+    for (Type* current_type = target_type.get(); current_type != type(); current_type = current_type->parent_.get()) {
+      types.push_back(current_type);
+    }
+    Value value = Value::CreateView(*this);
+    for (const Type* type : ReverseRange(types)) {
+      assert(type->from_base_);
+      value = type->from_base_(value);
+    }
+    return value;
   }
 }
 

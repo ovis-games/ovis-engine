@@ -9,9 +9,11 @@
 #include <ovis/utils/class.hpp>
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/json.hpp>
+#include <ovis/utils/range.hpp>
 #include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/serialize.hpp>
 #include <ovis/core/scene_object_component.hpp>
+#include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
 
@@ -46,7 +48,6 @@ class SceneObject : public Serializable, public SafelyReferenceable {
 
   SceneObject* CreateChildObject(std::string_view object_name);
   SceneObject* CreateChildObject(std::string_view object_name, const json& serialized_object);
-  SceneObject* CreateChildObject(std::string_view object_name, const sol::table& properties);
   void DeleteChildObject(std::string_view object_name);
   void DeleteChildObject(SceneObject* object);
   void ClearChildObjects();
@@ -57,42 +58,24 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   template <typename T>
   void ForEachChild(bool recursive, T&& functor);
 
-  template <typename ComponentType = SceneObjectComponent>
-  inline ComponentType* AddComponent(const std::string& component_id) {
-    return down_cast<ComponentType*>(AddComponent(component_id));
-  }
+  vm::Value AddComponent(safe_ptr<vm::Type> type);
+  template <typename ComponentType> ComponentType* AddComponent();
 
-  SceneObjectComponent* AddComponent(const std::string& component_id);
-  SceneObjectComponent* AddComponent(const std::string& component_id, const sol::table& component_properties);
-  bool HasComponent(const std::string& component_id) const;
+  vm::Value GetComponent(safe_ptr<vm::Type> type);
+  vm::Value GetComponent(safe_ptr<vm::Type> type) const;
+  template <typename ComponentType> ComponentType* GetComponent();
+  template <typename ComponentType> const ComponentType* GetComponent() const;
 
-  template <typename ComponentType = SceneObjectComponent>
-  ComponentType* GetComponent(const std::string& component_id) {
-    auto component = components_.find(component_id);
-    if (component == components_.end()) {
-      return nullptr;
-    } else {
-      return down_cast<ComponentType*>(component->second.get());
-    }
-  }
+  // std::span<vm::Value> components() { return components_; }
+  // std::span<const vm::Value> components() const { return components_; }
 
-  template <typename ComponentType = SceneObjectComponent>
-  const ComponentType* GetComponent(const std::string& component_id) const {
-    auto component = components_.find(component_id);
-    if (component == components_.end()) {
-      return nullptr;
-    } else {
-      return down_cast<ComponentType*>(component->second.get());
-    }
-  }
+  bool HasComponent(safe_ptr<vm::Type> type) const;
+  template <typename ComponentType> bool HasComponent() const;
 
-  void GetComponentIds(std::vector<std::string>* component_ids) const;
-  inline std::vector<std::string> GetComponentIds() const {
-    std::vector<std::string> component_ids;
-    GetComponentIds(&component_ids);
-    return component_ids;
-  }
-  void RemoveComponent(const std::string& component_id);
+  auto component_types() const { return TransformRange(components_, [](const auto& component) { return component.type; }); }
+
+  bool RemoveComponent(safe_ptr<vm::Type> type);
+  template <typename ComponentType> bool RemoveComponent();
   void ClearComponents();
 
   json Serialize() const override;
@@ -110,7 +93,11 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   std::string name_;
   std::string template_;
   std::vector<safe_ptr<SceneObject>> children_;
-  std::unordered_map<std::string, std::unique_ptr<SceneObjectComponent>> components_;
+  struct TypedComponent {
+    safe_ptr<vm::Type> type;
+    std::unique_ptr<SceneObjectComponent> pointer;
+  };
+  std::vector<TypedComponent> components_;
 
   std::optional<json> ConstructObjectFromTemplate(std::string_view template_asset) const;
   std::vector<safe_ptr<SceneObject>>::const_iterator FindChild(std::string_view name) const;
@@ -139,3 +126,5 @@ struct hash<ovis::SceneObject> {
   size_t operator()(const ovis::SceneObject& object) const { return hash<std::string_view>()(object.path()); }
 };
 }  // namespace std
+
+#include <ovis/core/scene_object.inl>
