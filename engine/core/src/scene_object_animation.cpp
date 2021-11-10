@@ -60,11 +60,9 @@ void SceneObjectAnimation::Animate(float frame, SceneObject* object) {
         value_a_it = value_b_it;
         value_b_it = std::next(value_b_it);
       }
-      // Change:
-      Vector3 value_a = value_a_it->value.Get<Vector3>();
-      Vector3 value_b = value_b_it->value.Get<Vector3>();
+
       const float t =  (frame - value_a_it->frame) / (value_b_it->frame - value_a_it->frame);
-      const vm::Value result = channel.interpolation_function->Call<vm::Value>(value_a, value_b, t);
+      const vm::Value result = channel.interpolation_function->Call<vm::Value>(value_a_it->value, value_b_it->value, t);
       component.SetProperty(channel.property, result);
     }
   }
