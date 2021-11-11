@@ -81,12 +81,18 @@ class Scene : public Serializable, public SafelyReferenceable {
   inline auto root_objects() const {
     return FilterRange(objects(), [](const SceneObject* object) { return !object->has_parent(); });
   }
+
   template <typename ComponentType>
   auto ObjectComponentsOfType() {
-    return 
-      TransformRange(objects_, [](auto& object) {
-          return object.second->template GetComponent<ComponentType>();
-        });
+    return FilterRange(
+        TransformRange(objects_, [](auto& object) { return object.second->template GetComponent<ComponentType>(); }),
+        [](ComponentType* component) { return component != nullptr; });
+  }
+  template <typename ComponentType>
+  auto ObjectsWithComponent() {
+    return FilterRange(
+        TransformRange(objects_, [](auto& object) { return object.second.get(); }),
+        [](SceneObject* object) { return object != nullptr; });
   }
 
   void Play();

@@ -46,18 +46,20 @@ void Renderer2D::ReleaseResources() {
 }
 
 void Renderer2D::Render(const RenderContext& render_context) {
-  // TODO: "cache" vector (to avoid reallocation)
-  auto objects_with_shape2d = viewport()->scene()->GetSceneObjectsWithComponent("Shape2D");
+  object_cache_.clear();
+  object_cache_.insert(object_cache_.end(), viewport()->scene()->ObjectsWithComponent<Shape2D>().begin(),
+                       viewport()->scene()->ObjectsWithComponent<Shape2D>().end());
 
+  auto& objects_with_shape2d = object_cache_;
   std::sort(objects_with_shape2d.begin(), objects_with_shape2d.end(), [](SceneObject* lhs, SceneObject* rhs) {
     Vector3 lhs_position;
-    Transform* lhs_transform = lhs->GetComponent<Transform>("Transform");
+    Transform* lhs_transform = lhs->GetComponent<Transform>();
     if (lhs_transform != nullptr) {
       lhs_position = lhs_transform->world_position();
     }
 
     Vector3 rhs_position;
-    Transform* rhs_transform = rhs->GetComponent<Transform>("Transform");
+    Transform* rhs_transform = rhs->GetComponent<Transform>();
     if (rhs_transform != nullptr) {
       rhs_position = rhs_transform->world_position();
     }
@@ -67,7 +69,7 @@ void Renderer2D::Render(const RenderContext& render_context) {
   });
 
   for (SceneObject* object : objects_with_shape2d) {
-    Shape2D* shape = object->GetComponent<Shape2D>("Shape2D");
+    Shape2D* shape = object->GetComponent<Shape2D>();
     const std::span<const Shape2D::Vertex> vertices = shape->vertices();
 
     if (shape_vertex_count_ + vertices.size() > VERTEX_BUFFER_ELEMENT_COUNT) {
@@ -84,7 +86,7 @@ void Renderer2D::Render(const RenderContext& render_context) {
       texture = texture_iterator->second.get();
     }
 
-    Transform* transform = object->GetComponent<Transform>("Transform");
+    Transform* transform = object->GetComponent<Transform>();
     const Matrix4 world_view_projection =
         transform ? AffineCombine(render_context.world_to_clip_space,
                                   transform->local_to_world_matrix())
