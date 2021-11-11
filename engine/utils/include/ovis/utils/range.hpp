@@ -190,6 +190,12 @@ class RangeFilter {
  public:
   class Iterator {
    public:
+    using value_type = std::remove_reference_t<decltype(*std::declval<IteratorType>())>;
+    using difference_type = std::ptrdiff_t;
+    using reference = const value_type&;
+    using pointer = const value_type*;
+    using iterator_category = std::forward_iterator_tag;
+
     Iterator(const Iterator&) = default;
     ~Iterator() = default;
 
@@ -267,6 +273,7 @@ class RangeAdapter {
     using reference = const value_type&;
     using pointer = const value_type*;
     using iterator_category = std::forward_iterator_tag;
+    // TODO: this could be the same iterator category as IteratorType
 
     Iterator(const Iterator&) = default;
     ~Iterator() = default;
