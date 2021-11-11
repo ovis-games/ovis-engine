@@ -262,6 +262,12 @@ class RangeAdapter {
  public:
   class Iterator {
    public:
+    using value_type = decltype(std::declval<Functor>()(*std::declval<IteratorType>())); 
+    using difference_type = std::ptrdiff_t;
+    using reference = const value_type&;
+    using pointer = const value_type*;
+    using iterator_category = std::forward_iterator_tag;
+
     Iterator(const Iterator&) = default;
     ~Iterator() = default;
 
