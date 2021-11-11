@@ -23,7 +23,7 @@ void SelectedObjectBoundingBox::Render(const RenderContext& render_context) {
 
     BeginDraw(render_context);
 
-    Transform* transform = object->GetComponent<Transform>("Transform");
+    Transform* transform = object->GetComponent<Transform>();
     const Matrix3x4 local_to_world =
         transform ? transform->local_to_world_matrix() : Matrix3x4::IdentityTransformation();
     std::array<Vector3, 8> aabb_vertices;

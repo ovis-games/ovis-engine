@@ -16,9 +16,9 @@ namespace editor {
 
 namespace {
 
-AxisAlignedBoundingBox3D GetComponentAABB(std::string_view id, SceneObjectComponent* component) {
-  if (id == "Shape2D") {
-    Shape2D* shape = down_cast<Shape2D*>(component);
+AxisAlignedBoundingBox3D GetComponentAABB(vm::Type* type, const vm::Value& component) {
+  if (type == vm::Type::Get<Shape2D>()) {
+    Shape2D* shape = component.Get<Shape2D*>();
     switch (shape->type()) {
       case Shape2D::Type::RECTANGLE:
         return AxisAlignedBoundingBox3D::FromCenterAndExtend(Vector3::Zero(),
@@ -54,8 +54,8 @@ void ObjectSelectionController::Update(std::chrono::microseconds) {
   }
 
   selected_object_aabb_ = AxisAlignedBoundingBox3D::Empty();
-  for (const std::string& component_id : object->GetComponentIds()) {
-    const auto aabb = GetComponentAABB(component_id, object->GetComponent(component_id));
+  for (const safe_ptr<vm::Type> component_type : object->component_types()) {
+    const auto aabb = GetComponentAABB(component_type.get() , object->GetComponent(component_type));
     selected_object_aabb_ = AxisAlignedBoundingBox3D::FromMinMax(min(aabb.min(), selected_object_aabb_.min()),
                                                                  max(aabb.max(), selected_object_aabb_.max()));
   }
@@ -71,7 +71,7 @@ void ObjectSelectionController::ProcessEvent(Event* event) {
     SceneObject* closest_object = nullptr;
 
     for (SceneObject* object : viewport()->scene()->objects()) {
-      const Transform* transform = object->GetComponent<Transform>("Transform");
+      const Transform* transform = object->GetComponent<Transform>();
       const Matrix3x4 world_to_object_space =
           transform ? transform->world_to_local_matrix() : Matrix3x4::IdentityTransformation();
       const Matrix3x4 object_to_world_space =
@@ -79,8 +79,8 @@ void ObjectSelectionController::ProcessEvent(Event* event) {
       const Ray3D view_ray_object_space{
           TransformPosition(world_to_object_space, view_ray_world_space.origin),
           Normalize(TransformDirection(world_to_object_space, view_ray_world_space.direction))};
-      for (const std::string& component_id : object->GetComponentIds()) {
-        const auto aabb = GetComponentAABB(component_id, object->GetComponent(component_id));
+      for (const safe_ptr<vm::Type> component_type : object->component_types()) {
+        const auto aabb = GetComponentAABB(component_type.get() , object->GetComponent(component_type));
         const auto intersection = ComputeRayAABBIntersection(view_ray_object_space, aabb, 0.0f, closest_distance);
         if (intersection) {
           closest_distance = intersection->t_ray_enter;
