@@ -4,6 +4,8 @@
 #include <sol/sol.hpp>
 
 #include <ovis/utils/log.hpp>
+#include <ovis/core/animator.hpp>
+#include <ovis/core/animator_controller.hpp>
 #include <ovis/core/camera.hpp>
 #include <ovis/core/core_module.hpp>
 #include <ovis/core/event.hpp>
@@ -117,12 +119,16 @@ bool LoadCoreModule() {
     SceneObjectComponent::Register("Core.Transform",
                                    [](SceneObject* object) { return std::make_unique<Transform>(object); });
     SceneObjectComponent::Register("Camera", [](SceneObject* object) { return std::make_unique<Camera>(object); });
+    SceneObjectComponent::Register("Core.Animator",
+                                   [](SceneObject* object) { return std::make_unique<Animator>(object); });
+    SceneController::Register("AnimatorController", []() { return std::make_unique<AnimatorController>(); });
 
 
     Vector2::RegisterType(core_module.get());
     Vector3::RegisterType(core_module.get());
     SceneObjectComponent::RegisterType(core_module.get());
     Transform::RegisterType(core_module.get());
+    Animator::RegisterType(core_module.get());
   }
 
   return true;
