@@ -163,6 +163,14 @@ void SceneObject::ClearComponents() {
   components_.clear();
 }
 
+SceneObjectAnimation* SceneObject::GetAnimation(std::string_view name) const {
+  for (const auto& animation : animations_) {
+    if (animation->name() == name) {
+      return animation.get();
+    }
+  }
+  return nullptr;
+}
 
 json SceneObject::Serialize() const {
   json serialized_object = json::object();
@@ -215,20 +223,15 @@ bool SceneObject::Deserialize(const json& serialized_object) {
     object_template->merge_patch(serialized_object);
     animations_.clear();
     if (object_template->contains("animations")) {
-      for (const auto& [name, assets] : object_template->at("animations").items()) {
-        assert(assets.is_array());
-        std::vector<safe_ptr<SceneObjectAnimation>> animations;
-        animations.reserve(assets.size());
-        for (const auto& asset : assets) {
-          assert(asset.is_string());
-          auto animation = template_animations.find(std::make_pair(asset, name));
-          if (animation != template_animations.end()) {
-            animations.push_back(safe_ptr(&animation->second));
-          } else {
-            LogE("Could not find template animation: {}", asset);
-          }
+
+      animations_.reserve(object_template->at("animations").size());
+      for (const auto& [animation_name, _] : object_template->at("animations").items()) {
+        auto animation = template_animations.find(std::make_pair(template_, animation_name));
+        if (animation != template_animations.end()) {
+          animations_.push_back(safe_ptr(&animation->second));
+        } else {
+          LogE("Could not find template animation: {}", template_);
         }
-        animations_.insert(std::make_pair(name, std::move(animations)));
       }
     }
     return Update(*object_template);
@@ -328,20 +331,7 @@ std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view te
 
   auto object_template = json::parse(*object_template_data);
 
-  if (object_template.contains("animations")) {
-    for (auto& [name, animation_value] : object_template["animations"].items()) {
-      std::pair<std::string, std::string> animation_identifier = std::make_pair(std::string(template_asset), name);
-      if (!template_animations.contains(animation_identifier)) {
-        SceneObjectAnimation animation(name);
-        if (!animation.Deserialize(animation_value)) {
-          LogE("Failed to deserialize animation");
-        } else {
-          template_animations.insert(std::make_pair(std::move(animation_identifier), std::move(animation)));
-          animation_value = json::array({ std::string(template_asset) });
-        }
-      }
-    }
-  }
+
 
   if (object_template.contains("template")) {
     const std::string parent_template_asset = object_template.at("template");
@@ -369,10 +359,22 @@ std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view te
     object_template["animations"] = std::move(animations);
 
     parent_template->merge_patch(object_template);
-    return *parent_template;
-  } else {
-    return object_template;
+    object_template = *parent_template;
   }
+
+  for (auto& [name, animation_value] : object_template["animations"].items()) {
+    std::pair<std::string, std::string> animation_identifier = std::make_pair(std::string(template_asset), name);
+    if (!template_animations.contains(animation_identifier)) {
+      SceneObjectAnimation animation(name);
+      if (!animation.Deserialize(animation_value)) {
+        LogE("Failed to deserialize animation");
+      } else {
+        template_animations.insert(std::make_pair(std::move(animation_identifier), std::move(animation)));
+      }
+    }
+  }
+  
+  return object_template;
 }
 
 std::vector<safe_ptr<SceneObject>>::const_iterator SceneObject::FindChild(std::string_view name) const {

@@ -1,7 +1,6 @@
-#include <ovis/core/scene_object_animation.hpp>
 #include <ovis/core/scene_object.hpp>
+#include <ovis/core/scene_object_animation.hpp>
 #include <ovis/core/scene_object_component.hpp>
-#include <ovis/core/transform.hpp> // TODO: delete this line
 
 namespace ovis {
 
@@ -9,8 +8,8 @@ namespace {
 
 SceneObjectAnimationKeyframe ParseKeyframe(const vm::Type& type, const json& data) {
   return {
-    .frame = data.at("frame"),
-    .value = type.CreateValue(data.at("value")),
+      .frame = data.at("frame"),
+      .value = type.CreateValue(data.at("value")),
   };
 }
 
@@ -31,13 +30,12 @@ SceneObjectAnimationChannel ParseChannel(const json& data) {
     channel.keyframes.push_back(ParseKeyframe(*property_type.get(), keyframe));
   }
   // Sort keyframes by frame
-  std::sort(channel.keyframes.begin(), channel.keyframes.end(), [](const auto& lhs, const auto& rhs) {
-    return lhs.frame < rhs.frame;
-  });
+  std::sort(channel.keyframes.begin(), channel.keyframes.end(),
+            [](const auto& lhs, const auto& rhs) { return lhs.frame < rhs.frame; });
   return channel;
 }
 
-}
+}  // namespace
 
 SceneObjectAnimation::SceneObjectAnimation(std::string_view name) : name_(name) {}
 
@@ -47,7 +45,7 @@ void SceneObjectAnimation::Animate(float frame, SceneObject* object) {
   assert(frame <= end_);
 
   for (const auto& channel : channels_) {
-    SceneObject* sub_object = object; // TODO: change this
+    SceneObject* sub_object = object;  // TODO: change this
     assert(sub_object);
 
     vm::Value component = sub_object->GetComponent(channel.component_type);
@@ -61,7 +59,7 @@ void SceneObjectAnimation::Animate(float frame, SceneObject* object) {
         value_b_it = std::next(value_b_it);
       }
 
-      const float t =  (frame - value_a_it->frame) / (value_b_it->frame - value_a_it->frame);
+      const float t = (frame - value_a_it->frame) / (value_b_it->frame - value_a_it->frame);
       const vm::Value result = channel.interpolation_function->Call<vm::Value>(value_a_it->value, value_b_it->value, t);
       component.SetProperty(channel.property, result);
     }
@@ -104,5 +102,5 @@ json SceneObjectAnimation::Serialize() const {
   return json();
 }
 
-}
+}  // namespace ovis
 

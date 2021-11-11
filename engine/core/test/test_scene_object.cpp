@@ -108,9 +108,9 @@ TEST_CASE("Create Scene Object with Animation", "[ovis][core][SceneObject]") {
   REQUIRE(transform != nullptr);
   REQUIRE(transform->local_scale() == Vector3(2.0, 1.0, 2.0));
   REQUIRE(SceneObject::GetAnimation("animation_test", "Some Movement") != nullptr);
-  const std::vector<std::string> animations(object->animations().begin(), object->animations().end());
+  const std::vector<const SceneObjectAnimation*> animations(object->animations().begin(), object->animations().end());
   REQUIRE(animations.size() == 1);
-  REQUIRE(animations[0] == "Some Movement");
+  REQUIRE(animations[0]->name() == "Some Movement");
 
   SceneObject::GetAnimation("animation_test", "Some Movement")->Animate(50, object);
   REQUIRE(transform->local_position().x == 0.0f);
