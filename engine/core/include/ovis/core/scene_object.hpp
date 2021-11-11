@@ -78,6 +78,8 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   template <typename ComponentType> bool RemoveComponent();
   void ClearComponents();
 
+  auto animations() const { return Keys(animations_); }
+
   json Serialize() const override;
   bool Deserialize(const json& serialized_object) override;
   bool Update(const json& serialized_object) override;
@@ -98,6 +100,9 @@ class SceneObject : public Serializable, public SafelyReferenceable {
     std::unique_ptr<SceneObjectComponent> pointer;
   };
   std::vector<TypedComponent> components_;
+
+  // Each animation can have multiple SceneObject* animations when it has template objects that has a "parent template"
+  std::unordered_map<std::string, std::vector<safe_ptr<SceneObjectAnimation>>> animations_;
 
   std::optional<json> ConstructObjectFromTemplate(std::string_view template_asset) const;
   std::vector<safe_ptr<SceneObject>>::const_iterator FindChild(std::string_view name) const;

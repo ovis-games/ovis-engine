@@ -213,6 +213,24 @@ bool SceneObject::Deserialize(const json& serialized_object) {
       return false;
     }
     object_template->merge_patch(serialized_object);
+    animations_.clear();
+    if (object_template->contains("animations")) {
+      for (const auto& [name, assets] : object_template->at("animations").items()) {
+        assert(assets.is_array());
+        std::vector<safe_ptr<SceneObjectAnimation>> animations;
+        animations.reserve(assets.size());
+        for (const auto& asset : assets) {
+          assert(asset.is_string());
+          auto animation = template_animations.find(std::make_pair(asset, name));
+          if (animation != template_animations.end()) {
+            animations.push_back(safe_ptr(&animation->second));
+          } else {
+            LogE("Could not find template animation: {}", asset);
+          }
+        }
+        animations_.insert(std::make_pair(name, std::move(animations)));
+      }
+    }
     return Update(*object_template);
   } else {
     template_ = "";
