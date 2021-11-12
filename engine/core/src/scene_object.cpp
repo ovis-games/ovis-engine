@@ -99,7 +99,7 @@ vm::Value SceneObject::AddComponent(safe_ptr<vm::Type> type) {
     return vm::Value::None();
   }
   if (!type->IsDerivedFrom<SceneObjectComponent>()) {
-    LogE("{} does not derived from SceneObjectComponent");
+    LogE("{} does not derived from SceneObjectComponent", type->full_reference());
     return vm::Value::None();
   }
 

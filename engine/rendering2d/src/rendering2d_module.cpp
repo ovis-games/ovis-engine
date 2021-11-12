@@ -26,7 +26,7 @@ bool LoadRendering2DModule() {
     LoadRenderingModule();
     rendering2d_module = vm::Module::Register("Rendering2D");
 
-    SceneObjectComponent::Register("Shape2D", [](SceneObject* object) { return std::make_unique<Shape2D>(object); });
+    SceneObjectComponent::Register("Rendering2D.Shape2D", [](SceneObject* object) { return std::make_unique<Shape2D>(object); });
     RenderPass::Register("Renderer2D", []() { return std::make_unique<Renderer2D>(); });
 
     Shape2D::RegisterType(rendering2d_module.get());
