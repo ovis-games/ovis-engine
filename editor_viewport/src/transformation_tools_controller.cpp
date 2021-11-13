@@ -133,14 +133,14 @@ void TransformationToolsController::ProcessEvent(Event* event) {
       emscripten::val value = emscripten::val::array();
       switch (transformation_type()) {
         case TransformationType::MOVE:
-          property_path = fmt::format("{}/position", GetComponentPath(scene_object->path(), "Transform"));
+          property_path = fmt::format("{}/position", GetComponentPath(scene_object->path(), "Core.Transform"));
           value.call<void>("push", transform->local_position().x);
           value.call<void>("push", transform->local_position().y);
           value.call<void>("push", transform->local_position().z);
           break;
 
         case TransformationType::ROTATE:
-          property_path = fmt::format("{}/rotation", GetComponentPath(scene_object->path(), "Transform"));
+          property_path = fmt::format("{}/rotation", GetComponentPath(scene_object->path(), "Core.Transform"));
           float yaw, pitch, roll;
           transform->GetLocalYawPitchRoll(&yaw, &pitch, &roll);
           value.call<void>("push", RadiansToDegreesFactor<float>() * pitch);
@@ -149,7 +149,7 @@ void TransformationToolsController::ProcessEvent(Event* event) {
           break;
 
         case TransformationType::SCALE:
-          property_path = fmt::format("{}/scale", GetComponentPath(scene_object->path(), "Transform"));
+          property_path = fmt::format("{}/scale", GetComponentPath(scene_object->path(), "Core.Transform"));
           value.call<void>("push", transform->local_scale().x);
           value.call<void>("push", transform->local_scale().y);
           value.call<void>("push", transform->local_scale().z);
