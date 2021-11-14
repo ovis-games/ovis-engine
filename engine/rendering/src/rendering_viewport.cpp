@@ -18,7 +18,7 @@ void RenderingViewport::Render() {
     SceneObject* scene_object = camera()->scene_object();
     SDL_assert(scene_object != nullptr);
 
-    Transform* transform = scene_object->GetComponent<Transform>("Transform");
+    Transform* transform = scene_object->GetComponent<Transform>();
 
     render_context.view_to_clip_space = camera()->projection_matrix();
     render_context.clip_to_view_space = camera()->inverse_projection_matrix();

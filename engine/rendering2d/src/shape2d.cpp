@@ -235,7 +235,7 @@ void Shape2D::UpdateEllipse() {
 }
 
 void Shape2D::RegisterType(vm::Module* module) {
-  module->RegisterType<Shape2D>("Shape2D");
+  module->RegisterType<Shape2D, SceneObjectComponent>("Shape2D");
 }
 
 }  // namespace ovis

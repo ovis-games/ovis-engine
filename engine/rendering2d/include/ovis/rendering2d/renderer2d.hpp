@@ -28,6 +28,8 @@ class Renderer2D : public RenderPass {
   std::unique_ptr<Texture2D> empty_texture_;
   std::unordered_map<std::string, std::unique_ptr<Texture2D>> textures_;
 
+  std::vector<SceneObject*> object_cache_;
+
   void DrawShapeVertices();
 };
 

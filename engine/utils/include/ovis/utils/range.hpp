@@ -190,13 +190,19 @@ class RangeFilter {
  public:
   class Iterator {
    public:
+    using value_type = std::remove_reference_t<decltype(*std::declval<IteratorType>())>;
+    using difference_type = std::ptrdiff_t;
+    using reference = const value_type&;
+    using pointer = const value_type*;
+    using iterator_category = std::forward_iterator_tag;
+
     Iterator(const Iterator&) = default;
     ~Iterator() = default;
 
     inline Iterator(Functor& functor, IteratorType iterator, IteratorType end)
-        : functor_(functor), iterator_(iterator), end_(end) {
+        : functor_(&functor), iterator_(iterator), end_(end) {
       // Find first element that passes the filter
-      while (iterator_ != end_ && !functor_(*iterator_)) {
+      while (iterator_ != end_ && !(*functor_)(*iterator_)) {
         ++iterator_;
       }
     }
@@ -214,7 +220,7 @@ class RangeFilter {
     inline Iterator& operator++() {
       do {
         ++iterator_;
-      } while (iterator_ != end_ && !functor_(*iterator_));
+      } while (iterator_ != end_ && !(*functor_)(*iterator_));
       return *this;
     }
 
@@ -222,12 +228,12 @@ class RangeFilter {
       Iterator old = *this;
       do {
         ++iterator_;
-      } while (iterator_ != end_ && !functor_(*iterator_));
+      } while (iterator_ != end_ && !(*functor_)(*iterator_));
       return old;
     }
 
    private:
-    Functor& functor_;
+    Functor* functor_;
     IteratorType iterator_;
     IteratorType end_;
   };
@@ -267,11 +273,12 @@ class RangeAdapter {
     using reference = const value_type&;
     using pointer = const value_type*;
     using iterator_category = std::forward_iterator_tag;
+    // TODO: this could be the same iterator category as IteratorType
 
     Iterator(const Iterator&) = default;
     ~Iterator() = default;
 
-    inline Iterator(Functor& functor, IteratorType iterator) : functor_(functor), iterator_(iterator) {}
+    inline Iterator(Functor& functor, IteratorType iterator) : functor_(&functor), iterator_(iterator) {}
 
     Iterator& operator=(const Iterator&) = default;
 
@@ -281,14 +288,14 @@ class RangeAdapter {
 
     inline const auto& operator*() const {
       if (!transformed_value_.has_value()) {
-        transformed_value_.emplace(functor_(*iterator_));
+        transformed_value_.emplace((*functor_)(*iterator_));
       }
       return *transformed_value_;
     }
 
     inline auto* operator->() const {
       if (!transformed_value_.has_value()) {
-        transformed_value_.emplace(functor_(*iterator_));
+        transformed_value_.emplace((*functor_)(*iterator_));
       }
       return &*transformed_value_;
     }
@@ -305,7 +312,7 @@ class RangeAdapter {
     }
 
    private:
-    Functor& functor_;
+    Functor* functor_;
     IteratorType iterator_;
     mutable std::optional<value_type> transformed_value_;
   };

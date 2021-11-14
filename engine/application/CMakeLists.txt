@@ -25,7 +25,7 @@ target_link_libraries(
     ovis::core
     ovis::rendering
     ovis::rendering2d
-    ovis::physics2d
+    # ovis::physics2d
     ovis::input
     ovis::networking
     ovis::imgui

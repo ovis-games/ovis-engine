@@ -42,7 +42,7 @@ void TransformationToolsController::Update(std::chrono::microseconds) {
     return;
   }
 
-  Transform* transform = scene_object->GetComponent<Transform>("Transform");
+  Transform* transform = scene_object->GetComponent<Transform>();
   if (!transform) {
     object_selected_ = false;
     return;
@@ -126,21 +126,21 @@ void TransformationToolsController::ProcessEvent(Event* event) {
       SceneObject* scene_object = object_selection_controller->selected_object();
       SDL_assert(scene_object);
 
-      Transform* transform = scene_object->GetComponent<Transform>("Transform");
+      Transform* transform = scene_object->GetComponent<Transform>();
       SDL_assert(transform);
 
       std::string property_path;
       emscripten::val value = emscripten::val::array();
       switch (transformation_type()) {
         case TransformationType::MOVE:
-          property_path = fmt::format("{}/position", GetComponentPath(scene_object->path(), "Transform"));
+          property_path = fmt::format("{}/position", GetComponentPath(scene_object->path(), "Core.Transform"));
           value.call<void>("push", transform->local_position().x);
           value.call<void>("push", transform->local_position().y);
           value.call<void>("push", transform->local_position().z);
           break;
 
         case TransformationType::ROTATE:
-          property_path = fmt::format("{}/rotation", GetComponentPath(scene_object->path(), "Transform"));
+          property_path = fmt::format("{}/rotation", GetComponentPath(scene_object->path(), "Core.Transform"));
           float yaw, pitch, roll;
           transform->GetLocalYawPitchRoll(&yaw, &pitch, &roll);
           value.call<void>("push", RadiansToDegreesFactor<float>() * pitch);
@@ -149,7 +149,7 @@ void TransformationToolsController::ProcessEvent(Event* event) {
           break;
 
         case TransformationType::SCALE:
-          property_path = fmt::format("{}/scale", GetComponentPath(scene_object->path(), "Transform"));
+          property_path = fmt::format("{}/scale", GetComponentPath(scene_object->path(), "Core.Transform"));
           value.call<void>("push", transform->local_scale().x);
           value.call<void>("push", transform->local_scale().y);
           value.call<void>("push", transform->local_scale().z);
@@ -250,7 +250,7 @@ void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_ev
   SceneObject* scene_object = object_selection_controller->selected_object();
   SDL_assert(scene_object);
 
-  Transform* transform = scene_object->GetComponent<Transform>("Transform");
+  Transform* transform = scene_object->GetComponent<Transform>();
   SDL_assert(transform);
 
   const Vector2 current_mouse_position_screen_space = mouse_move_event->screen_space_position();

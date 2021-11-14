@@ -26,3 +26,36 @@ target_add_assets(
   assets/shape2d.shader.vert
   assets/shape2d.shader.frag
 )
+
+if (OVIS_BUILD_TESTS)
+  add_executable(
+    ovis-rendering2d-test
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_shape2d.cpp
+  )
+  target_link_libraries(
+    ovis-rendering2d-test
+    PRIVATE
+      catch2
+      ovis::rendering2d
+  )
+  # target_add_assets(
+  #   ovis-rendering-test
+
+  #   test/assets/template.scene_object.json
+  # )
+  target_embed_assets(ovis-rendering2d-test)
+
+  if (OVIS_EMSCRIPTEN)
+    add_test(
+      ovis-renderin2d-test
+      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-rendering2d-test.js
+    )
+  else ()
+    add_test(
+      NAME ovis-renderin2d-test
+      COMMAND ovis-rendering2d-test --assets-directory ${CMAKE_CURRENT_BINARY_DIR}/assets/ovis-rendering2d-test/
+    )
+  endif ()
+endif ()
