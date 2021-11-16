@@ -216,6 +216,7 @@ bool SceneObject::Deserialize(const json& serialized_object) {
 
   if (serialized_object.contains("template")) {
     template_ = serialized_object.at("template");
+    LogE("Trying to load template: {}", template_);
     auto object_template = ConstructObjectFromTemplate(template_);
     if (!object_template.has_value()) {
       return false;
@@ -330,8 +331,6 @@ std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view te
   }
 
   auto object_template = json::parse(*object_template_data);
-
-
 
   if (object_template.contains("template")) {
     const std::string parent_template_asset = object_template.at("template");
