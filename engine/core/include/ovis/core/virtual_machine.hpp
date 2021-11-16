@@ -164,7 +164,7 @@ class Value {
   template <PointerToReferenceType T> T Get();
   template <ValueType T> std::remove_cvref_t<T>& Get();
   template <PointerToValueType T> T Get();
-  template <typename T> auto& Get() const { return const_cast<Value*>(this)->Get<T>(); }
+  template <typename T> auto&& Get() const { return const_cast<Value*>(this)->Get<T>(); }
 
   template <typename T>
   void SetProperty(std::string_view property_name, T&& property_value);
