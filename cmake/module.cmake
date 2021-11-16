@@ -1,3 +1,5 @@
+set(CMAKE_CURRENT_FUNCTION_LIST_DIR ${CMAKE_CURRENT_LIST_DIR})
+
 function(ovis_export_module_definition)
   set(options)
   set(oneValueArgs MODULE_NAME)
