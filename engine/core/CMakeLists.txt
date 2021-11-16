@@ -52,10 +52,10 @@ ovis_export_module_definition(
   MODULE_NAME Core
 )
 
-install(
-  FILES schemas/*.schema.json
-  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/schemas/core
-)
+# install(
+#   FILES schemas/*.schema.json
+#   DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/schemas/core
+# )
 
 if (OVIS_BUILD_TESTS)
   add_executable(
