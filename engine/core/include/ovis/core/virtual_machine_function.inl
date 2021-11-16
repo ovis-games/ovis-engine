@@ -100,5 +100,25 @@ inline Function::Function(std::string_view name, FunctionPointer function_pointe
   }
 }
 
+inline json Function::Serialize() const {
+  json function = json::object();
+  function["name"] = name();
+  json& inputs = function["inputs"] = json::array();
+  for (const auto& input : this->inputs()) {
+    inputs.push_back({
+      { "name", input.name },
+      { "type", input.type ? json(std::string(input.type->full_reference())) : json() },
+    });
+  }
+  json& outputs = function["outputs"] = json::array();
+  for (const auto& output : this->outputs()) {
+    outputs.push_back({
+      { "name", output.name },
+      { "type", output.type ? json(std::string(output.type->full_reference())) : json() },
+    });
+  }
+  return function;
+}
+
 }
 }

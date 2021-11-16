@@ -166,5 +166,20 @@ inline Value Type::CreateValue(const json& data) {
   }
 }
 
+inline json Type::Serialize() const {
+  json type = json::object();
+  type["name"] = std::string(name());
+  if (parent()) {
+    type["parent"] = std::string(parent()->full_reference());
+  }
+
+  json& properties = type["properties"] = json::object();
+  for (const auto& property : this->properties()) {
+    properties[property.name] = std::string(property.type->full_reference());
+  }
+
+  return type;
+}
+
 }
 }

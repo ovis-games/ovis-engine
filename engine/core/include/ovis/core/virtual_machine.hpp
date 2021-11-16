@@ -76,6 +76,8 @@ class Type : public SafelyReferenceable {
 
   static safe_ptr<Type> Deserialize(const json& data);
 
+  json Serialize() const;
+
  private:
   Type(Module* module, std::string_view name);
   Type(Module* module, std::string_view name, Type* parent, ConversionFunction from_base, ConversionFunction to_base);
@@ -324,6 +326,8 @@ class Function : public SafelyReferenceable {
   template <typename... OutputTypes, typename... InputsTypes>
   FunctionResultType<OutputTypes...> Call(ExecutionContext* context, InputsTypes&&... inputs);
 
+  json Serialize() const;
+
  private:
   Function(std::string_view name, FunctionPointer function_pointer, std::vector<ValueDeclaration> inputs,
            std::vector<ValueDeclaration> outputs);
@@ -368,6 +372,8 @@ class Module : public SafelyReferenceable {
   safe_ptr<Function> GetFunction(std::string_view name);
   std::span<Function> functions() { return functions_; }
   std::span<const Function> functions() const { return functions_; }
+
+  json Serialize() const;
 
  private:
   Module(std::string_view name) : name_(name) {}

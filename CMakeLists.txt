@@ -7,6 +7,7 @@ option(OVIS_BUILD_BENCHMARKS "Build the benchmarks" ON)
 
 include(cmake/emscripten.cmake)
 include(cmake/assets.cmake)
+include(cmake/module.cmake)
 include(cmake/doc.cmake)
 include(cmake/doc-tests.cmake)
 

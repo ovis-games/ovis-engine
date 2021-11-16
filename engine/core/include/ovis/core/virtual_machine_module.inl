@@ -215,5 +215,18 @@ inline safe_ptr<Function> Module::GetFunction(std::string_view name) {
   return nullptr;
 }
 
+inline json Module::Serialize() const {
+  json module = json::object();
+  json& types = module["types"] = json::object();
+  for (const auto& type : this->types()) {
+    types[std::string(type.name())] = type.Serialize();
+  }
+  json& functions = module["functions"] = json::object();
+  for (const auto& function : this->functions()) {
+    functions[std::string(function.name())] = function.Serialize();
+  }
+  return module;
+}
+
 }  // namespace vm
 }  // namespace ovis
