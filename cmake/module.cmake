@@ -23,6 +23,11 @@ function(ovis_export_module_definition)
       ovis::${MODULE_NAME_LOWERCASE}
   )
   if (OVIS_EMSCRIPTEN)
+    target_link_libraries(
+      ovis-${MODULE_NAME_LOWERCASE}-exporter
+      PRIVATE
+        nodefs.js
+    )
     add_custom_command(
       TARGET ovis-${MODULE_NAME_LOWERCASE}-exporter
       POST_BUILD
