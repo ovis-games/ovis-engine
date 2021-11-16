@@ -1,6 +1,28 @@
 namespace ovis {
 namespace vm {
 
+inline safe_ptr<Function> Function::Deserialize(const json& data) {
+  if (!data.contains("module")) {
+    return nullptr;
+  }
+  const auto& module_json = data.at("module");
+  if (!module_json.is_string()) {
+    return nullptr;
+  }
+  const safe_ptr<vm::Module> module = Module::Get(module_json.get_ref<const std::string&>());
+  if (module == nullptr) {
+    return nullptr;
+  }
+ if (!data.contains("name")) {
+    return nullptr;
+  }
+  const auto& name_json = data.at("name");
+  if (!name_json.is_string()) {
+    return nullptr;
+  }
+  return module->GetFunction(name_json.get_ref<const std::string&>());
+}
+
 template <typename... OutputTypes, typename... InputTypes>
 inline FunctionResultType<OutputTypes...> Function::Call(InputTypes&&... inputs) {
   return Call<OutputTypes...>(ExecutionContext::global_context(), std::forward<InputTypes>(inputs)...);

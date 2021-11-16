@@ -12,6 +12,7 @@
 #include <ovis/utils/range.hpp>
 #include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/serialize.hpp>
+#include <ovis/core/scene_object_animation.hpp>
 #include <ovis/core/scene_object_component.hpp>
 #include <ovis/core/virtual_machine.hpp>
 
@@ -77,9 +78,14 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   template <typename ComponentType> bool RemoveComponent();
   void ClearComponents();
 
+  auto animations() const { return TransformRange(animations_, [](const auto& animation) { return animation.get(); }); }
+  SceneObjectAnimation* GetAnimation(std::string_view name) const;
+
   json Serialize() const override;
   bool Deserialize(const json& serialized_object) override;
   bool Update(const json& serialized_object) override;
+
+  static SceneObjectAnimation* GetAnimation(std::string_view template_asset_id, std::string_view animation_name);
 
   static void RegisterType(sol::table* module);
 
@@ -95,9 +101,14 @@ class SceneObject : public Serializable, public SafelyReferenceable {
     std::unique_ptr<SceneObjectComponent> pointer;
   };
   std::vector<TypedComponent> components_;
+  std::vector<safe_ptr<SceneObjectAnimation>> animations_;
 
+  std::optional<json> ConstructObjectFromTemplate(std::string_view template_asset) const;
   std::vector<safe_ptr<SceneObject>>::const_iterator FindChild(std::string_view name) const;
   std::vector<safe_ptr<SceneObject>>::iterator FindChild(std::string_view name);
+
+  // Maps (scene_object_template, animation_name) -> animation
+  static std::map<std::pair<std::string, std::string>, SceneObjectAnimation, std::less<>> template_animations;
 };
 
 template <typename T>

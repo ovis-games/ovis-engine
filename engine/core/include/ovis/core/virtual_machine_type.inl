@@ -1,5 +1,3 @@
-#include "ovis/core/virtual_machine.hpp"
-
 namespace ovis {
 namespace vm {
 
@@ -41,7 +39,7 @@ inline void Type::RegisterConstructorFunction(safe_ptr<Function> constructor) {
   if (constructor->outputs().size() != 1 || constructor->outputs()[0].type != this) {
     return;
   }
-  
+
   // Check if there is already a constructor with these parameters registered.
   for (const auto& function : constructor_functions_) {
     if (function->inputs().size() != constructor->inputs().size()) {
@@ -151,14 +149,69 @@ struct PropertyCallbacks<PROPERTY> {
   }
 };
 
+template <auto GETTER>
+struct PropertyGetter;
+
+template <typename PropertyType, typename ContainingType, PropertyType (ContainingType::*GETTER)() const>
+struct PropertyGetter<GETTER> {
+  static safe_ptr<Type> property_type() { return Type::Get<PropertyType>(); }
+
+  static safe_ptr<Type> containing_type() { return Type::Get<ContainingType>(); }
+
+  // template <FunctionPointerType GETTER>
+  static Value Get(const ovis::vm::Value& object) { return Value::Create((object.Get<ContainingType>().*GETTER)()); }
+};
+
+template <auto GETTER>
+struct PropertySetter;
+
+template <typename PropertyType, typename ContainingType, void (ContainingType::*SETTER)(PropertyType T)>
+struct PropertySetter<SETTER> {
+  static safe_ptr<Type> property_type() { return Type::Get<PropertyType>(); }
+
+  static safe_ptr<Type> containing_type() { return Type::Get<ContainingType>(); }
+
+  // template <FunctionPointerType GETTER>
+  static void Set(ovis::vm::Value* object, const Value& property) {
+    return (object->Get<ContainingType>().*SETTER)(property.Get<PropertyType>());
+  }
+};
+
 }  // namespace detail
 
 template <auto PROPERTY>
+requires std::is_member_pointer_v<decltype(PROPERTY)>
 inline void Type::RegisterProperty(std::string_view name) {
   detail::PropertyCallbacks<PROPERTY>::Register(this, name);
 }
 
-inline Value Type::CreateValue(const json& data) {
+template <auto GETTER>
+inline void Type::RegisterProperty(std::string_view name) {
+  using GetterWrapper = detail::PropertyGetter<GETTER>;
+  RegisterProperty(name, GetterWrapper::property_type(), &GetterWrapper::PropertyGetter, nullptr);
+}
+
+template <auto GETTER, auto SETTER>
+inline void Type::RegisterProperty(std::string_view name) {
+  using GetterWrapper = detail::PropertyGetter<GETTER>;
+  using SetterWrapper = detail::PropertySetter<SETTER>;
+  assert(GetterWrapper::property_type() == SetterWrapper::property_type());
+  assert(GetterWrapper::containing_type() == SetterWrapper::containing_type());
+  assert(GetterWrapper::containing_type() == this);
+  RegisterProperty(name, GetterWrapper::property_type().get(), &GetterWrapper::Get, &SetterWrapper::Set);
+}
+
+inline const Type::Property* Type::GetProperty(std::string_view name) const {
+  for (const auto& property : properties_) {
+    if (property.name == name) {
+      return &property;
+    }
+  }
+  assert(false && "Property not found");
+  return nullptr;
+}
+
+inline Value Type::CreateValue(const json& data) const {
   if (deserialize_function_) {
     return deserialize_function_(data);
   } else {
@@ -181,5 +234,5 @@ inline json Type::Serialize() const {
   return type;
 }
 
-}
-}
+}  // namespace vm
+}  // namespace ovis

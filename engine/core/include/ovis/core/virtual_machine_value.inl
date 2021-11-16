@@ -22,6 +22,10 @@ Value Value::Create(T* value) {
   return Value(Type::Get<T>(), *value, false);
 }
 
+inline Value Value::Create(const Value& value) {
+  return value;
+}
+
 template <ReferenceType T>
 Value Value::CreateView(T& value) {
   return Create(value);
@@ -141,6 +145,7 @@ inline void Value::SetProperty(std::string_view property_name, T&& property_valu
     for (const auto& property : type_->properties_) {
       if (property.name == property_name) {
         assert(property.type == property_value.type());
+        assert(property.setter);
         property.setter(this, property_value);
         return;
       }

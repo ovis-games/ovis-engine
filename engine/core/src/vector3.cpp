@@ -1,8 +1,15 @@
 #include <ovis/core/vector.hpp>
 
+#include <fmt/ostream.h>
+
 #include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
+
+std::ostream& operator<<(std::ostream& stream, const Vector3& vector) {
+  fmt::print(stream, "{}", vector);
+  return stream;
+}
 
 void Vector3::RegisterType(sol::table* module) {
   // clang-format off
@@ -342,7 +349,8 @@ void Vector3::RegisterType(vm::Module* module) {
   // vector3_type["POSITIVE_Z"] = sol::property(Vector3::PositiveZ);
   // vector3_type["NEGATIVE_Z"] = sol::property(Vector3::NegativeZ);
 
-  module->RegisterType<Vector3>("Vector3");
+  auto vector3_type = module->RegisterType<Vector3>("Vector3");
+  vector3_type->SetDeserializeFunction(&DeserializeVector3);
   // module->RegisterConstructor<Vector3, float, float, float>("create_vector3", {"x", "y", "z"}, "vector");
   // vector3_type[sol::meta_function::equal_to] = static_cast<bool (*)(const Vector3&, const Vector3&)>(ovis::operator==);
   module->RegisterFunction<static_cast<Vector3 (*)(const Vector3&, const Vector3&)>(ovis::operator+)>("vector3_add", {"first vector", "second vector"}, {"vector"});
@@ -359,6 +367,8 @@ void Vector3::RegisterType(vm::Module* module) {
   module->RegisterFunction<&Normalize<Vector3>>("vector3_normalize", {"vector"}, {"normalized vector"});
   module->RegisterFunction<&Dot<Vector3>>("vector3_dot", {"first vector", "second vector"}, {"dot product"});
   module->RegisterFunction<&Cross>("vector3_cross", {"first vector", "second vector"}, {"cross product"});
+
+  module->RegisterFunction<&LinearInterpolateVector3>("Linear Interpolate Vector3", {"a", "b", "t"}, {"result"});
 }
 
 }

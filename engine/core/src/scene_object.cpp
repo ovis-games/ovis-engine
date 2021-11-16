@@ -7,8 +7,11 @@
 #include <ovis/core/lua.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_object.hpp>
+#include <ovis/core/scene_object_animation.hpp>
 
 namespace ovis {
+
+std::map<std::pair<std::string, std::string>, SceneObjectAnimation, std::less<>> SceneObject::template_animations;
 
 SceneObject::SceneObject(Scene* scene, std::string_view name, SceneObject* parent)
     : scene_(scene), parent_(parent), name_(name), path_(BuildPath(name, parent)) {
@@ -160,45 +163,14 @@ void SceneObject::ClearComponents() {
   components_.clear();
 }
 
-namespace {
-
-std::optional<json> ConstructObjectFromTemplate(std::string_view template_asset) {
-  auto asset_library = GetAssetLibraryForAsset(template_asset);
-
-  if (!asset_library) {
-    LogE("Invalid scene object template `{}`: asset does not exist", template_asset);
-    return {};
-  }
-  if (auto asset_type = asset_library->GetAssetType(template_asset); asset_type != "scene_object") {
-    LogE("Invalid scene object template `{}`: asset has invalid type `{}`", template_asset, asset_type);
-    return {};
-  }
-
-  const auto object_template_data = asset_library->LoadAssetTextFile(template_asset, "json");
-  if (!object_template_data.has_value()) {
-    LogE("Invalid scene object template `{}`: asset does not contain json file", template_asset);
-    return {};
-  }
-
-  const auto object_template = json::parse(*object_template_data);
-
-  if (object_template.contains("template")) {
-    const std::string parent_template_asset = object_template.at("template");
-
-    // TODO: detect circular references?
-    auto parent_template = ConstructObjectFromTemplate(parent_template_asset);
-    if (!parent_template.has_value()) {
-      return {};
+SceneObjectAnimation* SceneObject::GetAnimation(std::string_view name) const {
+  for (const auto& animation : animations_) {
+    if (animation->name() == name) {
+      return animation.get();
     }
-
-    parent_template->merge_patch(object_template);
-    return *parent_template;
-  } else {
-    return object_template;
   }
+  return nullptr;
 }
-
-}  // namespace
 
 json SceneObject::Serialize() const {
   json serialized_object = json::object();
@@ -249,6 +221,19 @@ bool SceneObject::Deserialize(const json& serialized_object) {
       return false;
     }
     object_template->merge_patch(serialized_object);
+    animations_.clear();
+    if (object_template->contains("animations")) {
+
+      animations_.reserve(object_template->at("animations").size());
+      for (const auto& [animation_name, _] : object_template->at("animations").items()) {
+        auto animation = template_animations.find(std::make_pair(template_, animation_name));
+        if (animation != template_animations.end()) {
+          animations_.push_back(safe_ptr(&animation->second));
+        } else {
+          LogE("Could not find template animation: {}", template_);
+        }
+      }
+    }
     return Update(*object_template);
   } else {
     template_ = "";
@@ -315,6 +300,81 @@ bool SceneObject::Update(const json& serialized_object) {
   }
 
   return true;
+}
+
+SceneObjectAnimation* SceneObject::GetAnimation(std::string_view template_asset_id, std::string_view animation_name) {
+  auto animation_it = template_animations.find(std::make_pair(std::string(template_asset_id), std::string(animation_name)));
+  if (animation_it != template_animations.end()) {
+    return &animation_it->second;
+  } else {
+    return nullptr;
+  }
+}
+
+std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view template_asset) const {
+  auto asset_library = GetAssetLibraryForAsset(template_asset);
+
+  if (!asset_library) {
+    LogE("Invalid scene object template `{}`: asset does not exist", template_asset);
+    return {};
+  }
+  if (auto asset_type = asset_library->GetAssetType(template_asset); asset_type != "scene_object") {
+    LogE("Invalid scene object template `{}`: asset has invalid type `{}`", template_asset, asset_type);
+    return {};
+  }
+
+  const auto object_template_data = asset_library->LoadAssetTextFile(template_asset, "json");
+  if (!object_template_data.has_value()) {
+    LogE("Invalid scene object template `{}`: asset does not contain json file", template_asset);
+    return {};
+  }
+
+  auto object_template = json::parse(*object_template_data);
+
+
+
+  if (object_template.contains("template")) {
+    const std::string parent_template_asset = object_template.at("template");
+
+    // TODO: detect circular references?
+    auto parent_template = ConstructObjectFromTemplate(parent_template_asset);
+    if (!parent_template.has_value()) {
+      return {};
+    }
+
+    json animations = parent_template->at("animations");
+    assert(animations.is_object());
+    if (object_template.contains("animations")) {
+      for (const auto& [name, animation] : object_template["animations"].items()) {
+        assert(animation.is_array());
+        assert(animation.size() == 1);
+        if (animations.contains(name)) {
+          assert(animations[name].is_array());
+          animations[name].push_back(animation[0]);
+        } else {
+          animations[name] = animation;
+        }
+      }
+    }
+    object_template["animations"] = std::move(animations);
+
+    parent_template->merge_patch(object_template);
+    object_template = *parent_template;
+  }
+
+  for (auto& [name, animation_value] : object_template["animations"].items()) {
+    std::pair<std::string, std::string> animation_identifier = std::make_pair(std::string(template_asset), name);
+    if (!template_animations.contains(animation_identifier)) {
+      SceneObjectAnimation animation(name);
+      if (!animation.Deserialize(animation_value)) {
+        LogE("Failed to deserialize animation");
+      } else {
+        template_animations.insert(std::make_pair(std::move(animation_identifier), std::move(animation)));
+      }
+    }
+  }
+  
+  return object_template;
 }
 
 std::vector<safe_ptr<SceneObject>>::const_iterator SceneObject::FindChild(std::string_view name) const {

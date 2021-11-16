@@ -9,6 +9,9 @@ add_library(
   include/ovis/core/scene_controller.hpp src/scene_controller.cpp
   include/ovis/core/scene_object.hpp src/scene_object.cpp
   include/ovis/core/scene_object_component.hpp src/scene_object_component.cpp
+  include/ovis/core/scene_object_animation.hpp src/scene_object_animation.cpp
+  include/ovis/core/animator.hpp src/animator.cpp
+  include/ovis/core/animator_controller.hpp src/animator_controller.cpp
   include/ovis/core/camera.hpp src/camera.cpp
   include/ovis/core/transform.hpp src/transform.cpp
   include/ovis/core/asset_library.hpp src/asset_library.cpp
@@ -67,6 +70,7 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scene_object.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/virtual_machine.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_animations.cpp
   )
 
   target_add_ldoc_test(
@@ -96,6 +100,7 @@ if (OVIS_BUILD_TESTS)
     ovis-core-test
 
     test/assets/template.scene_object.json
+    test/assets/animation_test.scene_object.json
   )
   target_embed_assets(ovis-core-test)
 

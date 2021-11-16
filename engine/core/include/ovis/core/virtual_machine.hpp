@@ -64,11 +64,20 @@ class Type : public SafelyReferenceable {
   void SetDeserializeFunction(DeserializeFunction function) { deserialize_function_ = function; }
   DeserializeFunction deserialize_function() const { return deserialize_function_; }
 
-  Value CreateValue(const json& data);
+  Value CreateValue(const json& data) const;
+
   void RegisterProperty(std::string_view name, Type* type, Property::GetFunction getter,
                         Property::SetFunction setter = nullptr);
-  template <auto PROPERTY>
+  template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
   void RegisterProperty(std::string_view);
+
+  template <auto GETTER>
+  void RegisterProperty(std::string_view);
+
+  template <auto GETTER, auto SETTER>
+  void RegisterProperty(std::string_view);
+
+  const Property* GetProperty(std::string_view name) const;
   std::span<const Property> properties() const { return properties_; }
 
   template <typename T>
@@ -128,6 +137,8 @@ class Value {
   template <ValueType T>
   static Value Create(T* value);
 
+  static Value Create(const Value& value);
+
   template <ReferenceType T>
   static Value CreateView(T& value);
 
@@ -155,7 +166,7 @@ class Value {
   template <PointerToReferenceType T> T Get();
   template <ValueType T> std::remove_cvref_t<T>& Get();
   template <PointerToValueType T> T Get();
-  template <typename T> auto Get() const { return const_cast<Value*>(this)->Get<T>(); }
+  template <typename T> auto& Get() const { return const_cast<Value*>(this)->Get<T>(); }
 
   template <typename T>
   void SetProperty(std::string_view property_name, T&& property_value);
@@ -327,6 +338,7 @@ class Function : public SafelyReferenceable {
   FunctionResultType<OutputTypes...> Call(ExecutionContext* context, InputsTypes&&... inputs);
 
   json Serialize() const;
+  static safe_ptr<Function> Deserialize(const json& data);
 
  private:
   Function(std::string_view name, FunctionPointer function_pointer, std::vector<ValueDeclaration> inputs,
