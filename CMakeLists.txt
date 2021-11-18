@@ -16,12 +16,13 @@ set(CXX_STANDARD_REQUIRED ON)
 
 if (OVIS_BUILD_TESTS)
   enable_testing()
-  find_program(
-    NODE_EXECUTABLE
-    node
-    DOC "Node.js executable for running tests"
-  )
 endif ()
+
+find_program(
+  NODE_EXECUTABLE
+  node
+  DOC "Node.js executable for running tests"
+)
 
 set(OVIS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory(extern)
