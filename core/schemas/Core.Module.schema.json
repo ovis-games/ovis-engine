@@ -8,13 +8,13 @@
     "types": {
       "type": "object",
       "patternProperties": {
-        "*": { "$ref": "core/Type.schema.json" }
+        "*": { "$ref": "Core.Type.schema.json" }
       }
     },
     "functions": {
       "type": "object",
       "patternProperties": {
-        "*": { "$ref": "core/Function.schema.json" }
+        "*": { "$ref": "Core.Function.schema.json" }
       }
     }
   },

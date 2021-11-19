@@ -6,13 +6,13 @@
   "type": "object",
   "properties": {
     "position": {
-      "$ref": "core/Vector3.schema.json"
+      "$ref": "Core.Vector3.schema.json"
     },
     "rotation": {
-      "$ref": "core/Quaternion.schema.json"
+      "$ref": "Core.Quaternion.schema.json"
     },
     "scale": {
-      "$ref": "core/Vector3.schema.json"
+      "$ref": "Core.Vector3.schema.json"
     }
   },
   "additionalProperties": false

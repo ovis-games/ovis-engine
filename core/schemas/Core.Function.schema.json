@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "Core.Function",
+  "title": "Function",
+  "description": "Describes a function",
+  "type": "object",
+  "properties": {
+  },
+  "additionalProperties": false
+}

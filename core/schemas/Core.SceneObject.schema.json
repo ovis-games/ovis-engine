@@ -5,17 +5,18 @@
   "description": "Description of an object inside a scene",
   "type": "object",
   "properties": {
+    "template": {
+      "type": "string"
+    },
     "components": {
       "type": "object",
       "properties": {
-        "Core.Transform": { "$ref": "Transform.schema.json" }
+        "Core.Transform": { "$ref": "Core.Transform.schema.json" }
       }
     },
     "children": {
       "type": "object",
-      "patternProperties": {
-        "*": { "$ref": "SceneObject.schema.json" }
-      }
+      "additionalProperties": {"$ref": "Core.SceneObject.schema.json" }
     }
   },
   "additionalProperties": false

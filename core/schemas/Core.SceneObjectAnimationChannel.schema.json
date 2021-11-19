@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "Core.SceneObjectAnimationChannel",
+  "title": "SceneObjectAnimationChannel",
+  "description": "Describes the animation for one property of a scene object component.",
+  "type": "object",
+  "properties": {
+    "object": {
+      "type": "string"
+    },
+    "component": { "$ref": "Core.TypeReference.schema.json" },
+    "property": {
+      "type": "string"
+    },
+    "interpolationFunction": {  "$ref": "Core.FunctionReference.schema.json" },
+    "keyframes": {
+      "type": "array",
+      "items": { "$ref": "Core.SceneObjectAnimationKeyframe.schema.json" }
+    }
+  },
+  "required": [ "object", "component", "property", "interpolationFunction", "keyframes" ],
+  "additionalProperties": false
+}
