@@ -216,7 +216,6 @@ bool SceneObject::Deserialize(const json& serialized_object) {
 
   if (serialized_object.contains("template")) {
     template_ = serialized_object.at("template");
-    LogE("Trying to load template: {}", template_);
     auto object_template = ConstructObjectFromTemplate(template_);
     if (!object_template.has_value()) {
       return false;
