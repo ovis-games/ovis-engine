@@ -86,6 +86,34 @@ TEST_CASE("Create Scene Object with Template", "[ovis][core][SceneObject]") {
   REQUIRE(transform->local_scale() == Vector3(2.0, 1.0, 2.0));
 }
 
+TEST_CASE("Try to create scene object with recursive template", "[ovis][core][SceneObject]") {
+  Scene test_scene;
+
+  SECTION("Recursion") {
+    SceneObject* object = test_scene.CreateObject("TestObject", R"({
+      "template": "recursive_template",
+      "components": {}
+    })"_json);
+    REQUIRE(object == nullptr);
+  }
+
+  SECTION("Indirect recursion") {
+    SceneObject* object = test_scene.CreateObject("TestObject", R"({
+      "template": "child_recursion_template",
+      "components": {}
+    })"_json);
+    REQUIRE(object == nullptr);
+  }
+
+  SECTION("Child recursion") {
+    SceneObject* object = test_scene.CreateObject("TestObject", R"({
+      "template": "indirect_recursion1",
+      "components": {}
+    })"_json);
+    REQUIRE(object == nullptr);
+  }
+}
+
 std::string FullPrecision(double d) {
     auto s = std::ostringstream{};
     s << std::setprecision( std::numeric_limits<double>::max_digits10 ) << d;
