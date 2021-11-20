@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "Rendering2D.Text",
+  "title": "Text",
+  "description": "A component that will display text.",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string"
+    },
+    "color": {
+      "$ref": "Core.Color.schema.json"
+    },
+    "font": {
+      "type": "string"
+    }
+  },
+  "required": [ "text", "color" ],
+  "additionalProperties": false
+}

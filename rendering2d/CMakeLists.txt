@@ -4,6 +4,8 @@ add_library(
   include/ovis/rendering2d/rendering2d_module.hpp src/rendering2d_module.cpp
   include/ovis/rendering2d/renderer2d.hpp src/renderer2d.cpp
   include/ovis/rendering2d/shape2d.hpp src/shape2d.cpp
+  include/ovis/rendering2d/text.hpp src/text.cpp
+  include/ovis/rendering2d/font_atlas.hpp src/font_atlas.cpp
 )
 add_library(ovis::rendering2d ALIAS ovis-rendering2d)
 
@@ -17,6 +19,7 @@ target_link_libraries(
   ovis-rendering2d
   PUBLIC
     ovis::rendering
+    stb
 )
 
 target_add_assets(
@@ -25,6 +28,7 @@ target_add_assets(
   assets/rendering2d.schema.json
   assets/shape2d.shader.vert
   assets/shape2d.shader.frag
+  assets/NotoSans-Regular.font.ttf
 )
 
 if (OVIS_BUILD_TESTS)

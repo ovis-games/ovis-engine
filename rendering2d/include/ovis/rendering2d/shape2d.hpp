@@ -28,9 +28,11 @@ class Shape2D : public SceneObjectComponent {
   struct Vertex {
     float x;
     float y;
+    float s;
+    float t;
     uint32_t color;
   };
-  static_assert(sizeof(Vertex) == 12);
+  static_assert(sizeof(Vertex) == 20);
 
   explicit inline Shape2D(SceneObject* object) : SceneObjectComponent(object) {Deserialize({});}
 

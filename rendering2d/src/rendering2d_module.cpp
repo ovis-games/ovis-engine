@@ -1,10 +1,10 @@
-
 #include <ovis/core/core_module.hpp>
 #include <ovis/core/lua.hpp>
 #include <ovis/rendering/rendering_module.hpp>
+#include <ovis/rendering2d/renderer2d.hpp>
 #include <ovis/rendering2d/rendering2d_module.hpp>
 #include <ovis/rendering2d/shape2d.hpp>
-#include <ovis/rendering2d/renderer2d.hpp>
+#include <ovis/rendering2d/text.hpp>
 
 namespace ovis {
 
@@ -26,10 +26,14 @@ bool LoadRendering2DModule() {
     LoadRenderingModule();
     rendering2d_module = vm::Module::Register("Rendering2D");
 
-    SceneObjectComponent::Register("Rendering2D.Shape2D", [](SceneObject* object) { return std::make_unique<Shape2D>(object); });
+    SceneObjectComponent::Register("Rendering2D.Shape2D",
+                                   [](SceneObject* object) { return std::make_unique<Shape2D>(object); });
+    SceneObjectComponent::Register("Rendering2D.Text",
+                                   [](SceneObject* object) { return std::make_unique<Text>(object); });
     RenderPass::Register("Renderer2D", []() { return std::make_unique<Renderer2D>(); });
 
     Shape2D::RegisterType(rendering2d_module.get());
+    Text::RegisterType(rendering2d_module.get());
 
     lua.require("ovis.rendering2d", &LoadRendering2DModule);
   }

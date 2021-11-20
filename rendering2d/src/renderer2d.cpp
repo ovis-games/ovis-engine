@@ -4,6 +4,7 @@
 #include <ovis/graphics/render_target_configuration.hpp>
 #include <ovis/rendering/rendering_viewport.hpp>
 #include <ovis/rendering2d/renderer2d.hpp>
+#include <ovis/rendering2d/text.hpp>
 
 namespace ovis {
 
@@ -31,11 +32,14 @@ void Renderer2D::CreateResources() {
   vertex_input_desc.vertex_buffers = {vertex_buffer_.get()};
   vertex_input_desc.vertex_attributes = {
       {*shape_shader_->GetAttributeLocation("Position"), 0, 0, VertexAttributeType::FLOAT32_VECTOR2},
-      {*shape_shader_->GetAttributeLocation("Color"), 8, 0, VertexAttributeType::UINT8_NORM_VECTOR4}};
+      {*shape_shader_->GetAttributeLocation("TextureCoordinates"), 8, 0, VertexAttributeType::FLOAT32_VECTOR2},
+      {*shape_shader_->GetAttributeLocation("Color"), 16, 0, VertexAttributeType::UINT8_NORM_VECTOR4}};
   vertex_input_ = std::make_unique<VertexInput>(context(), vertex_input_desc);
 
   const uint32_t white_pixel = 0xffffffff;
   empty_texture_ = std::make_unique<Texture2D>(context(), empty_texture_desc, &white_pixel);
+
+  font_atlases_.push_back(FontAtlas(context(), "NotoSans-Regular", 32.0f));
 }
 
 void Renderer2D::ReleaseResources() {
@@ -47,11 +51,14 @@ void Renderer2D::ReleaseResources() {
 
 void Renderer2D::Render(const RenderContext& render_context) {
   object_cache_.clear();
-  object_cache_.insert(object_cache_.end(), viewport()->scene()->ObjectsWithComponent<Shape2D>().begin(),
-                       viewport()->scene()->ObjectsWithComponent<Shape2D>().end());
+  for (auto* object : viewport()->scene()->objects()) {
+    if (object->HasComponent<Shape2D>() || object->HasComponent<Text>()) {
+      object_cache_.push_back(object);
+    }
+  }
 
-  auto& objects_with_shape2d = object_cache_;
-  std::sort(objects_with_shape2d.begin(), objects_with_shape2d.end(), [](SceneObject* lhs, SceneObject* rhs) {
+  // auto& objects_with_shape2d = object_cache_;
+  std::sort(object_cache_.begin(), object_cache_.end(), [](SceneObject* lhs, SceneObject* rhs) {
     Vector3 lhs_position;
     Transform* lhs_transform = lhs->GetComponent<Transform>();
     if (lhs_transform != nullptr) {
@@ -68,37 +75,69 @@ void Renderer2D::Render(const RenderContext& render_context) {
     return lhs_position.z > rhs_position.z;
   });
 
-  for (SceneObject* object : objects_with_shape2d) {
-    Shape2D* shape = object->GetComponent<Shape2D>();
-    const std::span<const Shape2D::Vertex> vertices = shape->vertices();
-
-    if (shape_vertex_count_ + vertices.size() > VERTEX_BUFFER_ELEMENT_COUNT) {
-      DrawShapeVertices();
-    }
-
-    const std::string texture_asset = shape->texture_asset();
-    Texture2D* texture = empty_texture_.get();
-    if (texture_asset.size() > 0) {
-      auto texture_iterator = textures_.find(texture_asset);
-      if (texture_iterator == textures_.end()) {
-        texture_iterator = textures_.insert(std::make_pair(texture_asset, LoadTexture2D(texture_asset, context()))).first;
-      }
-      texture = texture_iterator->second.get();
-    }
-
+  Texture2D* bound_texture = nullptr;
+  for (SceneObject* object : object_cache_) {
     Transform* transform = object->GetComponent<Transform>();
-    const Matrix4 world_view_projection =
-        transform ? AffineCombine(render_context.world_to_clip_space,
-                                  transform->local_to_world_matrix())
+    const Matrix4 world_to_clip_space =
+        transform ? AffineCombine(render_context.world_to_clip_space, transform->local_to_world_matrix())
                   : render_context.world_to_clip_space;
-    for (size_t i = 0; i < vertices.size(); ++i) {
-      const Vector2 transformed_position = TransformPosition(world_view_projection, Vector3(vertices[i].x, vertices[i].y, 0.0f));
-      shape_vertices_[shape_vertex_count_ + i].x = transformed_position.x;
-      shape_vertices_[shape_vertex_count_ + i].y = transformed_position.y;
-      shape_vertices_[shape_vertex_count_ + i].color = vertices[i].color;
+
+    if(Shape2D* shape = object->GetComponent<Shape2D>(); shape != nullptr) {
+      const std::span<const Shape2D::Vertex> vertices = shape->vertices();
+
+      const std::string texture_asset = shape->texture_asset();
+      Texture2D* texture = empty_texture_.get();
+      if (texture_asset.size() > 0) {
+        auto texture_iterator = textures_.find(texture_asset);
+        if (texture_iterator == textures_.end()) {
+          texture_iterator = textures_.insert(std::make_pair(texture_asset, LoadTexture2D(texture_asset, context()))).first;
+        }
+        texture = texture_iterator->second.get();
+      }
+
+      if (texture != bound_texture) {
+        DrawShapeVertices();
+        shape_shader_->SetTexture("Texture", texture);
+        bound_texture = texture;
+      } else if (shape_vertex_count_ + vertices.size() > VERTEX_BUFFER_ELEMENT_COUNT) {
+        DrawShapeVertices();
+      }
+
+      for (size_t i = 0; i < vertices.size(); ++i) {
+        const Vector2 transformed_position = TransformPosition(world_to_clip_space, Vector3(vertices[i].x, vertices[i].y, 0.0f));
+        shape_vertices_[shape_vertex_count_ + i].x = transformed_position.x;
+        shape_vertices_[shape_vertex_count_ + i].y = transformed_position.y;
+        shape_vertices_[shape_vertex_count_ + i].color = vertices[i].color;
+      }
+      shape_vertex_count_ += vertices.size();
     }
-    shape_vertex_count_ += vertices.size();
+
+    if(Text* text = object->GetComponent<Text>(); text != nullptr) {
+      DrawShapeVertices(); // TODO: check if texture different
+      Vector2 position = Vector2::Zero();
+
+      if (Texture2D* texture = font_atlases_[0].texture(); texture != bound_texture) {
+        DrawShapeVertices();
+        shape_shader_->SetTexture("Texture", texture);
+        bound_texture = texture;
+      }
+      for (char character : text->text()) {
+        auto vertices = font_atlases_[0].GetCharacterVertices(character, &position, text->color());
+        if (shape_vertex_count_ + vertices.size() > VERTEX_BUFFER_ELEMENT_COUNT) {
+          DrawShapeVertices();
+        }
+        for (auto& vertex : vertices) {
+          const Vector2 transformed_position = TransformPosition(world_to_clip_space, Vector3(vertex.x, vertex.y, 0.0f));
+          vertex.x = transformed_position.x;
+          vertex.y = transformed_position.y;
+        }
+
+        std::memcpy(&shape_vertices_[shape_vertex_count_], vertices.data(), sizeof(Shape2D::Vertex) * vertices.size());
+        shape_vertex_count_ += vertices.size();
+      }
+    }
   }
+
   DrawShapeVertices();
 }
 
