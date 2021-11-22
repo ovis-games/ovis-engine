@@ -311,7 +311,7 @@ SceneObjectAnimation* SceneObject::GetAnimation(std::string_view template_asset_
   }
 }
 
-std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view template_asset) const {
+std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view template_asset, std::span<std::string_view> parents) const {
   auto asset_library = GetAssetLibraryForAsset(template_asset);
 
   if (!asset_library) {
@@ -334,13 +334,26 @@ std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view te
   if (object_template.contains("template")) {
     const std::string parent_template_asset = object_template.at("template");
 
-    // TODO: detect circular references?
-    auto parent_template = ConstructObjectFromTemplate(parent_template_asset);
+    for (const auto& parent : parents) {
+      if (parent == parent_template_asset) {
+        // Circular reference
+        return {};
+      }
+    }
+
+    std::vector<std::string_view> parents_for_children;
+    parents_for_children.reserve(parents.size() + 1);
+    parents_for_children.insert(parents_for_children.end(), parents.begin(), parents.end());
+    parents_for_children.push_back(template_asset);
+
+    auto parent_template = ConstructObjectFromTemplate(parent_template_asset, parents_for_children);
     if (!parent_template.has_value()) {
       return {};
     }
 
-    json animations = parent_template->at("animations");
+    LogI("{}", object_template.dump(2));
+
+    json animations = parent_template->contains("animations") ? parent_template->at("animations") : json::object();
     assert(animations.is_object());
     if (object_template.contains("animations")) {
       for (const auto& [name, animation] : object_template["animations"].items()) {
@@ -360,14 +373,16 @@ std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view te
     object_template = *parent_template;
   }
 
-  for (auto& [name, animation_value] : object_template["animations"].items()) {
-    std::pair<std::string, std::string> animation_identifier = std::make_pair(std::string(template_asset), name);
-    if (!template_animations.contains(animation_identifier)) {
-      SceneObjectAnimation animation(name);
-      if (!animation.Deserialize(animation_value)) {
-        LogE("Failed to deserialize animation");
-      } else {
-        template_animations.insert(std::make_pair(std::move(animation_identifier), std::move(animation)));
+  if (object_template.contains("animation")) {
+    for (auto& [name, animation_value] : object_template["animations"].items()) {
+      std::pair<std::string, std::string> animation_identifier = std::make_pair(std::string(template_asset), name);
+      if (!template_animations.contains(animation_identifier)) {
+        SceneObjectAnimation animation(name);
+        if (!animation.Deserialize(animation_value)) {
+          LogE("Failed to deserialize animation");
+        } else {
+          template_animations.insert(std::make_pair(std::move(animation_identifier), std::move(animation)));
+        }
       }
     }
   }

@@ -160,8 +160,12 @@ SceneObject* Scene::CreateObject(std::string_view base_name, SceneObject* parent
 
 SceneObject* Scene::CreateObject(std::string_view object_name, const json& serialized_object, SceneObject* parent) {
   auto object = CreateObject(object_name, parent);
-  object->Deserialize(serialized_object);
-  return object;
+  if (object->Deserialize(serialized_object)) {
+    return object;
+  } else {
+    DeleteObject(object);
+    return nullptr;
+  }
 }
 
 void Scene::DeleteObject(std::string_view object_path) {

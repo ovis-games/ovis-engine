@@ -103,7 +103,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   std::vector<TypedComponent> components_;
   std::vector<safe_ptr<SceneObjectAnimation>> animations_;
 
-  std::optional<json> ConstructObjectFromTemplate(std::string_view template_asset) const;
+  std::optional<json> ConstructObjectFromTemplate(std::string_view template_asset, std::span<std::string_view> parents = {}) const;
   std::vector<safe_ptr<SceneObject>>::const_iterator FindChild(std::string_view name) const;
   std::vector<safe_ptr<SceneObject>>::iterator FindChild(std::string_view name);
 

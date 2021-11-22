@@ -99,19 +99,19 @@ TEST_CASE("Try to create scene object with recursive template", "[ovis][core][Sc
 
   SECTION("Indirect recursion") {
     SceneObject* object = test_scene.CreateObject("TestObject", R"({
-      "template": "child_recursion_template",
-      "components": {}
-    })"_json);
-    REQUIRE(object == nullptr);
-  }
-
-  SECTION("Child recursion") {
-    SceneObject* object = test_scene.CreateObject("TestObject", R"({
       "template": "indirect_recursion1",
       "components": {}
     })"_json);
     REQUIRE(object == nullptr);
   }
+
+  // SECTION("Child recursion") {
+  //   SceneObject* object = test_scene.CreateObject("TestObject", R"({
+  //     "template": "child_recursion_template",
+  //     "components": {}
+  //   })"_json);
+  //   REQUIRE(object == nullptr);
+  // }
 }
 
 std::string FullPrecision(double d) {
