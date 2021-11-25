@@ -27,8 +27,9 @@ using namespace ovis::editor;
 
 class AssetProvider : public AssetLibrary {
  public:
-  AssetProvider(const emscripten::val& assets) : assets_(assets) {
-    for (const auto& asset_id : GetObjectKeys(assets)) {
+  AssetProvider(const emscripten::val& asset_provider) : asset_provider_(asset_provider) {
+    LogD("Assets:");
+    for (const auto& asset_id : GetAssets()) {
       LogD(asset_id);
     }
   }
@@ -40,27 +41,25 @@ class AssetProvider : public AssetLibrary {
   }
 
   std::vector<std::string> GetAssets() const override final {
-    return GetObjectKeys(assets_);
+    return GetObjectKeys(asset_provider_["assets"]);
   }
 
   std::string GetAssetType(std::string_view asset_id) const override final {
-    LogD("GetAssetType {}", asset_id);
     if (Contains(asset_id)) {
       const std::string asset_id_string(asset_id);
-      return assets_[asset_id_string]["type"].as<std::string>();
+      return asset_provider_["assets"][asset_id_string]["type"].as<std::string>();
     } else {
       return "";
     }
   }
 
   std::vector<std::string> GetAssetFileTypes(std::string_view asset_id) const override final {
-    LogD("GetAssetFileTypes {}", asset_id);
     if (!Contains(asset_id)) {
       return {};
     }
 
     const std::string asset_id_string(asset_id);
-    return GetObjectKeys(assets_[asset_id_string]["files"]);
+    return GetObjectKeys(asset_provider_["assets"][asset_id_string]["files"]);
   }
 
   std::optional<std::string> LoadAssetTextFile(std::string_view asset_id,
@@ -69,11 +68,11 @@ class AssetProvider : public AssetLibrary {
     LogD("LoadAssetTextFile {} {}", asset_id, filename);
     const std::string asset_id_string(asset_id);
     const std::string filename_string(filename);
-    emscripten::val content = assets_[asset_id_string]["files"][filename_string]["content"];
+    emscripten::val content = asset_provider_["assets"][asset_id_string]["files"][filename_string]["content"];
     if (content.typeOf().as<std::string>() == "string") {
       return content.as<std::string>();
     } else {
-      return {};
+      return emscripten::val::global("JSON").call<std::string>("stringify", content);
     }
   }
   std::optional<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view filename) const override final {
@@ -86,7 +85,7 @@ class AssetProvider : public AssetLibrary {
   }
 
  private:
-  emscripten::val assets_;
+  emscripten::val asset_provider_;
 };
 
 void EMSCRIPTEN_KEEPALIVE OvisEditorViewport_Quit() {
@@ -118,14 +117,14 @@ void SetLogCallback(emscripten::val callback) {
   log_callback = callback;
 }
 
-void SetAssets(const emscripten::val& assets) {
-  ovis::CreateApplicationAssetLibrary<AssetProvider>(assets);
+void SetAssetProvider(const emscripten::val& asset_provider) {
+  ovis::CreateApplicationAssetLibrary<AssetProvider>(asset_provider);
 }
 
 EMSCRIPTEN_BINDINGS(editor_viewport_module) {
   function("viewportSetEventCallback", &SetEventCallback);
   function("viewportSetLogCallback", &SetLogCallback);
-  function("viewportSetAssets", &SetAssets);
+  function("viewportSetAssetProvider", &SetAssetProvider);
 }
 
 #endif
@@ -135,7 +134,7 @@ int main(int argc, char* argv[]) {
   using namespace ovis;
   using namespace ovis::editor;
 
-  // Log::AddListener(ConsoleLogger);
+  Log::AddListener(ConsoleLogger);
   Log::AddListener([](LogLevel level, const std::string& text) {
     if (log_callback.typeOf() == emscripten::val("function")) {
       log_callback(emscripten::val(static_cast<int>(level)), emscripten::val(text));
