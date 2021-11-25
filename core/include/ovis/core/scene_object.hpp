@@ -80,6 +80,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   json Serialize() const override;
   bool Deserialize(const json& serialized_object) override;
 
+  static void ClearObjectTemplateChache();
   static SceneObjectAnimation* GetAnimation(std::string_view template_asset_id, std::string_view animation_name);
 
   static void RegisterType(sol::table* module);

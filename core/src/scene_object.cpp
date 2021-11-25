@@ -333,6 +333,10 @@ std::vector<safe_ptr<SceneObject>>::iterator SceneObject::FindChild(std::string_
                       [name](const safe_ptr<SceneObject>& object) { return object->name() == name; });
 }
 
+void SceneObject::ClearObjectTemplateChache() {
+  templates.clear();
+}
+
 void SceneObject::RegisterType(sol::table* module) {
 }
 

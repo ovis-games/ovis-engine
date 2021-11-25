@@ -19,6 +19,7 @@ bool SetScene(const std::string& serialized_scene) {
 
   document = emscripten::val::global("JSON").call<emscripten::val>("parse", serialized_scene);
 
+  ovis::SceneObject::ClearObjectTemplateChache();
   return EditorViewport::instance()->scene()->Deserialize(ovis::json::parse(serialized_scene));
 }
 
