@@ -42,10 +42,6 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   inline SceneObject* parent() const { return parent_.get(); }
   inline bool has_parent() const { return parent_ != nullptr; }
 
-  // Setup the scene object with a specific template. This will completely reset the object and all
-  // previously added components and child objects will be removed.
-  bool SetupTemplate(std::string_view template_asset_id);
-
   SceneObject* CreateChildObject(std::string_view object_name);
   SceneObject* CreateChildObject(std::string_view object_name, const json& serialized_object);
   void DeleteChildObject(std::string_view object_name);
@@ -83,7 +79,6 @@ class SceneObject : public Serializable, public SafelyReferenceable {
 
   json Serialize() const override;
   bool Deserialize(const json& serialized_object) override;
-  bool Update(const json& serialized_object) override;
 
   static SceneObjectAnimation* GetAnimation(std::string_view template_asset_id, std::string_view animation_name);
 
@@ -94,7 +89,6 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   safe_ptr<SceneObject> parent_;
   std::string path_;
   std::string name_;
-  std::string template_;
   std::vector<safe_ptr<SceneObject>> children_;
   struct TypedComponent {
     safe_ptr<vm::Type> type;
@@ -107,6 +101,10 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   std::vector<safe_ptr<SceneObject>>::const_iterator FindChild(std::string_view name) const;
   std::vector<safe_ptr<SceneObject>>::iterator FindChild(std::string_view name);
 
+  static std::vector<std::pair<std::string, json>> templates;
+  static const json* FindTemplate(std::string_view asset_id);
+  static const json* LoadTemplate(std::string_view asset_id);
+  static json ResolveTemplateForObject(const json& object);
   // Maps (scene_object_template, animation_name) -> animation
   static std::map<std::pair<std::string, std::string>, SceneObjectAnimation, std::less<>> template_animations;
 };
