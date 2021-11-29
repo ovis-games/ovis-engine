@@ -130,6 +130,7 @@ std::remove_cvref_t<T>& Value::Get() {
       return base_type_value.Get<T>();
     } else {
       assert(false && "Invalid type requested");
+      throw std::runtime_error("Invalid type requested");
     }
   }
 }
