@@ -44,13 +44,13 @@ class AssetProvider : public AssetLibrary {
     return GetObjectKeys(asset_provider_["assets"]);
   }
 
-  std::string GetAssetType(std::string_view asset_id) const override final {
-    if (Contains(asset_id)) {
-      const std::string asset_id_string(asset_id);
-      return asset_provider_["assets"][asset_id_string]["type"].as<std::string>();
-    } else {
-      return "";
+  Result<std::string> GetAssetType(std::string_view asset_id) const override final {
+    if (!Contains(asset_id)) {
+      return Error("Asset {} does not exist", asset_id);
     }
+
+    const std::string asset_id_string(asset_id);
+    return asset_provider_["assets"][asset_id_string]["type"].as<std::string>();
   }
 
   std::vector<std::string> GetAssetFileTypes(std::string_view asset_id) const override final {
@@ -62,23 +62,24 @@ class AssetProvider : public AssetLibrary {
     return GetObjectKeys(asset_provider_["assets"][asset_id_string]["files"]);
   }
 
-  std::optional<std::string> LoadAssetTextFile(std::string_view asset_id,
+  Result<std::string> LoadAssetTextFile(std::string_view asset_id,
                                                std::string_view filename) const override final {
-    
     LogD("LoadAssetTextFile {} {}", asset_id, filename);
     const std::string asset_id_string(asset_id);
     const std::string filename_string(filename);
     emscripten::val content = asset_provider_["assets"][asset_id_string]["files"][filename_string]["content"];
-    if (content.typeOf().as<std::string>() == "string") {
-      return content.as<std::string>();
+    if (const auto content_type = content.typeOf().as<std::string>(); content_type != "object") {
+      return Error("Invalid asset content: {}", content_type);
     } else {
       return emscripten::val::global("JSON").call<std::string>("stringify", content);
     }
   }
-  std::optional<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view filename) const override final {
+
+  Result<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view filename) const override final {
     LogD("LoadAssetBinaryFile {} {}", asset_id, filename);
-    return {};
+    return Error("Not implemented");
   }
+
   std::vector<std::string> GetAssetsWithType(std::string_view type) const override final {
     LogD("GetAssetsWithType {}", type);
     return {};
