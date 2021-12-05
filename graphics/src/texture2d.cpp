@@ -139,17 +139,13 @@ void Texture2D::Bind(int texture_unit) {
   context()->BindTexture(GL_TEXTURE_2D, name(), texture_unit);
 }
 
-std::optional<Texture2DDescription> LoadTexture2DDescription(const std::string& asset_id) {
+Result<Texture2DDescription> LoadTexture2DDescription(const std::string& asset_id) {
   return LoadTexture2DDescription(GetAssetLibraryForAsset(asset_id), asset_id);
 }
 
-std::optional<Texture2DDescription> LoadTexture2DDescription(AssetLibrary* asset_library, const std::string& asset_id) {
-  const std::optional<std::string> parameters_file = asset_library->LoadAssetTextFile(asset_id, "json");
-
-  if (!parameters_file) {
-    LogE("Cannot find parameters file for texture asset '{}'", asset_id);
-    return {};
-  }
+Result<Texture2DDescription> LoadTexture2DDescription(AssetLibrary* asset_library, const std::string& asset_id) {
+  const Result<std::string> parameters_file = asset_library->LoadAssetTextFile(asset_id, "json");
+  OVIS_CHECK_RESULT(parameters_file);
 
   try {
     const json parameters = json::parse(*parameters_file);
@@ -167,8 +163,7 @@ std::optional<Texture2DDescription> LoadTexture2DDescription(AssetLibrary* asset
     } else if (filter == "trilinear") {
       description.filter = TextureFilter::TRILINEAR;
     } else {
-      LogE("Failed to load texture '{}': invalid filter ()", asset_id, filter);
-      return {};
+      return Error("Failed to load texture '{}': invalid filter ()", asset_id, filter);
     }
 
     std::string format = parameters["format"];
@@ -177,14 +172,12 @@ std::optional<Texture2DDescription> LoadTexture2DDescription(AssetLibrary* asset
     } else if (format == "RGBA_UINT8") {
       description.format = TextureFormat::RGBA_UINT8;
     } else {
-      LogE("Failed to load texture '{}': invalid format ()", asset_id, format);
-      return {};
+      return Error("Failed to load texture '{}': invalid format ()", asset_id, format);
     }
 
     return description;
   } catch (const json::parse_error& error) {
-    LogE("Invalid json: {}", error.what());
-    return {};
+    return Error("Invalid json: {}", error.what());
   }
 }
 
@@ -196,8 +189,8 @@ std::unique_ptr<Texture2D> LoadTexture2D(AssetLibrary* asset_library, const std:
                                          GraphicsContext* graphics_context) {
   SDL_assert(graphics_context != nullptr);
 
-  std::optional<Texture2DDescription> description = LoadTexture2DDescription(asset_library, asset_id);
-  std::optional<Blob> mip_level_data = asset_library->LoadAssetBinaryFile(asset_id, "0");
+  Result<Texture2DDescription> description = LoadTexture2DDescription(asset_library, asset_id);
+  Result<Blob> mip_level_data = asset_library->LoadAssetBinaryFile(asset_id, "0");
 
   if (description.has_value() && mip_level_data.has_value()) {
     return std::make_unique<Texture2D>(graphics_context, *description, mip_level_data->data());

@@ -223,7 +223,7 @@ ImFont* ImGuiStartFrameController::LoadFont(std::string_view asset, float size, 
 
   AssetLibrary* asset_library = GetApplicationAssetLibrary()->Contains(asset) ? GetApplicationAssetLibrary() : GetEngineAssetLibrary();
 
-  if (!asset_library->Contains(asset) || asset_library->GetAssetType(asset) != "font") {
+  if (const auto asset_type = asset_library->GetAssetType(asset); !asset_type || *asset_type != "font") {
     LogE("Could not load font: {}", asset);
     return nullptr;
   }

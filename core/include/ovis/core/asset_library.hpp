@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <variant>
 
+#include <ovis/utils/result.hpp>
 #include <ovis/utils/file.hpp>
 #include <ovis/utils/json.hpp>
 
@@ -16,24 +17,23 @@ class AssetLibrary {
 
   virtual bool Contains(std::string_view asset_id) const = 0;
   virtual std::vector<std::string> GetAssets() const = 0;
-  virtual std::string GetAssetType(std::string_view asset_id) const = 0;
+  virtual Result<std::string> GetAssetType(std::string_view asset_id) const = 0;
   virtual std::vector<std::string> GetAssetFileTypes(std::string_view asset_id) const = 0;
-  virtual std::optional<std::string> LoadAssetTextFile(std::string_view asset_id,
-                                                       std::string_view filename) const = 0;
-  virtual std::optional<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view filename) const = 0;
+  virtual Result<std::string> LoadAssetTextFile(std::string_view asset_id, std::string_view filename) const = 0;
+  virtual Result<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view filename) const = 0;
   virtual std::vector<std::string> GetAssetsWithType(std::string_view type) const = 0;
 
-  virtual bool CreateAsset(std::string_view asset_id, std::string_view type,
-                           const std::vector<std::pair<std::string, std::variant<std::string, Blob>>>& files) {
-    return false;
+  virtual Result<> CreateAsset(std::string_view asset_id, std::string_view type,
+                               const std::vector<std::pair<std::string, std::variant<std::string, Blob>>>& files) {
+    return Error("Not implemented");
   }
 
-  virtual bool SaveAssetFile(std::string_view asset_id, std::string_view filename,
-                             std::variant<std::string, Blob> content) {
-    return false;
+  virtual Result<> SaveAssetFile(std::string_view asset_id, std::string_view filename,
+                                 std::variant<std::string, Blob> content) {
+    return Error("Not implemented");
   }
 
-  virtual bool DeleteAsset(std::string_view asset_id) { return false; }
+  virtual Result<> DeleteAsset(std::string_view asset_id) { return Error("Not implemented"); }
 };
 
 class DirectoryAssetLibrary : public AssetLibrary {
@@ -42,26 +42,25 @@ class DirectoryAssetLibrary : public AssetLibrary {
 
   bool Contains(std::string_view asset_id) const override;
   std::vector<std::string> GetAssets() const override;
-  std::string GetAssetType(std::string_view asset_id) const override;
+  Result<std::string> GetAssetType(std::string_view asset_id) const override;
   std::vector<std::string> GetAssetFileTypes(std::string_view asset_id) const override;
-  std::optional<std::string> LoadAssetTextFile(std::string_view asset_id,
-                                               std::string_view filename) const override;
-  std::optional<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view filename) const override;
+  Result<std::string> LoadAssetTextFile(std::string_view asset_id, std::string_view filename) const override;
+  Result<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view filename) const override;
   std::vector<std::string> GetAssetsWithType(std::string_view type) const override;
 
-  bool CreateAsset(std::string_view asset_id, std::string_view type,
-                   const std::vector<std::pair<std::string, std::variant<std::string, Blob>>>& files) override;
+  Result<> CreateAsset(std::string_view asset_id, std::string_view type,
+                       const std::vector<std::pair<std::string, std::variant<std::string, Blob>>>& files) override;
 
-  bool SaveAssetFile(std::string_view asset_id, std::string_view filename,
-                     std::variant<std::string, Blob> content) override;
+  Result<> SaveAssetFile(std::string_view asset_id, std::string_view filename,
+                         std::variant<std::string, Blob> content) override;
 
-  bool DeleteAsset(std::string_view asset_id) override;
+  Result<> DeleteAsset(std::string_view asset_id) override;
 
-  void Rescan();
+  Result<> Rescan();
   inline std::string directory() const { return directory_; }
 
  protected:
-  std::optional<std::string> GetAssetFilename(std::string_view asset_id, std::string_view filename) const;
+  Result<std::string> GetAssetFilename(std::string_view asset_id, std::string_view filename) const;
 
  private:
   std::filesystem::path directory_;

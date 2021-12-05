@@ -189,15 +189,15 @@ bool SceneObject::Deserialize(const json& serialized_object) {
   ClearComponents();
   ClearChildObjects();
 
-  const json object_json = ResolveTemplateForObject(serialized_object);
-  if (object_json.is_null()) {
+  const Result<json> object_json = ResolveTemplateForObject(serialized_object);
+  if (!object_json) {
     // Can happen if the template is invalid. E.g., it does not exist or contains circular references
     LogE("Failed to deserialize scene object");
     return false;
   }
 
-  if (object_json.contains("components")) {
-    const json& components = object_json.at("components");
+  if (object_json->contains("components")) {
+    const json& components = object_json->at("components");
     assert(components.is_object());
     for (const auto& [component_id, component_json] : components.items()) {
       if (!SceneObjectComponent::IsRegistered(component_id)) {
@@ -218,8 +218,8 @@ bool SceneObject::Deserialize(const json& serialized_object) {
     }
   }
 
-  if (object_json.contains("children")) {
-    const auto& children = object_json.at("children");
+  if (object_json->contains("children")) {
+    const auto& children = object_json->at("children");
     assert(children.is_object());
     for (const auto& [child_name, child_json] : children.items()) {
       assert(!ContainsChildObject(child_name));
@@ -244,23 +244,19 @@ SceneObjectAnimation* SceneObject::GetAnimation(std::string_view template_asset_
   }
 }
 
-std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view template_asset, std::span<std::string_view> parents) const {
+Result<json> SceneObject::ConstructObjectFromTemplate(std::string_view template_asset, std::span<std::string_view> parents) const {
   auto asset_library = GetAssetLibraryForAsset(template_asset);
 
   if (!asset_library) {
-    LogE("Invalid scene object template `{}`: asset does not exist", template_asset);
-    return {};
+    return Error("Invalid scene object template `{}`: asset does not exist", template_asset);
   }
-  if (auto asset_type = asset_library->GetAssetType(template_asset); asset_type != "scene_object") {
-    LogE("Invalid scene object template `{}`: asset has invalid type `{}`", template_asset, asset_type);
-    return {};
+  if (auto asset_type = asset_library->GetAssetType(template_asset); !asset_type || *asset_type != "scene_object") {
+    OVIS_CHECK_RESULT(asset_type);
+    return Error("Invalid scene object template `{}`: asset has invalid type `{}`", template_asset, asset_type);
   }
 
   const auto object_template_data = asset_library->LoadAssetTextFile(template_asset, "json");
-  if (!object_template_data.has_value()) {
-    LogE("Invalid scene object template `{}`: asset does not contain json file", template_asset);
-    return {};
-  }
+  OVIS_CHECK_RESULT(object_template_data);
 
   auto object_template = json::parse(*object_template_data);
 
@@ -270,7 +266,7 @@ std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view te
     for (const auto& parent : parents) {
       if (parent == parent_template_asset) {
         // Circular reference
-        return {};
+        return Error("Object template {} contains a circular reference", template_asset);
       }
     }
 
@@ -280,11 +276,7 @@ std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view te
     parents_for_children.push_back(template_asset);
 
     auto parent_template = ConstructObjectFromTemplate(parent_template_asset, parents_for_children);
-    if (!parent_template.has_value()) {
-      return {};
-    }
-
-    LogI("{}", object_template.dump(2));
+    OVIS_CHECK_RESULT(parent_template);
 
     json animations = parent_template->contains("animations") ? parent_template->at("animations") : json::object();
     assert(animations.is_object());
@@ -349,15 +341,12 @@ const json* SceneObject::FindTemplate(std::string_view asset_id) {
   return nullptr;
 }
 
-json SceneObject::ResolveTemplateForObject(const json& object) {
+Result<json> SceneObject::ResolveTemplateForObject(const json& object) {
   json result_object;
   if (object.contains("template")) {
-    const auto* template_object = LoadTemplate(static_cast<const std::string&>(object.at("template")));
-    if (!template_object) {
-      LogE("Failed to load template `{}`", std::string(object.at("template")));
-      return json();
-    }
-    result_object = std::move(*template_object);
+    const auto template_object = LoadTemplate(static_cast<const std::string&>(object.at("template")));
+    OVIS_CHECK_RESULT(template_object);
+    result_object = std::move(**template_object);
 
     result_object.merge_patch(object);
     result_object.erase("template");
@@ -369,9 +358,11 @@ json SceneObject::ResolveTemplateForObject(const json& object) {
     json& children = result_object.at("children");
     assert(children.is_object());
     for (auto& [name, child_object] : children.items()) {
-      child_object = ResolveTemplateForObject(child_object);
+      const auto resolved_child = ResolveTemplateForObject(child_object);
+      OVIS_CHECK_RESULT(resolved_child);
+      child_object = *resolved_child;
       if (child_object.is_null()) {
-        return json();
+        return Error("Failed to resolve child object {} of template.", name);
       }
     }
   }
@@ -379,11 +370,10 @@ json SceneObject::ResolveTemplateForObject(const json& object) {
   return result_object;
 }
 
-const json* SceneObject::LoadTemplate(std::string_view asset_id) {
+Result<const json*> SceneObject::LoadTemplate(std::string_view asset_id) {
   if (const json* object_template = FindTemplate(asset_id); object_template != nullptr) {
     if (object_template->is_null()) {
-      LogE("Invalid template detected: {} (this can be caused by circular references)", asset_id);
-      return nullptr;
+      return Error("Invalid template detected: {} (this can be caused by circular references)", asset_id);
     } else {
       return object_template;
     }
@@ -391,30 +381,26 @@ const json* SceneObject::LoadTemplate(std::string_view asset_id) {
 
   const AssetLibrary* asset_library = GetAssetLibraryForAsset(asset_id);
   if (!asset_library) {
-    LogE("Cannot find scene object template: {}", asset_id);
-    return nullptr;
+    return Error("Cannot find scene object template: {}", asset_id);
   }
 
-  if (asset_library->GetAssetType(asset_id) != "scene_object") {
-    LogE("Referenced scene object template `{}` has wrong type: {}", asset_id, asset_library->GetAssetType("asset_id"));
-    return nullptr;
+  if (const auto asset_type = asset_library->GetAssetType(asset_id); !asset_type || *asset_type != "scene_object") {
+    return Error("Referenced scene object template `{}` has wrong type: {}", asset_id, asset_library->GetAssetType("asset_id"));
   }
 
-  const std::optional<std::string> text_file = asset_library->LoadAssetTextFile(asset_id, "json");
-  assert(text_file.has_value());
+  const Result<std::string> text_file = asset_library->LoadAssetTextFile(asset_id, "json");
+  OVIS_CHECK_RESULT(text_file);
 
   json template_json = json::parse(*text_file);
   const std::size_t template_index = templates.size();
   templates.push_back(std::make_pair(std::string(asset_id), json()));
 
-  template_json = ResolveTemplateForObject(template_json);
+  const auto resolved_template_json = ResolveTemplateForObject(template_json);
+  OVIS_CHECK_RESULT(resolved_template_json);
+  assert(!resolved_template_json->is_null());
   assert(templates[template_index].first == asset_id);
-  if (template_json.is_null()) {
-    return nullptr;
-  } else {
-    templates[template_index].second = std::move(template_json);
-    return &templates[template_index].second;
-  }
+  templates[template_index].second = std::move(*resolved_template_json);
+  return &templates[template_index].second;
 }
 
 }  // namespace ovis

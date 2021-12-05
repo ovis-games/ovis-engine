@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include <ovis/utils/class.hpp>
+#include <ovis/utils/result.hpp>
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/json.hpp>
 #include <ovis/utils/range.hpp>
@@ -98,14 +99,14 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   std::vector<TypedComponent> components_;
   std::vector<safe_ptr<SceneObjectAnimation>> animations_;
 
-  std::optional<json> ConstructObjectFromTemplate(std::string_view template_asset, std::span<std::string_view> parents = {}) const;
+  Result<json> ConstructObjectFromTemplate(std::string_view template_asset, std::span<std::string_view> parents = {}) const;
   std::vector<safe_ptr<SceneObject>>::const_iterator FindChild(std::string_view name) const;
   std::vector<safe_ptr<SceneObject>>::iterator FindChild(std::string_view name);
 
   static std::vector<std::pair<std::string, json>> templates;
   static const json* FindTemplate(std::string_view asset_id);
-  static const json* LoadTemplate(std::string_view asset_id);
-  static json ResolveTemplateForObject(const json& object);
+  static Result<const json*> LoadTemplate(std::string_view asset_id);
+  static Result<json> ResolveTemplateForObject(const json& object);
   // Maps (scene_object_template, animation_name) -> animation
   static std::map<std::pair<std::string, std::string>, SceneObjectAnimation, std::less<>> template_animations;
 };

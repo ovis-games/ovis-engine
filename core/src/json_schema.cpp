@@ -21,12 +21,12 @@ std::shared_ptr<json> LoadJsonSchema(AssetLibrary* asset_library, const std::str
     }
   }
 
-  if (!asset_library->Contains(name) || asset_library->GetAssetType(name) != "schema") {
+  if (const auto type = asset_library->GetAssetType(name); !type || *type != "schema") {
     LogE("Cannot load schema: {}", name);
     return nullptr;
   }
 
-  std::optional<std::string> serialized_schema = asset_library->LoadAssetTextFile(name, "json");
+  Result<std::string> serialized_schema = asset_library->LoadAssetTextFile(name, "json");
   if (!serialized_schema) {
     LogE("Cannot load schema: {}", name);
     return nullptr;
