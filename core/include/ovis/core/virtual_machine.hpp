@@ -16,8 +16,10 @@
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/json.hpp>
 #include <ovis/utils/range.hpp>
+#include <ovis/utils/result.hpp>
 #include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/type_id.hpp>
+#include <ovis/utils/versioned_index.hpp>
 
 namespace ovis {
 namespace vm {
@@ -34,6 +36,9 @@ class Type : public std::enable_shared_from_this<Type> {
   friend class Module;
 
  public:
+  using Id = VersionedIndex<uint32_t, 20>;
+  static constexpr Id NONE_ID = Id(0);
+
   using ConversionFunction = Value(*)(Value& value);
   using SerializeFunction = json(*)(const Value& value);
   using DeserializeFunction = Value(*)(const json& value);
@@ -42,7 +47,7 @@ class Type : public std::enable_shared_from_this<Type> {
     using GetFunction = std::add_pointer_t<Value(const Value& object)>;
     using SetFunction = std::add_pointer_t<void(Value* object, const Value& property_value)>;
 
-    std::weak_ptr<Type> type;
+    Id type_id;
     std::string name;
     GetFunction getter;
     SetFunction setter;
@@ -67,7 +72,7 @@ class Type : public std::enable_shared_from_this<Type> {
 
   Value CreateValue(const json& data) const;
 
-  void RegisterProperty(std::string_view name, std::shared_ptr<Type>, Property::GetFunction getter,
+  void RegisterProperty(std::string_view name, Id type_id, Property::GetFunction getter,
                         Property::SetFunction setter = nullptr);
   template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
   void RegisterProperty(std::string_view);
@@ -81,11 +86,11 @@ class Type : public std::enable_shared_from_this<Type> {
   const Property* GetProperty(std::string_view name) const;
   std::span<const Property> properties() const { return properties_; }
 
-  template <typename T>
-  static std::shared_ptr<Type> Get();
-
-  template <typename T>
-  static std::weak_ptr<Type> GetWeak();
+  static Id Register(std::shared_ptr<Type> type, TypeId native_type_id = TypeOf<void>);
+  static Result<> Deregister(Id id);
+  template <typename T> static std::shared_ptr<Type> Get();
+  template <typename T> static std::optional<Id> GetId();
+  static std::shared_ptr<Type> Get(Id id);
 
   static std::shared_ptr<Type> Deserialize(const json& data);
 
@@ -107,7 +112,14 @@ class Type : public std::enable_shared_from_this<Type> {
   DeserializeFunction deserialize_function_;
   std::vector<std::weak_ptr<Function>> constructor_functions_;
 
-  static std::vector<std::pair<TypeId, std::weak_ptr<Type>>> type_associations;
+  struct Registration {
+    Id vm_type_id;
+    TypeId native_type_id;
+    std::shared_ptr<Type> type;
+  };
+
+  // static std::vector<std::pair<TypeId, std::weak_ptr<Type>>> type_associations;
+  static std::vector<Registration> registered_types;
 };
 
 template <typename T> constexpr bool is_reference_type_v = std::is_base_of_v<SafelyReferenceable, T>;
@@ -123,7 +135,7 @@ template <typename T> concept PointerToValueType = is_pointer_to_value_type_v<T>
 class Value {
  public:
   Value(const Value& other) = default;
-  Value(Value&& other) : type_(std::move(other.type_)), data_(std::move(other.data_)), is_view_(other.is_view_) {}
+  Value(Value&& other) : type_id_(std::move(other.type_id_)), data_(std::move(other.data_)), is_view_(other.is_view_) {}
 
   // Named constructor
   static Value None() { return Value({}, {}, false); }
@@ -181,14 +193,14 @@ class Value {
 
   json Serialize() const;
 
-  std::weak_ptr<Type> type() const { return type_; }
+  Type::Id type_id() const { return type_id_; }
   bool is_view() const { return is_view_; }
-  bool is_none() const { return type_.expired(); }
+  bool is_none() const { return type_id_ == Type::NONE_ID; }
 
  private:
-  Value(std::weak_ptr<Type> type, std::any data, bool is_view) : type_(type), data_(std::move(data)), is_view_(is_view) {}
+  Value(Type::Id type_id, std::any data, bool is_view) : type_id_(type_id), data_(std::move(data)), is_view_(is_view) {}
 
-  std::weak_ptr<Type> type_;
+  Type::Id type_id_;
   std::any data_;
   bool is_view_;
 
@@ -363,6 +375,8 @@ class Module : public std::enable_shared_from_this<Module> {
   static std::shared_ptr<Module> Get(std::string_view name);
   static std::span<std::shared_ptr<Module>> registered_modules() { return modules; }
 
+  ~Module();
+
   std::string_view name() const { return name_; }
 
   // Types
@@ -374,8 +388,8 @@ class Module : public std::enable_shared_from_this<Module> {
   std::shared_ptr<Type> RegisterType(std::string_view name, bool create_cpp_association = true);
 
   std::shared_ptr<Type> GetType(std::string_view name);
-  std::span<std::shared_ptr<Type>> types() { return types_; }
-  std::span<const std::shared_ptr<Type>> types() const { return types_; }
+  // std::span<std::shared_ptr<Type>> types() { return types_; }
+  // std::span<const std::shared_ptr<Type>> types() const { return types_; }
 
   // Functions
   std::shared_ptr<Function> RegisterFunction(std::string_view name, FunctionPointer function_pointer,
@@ -396,7 +410,7 @@ class Module : public std::enable_shared_from_this<Module> {
   Module(std::string_view name) : name_(name) {}
 
   std::string name_;
-  std::vector<std::shared_ptr<Type>> types_;
+  std::vector<Type::Id> types_;
   std::vector<std::shared_ptr<Function>> functions_;
 
   static std::vector<std::shared_ptr<Module>> modules;

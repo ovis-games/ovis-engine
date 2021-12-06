@@ -83,28 +83,57 @@ inline Value Type::Construct(Args&&... args) const {
   return Value::None();
 }
 
-template <typename T>
-inline std::shared_ptr<Type> Type::Get() {
-  return GetWeak<T>().lock();
+inline Type::Id Type::Register(std::shared_ptr<Type> type, TypeId native_type_id) {
+  for (auto& registration : registered_types) {
+    if (registration.type == nullptr) {
+      registration.native_type_id = native_type_id;
+      registration.type = std::move(type);
+      return registration.vm_type_id = registration.vm_type_id.next();
+    }
+  }
+  Id id(registered_types.size());
+  registered_types.push_back({
+    .vm_type_id = id,
+    .native_type_id = native_type_id,
+    .type = std::move(type)
+  });
+  return id;
+}
+
+inline Result<> Type::Deregister(Type::Id id) {
+  assert(id.index() <= registered_types.size());
+  if (registered_types[id.index()].vm_type_id == id) {
+    registered_types[id.index()].type = nullptr;
+    return {};
+  } else {
+    return Error("Invalid id");
+  }
 }
 
 template <typename T>
-inline std::weak_ptr<Type> Type::GetWeak() {
-  // const auto type_index = std::type_index(typeid(T));
-  // const auto type = std::lower_bound(type_associations.begin(), type_associations.end(), type_index, [](const auto& pair, const auto& type_index) {
-  //       return pair.first < type_index;
-  //     });
-  // if (type != type_associations.end() && type->first == type_index) {
-  //   return type->second.lock();
-  // } else {
-  //   return nullptr;
-  // }
-  for (const auto& type : type_associations) {
-    if (type.first == TypeOf<T>) {
-      return type.second;
+inline std::shared_ptr<Type> Type::Get() {
+  for (const auto& registration : registered_types) {
+    if (registration.native_type_id == TypeOf<T>) {
+      return registration.type;
     }
   }
-  return {};
+  return nullptr;
+}
+
+template <typename T>
+inline std::optional<Type::Id> Type::GetId() {
+  for (const auto& registration : registered_types) {
+    if (registration.native_type_id == TypeOf<T>) {
+      return registration.vm_type_id;
+    }
+  }
+  return std::nullopt;
+}
+
+inline std::shared_ptr<Type> Type::Get(Id id) {
+  assert(id.index() < registered_types.size());
+  const auto& registration = registered_types[id.index()];
+  return registration.vm_type_id == id ? registration.type : nullptr;
 }
 
 inline std::shared_ptr<Type> Type::Deserialize(const json& data) {
@@ -147,10 +176,10 @@ inline std::shared_ptr<Type> Type::Deserialize(const json& data) {
   return module->GetType(type_name);
 }
 
-inline void Type::RegisterProperty(std::string_view name, std::shared_ptr<Type> type, Property::GetFunction getter,
+inline void Type::RegisterProperty(std::string_view name, Type::Id type_id, Property::GetFunction getter,
                                    Property::SetFunction setter) {
   properties_.push_back({
-      .type = type,
+      .type_id = type_id,
       .name = std::string(name),
       .getter = getter,
       .setter = setter,
@@ -182,6 +211,10 @@ struct PropertyGetter;
 template <typename PropertyType, typename ContainingType, PropertyType (ContainingType::*GETTER)() const>
 struct PropertyGetter<GETTER> {
   static std::shared_ptr<Type> property_type() { return Type::Get<PropertyType>(); }
+  static Type::Id property_type_id() {
+    assert(Type::GetId<PropertyType>());
+    return *Type::GetId<PropertyType>();
+  }
 
   static std::shared_ptr<Type> containing_type() { return Type::Get<ContainingType>(); }
 
@@ -195,6 +228,10 @@ struct PropertySetter;
 template <typename PropertyType, typename ContainingType, void (ContainingType::*SETTER)(PropertyType T)>
 struct PropertySetter<SETTER> {
   static std::shared_ptr<Type> property_type() { return Type::Get<PropertyType>(); }
+  static Type::Id property_type_id() {
+    assert(Type::GetId<PropertyType>());
+    return *Type::GetId<PropertyType>();
+  }
 
   static std::shared_ptr<Type> containing_type() { return Type::Get<ContainingType>(); }
 
@@ -225,7 +262,7 @@ inline void Type::RegisterProperty(std::string_view name) {
   assert(GetterWrapper::property_type() == SetterWrapper::property_type());
   assert(GetterWrapper::containing_type() == SetterWrapper::containing_type());
   assert(GetterWrapper::containing_type().get() == this);
-  RegisterProperty(name, GetterWrapper::property_type(), &GetterWrapper::Get, &SetterWrapper::Set);
+  RegisterProperty(name, GetterWrapper::property_type_id(), &GetterWrapper::Get, &SetterWrapper::Set);
 }
 
 inline const Type::Property* Type::GetProperty(std::string_view name) const {
@@ -256,7 +293,7 @@ inline json Type::Serialize() const {
 
   json& properties = type["properties"] = json::object();
   for (const auto& property : this->properties()) {
-    const auto property_type = property.type.lock();
+    const auto property_type = Type::Get(property.type_id);
     properties[property.name] = std::string(property_type->full_reference());
   }
 

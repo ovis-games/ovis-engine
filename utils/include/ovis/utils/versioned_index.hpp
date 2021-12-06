@@ -40,17 +40,17 @@ struct VersionedIndex {
   }
 
   VersionedIndex() = default;
-  VersionedIndex(T index) : value(index) {
+  constexpr VersionedIndex(T index) : value(index) {
     assert(index <= INDEX_MASK);
   }
-  VersionedIndex(T index, T version) : value((version << VERSION_BITS) | index) {
+  constexpr VersionedIndex(T index, T version) : value((version << VERSION_BITS) | index) {
     assert(index <= INDEX_MASK);
     assert(version < (1 << VERSION_BITS));
   }
 
-  T index() const { return value & INDEX_MASK; }
-  T version() const { return (value & VERSION_MASK) >> INDEX_BITS; }
-  VersionedIndex<T, VERSION_BITS> next() const {
+  constexpr T index() const { return value & INDEX_MASK; }
+  constexpr T version() const { return (value & VERSION_MASK) >> INDEX_BITS; }
+  constexpr VersionedIndex<T, VERSION_BITS> next() const {
     return VersionedIndex<T, VERSION_BITS>(index(), NextVersion(version()));
   }
 

@@ -3,7 +3,8 @@
 namespace ovis {
 namespace vm {
 
-std::vector<std::pair<TypeId, std::weak_ptr<Type>>> Type::type_associations;
+std::vector<Type::Registration> Type::registered_types = {
+    {.vm_type_id = Type::NONE_ID, .native_type_id = TypeOf<void>, .type = nullptr}};
 std::vector<std::shared_ptr<Module>> Module::modules;
 ExecutionContext ExecutionContext::global;
 

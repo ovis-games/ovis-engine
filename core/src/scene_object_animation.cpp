@@ -29,7 +29,7 @@ SceneObjectAnimationChannel ParseChannel(const json& data) {
   assert(interpolation_function != nullptr);
   channel.keyframes.reserve(data.at("keyframes").size());
 
-  const auto property_type = property->type.lock();
+  const auto property_type = vm::Type::Get(property->type_id);
   for (const auto& keyframe : data.at("keyframes")) {
     channel.keyframes.push_back(ParseKeyframe(property_type, keyframe));
   }

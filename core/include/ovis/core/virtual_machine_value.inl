@@ -4,22 +4,26 @@ namespace vm {
 
 template <ReferenceType T>
 Value Value::Create(T& value) {
-  return Value(Type::GetWeak<T>(), safe_ptr(&value), true);
+  assert(Type::GetId<T>());
+  return Value(*Type::GetId<T>(), safe_ptr(&value), true);
 }
 
 template <ReferenceType T>
 Value Value::Create(T* value) {
-  return Value(Type::GetWeak<T>(), safe_ptr(value), true);
+  assert(Type::GetId<T>());
+  return Value(*Type::GetId<T>(), safe_ptr(value), true);
 }
 
 template <ValueType T>
 Value Value::Create(T&& value) {
-  return Value(Type::GetWeak<T>(), std::forward<T>(value), false);
+  assert(Type::GetId<T>());
+  return Value(*Type::GetId<T>(), std::forward<T>(value), false);
 }
 
 template <ValueType T>
 Value Value::Create(T* value) {
-  return Value(Type::GetWeak<T>(), *value, false);
+  assert(Type::GetId<T>());
+  return Value(*Type::GetId<T>(), *value, false);
 }
 
 inline Value Value::Create(const Value& value) {
@@ -48,7 +52,7 @@ Value Value::CreateView(T* value) {
 
 inline Value Value::CreateView(Value& value) {
   assert(value.is_view() && "Cannot be implemented yet");
-  return Value(value.type(), value.data_, value.is_view_);
+  return Value(value.type_id(), value.data_, value.is_view_);
 }
 
 template <typename T>
@@ -98,7 +102,7 @@ Value Value::CreateViewIfPossible(T&& value) {
 
 template <ReferenceType T>
 T& Value::Get() {
-  if (type_.lock() == Type::Get<T>()) {
+  if (type_id_ == Type::GetId<T>()) {
     return *std::any_cast<safe_ptr<T>>(data_).get();
   } else {
     return CastToBase(Type::Get<T>()).template Get<T>();
@@ -108,11 +112,10 @@ T& Value::Get() {
 template <PointerToReferenceType T>
 T Value::Get() {
   using ReferenceType = std::remove_pointer_t<T>;
-  const auto value_type = type().lock();
-  if (value_type == nullptr) {
-    return nullptr;
-  } else if (value_type == Type::Get<ReferenceType>()) {
+  if (type_id_ == Type::GetId<ReferenceType>()) [[likely]] {
     return std::any_cast<safe_ptr<ReferenceType>>(data_).get();
+  } else if (type_id_ == Type::NONE_ID) {
+    return nullptr;
   } else {
     return CastToBase(Type::Get<ReferenceType>()).template Get<T>();
   }
@@ -123,11 +126,9 @@ std::remove_cvref_t<T>& Value::Get() {
   if constexpr (std::is_same_v<std::remove_cvref_t<T>, Value>) {
     return *this;
   } else {
-    const auto requested_type = Type::Get<T>();
-    const auto value_type = type().lock();
-    if (value_type == requested_type) {
+    if (type_id() == Type::GetId<T>()) [[likely]] {
       return is_view_ ? *std::any_cast<std::remove_cvref_t<T>*>(data_) : std::any_cast<std::remove_cvref_t<T>&>(data_);
-    } else if (value_type->IsDerivedFrom(requested_type)) {
+    } else if (const auto requested_type = Type::Get<T>(); Type::Get(type_id())->IsDerivedFrom(requested_type)) {
       Value base_type_value = CastToBase(requested_type);
       return base_type_value.Get<T>();
     } else {
@@ -145,10 +146,10 @@ T Value::Get() {
 template <typename T>
 inline void Value::SetProperty(std::string_view property_name, T&& property_value) {
   if constexpr (std::is_same_v<Value, T>) {
-    const auto value_type = type().lock();
+    const auto value_type = Type::Get(type_id());
     for (const auto& property : value_type->properties_) {
       if (property.name == property_name) {
-        assert(property.type.lock() == property_value.type().lock());
+        assert(property.type_id == type_id());
         assert(property.setter);
         property.setter(this, property_value);
         return;
@@ -163,7 +164,7 @@ inline void Value::SetProperty(std::string_view property_name, T&& property_valu
 template <typename T>
 inline T Value::GetProperty(std::string_view property_name) {
   if constexpr (std::is_same_v<Value, T>) {
-    const auto value_type = type().lock();
+    const auto value_type = Type::Get(type_id());
     for (const auto& property : value_type->properties_) {
       if (property.name == property_name) {
         return property.getter(*this);
@@ -177,7 +178,7 @@ inline T Value::GetProperty(std::string_view property_name) {
 }
 
 inline json Value::Serialize() const {
-  const auto value_type = type().lock();
+  const auto value_type = Type::Get(type_id());
   if (value_type && value_type->serialize_function()) {
     return value_type->serialize_function()(*this);
   } else {
@@ -187,7 +188,7 @@ inline json Value::Serialize() const {
 
 inline Value Value::CastToBase(std::shared_ptr<Type> target_type) {
   assert(target_type);
-  const auto value_type = type().lock();
+  const auto value_type = Type::Get(type_id());
   assert(value_type->IsDerivedFrom(target_type));
   if (target_type == value_type) {
     // TODO: create view
@@ -204,7 +205,7 @@ inline Value Value::CastToBase(std::shared_ptr<Type> target_type) {
 
 inline Value Value::CastToDerived(std::shared_ptr<Type> target_type) {
   assert(target_type);
-  const auto value_type = type().lock();
+  const auto value_type = Type::Get(type_id());
   assert(target_type->IsDerivedFrom(value_type));
   if (target_type == value_type) {
     // TODO: create view

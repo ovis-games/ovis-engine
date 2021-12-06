@@ -25,13 +25,20 @@ inline std::shared_ptr<Module> Module::Get(std::string_view name) {
   return nullptr;
 }
 
+inline Module::~Module() {
+  for (const auto type_id : types_) {
+    Type::Deregister(type_id);
+  }
+}
+
 inline std::shared_ptr<Type> Module::RegisterType(std::string_view name) {
   if (GetType(name) != nullptr) {
     return nullptr;
   }
 
-  types_.push_back(std::shared_ptr<Type>(new Type(shared_from_this(), name)));
-  return types_.back();
+  const auto type = std::shared_ptr<Type>(new Type(shared_from_this(), name));
+  types_.push_back(Type::Register(type));
+  return type;
 }
 
 inline std::shared_ptr<Type> Module::RegisterType(std::string_view name, std::shared_ptr<Type> parent_type,
@@ -41,8 +48,9 @@ inline std::shared_ptr<Type> Module::RegisterType(std::string_view name, std::sh
     return nullptr;
   }
 
-  types_.push_back(std::shared_ptr<Type>(new Type(shared_from_this(), name, parent_type, to_base, from_base)));
-  return types_.back();
+  const auto type = std::shared_ptr<Type>(new Type(shared_from_this(), name, parent_type, to_base, from_base));
+  types_.push_back(Type::Register(type));
+  return type;
 }
 
 namespace detail {
@@ -70,31 +78,24 @@ inline std::shared_ptr<Type> Module::RegisterType(std::string_view name, bool cr
     return nullptr;
   }
 
-  std::shared_ptr<Type> type;
-  if constexpr (std::is_same_v<ParentType, void>) {
-    type = RegisterType(name);
-  } else {
-    type = RegisterType(name, Type::Get<ParentType>(), &detail::ToBase<ParentType, T>, &detail::FromBase<ParentType, T>);
-  }
-  if (type == nullptr) {
+  if (GetType(name) != nullptr) {
     return nullptr;
   }
 
-  if (create_cpp_association) {
-    // const auto type_index = std::type_index(typeid(T));
-    Type::type_associations.push_back(std::make_pair(TypeOf<T>, type));
-    // const auto insert_position =
-    //     std::lower_bound(Type::type_associations.begin(), Type::type_associations.end(), type_index,
-    //                      [](const auto& pair, const auto& type_index) { return pair.first < type_index; });
-    // Type::type_associations.insert(insert_position, std::make_pair(type_index, type));
+  std::shared_ptr<Type> type;
+  if constexpr (std::is_same_v<ParentType, void>) {
+    type = std::shared_ptr<Type>(new Type(shared_from_this(), name));
+  } else {
+    type = std::shared_ptr<Type>(new Type(shared_from_this(), name, Type::Get<ParentType>(),
+                                          &detail::ToBase<ParentType, T>, &detail::FromBase<ParentType, T>));
   }
-
+  types_.push_back(create_cpp_association ? Type::Register(type, TypeOf<T>) : Type::Register(type));
   return type;
 }
 
 inline std::shared_ptr<Type> Module::GetType(std::string_view name) {
-  for (const auto& type : types_) {
-    if (type->name() == name) {
+  for (const auto& type_id : types_) {
+    if (const auto type = Type::Get(type_id); type && type->name() == name) {
       return type;
     }
   }
@@ -225,7 +226,9 @@ inline std::shared_ptr<Function> Module::GetFunction(std::string_view name) {
 inline json Module::Serialize() const {
   json module = json::object();
   json& types = module["types"] = json::object();
-  for (const auto& type : this->types()) {
+  for (const auto& type_id : types_) {
+    const auto type = Type::Get(type_id);
+    assert(type != nullptr);
     types[std::string(type->name())] = type->Serialize();
   }
   json& functions = module["functions"] = json::object();
