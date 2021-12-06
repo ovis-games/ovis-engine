@@ -17,6 +17,7 @@
 #include <ovis/utils/json.hpp>
 #include <ovis/utils/range.hpp>
 #include <ovis/utils/safe_pointer.hpp>
+#include <ovis/utils/type_id.hpp>
 
 namespace ovis {
 namespace vm {
@@ -83,6 +84,9 @@ class Type : public std::enable_shared_from_this<Type> {
   template <typename T>
   static std::shared_ptr<Type> Get();
 
+  template <typename T>
+  static std::weak_ptr<Type> GetWeak();
+
   static std::shared_ptr<Type> Deserialize(const json& data);
 
   json Serialize() const;
@@ -103,7 +107,7 @@ class Type : public std::enable_shared_from_this<Type> {
   DeserializeFunction deserialize_function_;
   std::vector<std::weak_ptr<Function>> constructor_functions_;
 
-  static std::unordered_map<std::type_index, std::weak_ptr<Type>> type_associations;
+  static std::vector<std::pair<TypeId, std::weak_ptr<Type>>> type_associations;
 };
 
 template <typename T> constexpr bool is_reference_type_v = std::is_base_of_v<SafelyReferenceable, T>;

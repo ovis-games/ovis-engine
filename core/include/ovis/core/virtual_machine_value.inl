@@ -4,22 +4,22 @@ namespace vm {
 
 template <ReferenceType T>
 Value Value::Create(T& value) {
-  return Value(Type::Get<T>(), safe_ptr(&value), true);
+  return Value(Type::GetWeak<T>(), safe_ptr(&value), true);
 }
 
 template <ReferenceType T>
 Value Value::Create(T* value) {
-  return Value(Type::Get<T>(), safe_ptr(value), true);
+  return Value(Type::GetWeak<T>(), safe_ptr(value), true);
 }
 
 template <ValueType T>
 Value Value::Create(T&& value) {
-  return Value(Type::Get<T>(), std::forward<T>(value), false);
+  return Value(Type::GetWeak<T>(), std::forward<T>(value), false);
 }
 
 template <ValueType T>
 Value Value::Create(T* value) {
-  return Value(Type::Get<T>(), *value, false);
+  return Value(Type::GetWeak<T>(), *value, false);
 }
 
 inline Value Value::Create(const Value& value) {
@@ -125,7 +125,7 @@ std::remove_cvref_t<T>& Value::Get() {
   } else {
     const auto requested_type = Type::Get<T>();
     const auto value_type = type().lock();
-    if (value_type == Type::Get<T>()) {
+    if (value_type == requested_type) {
       return is_view_ ? *std::any_cast<std::remove_cvref_t<T>*>(data_) : std::any_cast<std::remove_cvref_t<T>&>(data_);
     } else if (value_type->IsDerivedFrom(requested_type)) {
       Value base_type_value = CastToBase(requested_type);

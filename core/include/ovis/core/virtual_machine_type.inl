@@ -85,11 +85,26 @@ inline Value Type::Construct(Args&&... args) const {
 
 template <typename T>
 inline std::shared_ptr<Type> Type::Get() {
-  if (auto it = type_associations.find(typeid(T)); it != type_associations.end()) {
-    return it->second.lock();
-  } else {
-    return nullptr;
+  return GetWeak<T>().lock();
+}
+
+template <typename T>
+inline std::weak_ptr<Type> Type::GetWeak() {
+  // const auto type_index = std::type_index(typeid(T));
+  // const auto type = std::lower_bound(type_associations.begin(), type_associations.end(), type_index, [](const auto& pair, const auto& type_index) {
+  //       return pair.first < type_index;
+  //     });
+  // if (type != type_associations.end() && type->first == type_index) {
+  //   return type->second.lock();
+  // } else {
+  //   return nullptr;
+  // }
+  for (const auto& type : type_associations) {
+    if (type.first == TypeOf<T>) {
+      return type.second;
+    }
   }
+  return {};
 }
 
 inline std::shared_ptr<Type> Type::Deserialize(const json& data) {

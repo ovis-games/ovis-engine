@@ -18,6 +18,7 @@ add_library(
   include/ovis/utils/static_factory.hpp src/static_factory.cpp
   include/ovis/utils/versioned_index.hpp src/versioned_index.cpp
   include/ovis/utils/result.hpp src/result.cpp
+  include/ovis/utils/type_id.hpp src/type_id.cpp
 )
 add_library(ovis::utils ALIAS ovis-utils)
 

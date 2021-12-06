@@ -66,7 +66,7 @@ inline std::shared_ptr<Type> Module::RegisterType(std::string_view name, bool cr
     return nullptr;
   }
 
-  if (create_cpp_association && !Type::type_associations[typeid(T)].expired()) {
+  if (create_cpp_association && Type::Get<T>() != nullptr) {
     return nullptr;
   }
 
@@ -81,7 +81,12 @@ inline std::shared_ptr<Type> Module::RegisterType(std::string_view name, bool cr
   }
 
   if (create_cpp_association) {
-    Type::type_associations[typeid(T)] = type;
+    // const auto type_index = std::type_index(typeid(T));
+    Type::type_associations.push_back(std::make_pair(TypeOf<T>, type));
+    // const auto insert_position =
+    //     std::lower_bound(Type::type_associations.begin(), Type::type_associations.end(), type_index,
+    //                      [](const auto& pair, const auto& type_index) { return pair.first < type_index; });
+    // Type::type_associations.insert(insert_position, std::make_pair(type_index, type));
   }
 
   return type;
