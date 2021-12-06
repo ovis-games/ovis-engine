@@ -86,7 +86,7 @@ TEST_CASE("Simple return", "[ovis][core][script]") {
   REQUIRE(parser.inputs.size() == 0);
   REQUIRE(parser.outputs.size() == 1);
   REQUIRE(parser.outputs[0].name == "result");
-  REQUIRE(parser.outputs[0].type == Type::Get<double>());
+  REQUIRE(parser.outputs[0].type.lock() == Type::Get<double>());
 
   REQUIRE(parser.instructions.size() == 2);
   REQUIRE(std::holds_alternative<instructions::PushConstant>(parser.instructions[0]));
@@ -109,12 +109,12 @@ TEST_CASE("Script Function Parsing", "[ovis][core][script]") {
   REQUIRE(parser.inputs.size() == 0);
   REQUIRE(parser.outputs.size() == 1);
   REQUIRE(parser.outputs[0].name == "result");
-  REQUIRE(parser.outputs[0].type == Type::Get<double>());
+  REQUIRE(parser.outputs[0].type.lock() == Type::Get<double>());
 
   const ScriptFunction::DebugInfo& debug_info = parser.debug_info;
   REQUIRE(debug_info.scope_info.size() == 1);
   REQUIRE(debug_info.scope_info[0].variables.size() == 1);
-  REQUIRE(debug_info.scope_info[0].variables[0].declaration.type == Type::Get<double>());
+  REQUIRE(debug_info.scope_info[0].variables[0].declaration.type.lock() == Type::Get<double>());
   REQUIRE(debug_info.scope_info[0].variables[0].declaration.name == "Awesome Variable");
   REQUIRE(debug_info.scope_info[0].variables[0].position == 0);
 
@@ -133,7 +133,7 @@ TEST_CASE("Script Function Parsing", "[ovis][core][script]") {
   REQUIRE(function.inputs().size() == 0);
   REQUIRE(function.outputs().size() == 1);
   REQUIRE(function.outputs()[0].name == "result");
-  REQUIRE(function.outputs()[0].type == Type::Get<double>());
+  REQUIRE(function.outputs()[0].type.lock() == Type::Get<double>());
   const double result = function.Call<double>();
   REQUIRE(result == 30);
 }

@@ -1,7 +1,7 @@
 namespace ovis {
 namespace vm {
 
-inline safe_ptr<Function> Function::Deserialize(const json& data) {
+inline std::shared_ptr<Function> Function::Deserialize(const json& data) {
   if (!data.contains("module")) {
     return nullptr;
   }
@@ -9,7 +9,7 @@ inline safe_ptr<Function> Function::Deserialize(const json& data) {
   if (!module_json.is_string()) {
     return nullptr;
   }
-  const safe_ptr<vm::Module> module = Module::Get(module_json.get_ref<const std::string&>());
+  const std::shared_ptr<vm::Module> module = Module::Get(module_json.get_ref<const std::string&>());
   if (module == nullptr) {
     return nullptr;
   }
@@ -101,12 +101,12 @@ inline bool Function::IsCallableWithArguments() const {
   if (inputs_.size() != sizeof...(InputTypes)) {
     return false;
   }
-  std::array<safe_ptr<Type>, sizeof...(InputTypes)> input_types = {
+  std::array<std::shared_ptr<Type>, sizeof...(InputTypes)> input_types = {
     Type::Get<InputTypes>()...
   };
 
   for (auto i : IRange(sizeof...(InputTypes))) {
-    if (inputs_[i].type != input_types[i]) {
+    if (inputs_[i].type.lock() != input_types[i]) {
       return false;
     }
   }
@@ -127,16 +127,18 @@ inline json Function::Serialize() const {
   function["name"] = name();
   json& inputs = function["inputs"] = json::array();
   for (const auto& input : this->inputs()) {
+    const auto input_type = input.type.lock();
     inputs.push_back({
       { "name", input.name },
-      { "type", input.type ? json(std::string(input.type->full_reference())) : json() },
+      { "type", input_type ? json(std::string(input_type->full_reference())) : json() },
     });
   }
   json& outputs = function["outputs"] = json::array();
   for (const auto& output : this->outputs()) {
+    const auto output_type = output.type.lock();
     outputs.push_back({
       { "name", output.name },
-      { "type", output.type ? json(std::string(output.type->full_reference())) : json() },
+      { "type", output_type ? json(std::string(output_type->full_reference())) : json() },
     });
   }
   return function;

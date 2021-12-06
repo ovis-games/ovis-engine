@@ -28,7 +28,7 @@ class Function;
 class Module;
 class ExecutionContext;
 
-class Type : public SafelyReferenceable {
+class Type : public std::enable_shared_from_this<Type> {
   friend class Value;
   friend class Module;
 
@@ -41,7 +41,7 @@ class Type : public SafelyReferenceable {
     using GetFunction = std::add_pointer_t<Value(const Value& object)>;
     using SetFunction = std::add_pointer_t<void(Value* object, const Value& property_value)>;
 
-    safe_ptr<Type> type;
+    std::weak_ptr<Type> type;
     std::string name;
     GetFunction getter;
     SetFunction setter;
@@ -49,13 +49,13 @@ class Type : public SafelyReferenceable {
 
   std::string_view name() const { return name_; }
   std::string_view full_reference() const { return full_reference_; }
-  Type* parent() const { return parent_.get(); }
-  Module* module() const { return module_.get(); }
+  std::weak_ptr<Type> parent() const { return parent_; }
+  std::weak_ptr<Module> module() const { return module_; }
 
-  bool IsDerivedFrom(safe_ptr<Type> type) const;
+  bool IsDerivedFrom(std::shared_ptr<Type> type) const;
   template <typename T> bool IsDerivedFrom() const;
 
-  void RegisterConstructorFunction(safe_ptr<Function> function);
+  void RegisterConstructorFunction(std::shared_ptr<Function> function);
   template <typename... Args> Value Construct(Args&&... args) const;
 
   void SetSerializeFunction(SerializeFunction function) { serialize_function_ = function; }
@@ -66,7 +66,7 @@ class Type : public SafelyReferenceable {
 
   Value CreateValue(const json& data) const;
 
-  void RegisterProperty(std::string_view name, Type* type, Property::GetFunction getter,
+  void RegisterProperty(std::string_view name, std::shared_ptr<Type>, Property::GetFunction getter,
                         Property::SetFunction setter = nullptr);
   template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
   void RegisterProperty(std::string_view);
@@ -81,31 +81,30 @@ class Type : public SafelyReferenceable {
   std::span<const Property> properties() const { return properties_; }
 
   template <typename T>
-  static safe_ptr<Type> Get();
+  static std::shared_ptr<Type> Get();
 
-  static safe_ptr<Type> Deserialize(const json& data);
+  static std::shared_ptr<Type> Deserialize(const json& data);
 
   json Serialize() const;
 
  private:
-  Type(Module* module, std::string_view name);
-  Type(Module* module, std::string_view name, Type* parent, ConversionFunction from_base, ConversionFunction to_base);
+  Type(std::shared_ptr<Module> module, std::string_view name);
+  Type(std::shared_ptr<Module> module, std::string_view name, std::shared_ptr<Type> parent, ConversionFunction from_base, ConversionFunction to_base);
 
   std::vector<Property> properties_;
 
   std::string name_;
   std::string full_reference_;
-  safe_ptr<Type> parent_;
-  safe_ptr<Module> module_;
+  std::weak_ptr<Type> parent_;
+  std::weak_ptr<Module> module_;
   ConversionFunction from_base_;
   ConversionFunction to_base_;
   SerializeFunction serialize_function_;
   DeserializeFunction deserialize_function_;
-  std::vector<safe_ptr<Function>> constructor_functions_;
+  std::vector<std::weak_ptr<Function>> constructor_functions_;
 
-  static std::unordered_map<std::type_index, safe_ptr<Type>> type_associations;
+  static std::unordered_map<std::type_index, std::weak_ptr<Type>> type_associations;
 };
-std::ostream& operator<<(std::ostream& os, const safe_ptr<Type>& pointer);
 
 template <typename T> constexpr bool is_reference_type_v = std::is_base_of_v<SafelyReferenceable, T>;
 template <typename T> constexpr bool is_pointer_to_reference_type_v = std::is_pointer_v<T> && std::is_base_of_v<SafelyReferenceable, std::remove_pointer_t<T>>;
@@ -123,7 +122,7 @@ class Value {
   Value(Value&& other) : type_(std::move(other.type_)), data_(std::move(other.data_)), is_view_(other.is_view_) {}
 
   // Named constructor
-  static Value None() { return Value(nullptr, {}, false); }
+  static Value None() { return Value({}, {}, false); }
 
   template <ReferenceType T>
   static Value Create(T& value);
@@ -154,7 +153,7 @@ class Value {
   static Value CreateView(Value& value);
 
   template <typename T>
-  static Value CreateView(T&& value, safe_ptr<Type> actual_type);
+  static Value CreateView(T&& value, std::shared_ptr<Type> actual_type);
 
   template <typename T> 
   static Value CreateViewIfPossible(T&& value);
@@ -178,19 +177,19 @@ class Value {
 
   json Serialize() const;
 
-  Type* type() const { return type_.get(); }
+  std::weak_ptr<Type> type() const { return type_; }
   bool is_view() const { return is_view_; }
-  bool is_none() const { return type_ == nullptr; }
+  bool is_none() const { return type_.expired(); }
 
  private:
-  Value(safe_ptr<Type> type, std::any data, bool is_view) : type_(type), data_(std::move(data)), is_view_(is_view) {}
+  Value(std::weak_ptr<Type> type, std::any data, bool is_view) : type_(type), data_(std::move(data)), is_view_(is_view) {}
 
-  safe_ptr<Type> type_;
+  std::weak_ptr<Type> type_;
   std::any data_;
   bool is_view_;
 
-  Value CastToDerived(safe_ptr<Type> target_type);
-  Value CastToBase(safe_ptr<Type> target_type);
+  Value CastToDerived(std::shared_ptr<Type> target_type);
+  Value CastToBase(std::shared_ptr<Type> target_type);
 };
 
 namespace instructions {
@@ -309,13 +308,13 @@ template <typename T> struct FunctionResult <T> { using type = T; };
 template <> struct FunctionResult <> { using type = void; };
 template <typename... T> using FunctionResultType = typename FunctionResult<T...>::type;
 
-class Function : public SafelyReferenceable {
+class Function : public std::enable_shared_from_this<Function> {
   friend class Module;
 
  public:
   struct ValueDeclaration {
     std::string name;
-    safe_ptr<Type> type;
+    std::weak_ptr<Type> type;
   };
 
   std::string_view name() const { return name_; }
@@ -340,7 +339,7 @@ class Function : public SafelyReferenceable {
   FunctionResultType<OutputTypes...> Call(ExecutionContext* context, InputsTypes&&... inputs);
 
   json Serialize() const;
-  static safe_ptr<Function> Deserialize(const json& data);
+  static std::shared_ptr<Function> Deserialize(const json& data);
 
  private:
   Function(std::string_view name, FunctionPointer function_pointer, std::vector<ValueDeclaration> inputs,
@@ -353,39 +352,39 @@ class Function : public SafelyReferenceable {
   std::vector<ValueDeclaration> outputs_;
 };
 
-class Module : public SafelyReferenceable {
+class Module : public std::enable_shared_from_this<Module> {
  public:
-  static safe_ptr<Module> Register(std::string_view name);
+  static std::shared_ptr<Module> Register(std::string_view name);
   static void Deregister(std::string_view name);
-  static safe_ptr<Module> Get(std::string_view name);
-  static std::span<Module> registered_modules() { return modules; }
+  static std::shared_ptr<Module> Get(std::string_view name);
+  static std::span<std::shared_ptr<Module>> registered_modules() { return modules; }
 
   std::string_view name() const { return name_; }
 
   // Types
-  safe_ptr<Type> RegisterType(std::string_view name);
-  safe_ptr<Type> RegisterType(std::string_view name, safe_ptr<Type> parent_type, Type::ConversionFunction from_base,
-                              Type::ConversionFunction to_base);
+  std::shared_ptr<Type> RegisterType(std::string_view name);
+  std::shared_ptr<Type> RegisterType(std::string_view name, std::shared_ptr<Type> parent_type,
+                                     Type::ConversionFunction from_base, Type::ConversionFunction to_base);
 
   template <typename T, typename ParentType = void>
-  safe_ptr<Type> RegisterType(std::string_view name, bool create_cpp_association = true);
+  std::shared_ptr<Type> RegisterType(std::string_view name, bool create_cpp_association = true);
 
-  safe_ptr<Type> GetType(std::string_view name);
-  std::span<Type> types() { return types_; }
-  std::span<const Type> types() const { return types_; }
+  std::shared_ptr<Type> GetType(std::string_view name);
+  std::span<std::shared_ptr<Type>> types() { return types_; }
+  std::span<const std::shared_ptr<Type>> types() const { return types_; }
 
   // Functions
-  safe_ptr<Function> RegisterFunction(std::string_view name, FunctionPointer function_pointer,
-                                      std::vector<Function::ValueDeclaration> inputs,
-                                      std::vector<Function::ValueDeclaration> outputs);
+  std::shared_ptr<Function> RegisterFunction(std::string_view name, FunctionPointer function_pointer,
+                                             std::vector<Function::ValueDeclaration> inputs,
+                                             std::vector<Function::ValueDeclaration> outputs);
 
   template <auto FUNCTION>
-  safe_ptr<Function> RegisterFunction(std::string_view name, std::vector<std::string_view> input_names,
-                                      std::vector<std::string_view> output_names);
+  std::shared_ptr<Function> RegisterFunction(std::string_view name, std::vector<std::string_view> input_names,
+                                             std::vector<std::string_view> output_names);
 
-  safe_ptr<Function> GetFunction(std::string_view name);
-  std::span<Function> functions() { return functions_; }
-  std::span<const Function> functions() const { return functions_; }
+  std::shared_ptr<Function> GetFunction(std::string_view name);
+  std::span<std::shared_ptr<Function>> functions() { return functions_; }
+  std::span<const std::shared_ptr<Function>> functions() const { return functions_; }
 
   json Serialize() const;
 
@@ -393,10 +392,10 @@ class Module : public SafelyReferenceable {
   Module(std::string_view name) : name_(name) {}
 
   std::string name_;
-  std::vector<Type> types_;
-  std::vector<Function> functions_;
+  std::vector<std::shared_ptr<Type>> types_;
+  std::vector<std::shared_ptr<Function>> functions_;
 
-  static std::vector<Module> modules;
+  static std::vector<std::shared_ptr<Module>> modules;
 };
 }  // namespace vm
 }  // namespace ovis

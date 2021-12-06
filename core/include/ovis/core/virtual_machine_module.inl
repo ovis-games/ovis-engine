@@ -1,47 +1,48 @@
 namespace ovis {
 namespace vm {
 
-inline safe_ptr<Module> Module::Register(std::string_view name) {
+inline std::shared_ptr<Module> Module::Register(std::string_view name) {
   if (Get(name) != nullptr) {
     return nullptr;
   }
 
-  modules.push_back(Module(name));
-  return safe_ptr(&modules.back());
+  modules.push_back(std::shared_ptr<Module>(new Module(name)));
+  return modules.back();
 }
 
 inline void Module::Deregister(std::string_view name) {
-  std::erase_if(modules, [name](const Module& module) {
-    return module.name_ == name;
+  std::erase_if(modules, [name](const std::shared_ptr<Module>& module) {
+    return module->name() == name;
   });
 }
 
-inline safe_ptr<Module> Module::Get(std::string_view name) {
-  for (auto& module : modules) {
-    if (module.name_ == name) {
-      return safe_ptr(&module);
+inline std::shared_ptr<Module> Module::Get(std::string_view name) {
+  for (const auto& module : modules) {
+    if (module->name() == name) {
+      return module;
     }
   }
   return nullptr;
 }
 
-inline safe_ptr<Type> Module::RegisterType(std::string_view name) {
+inline std::shared_ptr<Type> Module::RegisterType(std::string_view name) {
   if (GetType(name) != nullptr) {
     return nullptr;
   }
 
-  types_.push_back(Type(this, name));
-  return safe_ptr(&types_.back());
+  types_.push_back(std::shared_ptr<Type>(new Type(shared_from_this(), name)));
+  return types_.back();
 }
 
-inline safe_ptr<Type> Module::RegisterType(std::string_view name, safe_ptr<Type> parent_type, Type::ConversionFunction to_base,
-                              Type::ConversionFunction from_base) {
+inline std::shared_ptr<Type> Module::RegisterType(std::string_view name, std::shared_ptr<Type> parent_type,
+                                                  Type::ConversionFunction to_base,
+                                                  Type::ConversionFunction from_base) {
   if (GetType(name) != nullptr) {
     return nullptr;
   }
 
-  types_.push_back(Type(this, name, parent_type.get(), to_base, from_base));
-  return safe_ptr(&types_.back());
+  types_.push_back(std::shared_ptr<Type>(new Type(shared_from_this(), name, parent_type, to_base, from_base)));
+  return types_.back();
 }
 
 namespace detail {
@@ -60,16 +61,16 @@ Value ToBase(Value& derived) {
 }
 
 template <typename T, typename ParentType>
-inline safe_ptr<Type> Module::RegisterType(std::string_view name, bool create_cpp_association) {
+inline std::shared_ptr<Type> Module::RegisterType(std::string_view name, bool create_cpp_association) {
   if (Type::Get<T>() != nullptr) {
     return nullptr;
   }
 
-  if (create_cpp_association && Type::type_associations[typeid(T)] != nullptr) {
+  if (create_cpp_association && !Type::type_associations[typeid(T)].expired()) {
     return nullptr;
   }
 
-  safe_ptr<Type> type;
+  std::shared_ptr<Type> type;
   if constexpr (std::is_same_v<ParentType, void>) {
     type = RegisterType(name);
   } else {
@@ -86,24 +87,25 @@ inline safe_ptr<Type> Module::RegisterType(std::string_view name, bool create_cp
   return type;
 }
 
-inline safe_ptr<Type> Module::GetType(std::string_view name) {
-  for (auto& type : types_) {
-    if (type.name() == name) {
-      return safe_ptr(&type);
+inline std::shared_ptr<Type> Module::GetType(std::string_view name) {
+  for (const auto& type : types_) {
+    if (type->name() == name) {
+      return type;
     }
   }
   return nullptr;
 }
 
-inline safe_ptr<Function> Module::RegisterFunction(std::string_view name, FunctionPointer function_pointer,
-                                                   std::vector<Function::ValueDeclaration> inputs,
-                                                   std::vector<Function::ValueDeclaration> outputs) {
+inline std::shared_ptr<Function> Module::RegisterFunction(std::string_view name, FunctionPointer function_pointer,
+                                                          std::vector<Function::ValueDeclaration> inputs,
+                                                          std::vector<Function::ValueDeclaration> outputs) {
   if (GetFunction(name) != nullptr) {
     return nullptr;
   }
-  functions_.push_back(Function(name, function_pointer, std::forward<std::vector<Function::ValueDeclaration>>(inputs),
-                                std::forward<std::vector<Function::ValueDeclaration>>(outputs)));
-  return safe_ptr(&functions_.back());
+  functions_.push_back(std::shared_ptr<Function>(
+      new Function(name, function_pointer, std::forward<std::vector<Function::ValueDeclaration>>(inputs),
+                   std::forward<std::vector<Function::ValueDeclaration>>(outputs))));
+  return functions_.back();
 }
 namespace detail {
 
@@ -195,10 +197,10 @@ struct FunctionWrapper<ConstructorWrapper<T, ArgumentTypes...>> {
 template <typename T, typename... ConstructorArguments>
 inline constexpr detail::ConstructorWrapper<T, ConstructorArguments...> Constructor{};
 
-
 template <auto FUNCTION>
-inline safe_ptr<Function> Module::RegisterFunction(std::string_view name, std::vector<std::string_view> input_names,
-                                                   std::vector<std::string_view> output_names) {
+inline std::shared_ptr<Function> Module::RegisterFunction(std::string_view name,
+                                                          std::vector<std::string_view> input_names,
+                                                          std::vector<std::string_view> output_names) {
   return RegisterFunction(
       name,
       &detail::FunctionWrapper<decltype(FUNCTION)>::template Call<FUNCTION>,
@@ -206,10 +208,10 @@ inline safe_ptr<Function> Module::RegisterFunction(std::string_view name, std::v
       detail::FunctionWrapper<decltype(FUNCTION)>::GetOutputDeclarations(output_names));
 }
 
-inline safe_ptr<Function> Module::GetFunction(std::string_view name) {
-  for (auto& function : functions_) {
-    if (function.name_ == name) {
-      return safe_ptr(&function);
+inline std::shared_ptr<Function> Module::GetFunction(std::string_view name) {
+  for (const auto& function : functions_) {
+    if (function->name_ == name) {
+      return function;
     }
   }
   return nullptr;
@@ -219,11 +221,11 @@ inline json Module::Serialize() const {
   json module = json::object();
   json& types = module["types"] = json::object();
   for (const auto& type : this->types()) {
-    types[std::string(type.name())] = type.Serialize();
+    types[std::string(type->name())] = type->Serialize();
   }
   json& functions = module["functions"] = json::object();
   for (const auto& function : this->functions()) {
-    functions[std::string(function.name())] = function.Serialize();
+    functions[std::string(function->name())] = function->Serialize();
   }
   return module;
 }

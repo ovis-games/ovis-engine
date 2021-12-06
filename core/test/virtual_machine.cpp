@@ -2,7 +2,7 @@
 
 #include <ovis/core/virtual_machine.hpp>
 
-ovis::safe_ptr<ovis::vm::Module> RegisterTestModule() {
+std::shared_ptr<ovis::vm::Module> RegisterTestModule() {
   if (ovis::vm::Module::Get("Test") != nullptr) {
     ovis::vm::Module::Deregister("Test");
   }
@@ -12,7 +12,7 @@ ovis::safe_ptr<ovis::vm::Module> RegisterTestModule() {
 TEST_CASE("Register Type", "[ovis][core][vm]") {
   using namespace ovis;
   using namespace ovis::vm;
-  safe_ptr<Module> test_module = RegisterTestModule();
+  std::shared_ptr<Module> test_module = RegisterTestModule();
 
   SECTION("Check Module Registration") {
     REQUIRE(test_module->name() == "Test");
@@ -28,7 +28,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     REQUIRE(foo_type == Type::Get<Foo>());
 
     Value foo = Value::Create(Foo{});
-    REQUIRE(foo.type() == foo_type);
+    REQUIRE(foo.type().lock() == foo_type);
     Foo& foo2 = foo.Get<Foo>();
 
     auto foo_type_again = test_module->RegisterType<Foo>("Foo2");
@@ -46,10 +46,10 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
 
     std::unique_ptr<Foo> foo = std::make_unique<Foo>();
     Value foo_value = Value::Create(foo.get());
-    REQUIRE(foo_value.type() == foo_type);
+    REQUIRE(foo_value.type().lock() == foo_type);
     REQUIRE(foo_value.Get<Foo*>() == foo.get());
     Value foo_value2 = vm::Value::Create(*foo.get());
-    REQUIRE(foo_value2.type() == foo_type);
+    REQUIRE(foo_value2.type().lock() == foo_type);
     REQUIRE(foo_value2.Get<Foo*>() == foo.get());
 
     foo.reset();
@@ -63,7 +63,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     {
       ExecutionContext::global_context()->PushValue2(Value::CreateViewIfPossible(10));
       Value v = ExecutionContext::global_context()->GetTopValue();
-      REQUIRE(v.type() == int_type);
+      REQUIRE(v.type().lock() == int_type);
       REQUIRE(v.is_view() == false);
       REQUIRE(v.Get<int>() == 10);
       ExecutionContext::global_context()->PopValue();
@@ -73,7 +73,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
       int i = 10;
       ExecutionContext::global_context()->PushValue2(Value::CreateViewIfPossible(i));
       Value v = ExecutionContext::global_context()->GetTopValue();
-      REQUIRE(v.type() == int_type);
+      REQUIRE(v.type().lock() == int_type);
       REQUIRE(v.is_view() == true);
       REQUIRE(v.Get<int>() == 10);
       i = 11;
@@ -157,7 +157,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
   SECTION("Type serialization") {
     struct Foo {
       static json Serialize(const vm::Value& value) {
-        assert(value.type() == vm::Type::Get<Foo>().get());
+        assert(value.type().lock() == vm::Type::Get<Foo>());
         const auto& foo = value.Get<Foo>();
         return foo.number;
       }
@@ -177,13 +177,13 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
 
     auto foo_type = test_module->RegisterType<Foo>("Foo");
     REQUIRE(foo_type != nullptr);
-    REQUIRE(foo_type->CreateValue(json(1337)).type() == nullptr);
+    REQUIRE(foo_type->CreateValue(json(1337)).type().lock() == nullptr);
   
     foo_type->SetSerializeFunction(&Foo::Serialize);
     foo_type->SetDeserializeFunction(&Foo::Deserialize);
 
     Value value = foo_type->CreateValue(json(1337));
-    REQUIRE(value.type() == foo_type);
+    REQUIRE(value.type().lock() == foo_type);
     REQUIRE(value.Get<Foo>().number == 1337);
     REQUIRE(value.Serialize() == json(1337));
 
@@ -211,7 +211,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
 
     foo_type->RegisterConstructorFunction(constructor);
     Value f2_value = foo_type->Construct(100);
-    REQUIRE(f2_value.type() == foo_type);
+    REQUIRE(f2_value.type().lock() == foo_type);
     REQUIRE(f2_value.Get<Foo>().a == 100);
   }
 
@@ -248,7 +248,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     REQUIRE(foo_function->inputs().size() == 0);
     REQUIRE(foo_function->outputs().size() == 1);
     REQUIRE(foo_function->GetOutput(0)->name == "The answer");
-    REQUIRE(foo_function->GetOutput(0)->type == Type::Get<int>());
+    REQUIRE(foo_function->GetOutput(0)->type.lock() == Type::Get<int>());
 
     REQUIRE(foo_function->Call<int>() == 42);
   }
@@ -266,10 +266,10 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
 
     REQUIRE(foo_function->inputs().size() == 1);
     REQUIRE(foo_function->GetInput(0)->name == "An awesome parameter");
-    REQUIRE(foo_function->GetInput(0)->type == Type::Get<int>());
+    REQUIRE(foo_function->GetInput(0)->type.lock() == Type::Get<int>());
     REQUIRE(foo_function->outputs().size() == 1);
     REQUIRE(foo_function->GetOutput(0)->name == "The answer");
-    REQUIRE(foo_function->GetOutput(0)->type == Type::Get<int>());
+    REQUIRE(foo_function->GetOutput(0)->type.lock() == Type::Get<int>());
 
     REQUIRE(foo_function->Call<int>(21) == 42);
     REQUIRE(foo_function->Call<int>(210) == 420);
@@ -291,12 +291,12 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
 
     // ValueView from value not implemented yet.
     // Value x = Value::Create(42);
-    // REQUIRE(x.type() == Type::Get<int>());
+    // REQUIRE(x.type().lock() == Type::Get<int>());
     // REQUIRE(x.Get<int>() == 42);
 
     // foo_function->Call(x);
 
-    // REQUIRE(x.type() == Type::Get<int>());
+    // REQUIRE(x.type().lock() == Type::Get<int>());
     // REQUIRE(x.Get<int>() == 84);
   }
 
@@ -313,12 +313,12 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
 
     REQUIRE(foo_function->inputs().size() == 2);
     REQUIRE(foo_function->GetInput(0)->name == "Some Value");
-    REQUIRE(foo_function->GetInput(0)->type == Type::Get<int>());
+    REQUIRE(foo_function->GetInput(0)->type.lock() == Type::Get<int>());
     REQUIRE(foo_function->GetInput(1)->name == "Some other value");
-    REQUIRE(foo_function->GetInput(1)->type == Type::Get<int>());
+    REQUIRE(foo_function->GetInput(1)->type.lock() == Type::Get<int>());
     REQUIRE(foo_function->outputs().size() == 1);
     REQUIRE(foo_function->GetOutput(0)->name == "The answer");
-    REQUIRE(foo_function->GetOutput(0)->type == Type::Get<int>());
+    REQUIRE(foo_function->GetOutput(0)->type.lock() == Type::Get<int>());
 
     REQUIRE(foo_function->Call<int>(21, 21) == 42);
     REQUIRE(foo_function->Call<int>(1337, 42) == 1379);
@@ -339,9 +339,9 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     REQUIRE(foo_function->inputs().size() == 0);
     REQUIRE(foo_function->outputs().size() == 2);
     REQUIRE(foo_function->GetOutput(0)->name == "Am I cool");
-    REQUIRE(foo_function->GetOutput(0)->type == Type::Get<bool>());
+    REQUIRE(foo_function->GetOutput(0)->type.lock() == Type::Get<bool>());
     REQUIRE(foo_function->GetOutput(1)->name == "The answer");
-    REQUIRE(foo_function->GetOutput(1)->type == Type::Get<int>());
+    REQUIRE(foo_function->GetOutput(1)->type.lock() == Type::Get<int>());
 
     auto results = foo_function->Call<bool, int>();
     REQUIRE(std::get<bool>(results) == true);

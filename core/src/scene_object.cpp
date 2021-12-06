@@ -93,7 +93,7 @@ bool SceneObject::ContainsChildObject(std::string_view object_name) {
   return FindChild(object_name) != children_.end();
 }
 
-vm::Value SceneObject::AddComponent(safe_ptr<vm::Type> type) {
+vm::Value SceneObject::AddComponent(const std::shared_ptr<vm::Type>& type) {
   if (!type) {
     LogE("Invalid object component");
     return vm::Value::None();
@@ -121,36 +121,36 @@ vm::Value SceneObject::AddComponent(safe_ptr<vm::Type> type) {
   }
 }
 
-vm::Value SceneObject::GetComponent(safe_ptr<vm::Type> type) {
+vm::Value SceneObject::GetComponent(const std::shared_ptr<vm::Type>& type) {
   for (const auto& component : components_) {
-    if (component.type == type) {
+    if (component.type.lock() == type) {
       return vm::Value::CreateView(component.pointer.get(), type);
     }
   }
   return vm::Value::None();
 }
 
-vm::Value SceneObject::GetComponent(safe_ptr<vm::Type> type) const {
+vm::Value SceneObject::GetComponent(const std::shared_ptr<vm::Type>& type) const {
   for (const auto& component : components_) {
-    if (component.type == type) {
+    if (component.type.lock() == type) {
       return vm::Value::CreateView(component.pointer.get(), type);
     }
   }
   return vm::Value::None();
 }
 
-bool SceneObject::HasComponent(safe_ptr<vm::Type> type) const {
+bool SceneObject::HasComponent(const std::shared_ptr<vm::Type>& type) const {
   for (const auto& component : components_) {
-    if (component.type == type) {
+    if (component.type.lock() == type) {
       return true;
     }
   }
   return false;
 }
 
-bool SceneObject::RemoveComponent(safe_ptr<vm::Type> type) {
+bool SceneObject::RemoveComponent(const std::shared_ptr<vm::Type>& type) {
   const auto erased_count = std::erase_if(components_, [type](const auto& component) {
-      return component.type == type;
+      return component.type.lock() == type;
   });
   assert(erased_count <= 1);
   return erased_count > 0;
@@ -175,8 +175,9 @@ json SceneObject::Serialize() const {
 
   auto& components = serialized_object["components"] = json::object();
   for (const auto& component : components_) {
-    assert(component.type != nullptr);
-    components[std::string(component.type->full_reference())] = component.pointer->Serialize();
+    const auto component_type = component.type.lock();
+    assert(component_type != nullptr);
+    components[std::string(component_type->full_reference())] = component.pointer->Serialize();
   }
   auto& children = serialized_object["children"] = json::object();
   for (const auto& child : children_) {

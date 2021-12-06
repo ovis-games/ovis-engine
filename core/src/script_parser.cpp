@@ -141,12 +141,12 @@ void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::stri
         .message = fmt::format("Function key 'module' must be of type string."),
         .path = path,
     });
-  } else if (safe_ptr<vm::Module> module = vm::Module::Get(static_cast<std::string>(*function_module)); module == nullptr) {
+  } else if (std::shared_ptr<vm::Module> module = vm::Module::Get(static_cast<std::string>(*function_module)); module == nullptr) {
     errors.push_back({
         .message = fmt::format("Module {} not found.", *function_module),
         .path = path,
     });
-  } else if (safe_ptr<vm::Function> function_reflection = module->GetFunction(static_cast<std::string>(*function_name)); function_reflection == nullptr) {
+  } else if (std::shared_ptr<vm::Function> function_reflection = module->GetFunction(static_cast<std::string>(*function_name)); function_reflection == nullptr) {
     errors.push_back({
         .message = fmt::format("Function {} not found in module {}.", *function_name, *function_module),
         .path = path,
@@ -185,7 +185,9 @@ void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::stri
             .message = fmt::format("Output '{}' not present for function.", output_name, function_reflection->name()),
             .path = path,
         });
-      } else if (const auto output_variable_position = GetOutputVariablePosition(static_cast<std::string>(local_variable), output_declaration->type, path); !output_variable_position.has_value()) {
+      } else if (const auto output_variable_position = GetOutputVariablePosition(
+                     static_cast<std::string>(local_variable), output_declaration->type.lock(), path);
+                 !output_variable_position.has_value()) {
         errors.push_back({
             .message = fmt::format("Mismatched types."),
             .path = path,
@@ -209,7 +211,7 @@ void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::stri
             .path = path,
         });
       } else {
-        ParsePush(*input_definition, path, input_declaration.type, 1);
+        ParsePush(*input_definition, path, input_declaration.type.lock(), 1);
       }
     }
 
@@ -336,7 +338,7 @@ void ScriptFunctionParser::ParseReturn(const json& action, std::string path) {
         });
         PushNone(path);
       } else {
-        ParsePush(*returned_output, path, output.type);
+        ParsePush(*returned_output, path, output.type.lock());
       }
     }
     instructions.push_back(vm::instructions::Return {});
@@ -357,7 +359,7 @@ void ScriptFunctionParser::PushNone(const std::string& path) {
   });
 }
 
-void ScriptFunctionParser::ParsePush(const json& value_definition, const std::string& path, safe_ptr<vm::Type> required_type, std::size_t stack_frame_offset) {
+void ScriptFunctionParser::ParsePush(const json& value_definition, const std::string& path, std::shared_ptr<vm::Type> required_type, std::size_t stack_frame_offset) {
   auto push = [&](auto value) {
     const auto input_type = vm::Type::Get<decltype(value)>();
     if (!required_type || required_type == input_type) {
@@ -433,10 +435,10 @@ void ScriptFunctionParser::ParsePush(const json& value_definition, const std::st
   }
 }
 
-std::optional<std::size_t> ScriptFunctionParser::GetOutputVariablePosition(std::string_view name, safe_ptr<vm::Type> type, const std::string& path) {
+std::optional<std::size_t> ScriptFunctionParser::GetOutputVariablePosition(std::string_view name, std::shared_ptr<vm::Type> type, const std::string& path) {
   const auto local_variable = GetLocalVariable(name);
   if (local_variable.has_value()) {
-    if (local_variable->declaration.type == type) {
+    if (local_variable->declaration.type.lock() == type) {
       return local_variable->position;
     } else {
       return {};

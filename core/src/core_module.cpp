@@ -82,9 +82,8 @@ void LogText(std::string text) {
 }
 
 bool LoadCoreModule() {
-  static safe_ptr<vm::Module> core_module;
-  if (core_module == nullptr) {
-    core_module = vm::Module::Register("Core");
+  if (vm::Module::Get("Core") == nullptr) {
+    auto core_module = vm::Module::Register("Core");
     assert(core_module->name() == "Core");
 
     auto boolean_type = core_module->RegisterType<bool>("Boolean");

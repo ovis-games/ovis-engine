@@ -3,14 +3,9 @@
 namespace ovis {
 namespace vm {
 
-std::unordered_map<std::type_index, safe_ptr<Type>> Type::type_associations;
-std::vector<Module> Module::modules;
+std::unordered_map<std::type_index, std::weak_ptr<Type>> Type::type_associations;
+std::vector<std::shared_ptr<Module>> Module::modules;
 ExecutionContext ExecutionContext::global;
-
-std::ostream& operator<<(std::ostream& os, const safe_ptr<Type>& pointer) {
-  os << (pointer ? pointer->name() : "Unknown");
-  return os;
-}
 
 }  // namespace vm
 }  // namespace ovis
