@@ -42,12 +42,14 @@ Value Value::CreateView(T* value) {
 
 template <ValueType T>
 Value Value::CreateView(T& value) {
-  return Value(Type::Get<T>(), &value, true);
+  assert(Type::GetId<T>());
+  return Value(*Type::GetId<T>(), &value, true);
 }
 
 template <ValueType T>
 Value Value::CreateView(T* value) {
-  return Value(Type::Get<T>(), value, true);
+  assert(Type::GetId<T>());
+  return Value(*Type::GetId<T>(), value, true);
 }
 
 inline Value Value::CreateView(Value& value) {

@@ -201,7 +201,8 @@ struct PropertyCallbacks<PROPERTY> {
   }
 
   static void Register(Type* type, std::string_view name) {
-    type->RegisterProperty(name, Type::Get<PropertyType>(), &PropertyGetter, &PropertySetter);
+    assert(Type::GetId<PropertyType>());
+    type->RegisterProperty(name, *Type::GetId<PropertyType>(), &PropertyGetter, &PropertySetter);
   }
 };
 

@@ -20,11 +20,12 @@ int LoadRendering2DModule(lua_State* l) {
 }
 
 bool LoadRendering2DModule() {
-  static safe_ptr<vm::Module> rendering2d_module;
-  if (!rendering2d_module) {
+  if (vm::Module::Get("Rendering2D") == nullptr) {
+    auto core_module = vm::Module::Register("Rendering2D");
+    assert(core_module->name() == "Rendering2D");
     LoadCoreModule();
     LoadRenderingModule();
-    rendering2d_module = vm::Module::Register("Rendering2D");
+    auto rendering2d_module = vm::Module::Register("Rendering2D");
 
     SceneObjectComponent::Register("Rendering2D.Shape2D", [](SceneObject* object) { return std::make_unique<Shape2D>(object); });
     RenderPass::Register("Renderer2D", []() { return std::make_unique<Renderer2D>(); });

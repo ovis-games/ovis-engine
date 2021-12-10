@@ -28,7 +28,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     REQUIRE(foo_type == Type::Get<Foo>());
 
     Value foo = Value::Create(Foo{});
-    REQUIRE(foo.type().lock() == foo_type);
+    REQUIRE(vm::Type::Get(foo.type_id()) == foo_type);
     Foo& foo2 = foo.Get<Foo>();
 
     auto foo_type_again = test_module->RegisterType<Foo>("Foo2");
@@ -46,10 +46,10 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
 
     std::unique_ptr<Foo> foo = std::make_unique<Foo>();
     Value foo_value = Value::Create(foo.get());
-    REQUIRE(foo_value.type().lock() == foo_type);
+    REQUIRE(vm::Type::Get(foo_value.type_id()) == foo_type);
     REQUIRE(foo_value.Get<Foo*>() == foo.get());
     Value foo_value2 = vm::Value::Create(*foo.get());
-    REQUIRE(foo_value2.type().lock() == foo_type);
+    REQUIRE(vm::Type::Get(foo_value2.type_id()) == foo_type);
     REQUIRE(foo_value2.Get<Foo*>() == foo.get());
 
     foo.reset();
@@ -63,7 +63,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
     {
       ExecutionContext::global_context()->PushValue2(Value::CreateViewIfPossible(10));
       Value v = ExecutionContext::global_context()->GetTopValue();
-      REQUIRE(v.type().lock() == int_type);
+      REQUIRE(vm::Type::Get(v.type_id()) == int_type);
       REQUIRE(v.is_view() == false);
       REQUIRE(v.Get<int>() == 10);
       ExecutionContext::global_context()->PopValue();
@@ -73,7 +73,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
       int i = 10;
       ExecutionContext::global_context()->PushValue2(Value::CreateViewIfPossible(i));
       Value v = ExecutionContext::global_context()->GetTopValue();
-      REQUIRE(v.type().lock() == int_type);
+      REQUIRE(vm::Type::Get(v.type_id()) == int_type);
       REQUIRE(v.is_view() == true);
       REQUIRE(v.Get<int>() == 10);
       i = 11;
@@ -157,7 +157,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
   SECTION("Type serialization") {
     struct Foo {
       static json Serialize(const vm::Value& value) {
-        assert(value.type().lock() == vm::Type::Get<Foo>());
+        assert(value.type_id() == vm::Type::GetId<Foo>());
         const auto& foo = value.Get<Foo>();
         return foo.number;
       }
@@ -177,13 +177,13 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
 
     auto foo_type = test_module->RegisterType<Foo>("Foo");
     REQUIRE(foo_type != nullptr);
-    REQUIRE(foo_type->CreateValue(json(1337)).type().lock() == nullptr);
+    REQUIRE(vm::Type::Get(foo_type->CreateValue(json(1337)).type_id()) == nullptr);
   
     foo_type->SetSerializeFunction(&Foo::Serialize);
     foo_type->SetDeserializeFunction(&Foo::Deserialize);
 
     Value value = foo_type->CreateValue(json(1337));
-    REQUIRE(value.type().lock() == foo_type);
+    REQUIRE(vm::Type::Get(value.type_id()) == foo_type);
     REQUIRE(value.Get<Foo>().number == 1337);
     REQUIRE(value.Serialize() == json(1337));
 
@@ -211,7 +211,7 @@ TEST_CASE("Register Type", "[ovis][core][vm]") {
 
     foo_type->RegisterConstructorFunction(constructor);
     Value f2_value = foo_type->Construct(100);
-    REQUIRE(f2_value.type().lock() == foo_type);
+    REQUIRE(vm::Type::Get(f2_value.type_id()) == foo_type);
     REQUIRE(f2_value.Get<Foo>().a == 100);
   }
 
