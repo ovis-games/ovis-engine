@@ -19,6 +19,7 @@ add_library(
   include/ovis/utils/versioned_index.hpp src/versioned_index.cpp
   include/ovis/utils/result.hpp src/result.cpp
   include/ovis/utils/type_id.hpp src/type_id.cpp
+  include/ovis/utils/parameter_pack.hpp src/parameter_pack.cpp
 )
 add_library(ovis::utils ALIAS ovis-utils)
 
