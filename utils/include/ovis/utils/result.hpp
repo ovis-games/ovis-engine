@@ -20,10 +20,14 @@ struct Error {
 template <typename T = void, typename E = Error>
 class Result;
 
+struct SuccessType {};
+constexpr SuccessType Success;
+
 template <typename E>
 class Result<void, E> {
 public:
-  Result() {}
+  [[deprecated]] Result() {}
+  Result(SuccessType) {}
   Result(E error) : error_(std::move(error)) {}
 
   [[nodiscard]] operator bool() const {
