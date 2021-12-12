@@ -89,31 +89,31 @@ bool LoadCoreModule() {
     auto boolean_type = core_module->RegisterType<bool>("Boolean");
     assert(boolean_type != nullptr);
 
-    core_module->RegisterFunction<&CreateBoolean>("Create Boolean", {"value"}, {"result"});
-    core_module->RegisterFunction<&Not>("Not", {"value"}, {"result"});
-    core_module->RegisterFunction<&And>("And", {"a", "b"}, {"result"});
-    core_module->RegisterFunction<&Or>("Or", {"a", "b"}, {"result"});
+    // core_module->RegisterFunction<&CreateBoolean>("Create Boolean", {"value"}, {"result"});
+    // core_module->RegisterFunction<&Not>("Not", {"value"}, {"result"});
+    // core_module->RegisterFunction<&And>("And", {"a", "b"}, {"result"});
+    // core_module->RegisterFunction<&Or>("Or", {"a", "b"}, {"result"});
 
-    auto number_type = core_module->RegisterType<double>("Number");
-    assert(number_type != nullptr);
-    assert(vm::Type::Get<double>() != nullptr);
+    // auto number_type = core_module->RegisterType<double>("Number");
+    // assert(number_type != nullptr);
+    // assert(vm::Type::Get<double>() != nullptr);
 
-    core_module->RegisterFunction<&CreateNumber>("Create Number", {"value"}, {"result"});
-    core_module->RegisterFunction<&Negate>("Negate", {"value"}, {"result"});
-    core_module->RegisterFunction<&Add>("Add", {"x", "y"}, {"result"});
-    core_module->RegisterFunction<&Subtract>("Subtract", {"x", "y"}, {"result"});
-    core_module->RegisterFunction<&Multiply>("Multiply", {"x", "y"}, {"result"});
-    core_module->RegisterFunction<&Divide>("Divide", {"x", "y"}, {"result"});
-    core_module->RegisterFunction<&IsEqual>("Is equal", {"x", "y"}, {"result"});
-    core_module->RegisterFunction<&IsNotEqual>("Is not equal", {"x", "y"}, {"result"});
-    core_module->RegisterFunction<&IsGreater>("Is greater", {"x", "y"}, {"result"});
-    core_module->RegisterFunction<&IsGreaterOrEqual>("Is greater or equal", {"x", "y"}, {"result"});
-    core_module->RegisterFunction<&IsLess>("Is less", {"x", "y"}, {"result"});
-    core_module->RegisterFunction<&IsLessOrEqual>("Is less or equal", {"x", "y"}, {"result"});
+    // core_module->RegisterFunction<&CreateNumber>("Create Number", {"value"}, {"result"});
+    // core_module->RegisterFunction<&Negate>("Negate", {"value"}, {"result"});
+    // core_module->RegisterFunction<&Add>("Add", {"x", "y"}, {"result"});
+    // core_module->RegisterFunction<&Subtract>("Subtract", {"x", "y"}, {"result"});
+    // core_module->RegisterFunction<&Multiply>("Multiply", {"x", "y"}, {"result"});
+    // core_module->RegisterFunction<&Divide>("Divide", {"x", "y"}, {"result"});
+    // core_module->RegisterFunction<&IsEqual>("Is equal", {"x", "y"}, {"result"});
+    // core_module->RegisterFunction<&IsNotEqual>("Is not equal", {"x", "y"}, {"result"});
+    // core_module->RegisterFunction<&IsGreater>("Is greater", {"x", "y"}, {"result"});
+    // core_module->RegisterFunction<&IsGreaterOrEqual>("Is greater or equal", {"x", "y"}, {"result"});
+    // core_module->RegisterFunction<&IsLess>("Is less", {"x", "y"}, {"result"});
+    // core_module->RegisterFunction<&IsLessOrEqual>("Is less or equal", {"x", "y"}, {"result"});
 
-    auto string_type = core_module->RegisterType<std::string>("String");
-    core_module->RegisterFunction<&CreateString>("Create String", {"value"}, {"result"});
-    core_module->RegisterFunction<&LogText>("Log", {"text"}, {});
+    // auto string_type = core_module->RegisterType<std::string>("String");
+    // core_module->RegisterFunction<&CreateString>("Create String", {"value"}, {"result"});
+    // core_module->RegisterFunction<&LogText>("Log", {"text"}, {});
 
     SceneObjectComponent::Register("Core.Transform",
                                    [](SceneObject* object) { return std::make_unique<Transform>(object); });
@@ -123,11 +123,11 @@ bool LoadCoreModule() {
     SceneController::Register("AnimatorController", []() { return std::make_unique<AnimatorController>(); });
 
 
-    Vector2::RegisterType(core_module.get());
-    Vector3::RegisterType(core_module.get());
-    SceneObjectComponent::RegisterType(core_module.get());
-    Transform::RegisterType(core_module.get());
-    Animator::RegisterType(core_module.get());
+    // Vector2::RegisterType(core_module.get());
+    // Vector3::RegisterType(core_module.get());
+    // SceneObjectComponent::RegisterType(core_module.get());
+    // Transform::RegisterType(core_module.get());
+    // Animator::RegisterType(core_module.get());
   }
 
   return true;

@@ -9,6 +9,12 @@
 
 namespace ovis {
 
+struct ValueInfo {
+  TypeId native_type_id;
+  vm::Type::Id vm_type_id;
+  bool is_pointer;
+};
+
 class ScriptFunctionParser {
  public:
   ScriptFunctionParser(const json& function_definition);

@@ -15,16 +15,16 @@ ScriptFunction::ScriptFunction(const json& function_definition)
     : ScriptFunction(ScriptFunctionParser(function_definition)) {}
 
 void ScriptFunction::Execute(vm::ExecutionContext* context) {
-  size_t instruction_pointer = 0;
+  // size_t instruction_pointer = 0;
 
-  do {
-    const auto instruction_pointer_offset = std::visit(*context, instructions_[instruction_pointer]);
-    if (instruction_pointer_offset.has_value()) {
-      instruction_pointer += *instruction_pointer_offset;
-    } else {
-      return;
-    }
-  } while (instruction_pointer < instructions_.size());
+  // do {
+  //   const auto instruction_pointer_offset = std::visit(*context, instructions_[instruction_pointer]);
+  //   if (instruction_pointer_offset.has_value()) {
+  //     instruction_pointer += *instruction_pointer_offset;
+  //   } else {
+  //     return;
+  //   }
+  // } while (instruction_pointer < instructions_.size());
 
   assert("Missing return statement");
 }

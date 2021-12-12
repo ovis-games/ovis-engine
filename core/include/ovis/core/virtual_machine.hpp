@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdlib>
 #include <any>
 #include <cassert>
 #include <cstdint>
@@ -15,6 +16,7 @@
 
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/json.hpp>
+#include <ovis/utils/parameter_pack.hpp>
 #include <ovis/utils/range.hpp>
 #include <ovis/utils/result.hpp>
 #include <ovis/utils/safe_pointer.hpp>
@@ -31,6 +33,9 @@ class Function;
 class Module;
 class ExecutionContext;
 
+using NativeFunction = Result<>(ExecutionContext*);
+// using NativeFunction* = Result<>(*)(ExecutionContext*);
+
 class Type : public std::enable_shared_from_this<Type> {
   friend class Value;
   friend class Module;
@@ -38,6 +43,10 @@ class Type : public std::enable_shared_from_this<Type> {
  public:
   using Id = VersionedIndex<uint32_t, 20>;
   static constexpr Id NONE_ID = Id(0);
+
+  // using DefaultConstructFunction = Result<>(void* value);
+  // using DestroyFunction = Result<>(void* value);
+  // using CopyFunction = Result<>(void* destination, const void* source);
 
   using ConversionFunction = Value(*)(Value& value);
   using SerializeFunction = json(*)(const Value& value);
@@ -58,33 +67,33 @@ class Type : public std::enable_shared_from_this<Type> {
   std::weak_ptr<Type> parent() const { return parent_; }
   std::weak_ptr<Module> module() const { return module_; }
 
-  bool IsDerivedFrom(std::shared_ptr<Type> type) const;
-  template <typename T> bool IsDerivedFrom() const;
+  // bool IsDerivedFrom(std::shared_ptr<Type> type) const;
+  // template <typename T> bool IsDerivedFrom() const;
 
-  void RegisterConstructorFunction(std::shared_ptr<Function> function);
-  template <typename... Args> Value Construct(Args&&... args) const;
+  // void RegisterConstructorFunction(std::shared_ptr<Function> function);
+  // template <typename... Args> Value Construct(Args&&... args) const;
 
-  void SetSerializeFunction(SerializeFunction function) { serialize_function_ = function; }
-  SerializeFunction serialize_function() const { return serialize_function_; }
+  // void SetSerializeFunction(SerializeFunction function) { serialize_function_ = function; }
+  // SerializeFunction serialize_function() const { return serialize_function_; }
 
-  void SetDeserializeFunction(DeserializeFunction function) { deserialize_function_ = function; }
-  DeserializeFunction deserialize_function() const { return deserialize_function_; }
+  // void SetDeserializeFunction(DeserializeFunction function) { deserialize_function_ = function; }
+  // DeserializeFunction deserialize_function() const { return deserialize_function_; }
 
-  Value CreateValue(const json& data) const;
+  // Value CreateValue(const json& data) const;
 
-  void RegisterProperty(std::string_view name, Id type_id, Property::GetFunction getter,
-                        Property::SetFunction setter = nullptr);
-  template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
-  void RegisterProperty(std::string_view);
+  // void RegisterProperty(std::string_view name, Id type_id, Property::GetFunction getter,
+  //                       Property::SetFunction setter = nullptr);
+  // template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
+  // void RegisterProperty(std::string_view);
 
-  template <auto GETTER>
-  void RegisterProperty(std::string_view);
+  // template <auto GETTER>
+  // void RegisterProperty(std::string_view);
 
-  template <auto GETTER, auto SETTER>
-  void RegisterProperty(std::string_view);
+  // template <auto GETTER, auto SETTER>
+  // void RegisterProperty(std::string_view);
 
-  const Property* GetProperty(std::string_view name) const;
-  std::span<const Property> properties() const { return properties_; }
+  // const Property* GetProperty(std::string_view name) const;
+  // std::span<const Property> properties() const { return properties_; }
 
   static Id Register(std::shared_ptr<Type> type, TypeId native_type_id = TypeOf<void>);
   static Result<> Deregister(Id id);
@@ -94,11 +103,12 @@ class Type : public std::enable_shared_from_this<Type> {
 
   static std::shared_ptr<Type> Deserialize(const json& data);
 
-  json Serialize() const;
+  // json Serialize() const;
 
  private:
   Type(std::shared_ptr<Module> module, std::string_view name);
   Type(std::shared_ptr<Module> module, std::string_view name, std::shared_ptr<Type> parent, ConversionFunction from_base, ConversionFunction to_base);
+  template <typename T, typename ParentType> static std::shared_ptr<Type> Create(std::shared_ptr<Module> module, std::string_view name);
 
   std::vector<Property> properties_;
 
@@ -106,6 +116,14 @@ class Type : public std::enable_shared_from_this<Type> {
   std::string full_reference_;
   std::weak_ptr<Type> parent_;
   std::weak_ptr<Module> module_;
+
+  std::size_t alignment_in_bytes_;
+  std::size_t size_in_bytes_;
+  NativeFunction* default_construct_;
+  NativeFunction* copy_construct_;
+  NativeFunction* assign_;
+  NativeFunction* destruct_;
+
   ConversionFunction from_base_;
   ConversionFunction to_base_;
   SerializeFunction serialize_function_;
@@ -134,128 +152,390 @@ template <typename T> concept PointerToValueType = is_pointer_to_value_type_v<T>
 
 class Value {
  public:
-  Value(const Value& other) = default;
-  Value(Value&& other) : type_id_(std::move(other.type_id_)), data_(std::move(other.data_)), is_view_(other.is_view_) {}
+  const void* data() const { return &data_; }
+  void* data() { return &data_; }
 
-  // Named constructor
-  static Value None() { return Value({}, {}, false); }
+  template <typename T> T& as() {
+    assert(TypeOf<T> == native_type_id_);
+    return *reinterpret_cast<T*>(data());
+  }
 
-  template <ReferenceType T>
-  static Value Create(T& value);
-
-  template <ReferenceType T>
-  static Value Create(T* value);
-
-  template <ValueType T>
-  static Value Create(T&& value);
-
-  template <ValueType T>
-  static Value Create(T* value);
-
-  static Value Create(const Value& value);
-
-  template <ReferenceType T>
-  static Value CreateView(T& value);
-
-  template <ReferenceType T>
-  static Value CreateView(T* value);
-
-  template <ValueType T>
-  static Value CreateView(T& value);
-
-  template <ValueType T>
-  static Value CreateView(T* value);
-
-  static Value CreateView(Value& value);
-
-  template <typename T>
-  static Value CreateView(T&& value, std::shared_ptr<Type> actual_type);
-
-  template <typename T> 
-  static Value CreateViewIfPossible(T&& value);
-
-  Value& operator=(const Value& other) = default;
-  Value& operator=(Value&& other) = default;
-
-  template <ReferenceType T> T& Get();
-  template <PointerToReferenceType T> T Get();
-  template <ValueType T> std::remove_cvref_t<T>& Get();
-  template <PointerToValueType T> T Get();
-
-  template <typename T> requires std::is_pointer_v<T> auto Get() const { return const_cast<Value*>(this)->Get<T>(); }
-  template <typename T> requires (!std::is_pointer_v<T>) auto& Get() const { return const_cast<Value*>(this)->Get<T>(); }
-
-  template <typename T>
-  void SetProperty(std::string_view property_name, T&& property_value);
-
-  template <typename T = Value>
-  T GetProperty(std::string_view property_name);
-
-  json Serialize() const;
-
-  Type::Id type_id() const { return type_id_; }
-  bool is_view() const { return is_view_; }
-  bool is_none() const { return type_id_ == Type::NONE_ID; }
+  template <typename T> const T& as() const {
+    assert(TypeOf<T> == native_type_id_);
+    return *reinterpret_cast<const T*>(data());
+  }
 
  private:
-  Value(Type::Id type_id, std::any data, bool is_view) : type_id_(type_id), data_(std::move(data)), is_view_(is_view) {}
+   std::aligned_storage_t<8, 8> data_;
+#ifndef NDEBUG
+   Type::Id vm_type_id_;
+   TypeId native_type_id_;
+#endif
+};
 
-  Type::Id type_id_;
-  std::any data_;
-  bool is_view_;
+namespace detail {
 
-  Value CastToDerived(std::shared_ptr<Type> target_type);
-  Value CastToBase(std::shared_ptr<Type> target_type);
+template <typename T>
+void Destruct(void* object) {
+  reinterpret_cast<T*>(object)->~T();
+}
+
+}  // namespace detail
+
+class alignas(16) ValueStorage final {
+ public:
+  using DestructFunction = void(void*);
+
+  constexpr static std::size_t ALIGNMENT = 8;
+  constexpr static std::size_t SIZE = 8;
+
+  // We will fit pointers in the value field, so they should fit and properly aligned
+  static_assert(alignof(void*) <= ALIGNMENT);
+  static_assert(sizeof(void*) <= SIZE);
+
+  ValueStorage() : destruct_function_and_flags(0) {}
+  template <typename T>
+  ValueStorage(T&& value) : ValueStorage() {
+    set(std::forward<T>(value));
+  }
+  ValueStorage(const ValueStorage& other) = delete;
+  ValueStorage(ValueStorage&& other) = delete;
+  ~ValueStorage() { reset(); }
+
+  ValueStorage& operator=(const ValueStorage& other) = delete;
+  ValueStorage& operator=(ValueStorage&& other) = delete;
+
+  template <typename T>
+  void set(T&& value) {
+    reset();
+
+    using StoredType = std::remove_reference_t<T>;
+    if constexpr (alignof(T) > ALIGNMENT || sizeof(T) > SIZE) {
+      allocate(alignof(T), sizeof(T));
+      SetAllocatedStorageFlag(true);
+      new (data_as_pointer()) StoredType(std::forward<T>(value));
+    } else {
+      new (data()) StoredType(std::forward<T>(value));
+    }
+    if constexpr (!std::is_trivially_destructible_v<T>) {
+      SetDestructFunction(&detail::Destruct<StoredType>);
+    }
+#ifndef NDEBUG
+    native_type_id_ = TypeOf<StoredType>;
+#endif
+  }
+
+  void reset() {
+    const bool is_storage_allocated = allocated_storage();
+    DestructFunction* destruct = destruct_function();
+    if (destruct) {
+      destruct(is_storage_allocated ? data_as_pointer() : data());
+      set_destruct_function(nullptr);
+    }
+    if (is_storage_allocated) {
+      deallocate();
+      SetAllocatedStorageFlag(false);
+    }
+#ifndef NDEBUG
+    native_type_id_ = TypeOf<void>;
+#endif
+  }
+
+  void allocate(std::size_t alignment, std::size_t size) {
+    new (&data_) void*(aligned_alloc(alignment, size));
+    SetAllocatedStorageFlag(true);
+  }
+
+  void deallocate() {
+    assert(allocated_storage());
+    std::free(*reinterpret_cast<void**>(&data_));
+    SetAllocatedStorageFlag(false);
+  }
+
+  bool allocated_storage() const { return flags_.allocated_storage != 0; }
+
+  void set_destruct_function(DestructFunction* destructor) { SetDestructFunction(destructor); }
+
+  DestructFunction* destruct_function() const {
+    return reinterpret_cast<DestructFunction*>(destruct_function_and_flags & ~1);
+  }
+
+  const void* data() const { return &data_; }
+  void* data() { return &data_; }
+
+  const void* data_as_pointer() const {
+    assert(allocated_storage());
+    return *reinterpret_cast<void* const*>(&data_);
+  }
+  void* data_as_pointer() {
+    assert(allocated_storage());
+    return *reinterpret_cast<void* const*>(&data_);
+  }
+
+  template <typename T>
+  T& as() {
+    assert(TypeOf<T> == native_type_id_);
+    if constexpr (alignof(T) > ALIGNMENT || sizeof(T) > SIZE) {
+      return *reinterpret_cast<T*>(data_as_pointer());
+    } else {
+      return *reinterpret_cast<T*>(data());
+    }
+  }
+
+  template <typename T>
+  const T& as() const {
+    assert(TypeOf<T> == native_type_id_);
+    if constexpr (alignof(T) > ALIGNMENT || sizeof(T) > SIZE) {
+      return *reinterpret_cast<const T*>(data_as_pointer());
+    } else {
+      return *reinterpret_cast<const T*>(data());
+    }
+  }
+
+  static void copy_trivially(ValueStorage* destination, const ValueStorage* source) {
+    assert(!destination->allocated_storage());
+    assert(!source->allocated_storage());
+    std::memcpy(&destination->data_, &source->data_, SIZE);
+    destination->destruct_function_and_flags = source->destruct_function_and_flags;
+#ifndef NDEBUG
+    destination->native_type_id_ = source->native_type_id_;
+#endif
+  }
+
+ private:
+  std::aligned_storage_t<SIZE, ALIGNMENT> data_;
+  union {
+    std::uintptr_t destruct_function_and_flags;
+    // TODO: the following only works on little endian!
+    struct {
+      std::uintptr_t allocated_storage : 1;
+      std::uintptr_t : (sizeof(std::uintptr_t) * 8 - 1);
+    } flags_;
+  };
+
+  void SetDestructFunction(DestructFunction* function) {
+    const std::uintptr_t pointer_as_int = reinterpret_cast<std::uintptr_t>(function);
+    assert((pointer_as_int & 1) == 0);
+    destruct_function_and_flags = pointer_as_int | flags_.allocated_storage;
+  }
+
+  void SetAllocatedStorageFlag(bool value) {
+    // See https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit
+    destruct_function_and_flags ^= (-static_cast<std::uintptr_t>(value) ^ destruct_function_and_flags) & 1;
+  }
+
+#ifndef NDEBUG
+ public:
+  TypeId native_type_id_ = TypeOf<void>;
+#endif
+};
+
+#ifdef NDEBUG
+static_assert(sizeof(ValueStorage) == 16);
+#endif
+
+enum class OpCode : std::uint32_t {
+  EXIT,
+  PUSH,
+  POP,
+  COPY_TRIVIAL_VALUE,
+  PUSH_TRIVIAL_CONSTANT,
+  CALL_NATIVE_FUNCTION,
+  SUBTRACT_NUMBERS,
+  MULTIPLY_NUMBERS,
+  IS_NUMBER_GREATER,
+  JUMP,
+  JUMP_IF_TRUE,
+  JUMP_IF_FALSE,
 };
 
 namespace instructions {
-struct NativeFunctionCall {
-  void (*function_pointer)(ExecutionContext*);
+
+constexpr std::size_t OPCODE_BITS = 8;
+constexpr std::size_t TYPE_ALIGN_BITS = 3;
+constexpr std::size_t TYPE_SIZE_BITS = 11;
+constexpr std::size_t REGISTER_INDEX_BITS = 12;
+constexpr std::size_t CONSTANT_INDEX_BITS = 10;
+constexpr std::size_t JUMP_OFFSET_BITS = 24;
+
+struct ConstructValue {
+  std::uint32_t opcode : OPCODE_BITS;
 };
+static_assert(sizeof(ConstructValue) == sizeof(std::uint32_t));
+
+struct ConstructLargeValue {
+  std::uint32_t opcode : OPCODE_BITS;
+  std::uint32_t align : TYPE_ALIGN_BITS;
+  std::uint32_t size : TYPE_SIZE_BITS;
+};
+static_assert(sizeof(ConstructLargeValue) == sizeof(std::uint32_t));
+
+struct DestructValue {
+  std::uint32_t opcode : OPCODE_BITS;
+};
+static_assert(sizeof(DestructValue) == sizeof(std::uint32_t));
+
+struct DestructLargeValue {
+  std::uint32_t opcode : OPCODE_BITS;
+  std::uint32_t align : TYPE_ALIGN_BITS;
+  std::uint32_t size : TYPE_SIZE_BITS;
+};
+static_assert(sizeof(DestructLargeValue) == sizeof(std::uint32_t));
+
+struct CopyValue {
+  std::uint32_t opcode : OPCODE_BITS;
+  std::uint32_t destination : REGISTER_INDEX_BITS;
+  std::uint32_t source : REGISTER_INDEX_BITS;
+};
+static_assert(sizeof(CopyValue) == sizeof(std::uint32_t));
+
+struct CopyLargeValue {
+  std::uint32_t opcode : OPCODE_BITS;
+  std::uint32_t destination : REGISTER_INDEX_BITS;
+  std::uint32_t source : REGISTER_INDEX_BITS;
+};
+static_assert(sizeof(CopyLargeValue) == sizeof(std::uint32_t));
+
+struct CopyTrivialValueData {
+  std::uint32_t opcode : OPCODE_BITS;
+  std::uint32_t destination : REGISTER_INDEX_BITS;
+  std::uint32_t source : REGISTER_INDEX_BITS;
+};
+static_assert(sizeof(CopyTrivialValueData) == sizeof(std::uint32_t));
+
 struct PushConstant {
-  Value value;
+  std::uint32_t opcode : OPCODE_BITS;
+  std::uint32_t constant : CONSTANT_INDEX_BITS;
 };
-struct PushStackValue {
-  std::size_t position;
-  std::size_t stack_frame_offset;
+static_assert(sizeof(PushConstant) == sizeof(std::uint32_t));
+
+struct PushTrivialConstantData {
+  std::uint32_t opcode : OPCODE_BITS = static_cast<std::uint32_t>(OpCode::PUSH_TRIVIAL_CONSTANT);
+  std::uint32_t constant : CONSTANT_INDEX_BITS;
 };
-struct Assign {
-  std::size_t position;
-  std::size_t stack_frame_offset;
+static_assert(sizeof(PushTrivialConstantData) == sizeof(std::uint32_t));
+
+struct PushLargeConstant {
+  std::uint32_t opcode : OPCODE_BITS;
+  std::uint32_t constant : CONSTANT_INDEX_BITS;
+  std::uint32_t align : TYPE_ALIGN_BITS;
+  std::uint32_t size : TYPE_SIZE_BITS;
 };
-struct Pop {
-  std::size_t count;
+static_assert(sizeof(PushLargeConstant) == sizeof(std::uint32_t));
+
+struct PushPopData {
+  std::uint32_t opcode : OPCODE_BITS;
+  std::uint32_t count : 8;
 };
-struct Jump {
-  std::ptrdiff_t instruction_offset;
+static_assert(sizeof(PushPopData) == sizeof(std::uint32_t));
+
+struct CallNativeFunctionData {
+  std::uint32_t opcode : OPCODE_BITS = static_cast<std::uint32_t>(OpCode::CALL_NATIVE_FUNCTION);
+  std::uint32_t input_count : 8;
 };
-struct JumpIfTrue {
-  std::ptrdiff_t instruction_offset;
+static_assert(sizeof(CallNativeFunctionData ) == sizeof(std::uint32_t));
+
+struct JumpData {
+  std::uint32_t opcode : OPCODE_BITS;
+  std::int32_t offset : JUMP_OFFSET_BITS;
 };
-struct JumpIfFalse {
-  std::ptrdiff_t instruction_offset;
+static_assert(sizeof(JumpData) == sizeof(std::uint32_t));
+
+struct NumberOperationData {
+  std::uint32_t opcode : OPCODE_BITS;
+  std::uint32_t result : 8;
+  std::uint32_t first : 8;
+  std::uint32_t second : 8;
 };
-struct PushStackFrame {
-};
-struct PopStackFrame {
-};
-struct Return {
-};
+static_assert(sizeof(NumberOperationData ) == sizeof(std::uint32_t));
+
 }  // namespace instructions
 
-using Instruction = std::variant<
-  instructions::NativeFunctionCall,
-  instructions::PushConstant,
-  instructions::PushStackValue,
-  instructions::Assign,
-  instructions::Pop,
-  instructions::Jump,
-  instructions::JumpIfTrue,
-  instructions::JumpIfFalse,
-  instructions::PushStackFrame,
-  instructions::PopStackFrame,
-  instructions::Return
->;
+union Instruction {
+  std::uint32_t opcode : instructions::OPCODE_BITS;
+
+  instructions::PushPopData push_pop;
+  instructions::PushTrivialConstantData push_trivial_constant;
+  instructions::CallNativeFunctionData call_native_function;
+  instructions::JumpData jump_data;
+  instructions::CopyTrivialValueData copy_trivial_value;
+  instructions::NumberOperationData number_operation_data;
+};
+
+namespace instructions {
+
+inline Instruction Exit() {
+  return { .opcode = static_cast<std::uint32_t>(OpCode::EXIT) };
+}
+
+inline Instruction Push(std::uint32_t count) {
+  return {.push_pop = {.opcode = static_cast<std::uint32_t>(OpCode::PUSH), .count = count}};
+}
+
+inline Instruction Pop(std::uint32_t count) {
+  return {.push_pop = {.opcode = static_cast<std::uint32_t>(OpCode::POP), .count = count}};
+}
+
+inline Instruction CopyTrivialValue(std::uint32_t destination, std::uint32_t source) {
+  return {.copy_trivial_value = {.opcode = static_cast<std::uint32_t>(OpCode::COPY_TRIVIAL_VALUE),
+                                 .destination = destination,
+                                 .source = source}};
+}
+
+inline Instruction PushTrivialConstant(std::uint32_t constant_index) {
+  return {.push_trivial_constant = {.constant = constant_index}};
+}
+
+inline Instruction CallNativeFunction(std::uint32_t input_count) {
+  return {.call_native_function = { .input_count = input_count }};
+}
+
+inline Instruction Jump(std::int32_t offset) {
+  return {.jump_data = {.opcode = static_cast<std::uint32_t>(OpCode::JUMP), .offset = offset}};
+}
+
+inline Instruction JumpIfTrue(std::int32_t offset) {
+  return {.jump_data = {.opcode = static_cast<std::uint32_t>(OpCode::JUMP_IF_TRUE), .offset = offset}};
+}
+
+inline Instruction JumpIfFalse(std::int32_t offset) {
+  return {.jump_data = {.opcode = static_cast<std::uint32_t>(OpCode::JUMP_IF_FALSE), .offset = offset}};
+}
+
+inline Instruction SubtractNumbers(std::uint32_t result, std::uint32_t first, std::uint32_t second) {
+  return {
+    .number_operation_data = {
+      .opcode = static_cast<std::uint32_t>(OpCode::SUBTRACT_NUMBERS),
+      .result = result,
+      .first = first,
+      .second = second
+    }
+  };
+}
+
+inline Instruction MultiplyNumbers(std::uint32_t result, std::uint32_t first, std::uint32_t second) {
+  return {
+    .number_operation_data = {
+      .opcode = static_cast<std::uint32_t>(OpCode::MULTIPLY_NUMBERS),
+      .result = result,
+      .first = first,
+      .second = second
+    }
+  };
+}
+
+inline Instruction IsNumberGreater(std::uint32_t result, std::uint32_t first, std::uint32_t second) {
+  return {
+    .number_operation_data = {
+      .opcode = static_cast<std::uint32_t>(OpCode::IS_NUMBER_GREATER),
+      .result = result,
+      .first = first,
+      .second = second
+    }
+  };
+}
+
+}  // namespace instructions
 
 namespace detail {
 template <typename T> struct TypeWrapper { using type = T; };
@@ -266,15 +546,16 @@ template <typename T> using WrappedType = typename detail::TypeWrapper<T>::type;
 
 class ExecutionContext {
  public:
-  ExecutionContext(std::size_t reserved_stack_size = 100);
+  ExecutionContext(std::size_t register_count = 1024);
 
-  // Push an arbitrary value onto the stack. In case T is a tuple, its members are packed onto the stack individually.
-  void PushValue2(Value value);
+  ValueStorage& top(std::size_t offset = 0);
+
+  void PushValue() { return PushValues(1); }
+  void PushValues(std::size_t count);
   template <typename T> void PushValue(T&& value);
-  template <typename T> void PushValueView(T&& value);
-
-  void PopValue();
+  void PopValue() { PopValues(1); }
   void PopValues(std::size_t count);
+  void PopAll() { PopValues(used_register_count_); }
 
   void PushStackFrame();
   void PopStackFrame();
@@ -290,26 +571,20 @@ class ExecutionContext {
   // offsets: (offset_from_top + tuple_size_v<T>, offset_from_top).
   template <typename T> WrappedType<T> GetTopValue(std::size_t offset_from_top = 0);
 
-  std::optional<std::ptrdiff_t> operator()(const instructions::NativeFunctionCall& native_function_call);
-  std::optional<std::ptrdiff_t> operator()(const instructions::PushConstant& push_constant);
-  std::optional<std::ptrdiff_t> operator()(const instructions::PushStackValue& push_stack_value);
-  std::optional<std::ptrdiff_t> operator()(const instructions::Assign& assign);
-  std::optional<std::ptrdiff_t> operator()(const instructions::Pop& pop);
-  std::optional<std::ptrdiff_t> operator()(const instructions::Jump& jump);
-  std::optional<std::ptrdiff_t> operator()(const instructions::JumpIfTrue& jump);
-  std::optional<std::ptrdiff_t> operator()(const instructions::JumpIfFalse& jump);
-  std::optional<std::ptrdiff_t> operator()(const instructions::PushStackFrame& push_scope);
-  std::optional<std::ptrdiff_t> operator()(const instructions::PopStackFrame& pop_scope);
-  std::optional<std::ptrdiff_t> operator()(const instructions::Return& jump);
+  std::span<const ValueStorage> registers() const { return { registers_.get(), used_register_count_}; }
+  std::span<const ValueStorage> current_function_scope_registers() const { return { registers_.get(), used_register_count_}; }
+  Result<> Execute(std::span<const Instruction> instructions, std::span<const ValueStorage> constants);
 
   static ExecutionContext* global_context() { return &global; }
 
  private:
   struct StackFrame {
-    std::size_t base_position;
+    std::size_t register_offset;
   };
 
-  std::vector<Value> stack_;
+  std::unique_ptr<ValueStorage[]> registers_;
+  std::size_t register_count_;
+  std::size_t used_register_count_;
   // Every exuction frame always has the base stack frame that cannot be popped
   // which simplifies the code
   std::vector<StackFrame> stack_frames_;
@@ -317,12 +592,43 @@ class ExecutionContext {
   static ExecutionContext global;
 };
 
-using FunctionPointer = void (*)(ExecutionContext*);
-
 template <typename... T> struct FunctionResult { using type = std::tuple<T...>; };
 template <typename T> struct FunctionResult <T> { using type = T; };
 template <> struct FunctionResult <> { using type = void; };
 template <typename... T> using FunctionResultType = typename FunctionResult<T...>::type;
+
+namespace detail {
+
+template <typename T> struct NativeFunctionWrapper;
+
+template <typename R, typename... Args>
+struct NativeFunctionWrapper<R(*)(Args...)> {
+  template <R(*FUNCTION)(Args...)>
+  static Result<> Call(ExecutionContext* context) {
+    const auto input_tuple = GetInputTuple(context, std::make_index_sequence<sizeof...(Args)>{});
+    context->PopValues(sizeof...(Args));
+    if constexpr (!std::is_same_v<void, R>) {
+      context->PushValue(std::apply(FUNCTION, input_tuple));
+    } else {
+      std::apply(FUNCTION, input_tuple);
+    }
+    return Success;
+  }
+
+  template <std::size_t... I>
+  static std::tuple<Args...> GetInputTuple(ExecutionContext* context, std::index_sequence<I...>) {
+    return std::tuple<Args...>(
+      context->top(sizeof...(Args) - I - 1).as<nth_parameter_t<I, Args...>>()...
+    );
+  }
+};
+
+}
+
+template <auto FUNCTION>
+Result<> NativeFunctionWrapper(ExecutionContext* context) {
+  return detail::NativeFunctionWrapper<decltype(FUNCTION)>::template Call<FUNCTION>(context);
+}
 
 class Function : public std::enable_shared_from_this<Function> {
   friend class Module;
@@ -335,7 +641,7 @@ class Function : public std::enable_shared_from_this<Function> {
 
   std::string_view name() const { return name_; }
   std::string_view text() const { return text_; }
-  FunctionPointer pointer() const { return function_pointer_; }
+  NativeFunction* pointer() const { return function_pointer_; }
 
   std::span<const ValueDeclaration> inputs() const { return inputs_; }
   std::optional<std::size_t> GetInputIndex(std::string_view input_name) const;
@@ -358,12 +664,12 @@ class Function : public std::enable_shared_from_this<Function> {
   static std::shared_ptr<Function> Deserialize(const json& data);
 
  private:
-  Function(std::string_view name, FunctionPointer function_pointer, std::vector<ValueDeclaration> inputs,
+  Function(std::string_view name, NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
            std::vector<ValueDeclaration> outputs);
 
   std::string name_;
   std::string text_;
-  FunctionPointer function_pointer_;
+  NativeFunction* function_pointer_;
   std::vector<ValueDeclaration> inputs_;
   std::vector<ValueDeclaration> outputs_;
 };
@@ -392,7 +698,7 @@ class Module : public std::enable_shared_from_this<Module> {
   // std::span<const std::shared_ptr<Type>> types() const { return types_; }
 
   // Functions
-  std::shared_ptr<Function> RegisterFunction(std::string_view name, FunctionPointer function_pointer,
+  std::shared_ptr<Function> RegisterFunction(std::string_view name, NativeFunction* function_pointer,
                                              std::vector<Function::ValueDeclaration> inputs,
                                              std::vector<Function::ValueDeclaration> outputs);
 
