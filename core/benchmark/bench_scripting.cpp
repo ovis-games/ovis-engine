@@ -346,16 +346,15 @@ static void BM_CalculateFactorialVM(benchmark::State& state) {
     ovis::vm::instructions::PushTrivialConstant(3), // [result, input, result, input, &Multiply]
     ovis::vm::instructions::CallNativeFunction(2),  // [result, input, Multiply_result]
     ovis::vm::instructions::CopyTrivialValue(0, 2), // [result, input, Multiply_result]
-    ovis::vm::instructions::Pop(1),                 // [result, input]
+    ovis::vm::instructions::PopTrivial(1),          // [result, input]
     ovis::vm::instructions::Push(1),                // [result, input, void]
     ovis::vm::instructions::CopyTrivialValue(2, 1), // [result, input, input]
     ovis::vm::instructions::PushTrivialConstant(1), // [result, input, input, 1.0]
     ovis::vm::instructions::PushTrivialConstant(2), // [result, input, input, 1.0, &Subtract]
     ovis::vm::instructions::CallNativeFunction(2),  // [result, input, Subtract_result]
     ovis::vm::instructions::CopyTrivialValue(1, 2), // [result, input, Subtract_result]
-    ovis::vm::instructions::Pop(1),                 // [result, input]
+    ovis::vm::instructions::PopTrivial(1),          // [result, input]
     ovis::vm::instructions::Jump(-20),              // [result, input]
-    ovis::vm::instructions::Exit(),
   };
 
   for (auto _ : state) {
@@ -407,7 +406,6 @@ static void BM_CalculateFactorialVMImproved(benchmark::State& state) {
     instructions::MultiplyNumbers(0, 0, 1), // [result, input, 1]
     instructions::SubtractNumbers(1, 1, 2), // [result, input, 1]
     instructions::Jump(-5),                 // [result, input, 1]
-    instructions::Exit(),
   };
 
   for (auto _ : state) {

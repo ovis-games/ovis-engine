@@ -29,6 +29,12 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
         break;
       }
 
+      case OpCode::POP_TRIVIAL: {
+        PopTrivialValues(instruction.push_pop.count);
+        ++program_counter;
+        break;
+      }
+
       case OpCode::COPY_TRIVIAL_VALUE: {
         const std::size_t destination_index = instruction.copy_trivial_value.destination;
         const std::size_t source_index = instruction.copy_trivial_value.source;
@@ -57,7 +63,7 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
 
       case OpCode::CALL_NATIVE_FUNCTION: {
         const auto function_pointer = top().as<NativeFunction*>();
-        PopValue();
+        PopTrivialValue();
         function_pointer(this);
         ++program_counter;
         break;
@@ -70,14 +76,14 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
 
       case OpCode::JUMP_IF_TRUE: {
         const auto condition = top().as<bool>();
-        PopValue();
+        PopTrivialValue();
         program_counter += condition ? instruction.jump_data.offset : 1;
         break;
       }
 
       case OpCode::JUMP_IF_FALSE: {
         const auto condition = top().as<bool>();
-        PopValue();
+        PopTrivialValue();
         program_counter += condition ? 1 : instruction.jump_data.offset;
         break;
       }

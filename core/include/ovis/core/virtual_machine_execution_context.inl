@@ -136,6 +136,14 @@ inline void ExecutionContext::PushValue(T&& value) {
 //   detail::ValueHelper<T>::PushValueView(this, std::forward<T>(value));
 // }
 
+inline void ExecutionContext::PopTrivialValues(std::size_t count) {
+  assert(count <= used_register_count_);
+  for (auto i : IRange(count)) {
+    registers_[used_register_count_ - (i + 1)].reset_trivial();
+  }
+  used_register_count_ -= count;
+}
+
 inline void ExecutionContext::PopValues(std::size_t count) {
   assert(count <= used_register_count_);
   for (auto i : IRange(count)) {

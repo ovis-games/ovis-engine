@@ -225,6 +225,14 @@ class alignas(16) ValueStorage final {
 #endif
   }
 
+  void reset_trivial() {
+    assert(!allocated_storage());
+    assert(destruct_function() == nullptr);
+#ifndef NDEBUG
+    native_type_id_ = TypeOf<void>;
+#endif
+  }
+
   void reset() {
     const bool is_storage_allocated = allocated_storage();
     DestructFunction* destruct = destruct_function();
@@ -338,6 +346,7 @@ enum class OpCode : std::uint32_t {
   EXIT,
   PUSH,
   POP,
+  POP_TRIVIAL,
   COPY_TRIVIAL_VALUE,
   PUSH_TRIVIAL_CONSTANT,
   CALL_NATIVE_FUNCTION,
@@ -476,6 +485,10 @@ inline Instruction Pop(std::uint32_t count) {
   return {.push_pop = {.opcode = static_cast<std::uint32_t>(OpCode::POP), .count = count}};
 }
 
+inline Instruction PopTrivial(std::uint32_t count) {
+  return {.push_pop = {.opcode = static_cast<std::uint32_t>(OpCode::POP_TRIVIAL), .count = count}};
+}
+
 inline Instruction CopyTrivialValue(std::uint32_t destination, std::uint32_t source) {
   return {.copy_trivial_value = {.opcode = static_cast<std::uint32_t>(OpCode::COPY_TRIVIAL_VALUE),
                                  .destination = destination,
@@ -553,6 +566,8 @@ class ExecutionContext {
   void PushValue() { return PushValues(1); }
   void PushValues(std::size_t count);
   template <typename T> void PushValue(T&& value);
+  void PopTrivialValue() { PopTrivialValues(1); }
+  void PopTrivialValues(std::size_t count);
   void PopValue() { PopValues(1); }
   void PopValues(std::size_t count);
   void PopAll() { PopValues(used_register_count_); }
