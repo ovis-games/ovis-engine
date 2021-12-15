@@ -81,7 +81,7 @@ class alignas(16) ValueStorage final {
   template <typename T> const T& as() const;
 
   // Trivially copies the value from source to destination. Neither the source nor the destination should have allocated storage.
-  static void copy_trivially(ValueStorage* destination, const ValueStorage* source);
+  static void CopyTrivially(ValueStorage* destination, const ValueStorage* source);
 
  private:
   std::aligned_storage_t<SIZE, ALIGNMENT> data_;
@@ -206,7 +206,7 @@ inline const T& ValueStorage::as() const {
   }
 }
 
-inline void ValueStorage::copy_trivially(ValueStorage* destination, const ValueStorage* source) {
+inline void ValueStorage::CopyTrivially(ValueStorage* destination, const ValueStorage* source) {
   assert(!destination->allocated_storage());
   assert(!source->allocated_storage());
   std::memcpy(&destination->data_, &source->data_, SIZE);

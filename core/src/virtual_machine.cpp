@@ -44,7 +44,7 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
         // if (source_index >= used_register_count_) {
         //   return Error("Source out of bounds");
         // }
-        ValueStorage::copy_trivially(&registers_[destination_index], &registers_[source_index]);
+        ValueStorage::CopyTrivially(&registers_[destination_index], &registers_[source_index]);
         ++program_counter;
         break;
       }
@@ -53,7 +53,7 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
         const std::size_t constant_index = instruction.push_trivial_constant.constant;
         // if (constant_index < constants.size()) {
           PushValue();
-          ValueStorage::copy_trivially(&top(), &constants[constant_index]);
+          ValueStorage::CopyTrivially(&top(), &constants[constant_index]);
           ++program_counter;
         // } else {
         //   return Error("Invalid constant index");
