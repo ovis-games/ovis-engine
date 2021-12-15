@@ -13,11 +13,10 @@ std::shared_ptr<ovis::vm::Module> RegisterTestModule() {
 }
 
 TEST_CASE("Value", "[ovis][core][vm]") {
-  ValueStorage value;
-  value.set(8.0);
+  ValueStorage value(8.0);
   REQUIRE(value.as<double>() == 8.0);
   REQUIRE(!value.allocated_storage());
-  value.set(4.0f);
+  value.reset(4.0f);
   REQUIRE(value.as<float>() == 4.0);
   REQUIRE(!value.allocated_storage());
 
@@ -25,12 +24,12 @@ TEST_CASE("Value", "[ovis][core][vm]") {
     uint64_t a = 100;
     uint64_t b = 123;
   };
-  value.set(Foo());
+  value.reset(Foo());
   REQUIRE(value.allocated_storage());
   REQUIRE(value.as<Foo>().a == 100);
   REQUIRE(value.as<Foo>().b == 123);
 
-  value.set('c');
+  value.reset('c');
   REQUIRE(!value.allocated_storage());
   REQUIRE(value.as<char>() == 'c');
 }

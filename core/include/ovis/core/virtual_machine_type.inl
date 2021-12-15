@@ -111,7 +111,7 @@ inline Result<> Type::Deregister(Type::Id id) {
   assert(id.index() <= registered_types.size());
   if (registered_types[id.index()].vm_type_id == id) {
     registered_types[id.index()].type = nullptr;
-    return {};
+    return Success;
   } else {
     return Error("Invalid id");
   }

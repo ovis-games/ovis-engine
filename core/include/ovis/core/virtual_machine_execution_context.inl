@@ -127,7 +127,7 @@ template <typename T>
 inline void ExecutionContext::PushValue(T&& value) {
   // OVIS_CHECK_RESULT(PushValue());
   PushValue();
-  top().set(std::forward<T>(value));
+  top().reset(std::forward<T>(value));
   // return Success;
 }
 

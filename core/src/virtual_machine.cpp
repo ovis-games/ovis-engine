@@ -126,7 +126,7 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
     }
   }
 
-  return {};
+  return Success;
 }
 
 }  // namespace vm
