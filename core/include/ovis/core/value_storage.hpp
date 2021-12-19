@@ -17,11 +17,12 @@ class alignas(16) ValueStorage final {
   constexpr static std::size_t ALIGNMENT = 8;
   constexpr static std::size_t SIZE = 8;
 
+  template <typename T>
+  static constexpr bool stored_inline = alignof(T) <= ALIGNMENT && sizeof(T) <= SIZE;
+
   // We will fit pointers and doubles in the value field, so they should fit and properly aligned
-  static_assert(alignof(void*) <= ALIGNMENT);
-  static_assert(sizeof(void*) <= SIZE);
-  static_assert(alignof(double) <= ALIGNMENT);
-  static_assert(sizeof(double) <= SIZE);
+  static_assert(stored_inline<void*>);
+  static_assert(stored_inline<double>);
 
   // Constructs an empty value storage
   ValueStorage() : destruct_function_and_flags(0) {}

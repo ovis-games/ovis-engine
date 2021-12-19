@@ -3,6 +3,14 @@
 
 namespace ovis {
 
+Function::Function(std::string_view name, NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
+                   std::vector<ValueDeclaration> outputs) {}
+
+std::shared_ptr<Function> Function::MakeNative(NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
+                                               std::vector<ValueDeclaration> outputs) {
+  return std::shared_ptr<Function>(new Function("", function_pointer, inputs, outputs));
+}
+
 std::shared_ptr<Function> Function::Deserialize(const json& data) {
   if (!data.contains("module")) {
     return nullptr;

@@ -45,6 +45,25 @@ class Type : public std::enable_shared_from_this<Type> {
   std::weak_ptr<Type> parent() const { return parent_; }
   std::weak_ptr<Module> module() const { return module_; }
 
+  std::size_t alignment_in_bytes() const { return alignment_in_bytes_; }
+  std::size_t size_in_bytes() const { return size_in_bytes_; }
+
+  bool copy_constructible() const { return copy_constructible_; }
+  bool trivially_copy_constructible() const { return copy_constructible() && !copy_construct_; }
+  const Function* copy_construct_function() const { return copy_construct_.get(); }
+
+  bool move_constructible() const { return move_constructible_; }
+  bool trivially_move_constructible() const { return move_constructible() && !move_construct_; }
+  const Function* move_construct_function() const { return move_construct_.get(); }
+
+  bool copy_assignable() const { return copy_assignable_; }
+  bool trivially_copy_assignable() const { return copy_assignable() && !copy_assign_; }
+  const Function* copy_assign_function() const { return copy_assign_.get(); }
+
+  bool move_assignable() const { return move_assignable_; }
+  bool trivially_move_assignable() const { return move_assignable() && !move_assign_; }
+  const Function* move_assign_function() const { return move_assign_.get(); }
+
   // bool IsDerivedFrom(std::shared_ptr<Type> type) const;
   // template <typename T> bool IsDerivedFrom() const;
 
@@ -95,12 +114,16 @@ class Type : public std::enable_shared_from_this<Type> {
   std::weak_ptr<Type> parent_;
   std::weak_ptr<Module> module_;
 
+  std::uint32_t copy_constructible_ : 1;
+  std::uint32_t move_constructible_ : 1;
+  std::uint32_t copy_assignable_ : 1;
+  std::uint32_t move_assignable_ : 1;
   std::size_t alignment_in_bytes_;
   std::size_t size_in_bytes_;
-  // NativeFunction* default_construct_;
-  // NativeFunction* copy_construct_;
-  // NativeFunction* assign_;
-  // NativeFunction* destruct_;
+  std::shared_ptr<Function> copy_construct_;
+  std::shared_ptr<Function> move_construct_;
+  std::shared_ptr<Function> copy_assign_;
+  std::shared_ptr<Function> move_assign_;
 
   // ConversionFunction from_base_;
   // ConversionFunction to_base_;
@@ -122,6 +145,7 @@ class Type : public std::enable_shared_from_this<Type> {
 
 // Inline implementation
 #include <ovis/utils/reflection.hpp>
+#include <ovis/core/function.hpp>
 
 namespace ovis {
 
@@ -133,9 +157,72 @@ namespace ovis {
 //   to_base_ = to_base;
 // }
 
+namespace detail {
+
+template <typename T>
+Result<> CopyConstruct(ExecutionContext* context) {
+  auto destination = context->top(1).as<void*>();
+  auto source = context->top(0).as<void*>();
+  assert(reinterpret_cast<std::uintptr_t>(source) % alignof(T) == 0);
+  assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
+  new (destination) T(*reinterpret_cast<const T*>(source));
+  return Success;
+}
+
+template <typename T>
+Result<> MoveConstruct(ExecutionContext* context) {
+  auto destination = context->top(1).as<void*>();
+  auto source = context->top(0).as<void*>();
+  assert(reinterpret_cast<std::uintptr_t>(source) % alignof(T) == 0);
+  assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
+  new (destination) T(std::move(*reinterpret_cast<T*>(source)));
+  return Success;
+}
+
+template <typename T>
+Result<> CopyAssign(ExecutionContext* context) {
+  auto destination = context->top(1).as<void*>();
+  auto source = context->top(0).as<void*>();
+  assert(reinterpret_cast<std::uintptr_t>(source) % alignof(T) == 0);
+  assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
+  *reinterpret_cast<T*>(destination) = *reinterpret_cast<const T*>(source);
+  return Success;
+}
+
+template <typename T>
+Result<> MoveAssign(ExecutionContext* context) {
+  auto destination = context->top(1).as<void*>();
+  auto source = context->top(0).as<void*>();
+  assert(reinterpret_cast<std::uintptr_t>(source) % alignof(T) == 0);
+  assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
+  *reinterpret_cast<T*>(destination) = std::move(*reinterpret_cast<T*>(source));
+  return Success;
+}
+
+}  // namespace detail
+
 template <typename T, typename ParentType>
 std::shared_ptr<Type> Type::Create(std::shared_ptr<Module> module, std::string_view name) {
   std::shared_ptr<Type> type(new Type(module, name));
+  type->alignment_in_bytes_ = alignof(T);
+  type->size_in_bytes_ = sizeof(T);
+  type->copy_constructible_ = std::is_copy_constructible_v<T>;
+  type->move_constructible_ = std::is_move_constructible_v<T>;
+  type->copy_assignable_ = std::is_copy_assignable_v<T>;
+  type->move_assignable_ = std::is_move_assignable_v<T>;
+
+  if constexpr (std::is_copy_constructible_v<T> && !std::is_trivially_copy_constructible_v<T>) {
+    type->copy_construct_ = Function::MakeNative(detail::CopyConstruct<T>, {{}, {}}, {});
+  }
+  if constexpr (std::is_move_constructible_v<T> && !std::is_trivially_move_constructible_v<T>) {
+    type->move_construct_ = Function::MakeNative(detail::MoveConstruct<T>, {{}, {}}, {});
+  }
+  if constexpr (std::is_copy_assignable_v<T> && !std::is_trivially_copy_assignable_v<T>) {
+    type->copy_assign_ = Function::MakeNative(detail::CopyAssign<T>, {{}, {}}, {});
+  }
+  if constexpr (std::is_move_assignable_v<T> && !std::is_trivially_move_assignable_v<T>) {
+    type->move_assign_ = Function::MakeNative(detail::MoveAssign<T>, {{}, {}}, {});
+  }
 
   return type;
 }

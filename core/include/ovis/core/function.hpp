@@ -50,6 +50,7 @@ Result<> NativeFunctionWrapper(ExecutionContext* context) {
 
 class Function : public std::enable_shared_from_this<Function> {
   friend class Module;
+  friend class Type;
 
  public:
   struct ValueDeclaration {
@@ -73,10 +74,11 @@ class Function : public std::enable_shared_from_this<Function> {
 
   template <typename... InputTypes> bool IsCallableWithArguments() const;
 
-  template <typename... OutputTypes, typename... InputsTypes>
-  FunctionResultType<OutputTypes...> Call(InputsTypes&&... inputs);
-  template <typename... OutputTypes, typename... InputsTypes>
-  FunctionResultType<OutputTypes...> Call(ExecutionContext* context, InputsTypes&&... inputs);
+  // template <typename... OutputTypes, typename... InputsTypes>
+  // FunctionResultType<OutputTypes...> Call(InputsTypes&&... inputs);
+  // template <typename... OutputTypes, typename... InputsTypes>
+  // FunctionResultType<OutputTypes...> Call(ExecutionContext* context, InputsTypes&&... inputs);
+  template <typename... InputsTypes> Result<> Call(InputsTypes&&... inputs) const;
 
   json Serialize() const;
   static std::shared_ptr<Function> Deserialize(const json& data);
@@ -85,12 +87,42 @@ class Function : public std::enable_shared_from_this<Function> {
   Function(std::string_view name, NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
            std::vector<ValueDeclaration> outputs);
 
+  static std::shared_ptr<Function> MakeNative(NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
+                                              std::vector<ValueDeclaration> outputs);
+
   std::string name_;
   std::string text_;
   NativeFunction* function_pointer_;
   std::vector<ValueDeclaration> inputs_;
   std::vector<ValueDeclaration> outputs_;
 };
+
+// Implementation
+namespace detail {
+
+template <typename... InputTypes>
+struct PushValues;
+
+template <typename InputType, typename... InputTypes>
+struct PushValues<InputType, InputTypes...> {
+  static void Push(InputType&& input, InputTypes&&... inputs) {
+    ExecutionContext::global_context()->PushValue(std::forward<InputType>(input));
+    PushValues<InputTypes...>::Push(std::forward<InputTypes>(inputs)...);
+  }
+};
+
+template <>
+struct PushValues<> {
+  static void Push() {}
+};
+
+}  // namespace detail
+
+template <typename... InputTypes>
+inline Result<> Function::Call(InputTypes&&... inputs) const {
+  detail::PushValues<InputTypes...>::Push(std::forward<InputTypes>(inputs)...);
+  return function_pointer_(ExecutionContext::global_context());
+}
 
 }  // namespace ovis
 

@@ -1,17 +1,11 @@
 #include <catch2/catch.hpp>
 
-#include <ovis/core/module.hpp>
+#include <ovis/core/function.hpp>
 #include <ovis/core/virtual_machine.hpp>
 
 using namespace ovis;
 using namespace ovis::vm;
 
-std::shared_ptr<ovis::Module> RegisterTestModule() {
-  if (ovis::Module::Get("Test") != nullptr) {
-    ovis::Module::Deregister("Test");
-  }
-  return ovis::Module::Register("Test");
-}
 
 TEST_CASE("Value", "[ovis][core][vm]") {
   ValueStorage value(8.0);
