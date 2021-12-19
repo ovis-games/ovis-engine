@@ -1,15 +1,16 @@
 #include <catch2/catch.hpp>
 
+#include <ovis/core/module.hpp>
 #include <ovis/core/virtual_machine.hpp>
 
 using namespace ovis;
 using namespace ovis::vm;
 
-std::shared_ptr<ovis::vm::Module> RegisterTestModule() {
-  if (ovis::vm::Module::Get("Test") != nullptr) {
-    ovis::vm::Module::Deregister("Test");
+std::shared_ptr<ovis::Module> RegisterTestModule() {
+  if (ovis::Module::Get("Test") != nullptr) {
+    ovis::Module::Deregister("Test");
   }
-  return ovis::vm::Module::Register("Test");
+  return ovis::Module::Register("Test");
 }
 
 TEST_CASE("Value", "[ovis][core][vm]") {

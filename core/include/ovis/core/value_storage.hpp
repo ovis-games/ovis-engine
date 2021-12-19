@@ -9,7 +9,6 @@
 #include <ovis/utils/type_id.hpp>
 
 namespace ovis {
-namespace vm {
 
 class alignas(16) ValueStorage final {
  public:
@@ -216,5 +215,4 @@ inline void ValueStorage::CopyTrivially(ValueStorage* destination, const ValueSt
 #endif
 }
 
-}  // namespace vm
 }  // namespace ovis

@@ -18,9 +18,9 @@ class VisualScriptSceneController : public SceneController {
   static void RegisterType(sol::table* module);
 
  private:
-  std::optional<ScriptFunction> play_function_;
-  std::optional<ScriptFunction> stop_function_;
-  std::optional<ScriptFunction> update_function_;
+  // std::optional<ScriptFunction> play_function_;
+  // std::optional<ScriptFunction> stop_function_;
+  // std::optional<ScriptFunction> update_function_;
 };
 
 std::unique_ptr<VisualScriptSceneController> LoadVisualScriptSceneController(const std::string& asset_id);

@@ -13,14 +13,14 @@ class SceneObject;
 
 struct SceneObjectAnimationKeyframe {
   std::uint32_t frame;
-  vm::Value value;
+  // vm::Value value;
 };
 
 struct SceneObjectAnimationChannel {
   std::string object_path;
-  std::weak_ptr<vm::Type> component_type;
+  // std::weak_ptr<Type> component_type;
   std::string property;
-  std::weak_ptr<vm::Function> interpolation_function;
+  // std::weak_ptr<Function> interpolation_function;
   std::vector<SceneObjectAnimationKeyframe> keyframes;
 };
 

@@ -10,6 +10,7 @@
 #include <ovis/core/core_module.hpp>
 #include <ovis/core/event.hpp>
 #include <ovis/core/lua.hpp>
+#include <ovis/core/module.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_controller.hpp>
 #include <ovis/core/scene_object.hpp>
@@ -82,8 +83,8 @@ void LogText(std::string text) {
 }
 
 bool LoadCoreModule() {
-  if (vm::Module::Get("Core") == nullptr) {
-    auto core_module = vm::Module::Register("Core");
+  if (Module::Get("Core") == nullptr) {
+    auto core_module = Module::Register("Core");
     assert(core_module->name() == "Core");
 
     auto boolean_type = core_module->RegisterType<bool>("Boolean");
@@ -96,7 +97,7 @@ bool LoadCoreModule() {
 
     // auto number_type = core_module->RegisterType<double>("Number");
     // assert(number_type != nullptr);
-    // assert(vm::Type::Get<double>() != nullptr);
+    // assert(Type::Get<double>() != nullptr);
 
     // core_module->RegisterFunction<&CreateNumber>("Create Number", {"value"}, {"result"});
     // core_module->RegisterFunction<&Negate>("Negate", {"value"}, {"result"});

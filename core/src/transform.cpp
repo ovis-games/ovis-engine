@@ -2,8 +2,8 @@
 #include <tuple>
 
 #include <ovis/utils/log.hpp>
+#include <ovis/core/module.hpp>
 #include <ovis/core/transform.hpp>
-#include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
 
@@ -182,11 +182,11 @@ void Transform::RegisterType(sol::table* module) {
   transform_type["world_position_to_local"] = &Transform::WorldPositionToLocal;
 }
 
-void Transform::RegisterType(vm::Module* module) {
+void Transform::RegisterType(Module* module) {
   auto transform_type = module->RegisterType<Transform, SceneObjectComponent>("Transform");
   // transform_type->RegisterProperty<&Transform::local_position, &Transform::SetLocalPosition>("Local Position");
   
-  // auto transform_constructor = module->RegisterFunction<vm::Constructor<Transform, SceneObject*>>("Create Transform", { "object" }, { "transform" });
+  // auto transform_constructor = module->RegisterFunction<Constructor<Transform, SceneObject*>>("Create Transform", { "object" }, { "transform" });
 }
 
 void Transform::CalculateMatrices() const {

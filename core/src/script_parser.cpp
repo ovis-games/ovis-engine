@@ -3,28 +3,122 @@
 
 namespace ovis {
 
-// ScriptFunctionParser::ScriptFunctionParser(const json& function_definition) {
-//   if (!function_definition.is_object()) {
-//     errors.push_back({
-//         .message = "Function definition must be an object",
-//         .path = "/",
-//     });
-//   } else {
-//     PushScope();
-//     inputs = ParseInputOutputDeclarations(function_definition["inputs"], "/inputs");
-//     for (const auto& input : IndexRange(inputs)) {
-//       debug_info.scope_info[0].variables.push_back({
-//           .declaration = *input,
-//           .position = input.index(),
-//       });
-//     }
-//     outputs = ParseInputOutputDeclarations(function_definition["outputs"], "/outputs");
-//     ParseActions(function_definition["actions"], "/actions");
-//     PopScope();
-//   }
-// }
+namespace {
 
-// std::vector<vm::Function::ValueDeclaration> ScriptFunctionParser::ParseInputOutputDeclarations(
+struct ScopeValue {
+  Type::Id type_id;
+  std::optional<std::string> variable_name;
+};
+
+struct Scope {
+  Scope* parent = nullptr;
+  std::vector<ScopeValue> values;
+};
+
+struct ScriptFunctionParser {
+  std::vector<Scope> scopes;
+  ParseScriptFunctionResult result;
+  ParseScriptErrors errors;
+
+  void Parse(const json& action_definiton);
+  void ParseActions(const json& action_definiton, std::string_view path);
+  void ParseAction(const json& action_definiton, std::string_view path);
+  void ParseFunctionCall(const json& action_definiton, std::string_view path);
+  void ParsePushValue(const json& value_definition, std::string_view path, Type::Id type);
+  void ParsePushVariable(const json& value_definition, std::string_view path, Type::Id type);
+  void ParsePushVariableReference(const json& value_definition, std::string_view path, Type::Id type);
+};
+
+}  // namespace
+
+Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(const json& function_definition) {
+  ScriptFunctionParser parser;
+  parser.Parse(function_definition);
+  if (parser.errors.size() > 0) {
+    return parser.errors;
+  } else {
+    return parser.result;
+  }
+}
+
+namespace {
+
+void ScriptFunctionParser::Parse(const json& json_definition) {
+  // TODO: check format
+  scopes.push_back({});
+  ParseActions(json_definition["actions"], "/actions");
+}
+
+void ScriptFunctionParser::ParseActions(const json& actions_definiton, std::string_view path) {
+  for (const auto& [index, action_definition] : actions_definiton.items()) {
+    assert(std::stoi(index) >= 0);
+    ParseAction(action_definition, fmt::format("{}/{}", path, index));
+  }
+}
+
+void ScriptFunctionParser::ParseAction(const json& action_definiton, std::string_view path) {
+  const std::string& id = action_definiton["id"];
+  if (id == "function_call") {
+    ParseFunctionCall(action_definiton, path);
+  } else {
+    errors.emplace_back(fmt::format("Invalid action id: {}", id), path);
+  }
+}
+
+void ScriptFunctionParser::ParseFunctionCall(const json& action_definiton, std::string_view path) {
+  assert(action_definiton["id"] == "function_call");
+  const auto function = Function::Deserialize(action_definiton["function"]);
+  if (!function) {
+    errors.emplace_back(fmt::format("Unknown function: {}", action_definiton["function"].dump(), path));
+    return;
+  }
+  
+  for (const auto& input : function->inputs()) {
+  }
+}
+
+void ScriptFunctionParser::ParsePushValue(const json& value_definition, std::string_view path, Type::Id type) {
+  if (value_definition.is_string()) {
+    if (type == Type::GetId<std::string>()) {
+      errors.emplace_back("Parsing constant Core.String not implemented yet", path);
+    } else {
+      const auto requested_type = Type::Get(type);
+      errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->full_reference() : "Unknown", "Core.String"));
+    }
+  } else if (value_definition.is_number()) {
+    if (type == Type::GetId<double>()) {
+      errors.emplace_back("Parsing constant Core.Number not implemented yet", path);
+    } else {
+      const auto requested_type = Type::Get(type);
+      errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->full_reference() : "Unknown", "Core.Number"));
+    }
+  } else if (value_definition.is_boolean()) {
+    if (type == Type::GetId<bool>()) {
+      errors.emplace_back("Parsing constant Core.Number not implemented yet", path);
+    } else {
+      const auto requested_type = Type::Get(type);
+      errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->full_reference() : "Unknown", "Core.Boolean"));
+    }
+  } else if (value_definition.is_object()) {
+    const std::string& id = value_definition["id"];
+    if (id == "variable") {
+      ParsePushVariable(value_definition, path, type);
+    } else {
+      errors.emplace_back("Invalid value definition", path);
+    }
+  } else {
+    errors.emplace_back("Invalid value definition", path);
+  }
+}
+
+void ScriptFunctionParser::ParsePushVariable(const json& value_definition, std::string_view path, Type::Id type) {
+  assert(value_definition["id"] == "variable");
+}
+
+}  // namespace
+
+
+// std::vector<Function::ValueDeclaration> ScriptFunctionParser::ParseInputOutputDeclarations(
 //     const json& value_declarations, std::string path) {
 //   if (!value_declarations.is_array()) {
 //     errors.push_back({
@@ -33,7 +127,7 @@ namespace ovis {
 //     });
 //     return {};
 //   } else {
-//     std::vector<vm::Function::ValueDeclaration> declarations;
+//     std::vector<Function::ValueDeclaration> declarations;
 //     for (const auto& declaration : value_declarations) {
 //       const auto parsed_declaration = ParseInputOutputDeclaration(declaration, path);
 //       if (parsed_declaration.has_value()) {
@@ -44,7 +138,7 @@ namespace ovis {
 //   }
 // }
 
-// std::optional<vm::Function::ValueDeclaration> ScriptFunctionParser::ParseInputOutputDeclaration(
+// std::optional<Function::ValueDeclaration> ScriptFunctionParser::ParseInputOutputDeclaration(
 //     const json& value_declaration, std::string path) {
 //   if (!value_declaration.is_object()) {
 //     errors.push_back({
@@ -57,9 +151,9 @@ namespace ovis {
 //     const std::string type = value_declaration["type"];
 //     const std::string name = value_declaration["name"];
 
-//     return vm::Function::ValueDeclaration {
+//     return Function::ValueDeclaration {
 //       .name = name,
-//       .type = vm::Module::Get(module)->GetType(type),
+//       .type = Module::Get(module)->GetType(type),
 //     };
 //   }
 // }
@@ -141,12 +235,12 @@ namespace ovis {
 //         .message = fmt::format("Function key 'module' must be of type string."),
 //         .path = path,
 //     });
-//   } else if (std::shared_ptr<vm::Module> module = vm::Module::Get(static_cast<std::string>(*function_module)); module == nullptr) {
+//   } else if (std::shared_ptr<Module> module = Module::Get(static_cast<std::string>(*function_module)); module == nullptr) {
 //     errors.push_back({
 //         .message = fmt::format("Module {} not found.", *function_module),
 //         .path = path,
 //     });
-//   } else if (std::shared_ptr<vm::Function> function_reflection = module->GetFunction(static_cast<std::string>(*function_name)); function_reflection == nullptr) {
+//   } else if (std::shared_ptr<Function> function_reflection = module->GetFunction(static_cast<std::string>(*function_name)); function_reflection == nullptr) {
 //     errors.push_back({
 //         .message = fmt::format("Function {} not found in module {}.", *function_name, *function_module),
 //         .path = path,
@@ -198,7 +292,7 @@ namespace ovis {
 //       }
 //     }
 
-//     instructions.push_back(vm::instructions::PushStackFrame {});
+//     instructions.push_back(instructions::PushStackFrame {});
 //     debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
 //       .action = path,
@@ -215,7 +309,7 @@ namespace ovis {
 //       }
 //     }
 
-//     instructions.push_back(vm::instructions::NativeFunctionCall {
+//     instructions.push_back(instructions::NativeFunctionCall {
 //         .function_pointer = function_reflection->pointer(),
 //     });
 //     debug_info.instruction_info.push_back({
@@ -227,7 +321,7 @@ namespace ovis {
 //     for (auto it = output_positions.rbegin(); it != output_positions.rend(); ++it) {
 //       const auto& output_position = *it;
 //       if (output_position.has_value()) {
-//         instructions.push_back(vm::instructions::Assign {
+//         instructions.push_back(instructions::Assign {
 //             .position = *output_position,
 //             .stack_frame_offset = 1,
 //         });
@@ -236,7 +330,7 @@ namespace ovis {
 //           .action = path,
 //         });
 //       } else {
-//         instructions.push_back(vm::instructions::Pop {
+//         instructions.push_back(instructions::Pop {
 //             .count = 1,
 //         });
 //         debug_info.instruction_info.push_back({
@@ -245,7 +339,7 @@ namespace ovis {
 //         });
 //       }
 //     }
-//     instructions.push_back(vm::instructions::PopStackFrame {});
+//     instructions.push_back(instructions::PopStackFrame {});
 //     debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
 //       .action = path,
@@ -266,10 +360,10 @@ namespace ovis {
 //         .path = path,
 //     });
 //   } else {
-//     ParsePush(*condition, path, vm::Type::Get<bool>());
+//     ParsePush(*condition, path, Type::Get<bool>());
 
 //     const std::size_t instruction_count_before = instructions.size();
-//     instructions.push_back(vm::instructions::JumpIfFalse{});
+//     instructions.push_back(instructions::JumpIfFalse{});
 //     debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
 //       .action = path,
@@ -278,7 +372,7 @@ namespace ovis {
 //     const std::size_t instruction_count_after = instructions.size();
 
 //     assert(instruction_count_after >= instruction_count_before);
-//     std::get<vm::instructions::JumpIfFalse>(instructions[instruction_count_before]).instruction_offset =
+//     std::get<instructions::JumpIfFalse>(instructions[instruction_count_before]).instruction_offset =
 //         instruction_count_after - instruction_count_before;
 //   }
 // }
@@ -297,16 +391,16 @@ namespace ovis {
 //     });
 //   } else {
 //     const std::ptrdiff_t instruction_count_before_push = instructions.size();
-//     ParsePush(*condition, path, vm::Type::Get<bool>());
+//     ParsePush(*condition, path, Type::Get<bool>());
 //     const std::ptrdiff_t instruction_count_after_push = instructions.size();
 
-//     instructions.push_back(vm::instructions::JumpIfFalse{});
+//     instructions.push_back(instructions::JumpIfFalse{});
 //     debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
 //       .action = path,
 //     });
 //     ParseActions(*actions, fmt::format("{}/actions", path));
-//     instructions.push_back(vm::instructions::Jump {
+//     instructions.push_back(instructions::Jump {
 //         .instruction_offset = instruction_count_before_push - static_cast<std::ptrdiff_t>(instructions.size()),
 //     });
 //     debug_info.instruction_info.push_back({
@@ -314,7 +408,7 @@ namespace ovis {
 //       .action = path,
 //     });
 
-//     std::get<vm::instructions::JumpIfFalse>(instructions[instruction_count_after_push]).instruction_offset =
+//     std::get<instructions::JumpIfFalse>(instructions[instruction_count_after_push]).instruction_offset =
 //         instructions.size() - instruction_count_after_push;
 //   }
 // }
@@ -341,7 +435,7 @@ namespace ovis {
 //         ParsePush(*returned_output, path, output.type.lock());
 //       }
 //     }
-//     instructions.push_back(vm::instructions::Return {});
+//     instructions.push_back(instructions::Return {});
 //     debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
 //       .action = path,
@@ -350,8 +444,8 @@ namespace ovis {
 // }
 
 // void ScriptFunctionParser::PushNone(const std::string& path) {
-//   instructions.push_back(vm::instructions::PushConstant {
-//       .value = vm::Value::None()
+//   instructions.push_back(instructions::PushConstant {
+//       .value = Value::None()
 //   });
 //   debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
@@ -359,12 +453,12 @@ namespace ovis {
 //   });
 // }
 
-// void ScriptFunctionParser::ParsePush(const json& value_definition, const std::string& path, std::shared_ptr<vm::Type> required_type, std::size_t stack_frame_offset) {
+// void ScriptFunctionParser::ParsePush(const json& value_definition, const std::string& path, std::shared_ptr<Type> required_type, std::size_t stack_frame_offset) {
 //   auto push = [&](auto value) {
-//     const auto input_type = vm::Type::Get<decltype(value)>();
+//     const auto input_type = Type::Get<decltype(value)>();
 //     if (!required_type || required_type == input_type) {
-//       instructions.push_back(vm::instructions::PushConstant{
-//           .value = vm::Value::Create(value),
+//       instructions.push_back(instructions::PushConstant{
+//           .value = Value::Create(value),
 //       });
 //       debug_info.instruction_info.push_back({
 //           .scope = current_scope_index,
@@ -397,7 +491,7 @@ namespace ovis {
 //             .path = path,
 //         });
 //       } else {
-//         instructions.push_back(vm::instructions::PushStackValue{
+//         instructions.push_back(instructions::PushStackValue{
 //             .position = local_variable->position,
 //             .stack_frame_offset = stack_frame_offset,
 //         });
@@ -435,7 +529,7 @@ namespace ovis {
 //   }
 // }
 
-// std::optional<std::size_t> ScriptFunctionParser::GetOutputVariablePosition(std::string_view name, std::shared_ptr<vm::Type> type, const std::string& path) {
+// std::optional<std::size_t> ScriptFunctionParser::GetOutputVariablePosition(std::string_view name, std::shared_ptr<Type> type, const std::string& path) {
 //   const auto local_variable = GetLocalVariable(name);
 //   if (local_variable.has_value()) {
 //     if (local_variable->declaration.type.lock() == type) {

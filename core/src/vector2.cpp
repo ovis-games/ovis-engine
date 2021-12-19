@@ -1,6 +1,5 @@
+#include <ovis/core/module.hpp>
 #include <ovis/core/vector.hpp>
-
-#include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
 
@@ -288,7 +287,7 @@ std::string VectorToString(Vector2 v) {
   return fmt::format("{}", v);
 }
 
-void Vector2::RegisterType(vm::Module* module) {
+void Vector2::RegisterType(Module* module) {
   // vector2_type["x"] = &Vector2::x;
   // vector2_type["y"] = &Vector2::y;
   // vector2_type["z"] = &Vector2::z;
@@ -304,19 +303,19 @@ void Vector2::RegisterType(vm::Module* module) {
   module->RegisterType<Vector2>("Vector2");
   // module->RegisterConstructor<Vector2, float, float>("Create Vector2", {"x", "y"}, "Vector2");
   // vector2_type[sol::meta_function::equal_to] = static_cast<bool (*)(const Vector2&, const Vector2&)>(ovis::operator==);
-  module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator+)>("vector2_add", {"first vector", "second vector"}, {"vector"});
-  module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&)>(ovis::operator-)>("vector2_negate", {"vector"}, {"vector"});
-  module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator-)>("vector2_subtract", {"first vector", "second vector"}, {"vector"});
-  module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator*)>("vector2_multiply", {"first vector", "second vector"}, {"vector"});
-  module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, float)>(ovis::operator*)>("vector2_multiply_scalar", {"vector", "scalar"}, {"vector"});
-  module->RegisterFunction<&VectorToString>("vector2_to_string", {"vector"}, {"string"});
-  module->RegisterFunction<&ovis::min<Vector2>>("vector2_min", {"first vector", "second vector"}, {"minimum"});
-  module->RegisterFunction<&ovis::max<Vector2>>("vector2_max", {"first vector", "second vector"}, {"maximum"});
-  module->RegisterFunction<&ovis::clamp<Vector2>>("vector2_clamp", {"vector", "min", "max"}, {"clamped vector"});
-  module->RegisterFunction<&SquaredLength<Vector2>>("vector2_squared_length", {"vector"}, {"squared length"});
-  module->RegisterFunction<&Length<Vector2>>("vector2_length", {"vector"}, {"length"});
-  module->RegisterFunction<&Normalize<Vector2>>("vector2_normalize", {"vector"}, {"normalized vector"});
-  module->RegisterFunction<&Dot<Vector2>>("vector2_dot", {"first vector", "second vector"}, {"dot product"});
+  // module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator+)>("vector2_add", {"first vector", "second vector"}, {"vector"});
+  // module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&)>(ovis::operator-)>("vector2_negate", {"vector"}, {"vector"});
+  // module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator-)>("vector2_subtract", {"first vector", "second vector"}, {"vector"});
+  // module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator*)>("vector2_multiply", {"first vector", "second vector"}, {"vector"});
+  // module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, float)>(ovis::operator*)>("vector2_multiply_scalar", {"vector", "scalar"}, {"vector"});
+  // module->RegisterFunction<&VectorToString>("vector2_to_string", {"vector"}, {"string"});
+  // module->RegisterFunction<&ovis::min<Vector2>>("vector2_min", {"first vector", "second vector"}, {"minimum"});
+  // module->RegisterFunction<&ovis::max<Vector2>>("vector2_max", {"first vector", "second vector"}, {"maximum"});
+  // module->RegisterFunction<&ovis::clamp<Vector2>>("vector2_clamp", {"vector", "min", "max"}, {"clamped vector"});
+  // module->RegisterFunction<&SquaredLength<Vector2>>("vector2_squared_length", {"vector"}, {"squared length"});
+  // module->RegisterFunction<&Length<Vector2>>("vector2_length", {"vector"}, {"length"});
+  // module->RegisterFunction<&Normalize<Vector2>>("vector2_normalize", {"vector"}, {"normalized vector"});
+  // module->RegisterFunction<&Dot<Vector2>>("vector2_dot", {"first vector", "second vector"}, {"dot product"});
 }
 
 }  // namespace ovis

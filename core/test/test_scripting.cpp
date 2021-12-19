@@ -1,14 +1,14 @@
-// #include <iostream>
+#include <iostream>
 
-// #include <catch2/catch.hpp>
+#include <catch2/catch.hpp>
 
-// #include <ovis/utils/log.hpp>
-// #include <ovis/core/core_module.hpp>
-// #include <ovis/core/script_function.hpp>
-// #include <ovis/core/script_parser.hpp>
+#include <ovis/utils/log.hpp>
+#include <ovis/core/core_module.hpp>
+#include <ovis/core/script_function.hpp>
+#include <ovis/core/script_parser.hpp>
 
-// using namespace ovis;
-// using namespace ovis::vm;
+using namespace ovis;
+using namespace ovis::vm;
 
 // const ovis::json add_10_and_20 = ovis::json::parse(R"(
 //     {
@@ -89,8 +89,8 @@
 //   REQUIRE(parser.outputs[0].type.lock() == Type::Get<double>());
 
 //   REQUIRE(parser.instructions.size() == 2);
-//   REQUIRE(std::holds_alternative<instructions::PushConstant>(parser.instructions[0]));
-//   REQUIRE(std::holds_alternative<instructions::Return>(parser.instructions[1]));
+//   // REQUIRE(std::holds_alternative<instructions::PushConstant>(parser.instructions[0]));
+//   // REQUIRE(std::holds_alternative<instructions::Return>(parser.instructions[1]));
 
 //   ScriptFunction f(parser);
 //   const double result = f.Call<double>();

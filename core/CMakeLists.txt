@@ -28,6 +28,11 @@ add_library(
   include/ovis/core/script_function.hpp src/script_function.cpp
   include/ovis/core/script_parser.hpp src/script_parser.cpp
   include/ovis/core/virtual_machine.hpp src/virtual_machine.cpp
+  include/ovis/core/type.hpp src/type.cpp
+  include/ovis/core/function.hpp src/function.cpp
+  include/ovis/core/module.hpp src/module.cpp
+  include/ovis/core/value.hpp src/value.cpp
+  include/ovis/core/value_storage.hpp src/value_storage.cpp
 )
 add_library(ovis::core ALIAS ovis-core)
 
@@ -72,6 +77,7 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/virtual_machine.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_animations.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_function_parser.cpp
   )
 
   target_add_ldoc_test(

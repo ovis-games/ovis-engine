@@ -116,7 +116,7 @@ class Transform : public SceneObjectComponent {
   const json* GetSchema() const override;
 
   static void RegisterType(sol::table* module);
-  static void RegisterType(vm::Module* module);
+  static void RegisterType(Module* module);
 
  private:
   Vector3 position_ = Vector3::Zero();

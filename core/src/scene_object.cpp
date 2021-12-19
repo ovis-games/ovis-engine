@@ -8,6 +8,7 @@
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_object_animation.hpp>
+#include <ovis/core/type.hpp>
 
 namespace ovis {
 
@@ -93,19 +94,19 @@ bool SceneObject::ContainsChildObject(std::string_view object_name) {
   return FindChild(object_name) != children_.end();
 }
 
-// vm::Value SceneObject::AddComponent(const std::shared_ptr<vm::Type>& type) {
+// Value SceneObject::AddComponent(const std::shared_ptr<Type>& type) {
 //   if (!type) {
 //     LogE("Invalid object component");
-//     return vm::Value::None();
+//     return Value::None();
 //   }
 //   if (!type->IsDerivedFrom<SceneObjectComponent>()) {
 //     LogE("{} does not derived from SceneObjectComponent", type->full_reference());
-//     return vm::Value::None();
+//     return Value::None();
 //   }
 
 //   if (HasComponent(type)) {
 //     LogE("Object '{}' already has the component '{}'.", path(), type->name());
-//     return vm::Value::None();
+//     return Value::None();
 //   } else {
 //     auto component = SceneObjectComponent::Create(std::string(type->full_reference()), this);
 //     if (component.has_value()) {
@@ -113,33 +114,33 @@ bool SceneObject::ContainsChildObject(std::string_view object_name) {
 //         .type = type,
 //         .pointer = std::move(*component),
 //       });
-//       return vm::Value::CreateView(components_.back().pointer.get(), type);
+//       return Value::CreateView(components_.back().pointer.get(), type);
 //     } else {
 //       LogE("Failed to construct component");
-//       return vm::Value::None();
+//       return Value::None();
 //     }
 //   }
 // }
 
-// vm::Value SceneObject::GetComponent(const std::shared_ptr<vm::Type>& type) {
+// Value SceneObject::GetComponent(const std::shared_ptr<Type>& type) {
 //   for (const auto& component : components_) {
 //     if (component.type.lock() == type) {
-//       return vm::Value::CreateView(component.pointer.get(), type);
+//       return Value::CreateView(component.pointer.get(), type);
 //     }
 //   }
-//   return vm::Value::None();
+//   return Value::None();
 // }
 
-// vm::Value SceneObject::GetComponent(const std::shared_ptr<vm::Type>& type) const {
+// Value SceneObject::GetComponent(const std::shared_ptr<Type>& type) const {
 //   for (const auto& component : components_) {
 //     if (component.type.lock() == type) {
-//       return vm::Value::CreateView(component.pointer.get(), type);
+//       return Value::CreateView(component.pointer.get(), type);
 //     }
 //   }
-//   return vm::Value::None();
+//   return Value::None();
 // }
 
-// bool SceneObject::HasComponent(const std::shared_ptr<vm::Type>& type) const {
+// bool SceneObject::HasComponent(const std::shared_ptr<Type>& type) const {
 //   for (const auto& component : components_) {
 //     if (component.type.lock() == type) {
 //       return true;
@@ -148,7 +149,7 @@ bool SceneObject::ContainsChildObject(std::string_view object_name) {
 //   return false;
 // }
 
-// bool SceneObject::RemoveComponent(const std::shared_ptr<vm::Type>& type) {
+// bool SceneObject::RemoveComponent(const std::shared_ptr<Type>& type) {
 //   const auto erased_count = std::erase_if(components_, [type](const auto& component) {
 //       return component.type.lock() == type;
 //   });
@@ -209,8 +210,8 @@ bool SceneObject::Deserialize(const json& serialized_object) {
 //         ClearComponents();
 //         return false;
 //       }
-//       const auto type = vm::Type::Deserialize(component_id);
-//       const vm::Value component = AddComponent(type);
+//       const auto type = Type::Deserialize(component_id);
+//       const Value component = AddComponent(type);
 //       if (!component.Get<SceneObjectComponent*>()->Deserialize(component_json)) {
 //         LogE("Failed to deserialize scene object, could not deserialize `{}`", component_id);
 //         ClearComponents();

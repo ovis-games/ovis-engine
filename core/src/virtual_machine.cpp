@@ -1,41 +1,46 @@
+#include <ovis/core/function.hpp>
+#include <ovis/core/type.hpp>
 #include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
-namespace vm {
 
-std::vector<Type::Registration> Type::registered_types = {
-    {.vm_type_id = Type::NONE_ID, .native_type_id = TypeOf<void>, .type = nullptr}};
-std::vector<std::shared_ptr<Module>> Module::modules;
 ExecutionContext ExecutionContext::global;
 
-Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, std::span<const ValueStorage> constants) {
+ExecutionContext::ExecutionContext(std::size_t register_count) {
+  registers_ = std::make_unique<ValueStorage[]>(register_count);
+  register_count_ = register_count;
+  used_register_count_ = 0;
+  // stack_frames_.push({ .register_offset = 0 });
+}
+
+Result<> ExecutionContext::Execute(std::span<const vm::Instruction> instructions, std::span<const ValueStorage> constants) {
   std::size_t program_counter = 0;
   while (program_counter < instructions.size()) {
-    Instruction instruction = instructions[program_counter];
-    switch (static_cast<OpCode>(instruction.opcode)) {
-      case OpCode::EXIT: {
+    vm::Instruction instruction = instructions[program_counter];
+    switch (static_cast<vm::OpCode>(instruction.opcode)) {
+      case vm::OpCode::EXIT: {
         return Success;
       }
 
-      case OpCode::PUSH: {
+      case vm::OpCode::PUSH: {
         PushValues(instruction.push_pop.count);
         ++program_counter;
         break;
       }
 
-      case OpCode::POP: {
+      case vm::OpCode::POP: {
         PopValues(instruction.push_pop.count);
         ++program_counter;
         break;
       }
 
-      case OpCode::POP_TRIVIAL: {
+      case vm::OpCode::POP_TRIVIAL: {
         PopTrivialValues(instruction.push_pop.count);
         ++program_counter;
         break;
       }
 
-      case OpCode::COPY_TRIVIAL_VALUE: {
+      case vm::OpCode::COPY_TRIVIAL_VALUE: {
         const std::size_t destination_index = instruction.copy_trivial_value.destination;
         const std::size_t source_index = instruction.copy_trivial_value.source;
         // if (destination_index >= used_register_count_) {
@@ -49,7 +54,7 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
         break;
       }
 
-      case OpCode::PUSH_TRIVIAL_CONSTANT: {
+      case vm::OpCode::PUSH_TRIVIAL_CONSTANT: {
         const std::size_t constant_index = instruction.push_trivial_constant.constant;
         // if (constant_index < constants.size()) {
           PushValue();
@@ -61,7 +66,7 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
         break;
       }
 
-      case OpCode::CALL_NATIVE_FUNCTION: {
+      case vm::OpCode::CALL_NATIVE_FUNCTION: {
         const auto function_pointer = top().as<NativeFunction*>();
         PopTrivialValue();
         function_pointer(this);
@@ -69,26 +74,26 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
         break;
       }
 
-      case OpCode::JUMP: {
+      case vm::OpCode::JUMP: {
         program_counter += instruction.jump_data.offset;
         break;
       }
 
-      case OpCode::JUMP_IF_TRUE: {
+      case vm::OpCode::JUMP_IF_TRUE: {
         const auto condition = top().as<bool>();
         PopTrivialValue();
         program_counter += condition ? instruction.jump_data.offset : 1;
         break;
       }
 
-      case OpCode::JUMP_IF_FALSE: {
+      case vm::OpCode::JUMP_IF_FALSE: {
         const auto condition = top().as<bool>();
         PopTrivialValue();
         program_counter += condition ? 1 : instruction.jump_data.offset;
         break;
       }
 
-      case OpCode::SUBTRACT_NUMBERS: {
+      case vm::OpCode::SUBTRACT_NUMBERS: {
         assert(instruction.number_operation_data.result < used_register_count_);
         assert(instruction.number_operation_data.first < used_register_count_);
         assert(instruction.number_operation_data.second < used_register_count_);
@@ -99,7 +104,7 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
         break;
       }
 
-      case OpCode::MULTIPLY_NUMBERS: {
+      case vm::OpCode::MULTIPLY_NUMBERS: {
         assert(instruction.number_operation_data.result < used_register_count_);
         assert(instruction.number_operation_data.first < used_register_count_);
         assert(instruction.number_operation_data.second < used_register_count_);
@@ -110,7 +115,7 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
         break;
       }
 
-      case OpCode::IS_NUMBER_GREATER: {
+      case vm::OpCode::IS_NUMBER_GREATER: {
         assert(instruction.number_operation_data.result < used_register_count_);
         assert(instruction.number_operation_data.first < used_register_count_);
         assert(instruction.number_operation_data.second < used_register_count_);
@@ -129,6 +134,5 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
   return Success;
 }
 
-}  // namespace vm
 }  // namespace ovis
 

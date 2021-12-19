@@ -6,12 +6,12 @@ namespace ovis {
 
 namespace {
 
-SceneObjectAnimationKeyframe ParseKeyframe(const std::shared_ptr<vm::Type> type, const json& data) {
+SceneObjectAnimationKeyframe ParseKeyframe(const std::shared_ptr<Type> type, const json& data) {
   assert(type);
   return {
       .frame = data.at("frame"),
       // .value = type->CreateValue(data.at("value")),
-      .value{}
+      // .value{}
   };
 }
 
@@ -19,18 +19,18 @@ SceneObjectAnimationChannel ParseChannel(const json& data) {
   SceneObjectAnimationChannel channel;
   // channel.object_path = data.at("object");
 
-  // const auto component_type = vm::Type::Deserialize(data.at("component"));
+  // const auto component_type = Type::Deserialize(data.at("component"));
   // channel.component_type = component_type;
   // assert(component_type != nullptr);
   // channel.property = data.at("property");
   // auto property = component_type->GetProperty(channel.property);
   // assert(property != nullptr);
-  // const auto interpolation_function = vm::Function::Deserialize(data.at("interpolationFunction"));
+  // const auto interpolation_function = Function::Deserialize(data.at("interpolationFunction"));
   // channel.interpolation_function = interpolation_function;
   // assert(interpolation_function != nullptr);
   // channel.keyframes.reserve(data.at("keyframes").size());
 
-  // const auto property_type = vm::Type::Get(property->type_id);
+  // const auto property_type = Type::Get(property->type_id);
   // for (const auto& keyframe : data.at("keyframes")) {
   //   channel.keyframes.push_back(ParseKeyframe(property_type, keyframe));
   // }
@@ -53,7 +53,7 @@ void SceneObjectAnimation::Animate(float frame, SceneObject* object) {
   //   SceneObject* sub_object = object;  // TODO: change this
   //   assert(sub_object);
 
-  //   vm::Value component = sub_object->GetComponent(channel.component_type.lock());
+  //   Value component = sub_object->GetComponent(channel.component_type.lock());
   //   if (channel.keyframes.size() == 1) {
   //     component.SetProperty(channel.property, channel.keyframes[0].value);
   //   } else if (channel.keyframes.size() > 1) {
@@ -66,7 +66,7 @@ void SceneObjectAnimation::Animate(float frame, SceneObject* object) {
 
   //     const float t = (frame - value_a_it->frame) / (value_b_it->frame - value_a_it->frame);
   //     const auto interpolation_function = channel.interpolation_function.lock();
-  //     const vm::Value result = interpolation_function->Call<vm::Value>(value_a_it->value, value_b_it->value, t);
+  //     const Value result = interpolation_function->Call<Value>(value_a_it->value, value_b_it->value, t);
   //     component.SetProperty(channel.property, result);
   //   }
   // }

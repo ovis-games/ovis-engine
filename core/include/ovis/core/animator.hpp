@@ -7,9 +7,7 @@
 
 namespace ovis {
 
-namespace vm {
 class Module;
-}
 
 class Animator : public SceneObjectComponent {
   OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
@@ -29,7 +27,7 @@ class Animator : public SceneObjectComponent {
   json Serialize() const override;
   bool Deserialize(const json& data) override;
 
-  static void RegisterType(vm::Module* module);
+  static void RegisterType(Module* module);
 
  private:
   struct PlayInfo {

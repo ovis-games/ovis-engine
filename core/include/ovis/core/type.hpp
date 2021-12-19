@@ -1,12 +1,129 @@
-namespace ovis {
-namespace vm {
+#pragma once
 
-inline Type::Type(std::shared_ptr<Module> module, std::string_view name)
-    : module_(module),
-      name_(name),
-      full_reference_(fmt::format("{}.{}", module->name(), name)),
-      serialize_function_(nullptr),
-      deserialize_function_(nullptr) {}
+#include <memory>
+#include <vector>
+
+#include <ovis/utils/json.hpp>
+#include <ovis/utils/result.hpp>
+#include <ovis/utils/type_id.hpp>
+#include <ovis/utils/versioned_index.hpp>
+#include <ovis/core/virtual_machine.hpp>
+
+namespace ovis {
+
+class Module;
+
+class Type : public std::enable_shared_from_this<Type> {
+  friend class Value;
+  friend class Module;
+
+ public:
+  using Id = VersionedIndex<uint32_t, 20>;
+  static constexpr Id NONE_ID = Id(0);
+
+  // using DefaultConstructFunction = Result<>(void* value);
+  // using DestroyFunction = Result<>(void* value);
+  // using CopyFunction = Result<>(void* destination, const void* source);
+
+  // using ConversionFunction = Value(*)(Value& value);
+  // using SerializeFunction = json(*)(const Value& value);
+  // using DeserializeFunction = Value(*)(const json& value);
+
+  struct Property {
+    // using GetFunction = std::add_pointer_t<Value(const Value& object)>;
+    // using SetFunction = std::add_pointer_t<void(Value* object, const Value& property_value)>;
+
+    Id type_id;
+    std::string name;
+    // GetFunction getter;
+    // SetFunction setter;
+    std::uintptr_t offset;
+  };
+
+  std::string_view name() const { return name_; }
+  std::string_view full_reference() const { return full_reference_; }
+  std::weak_ptr<Type> parent() const { return parent_; }
+  std::weak_ptr<Module> module() const { return module_; }
+
+  // bool IsDerivedFrom(std::shared_ptr<Type> type) const;
+  // template <typename T> bool IsDerivedFrom() const;
+
+  // void RegisterConstructorFunction(std::shared_ptr<Function> function);
+  // template <typename... Args> Value Construct(Args&&... args) const;
+
+  // void SetSerializeFunction(SerializeFunction function) { serialize_function_ = function; }
+  // SerializeFunction serialize_function() const { return serialize_function_; }
+
+  // void SetDeserializeFunction(DeserializeFunction function) { deserialize_function_ = function; }
+  // DeserializeFunction deserialize_function() const { return deserialize_function_; }
+
+  // Value CreateValue(const json& data) const;
+
+  // void RegisterProperty(std::string_view name, Id type_id, Property::GetFunction getter,
+  //                       Property::SetFunction setter = nullptr);
+  template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
+  void RegisterProperty(std::string_view);
+
+  // template <auto GETTER>
+  // void RegisterProperty(std::string_view);
+
+  template <auto GETTER, auto SETTER>
+  void RegisterProperty(std::string_view);
+
+  // const Property* GetProperty(std::string_view name) const;
+  // std::span<const Property> properties() const { return properties_; }
+
+  static Id Register(std::shared_ptr<Type> type, TypeId native_type_id = TypeOf<void>);
+  static Result<> Deregister(Id id);
+  template <typename T> static std::shared_ptr<Type> Get();
+  template <typename T> static std::optional<Id> GetId();
+  static std::shared_ptr<Type> Get(Id id);
+
+  static std::shared_ptr<Type> Deserialize(const json& data);
+
+  // json Serialize() const;
+
+ private:
+  Type(std::shared_ptr<Module> module, std::string_view name);
+  Type(std::shared_ptr<Module> module, std::string_view name, std::shared_ptr<Type> parent, NativeFunction from_base, NativeFunction to_base);
+  template <typename T, typename ParentType> static std::shared_ptr<Type> Create(std::shared_ptr<Module> module, std::string_view name);
+
+  std::vector<Property> properties_;
+
+  std::string name_;
+  std::string full_reference_;
+  std::weak_ptr<Type> parent_;
+  std::weak_ptr<Module> module_;
+
+  std::size_t alignment_in_bytes_;
+  std::size_t size_in_bytes_;
+  // NativeFunction* default_construct_;
+  // NativeFunction* copy_construct_;
+  // NativeFunction* assign_;
+  // NativeFunction* destruct_;
+
+  // ConversionFunction from_base_;
+  // ConversionFunction to_base_;
+  // SerializeFunction serialize_function_;
+  // DeserializeFunction deserialize_function_;
+  // std::vector<std::weak_ptr<Function>> constructor_functions_;
+
+  struct Registration {
+    Id vm_type_id;
+    TypeId native_type_id;
+    std::shared_ptr<Type> type;
+  };
+
+  // static std::vector<std::pair<TypeId, std::weak_ptr<Type>>> type_associations;
+  static std::vector<Registration> registered_types;
+};
+
+}  // namespace ovis
+
+// Inline implementation
+#include <ovis/utils/reflection.hpp>
+
+namespace ovis {
 
 // inline Type::Type(std::shared_ptr<Module> module, std::string_view name, std::shared_ptr<Type> parent,
 //                   ConversionFunction to_base, ConversionFunction from_base)
@@ -143,45 +260,6 @@ inline std::shared_ptr<Type> Type::Get(Id id) {
   return registration.vm_type_id == id ? registration.type : nullptr;
 }
 
-inline std::shared_ptr<Type> Type::Deserialize(const json& data) {
-  std::string_view module_name;
-  std::string_view type_name;
-
-  if (data.is_string()) {
-    std::string_view type_string = data.get_ref<const std::string&>();
-    auto period_position = type_string.find('.');
-    if (period_position == std::string_view::npos) {
-      return nullptr;
-    }
-    module_name = type_string.substr(0, period_position);
-    type_name = type_string.substr(period_position + 1);
-  } else if (data.is_object()) {
-    if (!data.contains("module")) {
-      return nullptr;
-    }
-    const auto& module_json = data.at("module");
-    if (!module_json.is_string()) {
-      return nullptr;
-    }
-    module_name = module_json.get_ref<const std::string&>();
-    if (!data.contains("name")) {
-      return nullptr;
-    }
-    const auto& name_json = data.at("name");
-    if (!name_json.is_string()) {
-      return nullptr;
-    }
-    type_name = name_json.get_ref<const std::string&>();
-  } else {
-    return nullptr;
-  }
-
-  const std::shared_ptr<vm::Module> module = Module::Get(module_name);
-  if (module == nullptr) {
-    return nullptr;
-  }
-  return module->GetType(type_name);
-}
 
 // inline void Type::RegisterProperty(std::string_view name, Type::Id type_id, Property::GetFunction getter,
 //                                    Property::SetFunction setter) {
@@ -200,9 +278,9 @@ inline std::shared_ptr<Type> Type::Deserialize(const json& data) {
 
 // template <typename T, typename PropertyType, PropertyType T::*PROPERTY>
 // struct PropertyCallbacks<PROPERTY> {
-//   static Value PropertyGetter(const ovis::vm::Value& object) { return Value::Create(object.Get<T>().*PROPERTY); }
+//   static Value PropertyGetter(const ovis::Value& object) { return Value::Create(object.Get<T>().*PROPERTY); }
 
-//   static void PropertySetter(ovis::vm::Value* object, const ovis::vm::Value& property_value) {
+//   static void PropertySetter(ovis::Value* object, const ovis::Value& property_value) {
 //     assert(property_value.type_id() == Type::template GetId<PropertyType>());
 //     object->Get<T>().*PROPERTY = property_value.Get<PropertyType>();
 //   }
@@ -227,7 +305,7 @@ inline std::shared_ptr<Type> Type::Deserialize(const json& data) {
 //   static std::shared_ptr<Type> containing_type() { return Type::Get<ContainingType>(); }
 
 //   // template <FunctionPointerType GETTER>
-//   static Value Get(const ovis::vm::Value& object) { return Value::Create((object.Get<ContainingType>().*GETTER)()); }
+//   static Value Get(const ovis::Value& object) { return Value::Create((object.Get<ContainingType>().*GETTER)()); }
 // };
 
 // template <auto GETTER>
@@ -244,18 +322,26 @@ inline std::shared_ptr<Type> Type::Deserialize(const json& data) {
 //   static std::shared_ptr<Type> containing_type() { return Type::Get<ContainingType>(); }
 
 //   // template <FunctionPointerType GETTER>
-//   static void Set(ovis::vm::Value* object, const Value& property) {
+//   static void Set(ovis::Value* object, const Value& property) {
 //     return (object->Get<ContainingType>().*SETTER)(property.Get<PropertyType>());
 //   }
 // };
 
 // }  // namespace detail
 
-// template <auto PROPERTY>
-// requires std::is_member_pointer_v<decltype(PROPERTY)>
-// inline void Type::RegisterProperty(std::string_view name) {
-//   detail::PropertyCallbacks<PROPERTY>::Register(this, name);
-// }
+template <auto PROPERTY>
+requires std::is_member_pointer_v<decltype(PROPERTY)>
+inline void Type::RegisterProperty(std::string_view name) {
+  // TODO: add assert that the class type is the same as the current type
+  const auto member_type_id = Type::GetId<typename MemberPointer<PROPERTY>::MemberType>();
+  assert(member_type_id);
+
+  properties_.push_back({
+    .type_id = *member_type_id,
+    .name = std::string(name),
+    .offset = MemberPointer<PROPERTY>::offset,
+  });
+}
 
 // template <auto GETTER>
 // inline void Type::RegisterProperty(std::string_view name) {
@@ -308,5 +394,4 @@ inline std::shared_ptr<Type> Type::Deserialize(const json& data) {
 //   return type;
 // }
 
-}  // namespace vm
 }  // namespace ovis

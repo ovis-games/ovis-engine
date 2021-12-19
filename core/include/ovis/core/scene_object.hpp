@@ -55,23 +55,23 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   template <typename T>
   void ForEachChild(bool recursive, T&& functor);
 
-  vm::Value AddComponent(const std::shared_ptr<vm::Type>& type);
+  Value AddComponent(const std::shared_ptr<Type>& type);
   template <typename ComponentType> ComponentType* AddComponent();
 
-  vm::Value GetComponent(const std::shared_ptr<vm::Type>& type);
-  vm::Value GetComponent(const std::shared_ptr<vm::Type>& type) const;
+  Value GetComponent(const std::shared_ptr<Type>& type);
+  Value GetComponent(const std::shared_ptr<Type>& type) const;
   template <typename ComponentType> ComponentType* GetComponent();
   template <typename ComponentType> const ComponentType* GetComponent() const;
 
   // std::span<vm::Value> components() { return components_; }
   // std::span<const vm::Value> components() const { return components_; }
 
-  bool HasComponent(const std::shared_ptr<vm::Type>& type) const;
+  bool HasComponent(const std::shared_ptr<Type>& type) const;
   template <typename ComponentType> bool HasComponent() const;
 
   auto component_types() const { return TransformRange(components_, [](const auto& component) { return component.type; }); }
 
-  bool RemoveComponent(const std::shared_ptr<vm::Type>& type);
+  bool RemoveComponent(const std::shared_ptr<Type>& type);
   template <typename ComponentType> bool RemoveComponent();
   void ClearComponents();
 
@@ -93,7 +93,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   std::string name_;
   std::vector<safe_ptr<SceneObject>> children_;
   struct TypedComponent {
-    std::weak_ptr<vm::Type> type;
+    std::weak_ptr<Type> type;
     std::unique_ptr<SceneObjectComponent> pointer;
   };
   std::vector<TypedComponent> components_;

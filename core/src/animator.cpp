@@ -1,6 +1,6 @@
 #include <ovis/core/animator.hpp>
+#include <ovis/core/module.hpp>
 #include <ovis/core/scene_object.hpp>
-#include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
 
@@ -60,7 +60,7 @@ bool Animator::Deserialize(const json& data) {
   return true;
 }
 
-void Animator::RegisterType(vm::Module* module) {
+void Animator::RegisterType(Module* module) {
   auto animation_type = module->RegisterType<Animator, SceneObjectComponent>("Animator");
 }
 

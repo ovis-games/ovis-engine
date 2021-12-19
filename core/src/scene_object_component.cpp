@@ -1,7 +1,7 @@
 #include <ovis/utils/log.hpp>
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_object_component.hpp>
-#include <ovis/core/virtual_machine.hpp>
+#include <ovis/core/module.hpp>
 
 namespace ovis {
 
@@ -16,7 +16,7 @@ void SceneObjectComponent::RegisterType(sol::table* module) {
   scene_obect_component_type["object"] = sol::property(&SceneObjectComponent::scene_object);
 }
 
-void SceneObjectComponent::RegisterType(vm::Module* module) {
+void SceneObjectComponent::RegisterType(Module* module) {
   module->RegisterType<SceneObjectComponent>("Scene Object Component");
 }
 
