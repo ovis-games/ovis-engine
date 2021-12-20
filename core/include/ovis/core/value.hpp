@@ -11,13 +11,14 @@ namespace ovis {
 class Value {
  public:
   Value() : type_() {}
-  // template <typename T>
-  // Value(T&& value) : type_(Type::GetId<T>()), storage_(std::make_unique<ValueStorage>(std::forward<T>(value))) {}
+  template <typename T> requires(!std::is_same_v<Value, std::remove_cvref_t<T>>) Value(T&& value);
 
   Value(const Value& other);
   Value(Value&&);
   Value& operator=(const Value&);
   Value& operator=(Value&&);
+
+  template <typename T> T& as() { return storage_.as<T>(); }
 
  private:
   ValueStorage storage_;
@@ -26,6 +27,10 @@ class Value {
 
 // Implementation
 // Can be optimized: reusing allocated storage should also be refactored to avoid code duplication
+template <typename T> requires(!std::is_same_v<Value, std::remove_cvref_t<T>>)
+Value::Value(T&& value) : type_(Type::Get<std::remove_cvref_t<T>>()) {
+  storage_.reset(std::forward<T>(value));
+}
 
 inline Value::Value(const Value& other) : type_(other.type_) {
   if (!type_) {

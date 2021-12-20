@@ -133,7 +133,7 @@ inline void ValueStorage::reset(T&& value) {
   } else {
     new (data()) StoredType(std::forward<T>(value));
   }
-  if constexpr (!std::is_trivially_destructible_v<T>) {
+  if constexpr (!std::is_trivially_destructible_v<StoredType>) {
     SetDestructFunction(&detail::Destruct<StoredType>);
   }
 #ifndef NDEBUG
