@@ -4,7 +4,8 @@
 namespace ovis {
 
 Function::Function(std::string_view name, NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
-                   std::vector<ValueDeclaration> outputs) {}
+                   std::vector<ValueDeclaration> outputs)
+    : name_(name), function_pointer_(function_pointer), inputs_(inputs), outputs_(outputs) {}
 
 std::shared_ptr<Function> Function::MakeNative(NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
                                                std::vector<ValueDeclaration> outputs) {
