@@ -162,7 +162,7 @@ namespace detail {
 template <typename T>
 Result<> CopyConstruct(ExecutionContext* context) {
   auto destination = context->top(1).as<void*>();
-  auto source = context->top(0).as<void*>();
+  auto source = context->top(0).as<const void*>();
   assert(reinterpret_cast<std::uintptr_t>(source) % alignof(T) == 0);
   assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
   new (destination) T(*reinterpret_cast<const T*>(source));
@@ -182,7 +182,7 @@ Result<> MoveConstruct(ExecutionContext* context) {
 template <typename T>
 Result<> CopyAssign(ExecutionContext* context) {
   auto destination = context->top(1).as<void*>();
-  auto source = context->top(0).as<void*>();
+  auto source = context->top(0).as<const void*>();
   assert(reinterpret_cast<std::uintptr_t>(source) % alignof(T) == 0);
   assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
   *reinterpret_cast<T*>(destination) = *reinterpret_cast<const T*>(source);
