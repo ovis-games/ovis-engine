@@ -6,6 +6,17 @@
 using namespace ovis;
 using namespace ovis::vm;
 
+TEST_CASE("Allocate instructions", "[ovis][core][vm]") {
+  const auto offset = vm::AllocateInstructions(100);
+  const auto instructions = vm::GetConstantRange(offset, 100);
+  REQUIRE(instructions.size() == 100);
+}
+
+TEST_CASE("Allocate constants", "[ovis][core][vm]") {
+  const auto offset = vm::AllocateConstants(100);
+  const auto constants = vm::GetConstantRange(offset, 100);
+  REQUIRE(constants.size() == 100);
+}
 
 TEST_CASE("Value", "[ovis][core][vm]") {
   ValueStorage value(8.0);

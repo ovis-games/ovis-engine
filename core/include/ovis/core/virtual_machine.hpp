@@ -54,8 +54,17 @@ template <typename... T> struct TypeWrapper<std::tuple<T...>> { using type = std
 }
 template <typename T> using WrappedType = typename detail::TypeWrapper<T>::type;
 
-class VirtualMachine {
-};
+namespace vm {
+
+// Allocates count instructions in the vm. The offset from the beginning is returned. A span of the allocated
+// instructions can be returned via GetInstructionRange(AllocateInstructions(count), count).
+std::size_t AllocateInstructions(std::size_t count);
+std::span<Instruction> GetInstructionRange(std::size_t offset, std::size_t count);
+
+std::size_t AllocateConstants(std::size_t count);
+std::span<ValueStorage> GetConstantRange(std::size_t offset, std::size_t count);
+
+}  // namespace vm
 
 class ExecutionContext {
  public:
