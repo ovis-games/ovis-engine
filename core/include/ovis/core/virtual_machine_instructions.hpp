@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <type_traits>
 
 namespace ovis {
 namespace vm {
@@ -82,7 +83,7 @@ struct PushConstant {
 static_assert(sizeof(PushConstant) == sizeof(std::uint32_t));
 
 struct PushTrivialConstantData {
-  std::uint32_t opcode : OPCODE_BITS = static_cast<std::uint32_t>(OpCode::PUSH_TRIVIAL_CONSTANT);
+  std::uint32_t opcode : OPCODE_BITS;
   std::uint32_t constant : CONSTANT_INDEX_BITS;
 };
 static_assert(sizeof(PushTrivialConstantData) == sizeof(std::uint32_t));
@@ -102,7 +103,7 @@ struct PushPopData {
 static_assert(sizeof(PushPopData) == sizeof(std::uint32_t));
 
 struct CallNativeFunctionData {
-  std::uint32_t opcode : OPCODE_BITS = static_cast<std::uint32_t>(OpCode::CALL_NATIVE_FUNCTION);
+  std::uint32_t opcode : OPCODE_BITS;
   std::uint32_t input_count : 8;
 };
 static_assert(sizeof(CallNativeFunctionData ) == sizeof(std::uint32_t));
@@ -133,6 +134,7 @@ union Instruction {
   instructions::CopyTrivialValueData copy_trivial_value;
   instructions::NumberOperationData number_operation_data;
 };
+static_assert(std::is_trivial_v<Instruction>);
 
 namespace instructions {
 
@@ -159,11 +161,21 @@ inline Instruction CopyTrivialValue(std::uint32_t destination, std::uint32_t sou
 }
 
 inline Instruction PushTrivialConstant(std::uint32_t constant_index) {
-  return {.push_trivial_constant = {.constant = constant_index}};
+  return {
+    .push_trivial_constant = {
+      .opcode = static_cast<std::uint32_t>(OpCode::PUSH_TRIVIAL_CONSTANT),
+      .constant = constant_index
+    }
+  };
 }
 
 inline Instruction CallNativeFunction(std::uint32_t input_count) {
-  return {.call_native_function = { .input_count = input_count }};
+  return {
+    .call_native_function = {
+      .opcode = static_cast<std::uint32_t>(OpCode::CALL_NATIVE_FUNCTION),
+      .input_count = input_count
+    }
+  };
 }
 
 inline Instruction Jump(std::int32_t offset) {
