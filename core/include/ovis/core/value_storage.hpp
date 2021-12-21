@@ -188,7 +188,11 @@ inline ValueStorage::DestructFunction* ValueStorage::destruct_function() const {
 
 template <typename T>
 inline T& ValueStorage::as() {
-  assert(TypeOf<T> == native_type_id_);
+  assert(TypeOf<T> == native_type_id_ ||
+         (!allocated_storage() && destruct_function() == nullptr && std::is_trivially_constructible_v<T>));
+#ifndef NDEBUG
+  native_type_id_ = TypeOf<T>;
+#endif
   if constexpr (alignof(T) > ALIGNMENT || sizeof(T) > SIZE) {
     return *reinterpret_cast<T*>(data_as_pointer());
   } else {
