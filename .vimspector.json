@@ -1,0 +1,23 @@
+{
+  "configurations": {
+    "Launch": {
+      "adapter": "vscode-cpptools",
+      "configuration": {
+        "request": "launch",
+        "program": "/home/simon/Code/ovis-website/client/engine/build/clang/core/ovis-core-test",
+        "args": ["--assets-directory=./build/clang/core/assets/ovis-core-test/", "[ovis][core][vm]"],
+        "cwd": "/home/simon/Code/ovis-engine",
+        "environment": [ ],
+        "externalConsole": true,
+        "MIMode": "gdb",
+        "SetupCommands": [
+          {
+            "description": "Enable pretty printing for GDB",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+          }
+        ]
+      }
+    }
+  }
+}
