@@ -1,7 +1,3 @@
-cmake_minimum_required(VERSION 3.12)
-project(ovis)
-
-option(OVIS_BUILD_TESTS "Build the Ovis unit tests" ON)
 option(OVIS_BUILD_DOCS "Build the Ovis documentation" ON)
 option(OVIS_BUILD_BENCHMARKS "Build the benchmarks" ON)
 
