@@ -7,13 +7,12 @@
 #include <utility>
 
 #include <ovis/utils/type_id.hpp>
+#include <ovis/core/function_handle.hpp>
 
 namespace ovis {
 
 class alignas(16) ValueStorage final {
  public:
-  using DestructFunction = void(void*);
-
   constexpr static std::size_t ALIGNMENT = 8;
   constexpr static std::size_t SIZE = 8;
 
@@ -30,14 +29,14 @@ class alignas(16) ValueStorage final {
   // Stores a value of type T in the storage. See reset(T&&)
   template <typename T> ValueStorage(T&& value) : ValueStorage() { reset(std::forward<T>(value)); }
 
+  // Values cannot be moved or copied
   ValueStorage(const ValueStorage& other) = delete;
   ValueStorage(ValueStorage&& other) = delete;
-
-  // The destructor will clean up any allocated storage and will call the cleanup function.
-  ~ValueStorage() { reset(); }
-
   ValueStorage& operator=(const ValueStorage& other) = delete;
   ValueStorage& operator=(ValueStorage&& other) = delete;
+
+  // The destructor will call the destructor and clean up any allocated storage
+  ~ValueStorage() { reset(); }
 
   // Reset the storage to a new value. This will allocate storage if necessary and set the cleanup function automatically.
   template <typename T> void reset(T&& value);
@@ -47,33 +46,41 @@ class alignas(16) ValueStorage final {
   // Reset the storeate without a new value
   void reset();
   // Call this version if you know the currently stored value is not dynamically allocated and trivially destructible.
-  void reset_trivial();  
+  void reset_trivial();
+
 
   // Sets up dynamically allocated storage
   void Allocate(std::size_t alignment, std::size_t size);
-  // Deallocates allocated storage. Only call this if Allocate() was called before and the value has already ben destructed.
+
+  // Deallocates allocated storage. Only call this if Allocate() was called before and the value has already been constructed.
   void Deallocate();
+
   // Returns true if the storage was dynamically allocated.
-  bool allocated_storage() const { return flags_.allocated_storage != 0; }
+  bool has_allocated_storage() const { return flags_.allocated_storage != 0; }
+
+  // Returns the pointer to the allocated storage.
+  const void* allocated_storage_pointer() const {
+    assert(has_allocated_storage());
+    return *reinterpret_cast<void* const*>(&data_);
+  }
+
+  // Returns the pointer to the allocated storage.
+  void* allocated_storage_pointer() {
+    assert(has_allocated_storage());
+    return *reinterpret_cast<void* const*>(&data_);
+  }
 
   // Sets the desctuction function for the value.
-  void SetDestructFunction(DestructFunction* destructor);
+  void SetDestructFunction(FunctionHandle destructor);
   // Returns the desctruction function.
-  DestructFunction* destruct_function() const;
+  FunctionHandle destruct_function() const;
 
-  // Returns a pointer to the internal data. Storage was allocated via Allocate() it will contains the pointer to the storage.
+  // Returns a pointer to the internal data. Storage was allocated via Allocate() it will contain the pointer to the storage.
   const void* data() const { return &data_; }
   void* data() { return &data_; }
 
-  // Returns a pointer to the allocated storage. Only call this function if storage has been allocated via Allocate().
-  const void* data_as_pointer() const {
-    assert(allocated_storage());
-    return *reinterpret_cast<void* const*>(&data_);
-  }
-  void* data_as_pointer() {
-    assert(allocated_storage());
-    return *reinterpret_cast<void* const*>(&data_);
-  }
+  const void* value_pointer() const { return has_allocated_storage() ? allocated_storage_pointer() : data(); }
+  void* value_pointer() { return has_allocated_storage() ? allocated_storage_pointer() : data(); }
 
   // Returns the value as a reference to T. THIS METHOD WILL NOT CHECK FOR THE ALLOCATED STORAGE BIT! It assumes that
   // the value is stored internally if possible based on size and alignment.
@@ -95,8 +102,7 @@ class alignas(16) ValueStorage final {
   };
 
   void SetAllocatedStorageFlag(bool value) {
-    // See https://stackoverflow.com/questions/47981/how-do-you-set-clear-and-toggle-a-single-bit
-    destruct_function_and_flags ^= (-static_cast<std::uintptr_t>(value) ^ destruct_function_and_flags) & 1;
+    flags_.allocated_storage = value;
   }
 
 #ifndef NDEBUG
@@ -129,12 +135,12 @@ inline void ValueStorage::reset(T&& value) {
   if constexpr (alignof(T) > ALIGNMENT || sizeof(T) > SIZE) {
     Allocate(alignof(T), sizeof(T));
     SetAllocatedStorageFlag(true);
-    new (data_as_pointer()) StoredType(std::forward<T>(value));
+    new (allocated_storage_pointer()) StoredType(std::forward<T>(value));
   } else {
     new (data()) StoredType(std::forward<T>(value));
   }
   if constexpr (!std::is_trivially_destructible_v<StoredType>) {
-    SetDestructFunction(&detail::Destruct<StoredType>);
+    SetDestructFunction(FunctionHandle::FromNativeFunction(&detail::Destruct<StoredType>));
   }
 #ifndef NDEBUG
   native_type_id_ = TypeOf<StoredType>;
@@ -142,11 +148,14 @@ inline void ValueStorage::reset(T&& value) {
 }
 
 inline void ValueStorage::reset() {
-  const bool is_storage_allocated = allocated_storage();
-  DestructFunction* destruct = destruct_function();
+  const bool is_storage_allocated = has_allocated_storage();
+  auto destruct = destruct_function();
   if (destruct) {
-    destruct(is_storage_allocated ? data_as_pointer() : data());
-    SetDestructFunction(nullptr);
+    if (destruct.Call<void>(value_pointer())) {
+      SetDestructFunction(FunctionHandle::Null());
+    } else {
+      throw std::runtime_error("Failed to destruct object");
+    }
   }
   if (is_storage_allocated) {
     Deallocate();
@@ -158,8 +167,8 @@ inline void ValueStorage::reset() {
 }
 
 inline void ValueStorage::reset_trivial() {
-  assert(!allocated_storage());
-  assert(destruct_function() == nullptr);
+  assert(!has_allocated_storage());
+  assert(destruct_function());
 #ifndef NDEBUG
   native_type_id_ = TypeOf<void>;
 #endif
@@ -171,48 +180,47 @@ inline void ValueStorage::Allocate(std::size_t alignment, std::size_t size) {
 }
 
 inline void ValueStorage::Deallocate() {
-  assert(allocated_storage());
-  std::free(*reinterpret_cast<void**>(&data_));
+  assert(has_allocated_storage());
+  std::free(allocated_storage_pointer());
   SetAllocatedStorageFlag(false);
 }
 
-inline void ValueStorage::SetDestructFunction(DestructFunction* destructor) {
-  const std::uintptr_t pointer_as_int = reinterpret_cast<std::uintptr_t>(destructor);
-  assert((pointer_as_int & 1) == 0);
-  destruct_function_and_flags = pointer_as_int | flags_.allocated_storage;
+inline void ValueStorage::SetDestructFunction(FunctionHandle destructor) {
+  assert((destructor.integer & 1) == 0);
+  destruct_function_and_flags = destructor.integer | flags_.allocated_storage;
 }
 
-inline ValueStorage::DestructFunction* ValueStorage::destruct_function() const {
-  return reinterpret_cast<DestructFunction*>(destruct_function_and_flags & ~1);
+inline FunctionHandle ValueStorage::destruct_function() const {
+  return { .integer = destruct_function_and_flags & ~1 };
 }
 
 template <typename T>
 inline T& ValueStorage::as() {
-  assert(TypeOf<T> == native_type_id_ ||
-         (!allocated_storage() && destruct_function() == nullptr && std::is_trivially_constructible_v<T>));
+  // assert(TypeOf<T> == native_type_id_ ||
+  //        (!allocated_storage() && destruct_function() == nullptr && std::is_trivially_constructible_v<T>));
 #ifndef NDEBUG
   native_type_id_ = TypeOf<T>;
 #endif
-  if constexpr (alignof(T) > ALIGNMENT || sizeof(T) > SIZE) {
-    return *reinterpret_cast<T*>(data_as_pointer());
-  } else {
+  if constexpr (stored_inline<T>) {
     return *reinterpret_cast<T*>(data());
+  } else {
+    return *reinterpret_cast<T*>(allocated_storage_pointer());
   }
 }
 
 template <typename T>
 inline const T& ValueStorage::as() const {
   assert(TypeOf<T> == native_type_id_);
-  if constexpr (alignof(T) > ALIGNMENT || sizeof(T) > SIZE) {
-    return *reinterpret_cast<const T*>(data_as_pointer());
+  if constexpr (stored_inline<T>) {
+    return *reinterpret_cast<T*>(data());
   } else {
-    return *reinterpret_cast<const T*>(data());
+    return *reinterpret_cast<T*>(allocated_storage_pointer());
   }
 }
 
 inline void ValueStorage::CopyTrivially(ValueStorage* destination, const ValueStorage* source) {
-  assert(!destination->allocated_storage());
-  assert(!source->allocated_storage());
+  assert(!destination->has_allocated_storage());
+  assert(!source->has_allocated_storage());
   std::memcpy(&destination->data_, &source->data_, SIZE);
   destination->destruct_function_and_flags = source->destruct_function_and_flags;
 #ifndef NDEBUG

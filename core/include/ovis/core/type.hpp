@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <variant>
 #include <vector>
 
 #include <ovis/utils/json.hpp>
@@ -13,6 +14,49 @@ namespace ovis {
 
 class Module;
 
+struct TypePropertyDescription {
+  struct PrimitiveAccess {
+    std::uintptr_t offset;
+  };
+  struct FunctionAccess {
+    std::shared_ptr<Function> getter;
+    std::shared_ptr<Function> setter;
+  };
+
+  std::string name;
+  std::shared_ptr<Type> type;
+  std::variant<PrimitiveAccess, FunctionAccess> access;
+};
+
+struct TypeDescription {
+  TypeId native_type_id;
+  std::string name;
+  std::uintptr_t alignment_in_bytes;
+  std::uintptr_t size_in_bytes;
+  std::shared_ptr<Type> parent;
+  std::vector<TypePropertyDescription> properties;
+
+  // Default constructor
+  std::shared_ptr<Function> construct;
+
+  // If one of the following functions is null, it is assumed that the
+  // type ist trivially copy/move-constrctible/assignable.
+  std::shared_ptr<Function> copy_construct;
+  std::shared_ptr<Function> move_construct;
+  std::shared_ptr<Function> copy_assign;
+  std::shared_ptr<Function> move_assign;
+
+  // If the destruct function is null it is assumed it is trivially
+  // destructible.
+  std::shared_ptr<Function> destruct;
+
+  template <typename T, typename ParentType = void> requires (!std::is_base_of_v<SafelyReferenceable, T>)
+  static TypeDescription CreateForNativeType(std::string_view name);
+
+  template <typename T, typename ParentType = void> requires (std::is_base_of_v<SafelyReferenceable, T>)
+  static TypeDescription CreateForNativeType(std::string_view name);
+};
+
 class Type : public std::enable_shared_from_this<Type> {
   friend class Value;
   friend class Module;
@@ -21,48 +65,34 @@ class Type : public std::enable_shared_from_this<Type> {
   using Id = VersionedIndex<uint32_t, 20>;
   static constexpr Id NONE_ID = Id(0);
 
-  // using DefaultConstructFunction = Result<>(void* value);
-  // using DestroyFunction = Result<>(void* value);
-  // using CopyFunction = Result<>(void* destination, const void* source);
+  Id id() const { return id_; }
+  const TypeDescription& description() const { return description_; }
 
-  // using ConversionFunction = Value(*)(Value& value);
-  // using SerializeFunction = json(*)(const Value& value);
-  // using DeserializeFunction = Value(*)(const json& value);
-
-  struct Property {
-    // using GetFunction = std::add_pointer_t<Value(const Value& object)>;
-    // using SetFunction = std::add_pointer_t<void(Value* object, const Value& property_value)>;
-
-    Id type_id;
-    std::string name;
-    // GetFunction getter;
-    // SetFunction setter;
-    std::uintptr_t offset;
-  };
-
-  std::string_view name() const { return name_; }
+  std::string_view name() const { return description().name; }
   std::string_view full_reference() const { return full_reference_; }
-  std::weak_ptr<Type> parent() const { return parent_; }
+  std::weak_ptr<Type> parent() const { return description().parent; }
   std::weak_ptr<Module> module() const { return module_; }
 
-  std::size_t alignment_in_bytes() const { return alignment_in_bytes_; }
-  std::size_t size_in_bytes() const { return size_in_bytes_; }
+  std::size_t alignment_in_bytes() const { return description().alignment_in_bytes; }
+  std::size_t size_in_bytes() const { return description().size_in_bytes; }
 
-  bool copy_constructible() const { return copy_constructible_; }
-  bool trivially_copy_constructible() const { return copy_constructible() && !copy_construct_; }
-  const Function* copy_construct_function() const { return copy_construct_.get(); }
+  bool trivially_constructible() const { return description().construct == nullptr; }
+  const Function* construct_function() const { return description().construct.get(); }
 
-  bool move_constructible() const { return move_constructible_; }
-  bool trivially_move_constructible() const { return move_constructible() && !move_construct_; }
-  const Function* move_construct_function() const { return move_construct_.get(); }
+  bool trivially_copy_constructible() const { return description().copy_construct == nullptr; }
+  const Function* copy_construct_function() const { return description().copy_construct.get(); }
 
-  bool copy_assignable() const { return copy_assignable_; }
-  bool trivially_copy_assignable() const { return copy_assignable() && !copy_assign_; }
-  const Function* copy_assign_function() const { return copy_assign_.get(); }
+  bool trivially_move_constructible() const { return description().move_construct == nullptr; }
+  const Function* move_construct_function() const { return description().move_construct.get(); }
 
-  bool move_assignable() const { return move_assignable_; }
-  bool trivially_move_assignable() const { return move_assignable() && !move_assign_; }
-  const Function* move_assign_function() const { return move_assign_.get(); }
+  bool trivially_copy_assignable() const { return description().copy_assign == nullptr; }
+  const Function* copy_assign_function() const { return description().copy_assign.get(); }
+
+  bool trivially_move_assignable() const { return description().move_assign == nullptr; }
+  const Function* move_assign_function() const { return description().move_assign.get(); }
+
+  bool trivially_destructible() const { return description().destruct == nullptr; }
+  const Function* destruct_function() const { return description().destruct.get(); }
 
   // bool IsDerivedFrom(std::shared_ptr<Type> type) const;
   // template <typename T> bool IsDerivedFrom() const;
@@ -80,20 +110,18 @@ class Type : public std::enable_shared_from_this<Type> {
 
   // void RegisterProperty(std::string_view name, Id type_id, Property::GetFunction getter,
   //                       Property::SetFunction setter = nullptr);
-  template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
-  void RegisterProperty(std::string_view);
+  // template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
+  // void RegisterProperty(std::string_view);
 
   // template <auto GETTER>
   // void RegisterProperty(std::string_view);
 
-  template <auto GETTER, auto SETTER>
-  void RegisterProperty(std::string_view);
+  // template <auto GETTER, auto SETTER>
+  // void RegisterProperty(std::string_view);
 
-  // const Property* GetProperty(std::string_view name) const;
-  // std::span<const Property> properties() const { return properties_; }
+  const TypePropertyDescription* GetProperty(std::string_view name) const;
+  std::span<const TypePropertyDescription> properties() const { return description().properties; }
 
-  static Id Register(std::shared_ptr<Type> type, TypeId native_type_id = TypeOf<void>);
-  static Result<> Deregister(Id id);
   template <typename T> static std::shared_ptr<Type> Get();
   template <typename T> static std::optional<Id> GetId();
   static std::shared_ptr<Type> Get(Id id);
@@ -103,36 +131,17 @@ class Type : public std::enable_shared_from_this<Type> {
   // json Serialize() const;
 
  private:
-  Type(std::shared_ptr<Module> module, std::string_view name);
-  Type(std::shared_ptr<Module> module, std::string_view name, std::shared_ptr<Type> parent, NativeFunction from_base, NativeFunction to_base);
-  template <typename T, typename ParentType> static std::shared_ptr<Type> Create(std::shared_ptr<Module> module, std::string_view name);
+  Type(Id id, std::shared_ptr<Module> module, TypeDescription description);
+  static std::shared_ptr<Type> Add(std::shared_ptr<Module> module, TypeDescription description);
+  static Result<> Remove(Id id);
 
-  std::vector<Property> properties_;
-
-  std::string name_;
+  Id id_;
   std::string full_reference_;
-  std::weak_ptr<Type> parent_;
   std::weak_ptr<Module> module_;
-
-  std::uint32_t copy_constructible_ : 1;
-  std::uint32_t move_constructible_ : 1;
-  std::uint32_t copy_assignable_ : 1;
-  std::uint32_t move_assignable_ : 1;
-  std::size_t alignment_in_bytes_;
-  std::size_t size_in_bytes_;
-  std::shared_ptr<Function> copy_construct_;
-  std::shared_ptr<Function> move_construct_;
-  std::shared_ptr<Function> copy_assign_;
-  std::shared_ptr<Function> move_assign_;
-
-  // ConversionFunction from_base_;
-  // ConversionFunction to_base_;
-  // SerializeFunction serialize_function_;
-  // DeserializeFunction deserialize_function_;
-  // std::vector<std::weak_ptr<Function>> constructor_functions_;
+  TypeDescription description_;
 
   struct Registration {
-    Id vm_type_id;
+    Id id;
     TypeId native_type_id;
     std::shared_ptr<Type> type;
   };
@@ -158,6 +167,16 @@ namespace ovis {
 // }
 
 namespace detail {
+
+template <typename T>
+Result<> DefaultConstruct(ExecutionContext* context) {
+  auto destination = context->top(1).as<void*>();
+  auto source = context->top(0).as<const void*>();
+  assert(reinterpret_cast<std::uintptr_t>(source) % alignof(T) == 0);
+  assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
+  new (destination) T();
+  return Success;
+}
 
 template <typename T>
 Result<> CopyConstruct(ExecutionContext* context) {
@@ -199,32 +218,47 @@ Result<> MoveAssign(ExecutionContext* context) {
   return Success;
 }
 
+template <typename T>
+Result<> Destruct(ExecutionContext* context) {
+  auto value = context->top(0).as<void*>();
+  reinterpret_cast<T*>(value)->~T();
+  return Success;
+}
+
 }  // namespace detail
 
-template <typename T, typename ParentType>
-std::shared_ptr<Type> Type::Create(std::shared_ptr<Module> module, std::string_view name) {
-  std::shared_ptr<Type> type(new Type(module, name));
-  type->alignment_in_bytes_ = alignof(T);
-  type->size_in_bytes_ = sizeof(T);
-  type->copy_constructible_ = std::is_copy_constructible_v<T>;
-  type->move_constructible_ = std::is_move_constructible_v<T>;
-  type->copy_assignable_ = std::is_copy_assignable_v<T>;
-  type->move_assignable_ = std::is_move_assignable_v<T>;
+template <typename T, typename ParentType> requires(!std::is_base_of_v<SafelyReferenceable, T>)
+inline TypeDescription TypeDescription::CreateForNativeType(std::string_view name) {
+  static_assert(std::is_copy_constructible_v<T>);
+  static_assert(std::is_move_constructible_v<T>);
+  static_assert(std::is_copy_assignable_v<T>);
+  static_assert(std::is_move_assignable_v<T>);
+  return TypeDescription{
+      .native_type_id = TypeOf<T>,
+      .name = std::string(name),
+      .alignment_in_bytes = alignof(T),
+      .size_in_bytes = sizeof(T),
+      .parent = Type::Get<ParentType>(),
+      .properties = {},
+      .construct =
+          std::is_trivially_constructible_v<T> ? nullptr : Function::MakeNative(detail::DefaultConstruct<T>, {{}}, {}),
+      .copy_construct = std::is_trivially_copy_constructible_v<T>
+                            ? nullptr
+                            : Function::MakeNative(detail::CopyConstruct<T>, {{}, {}}, {}),
+      .move_construct = std::is_trivially_move_constructible_v<T>
+                            ? nullptr
+                            : Function::MakeNative(detail::MoveConstruct<T>, {{}, {}}, {}),
+      .copy_assign =
+          std::is_trivially_copy_assignable_v<T> ? nullptr : Function::MakeNative(detail::CopyAssign<T>, {{}, {}}, {}),
+      .move_assign =
+          std::is_trivially_move_assignable_v<T> ? nullptr : Function::MakeNative(detail::MoveAssign<T>, {{}, {}}, {}),
+      .destruct = std::is_trivially_destructible_v<T> ? nullptr : Function::MakeNative(detail::MoveAssign<T>, {{}}, {}),
+  };
+}
 
-  if constexpr (std::is_copy_constructible_v<T> && !std::is_trivially_copy_constructible_v<T>) {
-    type->copy_construct_ = Function::MakeNative(detail::CopyConstruct<T>, {{}, {}}, {});
-  }
-  if constexpr (std::is_move_constructible_v<T> && !std::is_trivially_move_constructible_v<T>) {
-    type->move_construct_ = Function::MakeNative(detail::MoveConstruct<T>, {{}, {}}, {});
-  }
-  if constexpr (std::is_copy_assignable_v<T> && !std::is_trivially_copy_assignable_v<T>) {
-    type->copy_assign_ = Function::MakeNative(detail::CopyAssign<T>, {{}, {}}, {});
-  }
-  if constexpr (std::is_move_assignable_v<T> && !std::is_trivially_move_assignable_v<T>) {
-    type->move_assign_ = Function::MakeNative(detail::MoveAssign<T>, {{}, {}}, {});
-  }
-
-  return type;
+template <typename T, typename ParentType> requires(std::is_base_of_v<SafelyReferenceable, T>)
+inline TypeDescription TypeDescription::CreateForNativeType(std::string_view name) {
+  return CreateForNativeType<safe_ptr<T>, ParentType>(name);
 }
 
 // inline bool Type::IsDerivedFrom(std::shared_ptr<Type> type) const {
@@ -294,32 +328,32 @@ std::shared_ptr<Type> Type::Create(std::shared_ptr<Module> module, std::string_v
 //   return Value::None();
 // }
 
-inline Type::Id Type::Register(std::shared_ptr<Type> type, TypeId native_type_id) {
-  for (auto& registration : registered_types) {
-    if (registration.type == nullptr) {
-      registration.native_type_id = native_type_id;
-      registration.type = std::move(type);
-      return registration.vm_type_id = registration.vm_type_id.next();
-    }
-  }
-  Id id(registered_types.size());
-  registered_types.push_back({
-    .vm_type_id = id,
-    .native_type_id = native_type_id,
-    .type = std::move(type)
-  });
-  return id;
-}
+// inline Type::Id Type::Register(std::shared_ptr<Type> type, TypeId native_type_id) {
+//   for (auto& registration : registered_types) {
+//     if (registration.type == nullptr) {
+//       registration.native_type_id = native_type_id;
+//       registration.type = std::move(type);
+//       return registration.vm_type_id = registration.vm_type_id.next();
+//     }
+//   }
+//   Id id(registered_types.size());
+//   registered_types.push_back({
+//     .vm_type_id = id,
+//     .native_type_id = native_type_id,
+//     .type = std::move(type)
+//   });
+//   return id;
+// }
 
-inline Result<> Type::Deregister(Type::Id id) {
-  assert(id.index() <= registered_types.size());
-  if (registered_types[id.index()].vm_type_id == id) {
-    registered_types[id.index()].type = nullptr;
-    return Success;
-  } else {
-    return Error("Invalid id");
-  }
-}
+// inline Result<> Type::Deregister(Type::Id id) {
+//   assert(id.index() <= registered_types.size());
+//   if (registered_types[id.index()].vm_type_id == id) {
+//     registered_types[id.index()].type = nullptr;
+//     return Success;
+//   } else {
+//     return Error("Invalid id");
+//   }
+// }
 
 template <typename T>
 inline std::shared_ptr<Type> Type::Get() {
@@ -335,7 +369,7 @@ template <typename T>
 inline std::optional<Type::Id> Type::GetId() {
   for (const auto& registration : registered_types) {
     if (registration.native_type_id == TypeOf<T>) {
-      return registration.vm_type_id;
+      return registration.id;
     }
   }
   return std::nullopt;
@@ -344,7 +378,7 @@ inline std::optional<Type::Id> Type::GetId() {
 inline std::shared_ptr<Type> Type::Get(Id id) {
   assert(id.index() < registered_types.size());
   const auto& registration = registered_types[id.index()];
-  return registration.vm_type_id == id ? registration.type : nullptr;
+  return registration.id == id ? registration.type : nullptr;
 }
 
 
@@ -416,19 +450,19 @@ inline std::shared_ptr<Type> Type::Get(Id id) {
 
 // }  // namespace detail
 
-template <auto PROPERTY>
-requires std::is_member_pointer_v<decltype(PROPERTY)>
-inline void Type::RegisterProperty(std::string_view name) {
-  // TODO: add assert that the class type is the same as the current type
-  const auto member_type_id = Type::GetId<typename MemberPointer<PROPERTY>::MemberType>();
-  assert(member_type_id);
+// template <auto PROPERTY>
+// requires std::is_member_pointer_v<decltype(PROPERTY)>
+// inline void Type::RegisterProperty(std::string_view name) {
+//   // TODO: add assert that the class type is the same as the current type
+//   const auto member_type_id = Type::GetId<typename MemberPointer<PROPERTY>::MemberType>();
+//   assert(member_type_id);
 
-  properties_.push_back({
-    .type_id = *member_type_id,
-    .name = std::string(name),
-    .offset = MemberPointer<PROPERTY>::offset,
-  });
-}
+//   properties_.push_back({
+//     .type_id = *member_type_id,
+//     .name = std::string(name),
+//     .offset = MemberPointer<PROPERTY>::offset,
+//   });
+// }
 
 // template <auto GETTER>
 // inline void Type::RegisterProperty(std::string_view name) {
@@ -446,15 +480,15 @@ inline void Type::RegisterProperty(std::string_view name) {
 //   RegisterProperty(name, GetterWrapper::property_type_id(), &GetterWrapper::Get, &SetterWrapper::Set);
 // }
 
-// inline const Type::Property* Type::GetProperty(std::string_view name) const {
-//   for (const auto& property : properties_) {
-//     if (property.name == name) {
-//       return &property;
-//     }
-//   }
-//   assert(false && "Property not found");
-//   return nullptr;
-// }
+inline const TypePropertyDescription* Type::GetProperty(std::string_view name) const {
+  for (const auto& property : description().properties) {
+    if (property.name == name) {
+      return &property;
+    }
+  }
+  assert(false && "Property not found");
+  return nullptr;
+}
 
 // inline Value Type::CreateValue(const json& data) const {
 //   if (deserialize_function_) {

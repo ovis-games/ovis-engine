@@ -87,8 +87,7 @@ bool LoadCoreModule() {
     auto core_module = Module::Register("Core");
     assert(core_module->name() == "Core");
 
-    auto boolean_type = core_module->RegisterType<bool>("Boolean");
-    assert(boolean_type != nullptr);
+    core_module->RegisterType(TypeDescription::CreateForNativeType<bool>("Boolean"));
 
     // core_module->RegisterFunction<&CreateBoolean>("Create Boolean", {"value"}, {"result"});
     // core_module->RegisterFunction<&Not>("Not", {"value"}, {"result"});

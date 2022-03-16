@@ -7,6 +7,7 @@
 
 #include <ovis/utils/result.hpp>
 #include <ovis/core/virtual_machine.hpp>
+#include <ovis/core/function_handle.hpp>
 
 namespace ovis {
 
@@ -48,6 +49,7 @@ Result<> NativeFunctionWrapper(ExecutionContext* context) {
   return detail::NativeFunctionWrapper<decltype(FUNCTION)>::template Call<FUNCTION>(context);
 }
 
+// A function can either be a native (C++) function or script function.
 class Function : public std::enable_shared_from_this<Function> {
   friend class Module;
   friend class Type;
@@ -60,7 +62,16 @@ class Function : public std::enable_shared_from_this<Function> {
 
   std::string_view name() const { return name_; }
   std::string_view text() const { return text_; }
-  NativeFunction* pointer() const { return function_pointer_; }
+
+  // Returns the native function pointer. It is only valid to call this function if the function is actually a native
+  // function. Can be checked via is_native_function().
+  NativeFunction* native_function_pointer() const;
+  bool is_native_function() const { return !handle_.is_script_function; }
+
+  // Returns the offset into the instruction storage of the virtual machine. It is only valid to call this function if
+  // the function is actually a script function. You can call is_script_function() to check this.
+  std::uintptr_t instruction_offset() const;
+  bool is_script_function() const { return handle_.is_script_function; }
 
   std::span<const ValueDeclaration> inputs() const { return inputs_; }
   std::optional<std::size_t> GetInputIndex(std::string_view input_name) const;
@@ -83,16 +94,16 @@ class Function : public std::enable_shared_from_this<Function> {
   json Serialize() const;
   static std::shared_ptr<Function> Deserialize(const json& data);
 
+  static std::shared_ptr<Function> MakeNative(NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
+                                              std::vector<ValueDeclaration> outputs);
+
  private:
   Function(std::string_view name, NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
            std::vector<ValueDeclaration> outputs);
 
-  static std::shared_ptr<Function> MakeNative(NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
-                                              std::vector<ValueDeclaration> outputs);
-
   std::string name_;
   std::string text_;
-  NativeFunction* function_pointer_;
+  FunctionHandle handle_; // This handle has always the unused bit set to 0.
   std::vector<ValueDeclaration> inputs_;
   std::vector<ValueDeclaration> outputs_;
 };
@@ -121,7 +132,22 @@ struct PushValues<> {
 template <typename... InputTypes>
 inline Result<> Function::Call(InputTypes&&... inputs) const {
   detail::PushValues<InputTypes...>::Push(std::forward<InputTypes>(inputs)...);
-  return function_pointer_(ExecutionContext::global_context());
+  if (handle_.is_script_function) {
+    assert(false && "Not implemented yet");
+  } else {
+    return native_function_pointer()(ExecutionContext::global_context());
+  }
+}
+
+inline NativeFunction* Function::native_function_pointer() const {
+  assert(!handle_.is_script_function);
+  assert(handle_.zero == 0);
+  return handle_.native_function;
+}
+
+inline std::uintptr_t Function::instruction_offset() const {
+  assert(handle_.is_script_function);
+  return handle_.instruction_offset;
 }
 
 }  // namespace ovis

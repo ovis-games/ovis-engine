@@ -19,24 +19,25 @@ TEST_CASE("Allocate constants", "[ovis][core][vm]") {
 }
 
 TEST_CASE("Value", "[ovis][core][vm]") {
-  ValueStorage value(8.0);
+  ValueStorage value;
+  value.reset(8.0);
   REQUIRE(value.as<double>() == 8.0);
-  REQUIRE(!value.allocated_storage());
+  REQUIRE(!value.has_allocated_storage());
   value.reset(4.0f);
   REQUIRE(value.as<float>() == 4.0);
-  REQUIRE(!value.allocated_storage());
+  REQUIRE(!value.has_allocated_storage());
 
   struct Foo {
     uint64_t a = 100;
     uint64_t b = 123;
   };
   value.reset(Foo());
-  REQUIRE(value.allocated_storage());
+  REQUIRE(value.has_allocated_storage());
   REQUIRE(value.as<Foo>().a == 100);
   REQUIRE(value.as<Foo>().b == 123);
 
   value.reset('c');
-  REQUIRE(!value.allocated_storage());
+  REQUIRE(!value.has_allocated_storage());
   REQUIRE(value.as<char>() == 'c');
 }
 
@@ -183,7 +184,7 @@ TEST_CASE("Jump", "[ovis][core][vm]") {
   REQUIRE(constants[0].as<double>() == 1.0);
   REQUIRE(constants[1].as<double>() == 2.0);
   for (const auto& c : constants) {
-    REQUIRE(!c.allocated_storage());
+    REQUIRE(!c.has_allocated_storage());
   }
 
   std::array<Instruction, 4> instructions = {
@@ -215,7 +216,7 @@ TEST_CASE("Jump if true", "[ovis][core][vm]") {
   REQUIRE(constants[3].as<bool>() == true);
   REQUIRE(constants[4].as<bool>() == false);
   for (const auto& c : constants) {
-    REQUIRE(!c.allocated_storage());
+    REQUIRE(!c.has_allocated_storage());
   }
 
   std::array<Instruction, 8> instructions = {
@@ -252,7 +253,7 @@ TEST_CASE("Jump if false", "[ovis][core][vm]") {
   REQUIRE(constants[3].as<bool>() == true);
   REQUIRE(constants[4].as<bool>() == false);
   for (const auto& c : constants) {
-    REQUIRE(!c.allocated_storage());
+    REQUIRE(!c.has_allocated_storage());
   }
 
   std::array<Instruction, 8> instructions = {

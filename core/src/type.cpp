@@ -4,10 +4,39 @@
 namespace ovis {
 
 std::vector<Type::Registration> Type::registered_types = {
-    {.vm_type_id = Type::NONE_ID, .native_type_id = TypeOf<void>, .type = nullptr}};
+    {.id = Type::NONE_ID, .native_type_id = TypeOf<void>, .type = nullptr}};
 
-Type::Type(std::shared_ptr<Module> module, std::string_view name)
-    : module_(module), name_(name), full_reference_(fmt::format("{}.{}", module->name(), name)) {}
+Type::Type(Id id, std::shared_ptr<Module> module, TypeDescription description)
+    : id_(id),
+      module_(module),
+      full_reference_(fmt::format("{}.{}", module->name(), description.name)),
+      description_(std::move(description)) {}
+
+std::shared_ptr<Type> Type::Add(std::shared_ptr<Module> module, TypeDescription description) {
+  for (auto& registration : registered_types) {
+    if (registration.type == nullptr) {
+      registration.id = registration.id.next();
+      registration.native_type_id = description.native_type_id;
+      return registration.type = std::shared_ptr<Type>(new Type(registration.id, module, std::move(description)));
+    }
+  }
+  Id id(registered_types.size());
+  registered_types.push_back({
+    .id = id,
+    .native_type_id = description.native_type_id,
+    .type = std::shared_ptr<Type>(new Type(id, module, std::move(description))),
+  });
+  return registered_types.back().type;
+}
+
+Result<> Type::Remove(Id id) {
+  if (id.index() < registered_types.size() && registered_types[id.index()].id == id) {
+    registered_types[id.index()].type = nullptr;
+    return Success;
+  } else {
+    return Error("Invalid type id");
+  }
+}
 
 std::shared_ptr<Type> Type::Deserialize(const json& data) {
   std::string_view module_name;

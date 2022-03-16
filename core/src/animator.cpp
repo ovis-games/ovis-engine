@@ -61,7 +61,8 @@ bool Animator::Deserialize(const json& data) {
 }
 
 void Animator::RegisterType(Module* module) {
-  auto animation_type = module->RegisterType<Animator, SceneObjectComponent>("Animator");
+  auto animator_description = TypeDescription::CreateForNativeType<Animator, SceneObjectComponent>("Animator");
+  module->RegisterType(animator_description);
 }
 
 }

@@ -300,7 +300,9 @@ void Vector2::RegisterType(Module* module) {
   // vector2_type["POSITIVE_Z"] = sol::property(Vector2::PositiveZ);
   // vector2_type["NEGATIVE_Z"] = sol::property(Vector2::NegativeZ);
 
-  module->RegisterType<Vector2>("Vector2");
+  auto vector2_description = TypeDescription::CreateForNativeType<Vector2>("Vector2");
+  // vector3_type->RegisterProperty<&Vector3::x>("x");
+  module->RegisterType(vector2_description);
   // module->RegisterConstructor<Vector2, float, float>("Create Vector2", {"x", "y"}, "Vector2");
   // vector2_type[sol::meta_function::equal_to] = static_cast<bool (*)(const Vector2&, const Vector2&)>(ovis::operator==);
   // module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator+)>("vector2_add", {"first vector", "second vector"}, {"vector"});

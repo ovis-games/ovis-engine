@@ -26,13 +26,7 @@ class Module : public std::enable_shared_from_this<Module> {
   std::string_view name() const { return name_; }
 
   // Types
-  std::shared_ptr<Type> RegisterType(std::string_view name);
-  std::shared_ptr<Type> RegisterType(std::string_view name, std::shared_ptr<Type> parent_type, NativeFunction from_base,
-                                     NativeFunction to_base);
-
-  template <typename T, typename ParentType = void>
-  std::shared_ptr<Type> RegisterType(std::string_view name, bool create_cpp_association = true);
-
+  std::shared_ptr<Type> RegisterType(TypeDescription description);
   std::shared_ptr<Type> GetType(std::string_view name);
   // std::span<std::shared_ptr<Type>> types() { return types_; }
   // std::span<const std::shared_ptr<Type>> types() const { return types_; }
@@ -70,25 +64,6 @@ inline std::shared_ptr<Module> Module::Get(std::string_view name) {
     }
   }
   return nullptr;
-}
-
-template <typename T, typename ParentType>
-inline std::shared_ptr<Type> Module::RegisterType(std::string_view name, bool create_cpp_association) {
-  if (Type::Get<T>() != nullptr) {
-    return nullptr;
-  }
-
-  if (create_cpp_association && Type::Get<T>() != nullptr) {
-    return nullptr;
-  }
-
-  if (GetType(name) != nullptr) {
-    return nullptr;
-  }
-
-  std::shared_ptr<Type> type = Type::Create<T, ParentType>(shared_from_this(), name);
-  types_.push_back(create_cpp_association ? Type::Register(type, TypeOf<T>) : Type::Register(type));
-  return type;
 }
 
 inline std::shared_ptr<Type> Module::GetType(std::string_view name) {

@@ -22,6 +22,7 @@
 #include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/type_id.hpp>
 #include <ovis/utils/versioned_index.hpp>
+#include <ovis/core/function_handle.hpp>
 #include <ovis/core/value_storage.hpp>
 #include <ovis/core/virtual_machine_instructions.hpp>
 
@@ -33,8 +34,6 @@ class Value;
 class Function;
 class Module;
 class ExecutionContext;
-
-using NativeFunction = Result<>(ExecutionContext*);
 
 template <typename T> constexpr bool is_reference_type_v = std::is_base_of_v<SafelyReferenceable, T>;
 template <typename T> constexpr bool is_pointer_to_reference_type_v = std::is_pointer_v<T> && std::is_base_of_v<SafelyReferenceable, std::remove_pointer_t<T>>;

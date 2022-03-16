@@ -5,7 +5,12 @@ namespace ovis {
 
 Function::Function(std::string_view name, NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
                    std::vector<ValueDeclaration> outputs)
-    : name_(name), function_pointer_(function_pointer), inputs_(inputs), outputs_(outputs) {}
+    : name_(name), inputs_(inputs), outputs_(outputs) {
+  handle_.native_function = function_pointer;
+  // Check that the two least significant bits are zero. I.e., the function pointer is aligned to a four byte boundary.
+  assert(handle_.is_script_function == 0);
+  assert(handle_.zero == 0);
+}
 
 std::shared_ptr<Function> Function::MakeNative(NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
                                                std::vector<ValueDeclaration> outputs) {

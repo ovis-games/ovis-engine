@@ -4,12 +4,12 @@
       "adapter": "vscode-cpptools",
       "configuration": {
         "request": "launch",
-        "program": "/home/simon/Code/ovis-website/client/engine/build/clang/core/ovis-core-test",
-        "args": ["--assets-directory=./build/clang/core/assets/ovis-core-test/", "[ovis][core][vm]"],
-        "cwd": "/home/simon/Code/ovis-engine",
+        "program": "/Users/simon/Code/ovis-engine/build/clang/core/ovis-core-test",
+        "args": ["--assets-directory=./build/clang/core/assets/ovis-core-test/", "[ovis][core][Value]"],
+        "cwd": "/Users/simon/Code/ovis-engine",
         "environment": [ ],
         "externalConsole": true,
-        "MIMode": "gdb",
+        "MIMode": "lldb",
         "SetupCommands": [
           {
             "description": "Enable pretty printing for GDB",

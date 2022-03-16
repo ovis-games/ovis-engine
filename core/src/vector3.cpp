@@ -345,8 +345,9 @@ void Vector3::RegisterType(Module* module) {
   // vector3_type["POSITIVE_Z"] = sol::property(Vector3::PositiveZ);
   // vector3_type["NEGATIVE_Z"] = sol::property(Vector3::NegativeZ);
 
-  auto vector3_type = module->RegisterType<Vector3>("Vector3");
-  vector3_type->RegisterProperty<&Vector3::x>("x");
+  auto vector3_description = TypeDescription::CreateForNativeType<Vector3>("Vector3");
+  // vector3_type->RegisterProperty<&Vector3::x>("x");
+  module->RegisterType(vector3_description);
   // vector3_type->SetDeserializeFunction(&DeserializeVector3);
   // module->RegisterConstructor<Vector3, float, float, float>("CreateVector3", {"x", "y", "z"}, "vector");
   // module->RegisterConstructor<Vector3, float, float, float>("create_vector3", {"x", "y", "z"}, "vector");

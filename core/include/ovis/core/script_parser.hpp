@@ -25,6 +25,7 @@ struct ParseScriptError : Error {
 
   std::optional<std::string> path;
 };
+using ParseScriptErrors = std::vector<ParseScriptError>;
 
 struct ParseScriptFunctionResult {
   std::vector<Function::ValueDeclaration> inputs;
@@ -34,9 +35,13 @@ struct ParseScriptFunctionResult {
   // ScriptFunction::DebugInfo debug_info;
 };
 
-using ParseScriptErrors = std::vector<ParseScriptError>;
-
 Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(const json& function_definition);
+
+struct ParseScriptTypeResult {
+  TypeDescription type_description;
+};
+
+Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(const json& type_definition);
 
 // class ScriptFunctionParser {
 //   struct ScopeValue {

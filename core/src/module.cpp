@@ -21,8 +21,16 @@ void Module::Deregister(std::string_view name) {
 
 Module::~Module() {
   for (const auto type_id : types_) {
-    Type::Deregister(type_id);
+    Type::Remove(type_id);
   }
+}
+
+std::shared_ptr<Type> Module::RegisterType(TypeDescription description) {
+  auto type = Type::Add(shared_from_this(), std::move(description));
+  if (type) {
+    types_.push_back(type->id());
+  }
+  return type;
 }
 
 }  // namespace ovis

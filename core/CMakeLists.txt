@@ -78,8 +78,10 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/virtual_machine.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_animations.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_type.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_module.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_value.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_function_parser.cpp
+    # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_type_parsing.cpp
   )
 
   target_add_ldoc_test(
@@ -114,6 +116,7 @@ if (OVIS_BUILD_TESTS)
     test/assets/indirect_recursion1.scene_object.json
     test/assets/indirect_recursion2.scene_object.json
     test/assets/animation_test.scene_object.json
+    test/assets/test_script_type.script_type.json
   )
   target_embed_assets(ovis-core-test)
 

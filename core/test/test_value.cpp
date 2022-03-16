@@ -7,8 +7,8 @@ using SharedDouble = std::shared_ptr<double>;
 
 std::shared_ptr<ovis::Module> RegisterValueTestModule() {
   auto module = RegisterTestModule();
-  module->RegisterType<double>("Number");
-  module->RegisterType<SharedDouble>("SharedNumber");
+  module->RegisterType(ovis::TypeDescription::CreateForNativeType<double>("Number"));
+  module->RegisterType(ovis::TypeDescription::CreateForNativeType<SharedDouble>("SharedNumber"));
   return module;
 }
 
