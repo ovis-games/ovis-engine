@@ -22,12 +22,6 @@ union FunctionHandle {
   // We assume that a pointer to a function is the same size as other pointers.
   static_assert(sizeof(NativeFunction*) == sizeof(std::uintptr_t));
 
-  template <typename ReturnType, typename... ArgumentTypes>
-  Result<ReturnType> Call(ArgumentTypes&&... arguments);
-
-  template <typename ReturnType, typename... ArgumentTypes>
-  Result<ReturnType> Call(ExecutionContext* context, ArgumentTypes&&... arguments);
-
   operator bool() const {
     return native_function != nullptr;
   }
@@ -57,18 +51,3 @@ static_assert(std::is_trivially_copyable_v<FunctionHandle>);
 static_assert(std::is_trivially_constructible_v<FunctionHandle>);
 
 }  // namespace ovis
-
-// #include <ovis/core/virtual_machine.hpp>
-
-namespace ovis {
-
-// template <typename ReturnType, typename... ArgumentTypes>
-// Result<ReturnType> FunctionHandle::Call(ArgumentTypes&&... arguments) {
-//   return Call(ExecutionContext::global_context(), std::forward<ArgumentTypes>(arguments)...);
-// }
-
-template <typename ReturnType, typename... ArgumentTypes>
-Result<ReturnType> FunctionHandle::Call(ExecutionContext* context, ArgumentTypes&&... arguments) {
-}
-
-}

@@ -75,6 +75,7 @@ class Type : public std::enable_shared_from_this<Type> {
 
   std::size_t alignment_in_bytes() const { return description().alignment_in_bytes; }
   std::size_t size_in_bytes() const { return description().size_in_bytes; }
+  bool is_stored_inline() const { return ValueStorage::IsTypeStoredInline(alignment_in_bytes(), size_in_bytes()); }
 
   bool trivially_constructible() const { return description().construct == nullptr; }
   const Function* construct_function() const { return description().construct.get(); }
@@ -240,8 +241,7 @@ inline TypeDescription TypeDescription::CreateForNativeType(std::string_view nam
       .size_in_bytes = sizeof(T),
       .parent = Type::Get<ParentType>(),
       .properties = {},
-      .construct =
-          std::is_trivially_constructible_v<T> ? nullptr : Function::MakeNative(detail::DefaultConstruct<T>, {{}}, {}),
+      .construct = Function::MakeNative(detail::DefaultConstruct<T>, {{}}, {}),
       .copy_construct = std::is_trivially_copy_constructible_v<T>
                             ? nullptr
                             : Function::MakeNative(detail::CopyConstruct<T>, {{}, {}}, {}),

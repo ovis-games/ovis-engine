@@ -57,7 +57,7 @@ Result<> ExecutionContext::Execute(std::span<const vm::Instruction> instructions
       }
 
       case vm::OpCode::PUSH: {
-        PushValues(instruction.push_pop.count);
+        PushUninitializedValues(instruction.push_pop.count);
         ++program_counter;
         break;
       }
@@ -91,7 +91,7 @@ Result<> ExecutionContext::Execute(std::span<const vm::Instruction> instructions
       case vm::OpCode::PUSH_TRIVIAL_CONSTANT: {
         const std::size_t constant_index = instruction.push_trivial_constant.constant;
         // if (constant_index < constants.size()) {
-          PushValue();
+          PushUninitializedValue();
           ValueStorage::CopyTrivially(&top(), &constants[constant_index]);
           ++program_counter;
         // } else {

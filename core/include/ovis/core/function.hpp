@@ -16,38 +16,6 @@ template <typename T> struct FunctionResult <T> { using type = T; };
 template <> struct FunctionResult <> { using type = void; };
 template <typename... T> using FunctionResultType = typename FunctionResult<T...>::type;
 
-namespace detail {
-
-template <typename T> struct NativeFunctionWrapper;
-
-template <typename R, typename... Args>
-struct NativeFunctionWrapper<R(*)(Args...)> {
-  template <R(*FUNCTION)(Args...)>
-  static Result<> Call(ExecutionContext* context) {
-    const auto input_tuple = GetInputTuple(context, std::make_index_sequence<sizeof...(Args)>{});
-    context->PopValues(sizeof...(Args));
-    if constexpr (!std::is_same_v<void, R>) {
-      context->PushValue(std::apply(FUNCTION, input_tuple));
-    } else {
-      std::apply(FUNCTION, input_tuple);
-    }
-    return Success;
-  }
-
-  template <std::size_t... I>
-  static std::tuple<Args...> GetInputTuple(ExecutionContext* context, std::index_sequence<I...>) {
-    return std::tuple<Args...>(
-      context->top(sizeof...(Args) - I - 1).as<nth_parameter_t<I, Args...>>()...
-    );
-  }
-};
-
-}
-
-template <auto FUNCTION>
-Result<> NativeFunctionWrapper(ExecutionContext* context) {
-  return detail::NativeFunctionWrapper<decltype(FUNCTION)>::template Call<FUNCTION>(context);
-}
 
 // A function can either be a native (C++) function or script function.
 class Function : public std::enable_shared_from_this<Function> {
@@ -73,6 +41,9 @@ class Function : public std::enable_shared_from_this<Function> {
   std::uintptr_t instruction_offset() const;
   bool is_script_function() const { return handle_.is_script_function; }
 
+  // Returns the handle of the function
+  FunctionHandle handle() const { return handle_; }
+
   std::span<const ValueDeclaration> inputs() const { return inputs_; }
   std::optional<std::size_t> GetInputIndex(std::string_view input_name) const;
   std::optional<ValueDeclaration> GetInput(std::string_view input_name) const;
@@ -83,13 +54,14 @@ class Function : public std::enable_shared_from_this<Function> {
   std::optional<ValueDeclaration> GetOutput(std::string_view output_name) const;
   std::optional<ValueDeclaration> GetOutput(std::size_t output_index) const;
 
-  template <typename... InputTypes> bool IsCallableWithArguments() const;
+  // TODO: implement this function
+  template <typename... InputTypes> bool IsCallableWithArguments() const { return true; }
 
   // template <typename... OutputTypes, typename... InputsTypes>
   // FunctionResultType<OutputTypes...> Call(InputsTypes&&... inputs);
   // template <typename... OutputTypes, typename... InputsTypes>
   // FunctionResultType<OutputTypes...> Call(ExecutionContext* context, InputsTypes&&... inputs);
-  template <typename... InputsTypes> Result<> Call(InputsTypes&&... inputs) const;
+  template <typename OutputType, typename... InputsTypes> Result<OutputType> Call(InputsTypes&&... inputs) const;
 
   json Serialize() const;
   static std::shared_ptr<Function> Deserialize(const json& data);
@@ -108,35 +80,10 @@ class Function : public std::enable_shared_from_this<Function> {
   std::vector<ValueDeclaration> outputs_;
 };
 
-// Implementation
-namespace detail {
-
-template <typename... InputTypes>
-struct PushValues;
-
-template <typename InputType, typename... InputTypes>
-struct PushValues<InputType, InputTypes...> {
-  static void Push(InputType&& input, InputTypes&&... inputs) {
-    ExecutionContext::global_context()->PushValue(std::forward<InputType>(input));
-    PushValues<InputTypes...>::Push(std::forward<InputTypes>(inputs)...);
-  }
-};
-
-template <>
-struct PushValues<> {
-  static void Push() {}
-};
-
-}  // namespace detail
-
-template <typename... InputTypes>
-inline Result<> Function::Call(InputTypes&&... inputs) const {
-  detail::PushValues<InputTypes...>::Push(std::forward<InputTypes>(inputs)...);
-  if (handle_.is_script_function) {
-    assert(false && "Not implemented yet");
-  } else {
-    return native_function_pointer()(ExecutionContext::global_context());
-  }
+template <typename OutputType = void, typename... InputTypes>
+inline Result<OutputType> Function::Call(InputTypes&&... inputs) const {
+  assert(IsCallableWithArguments<InputTypes...>());
+  return ExecutionContext::global_context()->Call<OutputType>(handle_, std::forward<InputTypes>(inputs)...);
 }
 
 inline NativeFunction* Function::native_function_pointer() const {

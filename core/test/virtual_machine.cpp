@@ -116,7 +116,7 @@ TEST_CASE("Load constant", "[ovis][core][vm]") {
     instructions::PushTrivialConstant(0),
     instructions::Exit(),
   };
-  REQUIRE(instructions[0].opcode == std::uint32_t(OpCode::PUSH_TRIVIAL_CONSTANT));
+  REQUIRE(instructions[0].opcode == OpCode::PUSH_TRIVIAL_CONSTANT);
   REQUIRE(instructions[0].push_trivial_constant.constant == 0);
 
   REQUIRE(context.registers().size() == 0);
@@ -139,7 +139,7 @@ TEST_CASE("Copy trivial value", "[ovis][core][vm]") {
     instructions::CopyTrivialValue(1, 0),
     instructions::Exit(),
   };
-  REQUIRE(instructions[0].opcode == std::uint32_t(OpCode::PUSH_TRIVIAL_CONSTANT));
+  REQUIRE(instructions[0].opcode == OpCode::PUSH_TRIVIAL_CONSTANT);
   REQUIRE(instructions[0].push_trivial_constant.constant == 0);
 
   REQUIRE(context.registers().size() == 0);
@@ -165,7 +165,7 @@ TEST_CASE("Native function call", "[ovis][core][vm]") {
     instructions::CallNativeFunction(2),
     instructions::Exit(),
   };
-  REQUIRE(instructions[0].opcode == std::uint32_t(OpCode::PUSH_TRIVIAL_CONSTANT));
+  REQUIRE(instructions[0].opcode == OpCode::PUSH_TRIVIAL_CONSTANT);
   REQUIRE(instructions[0].push_trivial_constant.constant == 0);
 
   REQUIRE(context.registers().size() == 0);
