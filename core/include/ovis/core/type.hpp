@@ -26,6 +26,12 @@ struct TypePropertyDescription {
   std::string name;
   std::shared_ptr<Type> type;
   std::variant<PrimitiveAccess, FunctionAccess> access;
+
+  template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
+  static TypePropertyDescription Create(std::string_view name);
+
+  static TypePropertyDescription Create(std::string_view name, std::shared_ptr<Function> getter,
+                                        std::shared_ptr<Function> setter = nullptr);
 };
 
 struct TypeDescription {
@@ -227,6 +233,36 @@ Result<> Destruct(ExecutionContext* context) {
 }
 
 }  // namespace detail
+
+template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
+inline TypePropertyDescription TypePropertyDescription::Create(std::string_view name) {
+  return {
+    .name = std::string(name),
+    .type = Type::Get<typename MemberPointer<PROPERTY>::MemberType>(),
+    .access = PrimitiveAccess {
+      .offset = MemberPointer<PROPERTY>::offset
+    }
+  };
+}
+
+inline TypePropertyDescription TypePropertyDescription::Create(std::string_view name, std::shared_ptr<Function> getter,
+                                                        std::shared_ptr<Function> setter) {
+  assert(getter != nullptr);
+  assert(getter->outputs().size() == 1);
+  if (setter != nullptr) {
+    assert(setter->inputs().size() == 2);
+    assert(setter->GetInput(1)->type.lock() == getter->GetOutput(0)->type.lock());
+  }
+
+  return {
+    .name = std::string(name),
+    .type = getter->GetOutput(0)->type.lock(),
+    .access = FunctionAccess {
+      .getter = getter,
+      .setter = setter,
+    }
+  };
+}
 
 template <typename T, typename ParentType> requires(!std::is_base_of_v<SafelyReferenceable, T>)
 inline TypeDescription TypeDescription::CreateForNativeType(std::string_view name) {
