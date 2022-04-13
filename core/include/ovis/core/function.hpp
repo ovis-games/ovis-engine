@@ -47,12 +47,12 @@ class Function : public std::enable_shared_from_this<Function> {
   std::span<const ValueDeclaration> inputs() const { return inputs_; }
   std::optional<std::size_t> GetInputIndex(std::string_view input_name) const;
   std::optional<ValueDeclaration> GetInput(std::string_view input_name) const;
-
   std::optional<ValueDeclaration> GetInput(std::size_t input_index) const;
+
   std::span<const ValueDeclaration> outputs() const { return outputs_; }
   std::optional<std::size_t> GetOutputIndex(std::string_view output_name) const;
-  std::optional<ValueDeclaration> GetOutput(std::string_view output_name) const;
   std::optional<ValueDeclaration> GetOutput(std::size_t output_index) const;
+  std::optional<ValueDeclaration> GetOutput(std::string_view output_name) const;
 
   // TODO: implement this function
   template <typename... InputTypes> bool IsCallableWithArguments() const { return true; }
@@ -78,7 +78,60 @@ class Function : public std::enable_shared_from_this<Function> {
   FunctionHandle handle_; // This handle has always the unused bit set to 0.
   std::vector<ValueDeclaration> inputs_;
   std::vector<ValueDeclaration> outputs_;
+
+  auto FindInput(std::string_view name) const {
+    return std::find_if(inputs().begin(), inputs().end(), [name](const auto& value) { return value.name == name; });
+  }
+  auto FindOutput(std::string_view name) const {
+    return std::find_if(outputs().begin(), outputs().end(), [name](const auto& value) { return value.name == name; });
+  }
 };
+
+inline std::optional<std::size_t> Function::GetInputIndex(std::string_view input_name) const {
+  const auto input = FindInput(input_name);
+  if (input == inputs().end()) {
+    return std::nullopt;
+  } else {
+    return std::distance(inputs().begin(), input);
+  }
+}
+
+inline std::optional<Function::ValueDeclaration> Function::GetInput(std::string_view input_name) const {
+  const auto input = FindInput(input_name);
+  if (input == inputs().end()) {
+    return std::nullopt;
+  } else {
+    return *input;
+  }
+}
+
+inline std::optional<Function::ValueDeclaration> Function::GetInput(std::size_t input_index) const {
+  assert(input_index < inputs().size());
+  return *(inputs().begin() + input_index);
+}
+
+inline std::optional<std::size_t> Function::GetOutputIndex(std::string_view output_name) const {
+  const auto output = FindOutput(output_name);
+  if (output == outputs().end()) {
+    return std::nullopt;
+  } else {
+    return std::distance(outputs().begin(), output);
+  }
+}
+
+inline std::optional<Function::ValueDeclaration> Function::GetOutput(std::string_view output_name) const {
+  const auto output = FindOutput(output_name);
+  if (output == outputs().end()) {
+    return std::nullopt;
+  } else {
+    return *output;
+  }
+}
+
+inline std::optional<Function::ValueDeclaration> Function::GetOutput(std::size_t output_index) const {
+  assert(output_index < outputs().size());
+  return *(outputs().begin() + output_index);
+}
 
 template <typename OutputType = void, typename... InputTypes>
 inline Result<OutputType> Function::Call(InputTypes&&... inputs) const {
