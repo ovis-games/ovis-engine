@@ -96,8 +96,8 @@ class ExecutionContext {
   // offsets: (offset_from_top + tuple_size_v<T>, offset_from_top).
   template <typename T> WrappedType<T> GetTopValue(std::size_t offset_from_top = 0);
 
-  std::span<const ValueStorage> registers() const { return { registers_.get(), used_register_count_}; }
-  std::span<const ValueStorage> current_function_scope_registers() const { return { registers_.get(), used_register_count_}; }
+  std::span<const ValueStorage> registers() const;
+  std::span<const ValueStorage> current_function_scope_registers() const;
   Result<> Execute(std::span<const vm::Instruction> instructions, std::span<const ValueStorage> constants);
 
   template <typename ReturnType, typename... ArgumentTypes>
@@ -294,6 +294,14 @@ inline void ExecutionContext::PopValues(std::size_t count) {
     registers_[used_register_count_ - (i + 1)].reset();
   }
   used_register_count_ -= count;
+}
+
+inline std::span<const ValueStorage> ExecutionContext::registers() const {
+  return {registers_.get(), used_register_count_};
+}
+
+inline std::span<const ValueStorage> ExecutionContext::current_function_scope_registers() const {
+  return {registers_.get(), used_register_count_};
 }
 
 template <typename ReturnType, typename... ArgumentTypes>
