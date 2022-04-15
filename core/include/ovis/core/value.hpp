@@ -11,7 +11,6 @@ namespace ovis {
 class Value {
  public:
   Value() : type_() {}
-  template <typename T> requires(!std::is_same_v<Value, std::remove_cvref_t<T>>) Value(T&& value);
 
   Value(const Value& other);
   Value(Value&&);
@@ -21,7 +20,10 @@ class Value {
   template <typename T> T& as() { return storage_.as<T>(); }
   const std::shared_ptr<Type>& type() const { return type_; }
 
-  // static Value CreateFromType(std::shared_ptr<Type> type);
+  void Reset();
+
+  template <typename T> static Value Create(T&& native_value);
+  static Result<Value> Construct(std::shared_ptr<Type> type);
 
  private:
   ValueStorage storage_;
@@ -32,10 +34,6 @@ class Value {
 // TODO:
 //   * Refactor duplicated code!
 //   * Reuse allocated storage
-template <typename T> requires(!std::is_same_v<Value, std::remove_cvref_t<T>>)
-Value::Value(T&& value) : type_(Type::Get<std::remove_cvref_t<T>>()) {
-  storage_.reset(std::forward<T>(value));
-}
 
 inline Value::Value(const Value& other) : type_(other.type_) {
   if (!type_) {
@@ -189,6 +187,19 @@ inline Value& Value::operator=(Value&& other) {
   }
 
   return *this;
+}
+
+inline void Value::Reset() {
+  type_.reset();
+  storage_.reset();
+}
+
+template <typename T>
+inline Value Value::Create(T&& native_value) {
+  Value value;
+  value.type_ = Type::Get<std::remove_cvref_t<T>>();
+  value.storage_.reset(std::forward<T>(native_value));
+  return value;
 }
 
 }  // namespace ovis
