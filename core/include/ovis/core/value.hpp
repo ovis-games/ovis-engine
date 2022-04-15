@@ -1,6 +1,8 @@
 #pragma once
 
+#include <cstring>
 #include <memory>
+#include <string_view>
 #include <type_traits>
 
 #include <ovis/core/type.hpp>
@@ -21,6 +23,9 @@ class Value {
   const std::shared_ptr<Type>& type() const { return type_; }
 
   void Reset();
+
+  template <typename T> void SetProperty(std::string_view name, T&& value);
+  template <typename T> T GetProperty(std::string_view name);
 
   template <typename T> static Value Create(T&& native_value);
   static Result<Value> Construct(std::shared_ptr<Type> type);
@@ -193,6 +198,30 @@ inline void Value::Reset() {
   type_.reset();
   storage_.reset();
 }
+
+template <typename T>
+void Value::SetProperty(std::string_view name, T&& value) {
+  const auto property = type()->GetProperty(name);
+  assert(property != nullptr);
+
+  const auto& property_type = property->type;
+  assert(property_type != nullptr);
+  assert(property_type->id() == Type::GetId<T>());
+
+  if (property->access.index() == 0) {
+    const auto primitive_access = std::get<TypePropertyDescription::PrimitiveAccess>(property->access);
+    auto property_pointer = static_cast<std::byte*>(storage_.value_pointer()) + primitive_access.offset;
+    if (property_type->trivially_copy_assignable()) {
+      std::memcpy(property_pointer, &value, sizeof(T));
+    } else {
+      ExecutionContext::global_context()->Call<void>(property_type->copy_assign_function()->handle(), property_pointer, &value);
+    }
+  } else {
+    const auto function_access = std::get<TypePropertyDescription::FunctionAccess>(property->access);
+  }
+}
+
+template <typename T> T GetProperty(std::string_view name);
 
 template <typename T>
 inline Value Value::Create(T&& native_value) {
