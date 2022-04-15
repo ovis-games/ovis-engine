@@ -177,9 +177,7 @@ namespace detail {
 
 template <typename T>
 Result<> DefaultConstruct(ExecutionContext* context) {
-  auto destination = context->top(1).as<void*>();
-  auto source = context->top(0).as<const void*>();
-  assert(reinterpret_cast<std::uintptr_t>(source) % alignof(T) == 0);
+  auto destination = context->top(0).as<void*>();
   assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
   new (destination) T();
   return Success;
