@@ -286,7 +286,7 @@ inline TypeDescription TypeDescription::CreateForNativeType(std::string_view nam
           std::is_trivially_copy_assignable_v<T> ? nullptr : Function::MakeNative(detail::CopyAssign<T>, {{}, {}}, {}),
       .move_assign =
           std::is_trivially_move_assignable_v<T> ? nullptr : Function::MakeNative(detail::MoveAssign<T>, {{}, {}}, {}),
-      .destruct = std::is_trivially_destructible_v<T> ? nullptr : Function::MakeNative(detail::MoveAssign<T>, {{}}, {}),
+      .destruct = std::is_trivially_destructible_v<T> ? nullptr : Function::MakeNative(detail::Destruct<T>, {{}}, {}),
   };
 }
 
