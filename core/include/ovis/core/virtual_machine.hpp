@@ -162,6 +162,9 @@ class alignas(16) ValueStorage final {
   void reset_trivial();
 
 
+  // Allocates storage if the value defined by alignment and size cannot be stored inline.
+  void* AllocateIfNecessary(std::size_t alignment, std::size_t size);
+
   // Sets up dynamically allocated storage
   void Allocate(std::size_t alignment, std::size_t size);
 
@@ -419,6 +422,17 @@ inline void ValueStorage::reset_trivial() {
 #ifndef NDEBUG
   native_type_id_ = TypeOf<void>;
 #endif
+}
+
+inline void* ValueStorage::AllocateIfNecessary(std::size_t alignment, std::size_t size) {
+  assert(!has_allocated_storage());
+  assert(!destruct_function());
+  if (IsTypeStoredInline(alignment, size)) {
+    return data();
+  } else {
+    Allocate(alignment, size);
+    return allocated_storage_pointer();
+  }
 }
 
 inline void ValueStorage::Allocate(std::size_t alignment, std::size_t size) {
