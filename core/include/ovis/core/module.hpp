@@ -32,14 +32,7 @@ class Module : public std::enable_shared_from_this<Module> {
   // std::span<const std::shared_ptr<Type>> types() const { return types_; }
 
   // Functions
-  std::shared_ptr<Function> RegisterFunction(std::string_view name, NativeFunction* function_pointer,
-                                             std::vector<Function::ValueDeclaration> inputs,
-                                             std::vector<Function::ValueDeclaration> outputs);
-
-  template <auto FUNCTION>
-  std::shared_ptr<Function> RegisterFunction(std::string_view name, std::vector<std::string_view> input_names,
-                                             std::vector<std::string_view> output_names);
-
+  std::shared_ptr<Function> RegisterFunction(FunctionDescription description);
   std::shared_ptr<Function> GetFunction(std::string_view name);
   std::span<std::shared_ptr<Function>> functions() { return functions_; }
   std::span<const std::shared_ptr<Function>> functions() const { return functions_; }

@@ -35,4 +35,6 @@ TEST_CASE("Parse parse variable declaration", "[ovis][core][ScriptFunctionParser
   REQUIRE_RESULT(parse_result);
 
   REQUIRE(parse_result->instructions.size() == 2);
+  REQUIRE(parse_result->instructions[0].opcode == vm::OpCode::PUSH);
+  REQUIRE(parse_result->instructions[0].push_pop.count == 1);
 }

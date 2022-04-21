@@ -8,6 +8,7 @@
 #include <ovis/utils/result.hpp>
 #include <ovis/utils/type_id.hpp>
 #include <ovis/utils/versioned_index.hpp>
+#include <ovis/core/type_helper.hpp>
 #include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
@@ -47,10 +48,10 @@ struct TypeDescription {
 
   // If one of the following functions is null, it is assumed that the
   // type ist trivially copy/move-constrctible/assignable.
-  std::shared_ptr<Function> copy_construct;
-  std::shared_ptr<Function> move_construct;
+  // std::shared_ptr<Function> copy_construct;
+  // std::shared_ptr<Function> move_construct;
   std::shared_ptr<Function> copy_assign;
-  std::shared_ptr<Function> move_assign;
+  // std::shared_ptr<Function> move_assign;
 
   // If the destruct function is null it is assumed it is trivially
   // destructible.
@@ -86,45 +87,20 @@ class Type : public std::enable_shared_from_this<Type> {
   bool trivially_constructible() const { return description().construct == nullptr; }
   const Function* construct_function() const { return description().construct.get(); }
 
-  bool trivially_copy_constructible() const { return description().copy_construct == nullptr; }
-  const Function* copy_construct_function() const { return description().copy_construct.get(); }
+  // bool trivially_copy_constructible() const { return description().copy_construct == nullptr; }
+  // const Function* copy_construct_function() const { return description().copy_construct.get(); }
 
-  bool trivially_move_constructible() const { return description().move_construct == nullptr; }
-  const Function* move_construct_function() const { return description().move_construct.get(); }
+  // bool trivially_move_constructible() const { return description().move_construct == nullptr; }
+  // const Function* move_construct_function() const { return description().move_construct.get(); }
 
   bool trivially_copy_assignable() const { return description().copy_assign == nullptr; }
   const Function* copy_assign_function() const { return description().copy_assign.get(); }
 
-  bool trivially_move_assignable() const { return description().move_assign == nullptr; }
-  const Function* move_assign_function() const { return description().move_assign.get(); }
+  // bool trivially_move_assignable() const { return description().move_assign == nullptr; }
+  // const Function* move_assign_function() const { return description().move_assign.get(); }
 
   bool trivially_destructible() const { return description().destruct == nullptr; }
   const Function* destruct_function() const { return description().destruct.get(); }
-
-  // bool IsDerivedFrom(std::shared_ptr<Type> type) const;
-  // template <typename T> bool IsDerivedFrom() const;
-
-  // void RegisterConstructorFunction(std::shared_ptr<Function> function);
-  // template <typename... Args> Value Construct(Args&&... args) const;
-
-  // void SetSerializeFunction(SerializeFunction function) { serialize_function_ = function; }
-  // SerializeFunction serialize_function() const { return serialize_function_; }
-
-  // void SetDeserializeFunction(DeserializeFunction function) { deserialize_function_ = function; }
-  // DeserializeFunction deserialize_function() const { return deserialize_function_; }
-
-  // Value CreateValue(const json& data) const;
-
-  // void RegisterProperty(std::string_view name, Id type_id, Property::GetFunction getter,
-  //                       Property::SetFunction setter = nullptr);
-  // template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
-  // void RegisterProperty(std::string_view);
-
-  // template <auto GETTER>
-  // void RegisterProperty(std::string_view);
-
-  // template <auto GETTER, auto SETTER>
-  // void RegisterProperty(std::string_view);
 
   const TypePropertyDescription* GetProperty(std::string_view name) const;
   std::span<const TypePropertyDescription> properties() const { return description().properties; }
@@ -175,60 +151,6 @@ namespace ovis {
 
 namespace detail {
 
-template <typename T>
-Result<> DefaultConstruct(ExecutionContext* context) {
-  auto destination = context->top(0).as<void*>();
-  assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
-  new (destination) T();
-  return Success;
-}
-
-template <typename T>
-Result<> CopyConstruct(ExecutionContext* context) {
-  auto destination = context->top(1).as<void*>();
-  auto source = context->top(0).as<const void*>();
-  assert(reinterpret_cast<std::uintptr_t>(source) % alignof(T) == 0);
-  assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
-  new (destination) T(*reinterpret_cast<const T*>(source));
-  return Success;
-}
-
-template <typename T>
-Result<> MoveConstruct(ExecutionContext* context) {
-  auto destination = context->top(1).as<void*>();
-  auto source = context->top(0).as<void*>();
-  assert(reinterpret_cast<std::uintptr_t>(source) % alignof(T) == 0);
-  assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
-  new (destination) T(std::move(*reinterpret_cast<T*>(source)));
-  return Success;
-}
-
-template <typename T>
-Result<> CopyAssign(ExecutionContext* context) {
-  auto destination = context->top(1).as<void*>();
-  auto source = context->top(0).as<const void*>();
-  assert(reinterpret_cast<std::uintptr_t>(source) % alignof(T) == 0);
-  assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
-  *reinterpret_cast<T*>(destination) = *reinterpret_cast<const T*>(source);
-  return Success;
-}
-
-template <typename T>
-Result<> MoveAssign(ExecutionContext* context) {
-  auto destination = context->top(1).as<void*>();
-  auto source = context->top(0).as<void*>();
-  assert(reinterpret_cast<std::uintptr_t>(source) % alignof(T) == 0);
-  assert(reinterpret_cast<std::uintptr_t>(destination) % alignof(T) == 0);
-  *reinterpret_cast<T*>(destination) = std::move(*reinterpret_cast<T*>(source));
-  return Success;
-}
-
-template <typename T>
-Result<> Destruct(ExecutionContext* context) {
-  auto value = context->top(0).as<void*>();
-  reinterpret_cast<T*>(value)->~T();
-  return Success;
-}
 
 }  // namespace detail
 
@@ -236,9 +158,9 @@ template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
 inline TypePropertyDescription TypePropertyDescription::Create(std::string_view name) {
   return {
     .name = std::string(name),
-    .type = Type::Get<typename MemberPointer<PROPERTY>::MemberType>(),
+    .type = Type::Get<typename reflection::MemberPointer<PROPERTY>::MemberType>(),
     .access = PrimitiveAccess {
-      .offset = MemberPointer<PROPERTY>::offset
+      .offset = reflection::MemberPointer<PROPERTY>::offset
     }
   };
 }
@@ -275,18 +197,25 @@ inline TypeDescription TypeDescription::CreateForNativeType(std::string_view nam
       .size_in_bytes = sizeof(T),
       .parent = Type::Get<ParentType>(),
       .properties = {},
-      .construct = Function::MakeNative(detail::DefaultConstruct<T>, {{}}, {}),
-      .copy_construct = std::is_trivially_copy_constructible_v<T>
-                            ? nullptr
-                            : Function::MakeNative(detail::CopyConstruct<T>, {{}, {}}, {}),
-      .move_construct = std::is_trivially_move_constructible_v<T>
-                            ? nullptr
-                            : Function::MakeNative(detail::MoveConstruct<T>, {{}, {}}, {}),
+      .construct = Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::DefaultConstruct<T>>()),
+      // .copy_construct = std::is_trivially_copy_constructible_v<T>
+      //                       ? nullptr
+      //                       :
+      //                       Function::Create(FunctionDescription::CreateForNativeFunction(detail::CopyConstruct<T>)),
+      // .move_construct = std::is_trivially_move_constructible_v<T>
+      //                       ? nullptr
+      //                       :
+      //                       Function::Create(FunctionDescription::CreateForNativeFunction(detail::MoveConstruct<T>)),
       .copy_assign =
-          std::is_trivially_copy_assignable_v<T> ? nullptr : Function::MakeNative(detail::CopyAssign<T>, {{}, {}}, {}),
-      .move_assign =
-          std::is_trivially_move_assignable_v<T> ? nullptr : Function::MakeNative(detail::MoveAssign<T>, {{}, {}}, {}),
-      .destruct = std::is_trivially_destructible_v<T> ? nullptr : Function::MakeNative(detail::Destruct<T>, {{}}, {}),
+          std::is_trivially_copy_assignable_v<T>
+              ? nullptr
+              : Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::CopyAssign<T>>()),
+      // .move_assign =
+      //     std::is_trivially_move_assignable_v<T> ? nullptr : Function::MakeNative(detail::MoveAssign<T>, {{}, {}},
+      //     {}),
+      .destruct = std::is_trivially_destructible_v<T>
+                      ? nullptr
+                      : Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::Destruct<T>>()),
   };
 }
 

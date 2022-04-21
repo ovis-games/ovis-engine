@@ -23,6 +23,7 @@
 #include <ovis/utils/type_id.hpp>
 #include <ovis/utils/versioned_index.hpp>
 #include <ovis/core/function_handle.hpp>
+#include <ovis/core/type_helper.hpp>
 #include <ovis/core/value_storage.hpp>
 #include <ovis/core/virtual_machine_instructions.hpp>
 
@@ -341,11 +342,6 @@ inline Result<ReturnType> ExecutionContext::Call(FunctionHandle handle, Argument
 // ValueStorage
 namespace detail {
 
-template <typename T>
-void Destruct(void* object) {
-  reinterpret_cast<T*>(object)->~T();
-}
-
 template <typename T> struct NativeFunctionWrapper;
 
 template <typename R, typename... Args>
@@ -390,7 +386,7 @@ inline void ValueStorage::reset(T&& value) {
     new (data()) StoredType(std::forward<T>(value));
   }
   if constexpr (!std::is_trivially_destructible_v<StoredType>) {
-    SetDestructFunction(FunctionHandle::FromNativeFunction(&NativeFunctionWrapper<detail::Destruct<StoredType>>));
+    SetDestructFunction(FunctionHandle::FromNativeFunction(&NativeFunctionWrapper<&type_helper::Destruct<StoredType>>));
   }
 #ifndef NDEBUG
   native_type_id_ = TypeOf<StoredType>;

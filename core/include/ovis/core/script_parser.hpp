@@ -28,8 +28,8 @@ struct ParseScriptError : Error {
 using ParseScriptErrors = std::vector<ParseScriptError>;
 
 struct ParseScriptFunctionResult {
-  std::vector<Function::ValueDeclaration> inputs;
-  std::vector<Function::ValueDeclaration> outputs;
+  std::vector<ValueDeclaration> inputs;
+  std::vector<ValueDeclaration> outputs;
   std::vector<vm::Instruction> instructions;
   std::vector<Value> constants;
   // ScriptFunction::DebugInfo debug_info;
@@ -39,6 +39,12 @@ Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(const j
 
 struct ParseScriptTypeResult {
   TypeDescription type_description;
+  std::vector<Value> construct_constants;
+  std::vector<vm::Instruction> construct_instructions;
+  std::vector<Value> copy_constants;
+  std::vector<vm::Instruction> copy_instructions;
+  std::vector<Value> destruct_constants;
+  std::vector<vm::Instruction> destruct_instructions;
 };
 
 Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(const json& type_definition);
@@ -56,8 +62,8 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(const json& typ
 
 //  private:
 //   ScriptFunctionParser(const json& function_definition);
-//   // std::vector<Function::ValueDeclaration> ParseInputOutputDeclarations(const json& value_declarations, std::string path);
-//   // std::optional<Function::ValueDeclaration> ParseInputOutputDeclaration(const json& value_declaration, std::string path);
+//   // std::vector<ValueDeclaration> ParseInputOutputDeclarations(const json& value_declarations, std::string path);
+//   // std::optional<ValueDeclaration> ParseInputOutputDeclaration(const json& value_declaration, std::string path);
 //   // void ParseActions(const json& actions, std::string path);
 //   // void ParseAction(const json& action, std::string path);
 //   // void ParseFunctionCallAction(const json& action, std::string path);

@@ -16,10 +16,7 @@ TEST_CASE("Register non-trivial type", "[ovis][core][Type]") {
 
   REQUIRE(non_trivial_type->size_in_bytes() == sizeof(NonTrivial));
   REQUIRE(non_trivial_type->alignment_in_bytes() == alignof(NonTrivial));
-  REQUIRE(!non_trivial_type->trivially_copy_constructible());
-  REQUIRE(!non_trivial_type->trivially_move_constructible());
   REQUIRE(!non_trivial_type->trivially_copy_assignable());
-  REQUIRE(!non_trivial_type->trivially_move_assignable());
   REQUIRE(!non_trivial_type->trivially_destructible());
 }
 
@@ -34,10 +31,7 @@ TEST_CASE("Register trivial type", "[ovis][core][Type]") {
 
   REQUIRE(trivial_type->size_in_bytes() == sizeof(Trivial));
   REQUIRE(trivial_type->alignment_in_bytes() == alignof(Trivial));
-  REQUIRE(trivial_type->trivially_copy_constructible());
-  REQUIRE(trivial_type->trivially_move_constructible());
   REQUIRE(trivial_type->trivially_copy_assignable());
-  REQUIRE(trivial_type->trivially_move_assignable());
   REQUIRE(trivial_type->trivially_destructible());
 }
 

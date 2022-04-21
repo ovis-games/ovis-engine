@@ -23,10 +23,13 @@ struct ScriptFunctionParser {
   void Parse(const json& action_definiton);
   void ParseActions(const json& action_definiton, std::string_view path);
   void ParseAction(const json& action_definiton, std::string_view path);
+  void ParseVariableDeclaration(const json& action_definiton, std::string_view path);
   void ParseFunctionCall(const json& action_definiton, std::string_view path);
   void ParsePushValue(const json& value_definition, std::string_view path, Type::Id type);
   void ParsePushVariable(const json& value_definition, std::string_view path, Type::Id type);
   void ParsePushVariableReference(const json& value_definition, std::string_view path, Type::Id type);
+
+  void CallFunction(const std::shared_ptr<Function> function);
 };
 
 }  // namespace
@@ -63,7 +66,9 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(const json& typ
     description.size_in_bytes += padding_bytes;
 
     description.properties.push_back({
+        .name = property_name,
         .type = property_type,
+        .access = TypePropertyDescription::PrimitiveAccess { .offset = description.size_in_bytes }
     });
 
     description.size_in_bytes += property_type->size_in_bytes();
@@ -89,10 +94,34 @@ void ScriptFunctionParser::ParseActions(const json& actions_definiton, std::stri
 
 void ScriptFunctionParser::ParseAction(const json& action_definiton, std::string_view path) {
   const std::string& id = action_definiton["id"];
-  if (id == "function_call") {
+  if (id == "variable") {
+    ParseVariableDeclaration(action_definiton, path);
+  }
+  else if (id == "function_call") {
     ParseFunctionCall(action_definiton, path);
   } else {
     errors.emplace_back(fmt::format("Invalid action id: {}", id), path);
+  }
+}
+
+void ScriptFunctionParser::ParseVariableDeclaration(const json& action_definiton, std::string_view path) {
+  assert(action_definiton["id"] == "variable");
+  const auto type = Type::Deserialize(action_definiton["type"]);
+  if (!type) {
+    errors.emplace_back(fmt::format("Unknown variable type {}", action_definiton["type"].dump()), path);
+    return;
+  }
+
+  assert(type->construct_function());
+
+  result.constants.push_back(Value::Create(type->construct_function()->handle()));
+  result.constants.push_back(Value::Create(type->destruct_function()->handle()));
+  result.instructions.push_back(vm::Instruction::CreatePushTrivialConstant(0));
+  result.instructions.push_back(vm::Instruction::CreatePushTrivialConstant(1));
+  if (type->is_stored_inline()) {
+    result.instructions.push_back(vm::Instruction::CreateConstructInlineValue());
+  } else {
+    result.instructions.push_back(vm::Instruction::CreateConstructValue(type->alignment_in_bytes(), type->size_in_bytes()));
   }
 }
 

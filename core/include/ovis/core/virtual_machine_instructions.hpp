@@ -16,13 +16,21 @@ enum class OpCode : std::uint32_t {
   CONSTRUCT_VALUE,
   COPY_TRIVIAL_VALUE,
   PUSH_TRIVIAL_CONSTANT,
+
+  CALL_FUNCTION,
   CALL_NATIVE_FUNCTION,
+  CALL_SCRIPT_FUNCTION,
+  SET_CONSTANT_OFFSET,
+  RETURN,
+
   SUBTRACT_NUMBERS,
   MULTIPLY_NUMBERS,
   IS_NUMBER_GREATER,
   JUMP,
   JUMP_IF_TRUE,
   JUMP_IF_FALSE,
+
+  OFFSET_ADDRESS,
 };
 
 namespace instructions {
@@ -33,6 +41,7 @@ constexpr std::size_t TYPE_SIZE_BITS = 11;
 constexpr std::size_t REGISTER_INDEX_BITS = 12;
 constexpr std::size_t CONSTANT_INDEX_BITS = 10;
 constexpr std::size_t JUMP_OFFSET_BITS = 24;
+constexpr std::size_t ADDRESS_OFFSET_BITS = 12;
 
 struct ConstructInlineValue {
   OpCode opcode : OPCODE_BITS;
@@ -125,6 +134,13 @@ struct NumberOperationData {
 };
 static_assert(sizeof(NumberOperationData ) == sizeof(std::uint32_t));
 
+struct OffsetAddressData {
+  OpCode opcode : OPCODE_BITS;
+  std::uint32_t register_index : REGISTER_INDEX_BITS;
+  std::uint32_t offset : ADDRESS_OFFSET_BITS;
+};
+static_assert(sizeof(OffsetAddressData) == sizeof(std::uint32_t));
+
 }  // namespace instructions
 
 union Instruction {
@@ -137,6 +153,7 @@ union Instruction {
   instructions::JumpData jump_data;
   instructions::CopyTrivialValueData copy_trivial_value;
   instructions::NumberOperationData number_operation_data;
+  instructions::OffsetAddressData offset_address_data;
 
   static Instruction CreatePushTrivialConstant(std::uint32_t constant_index) {
     assert(constant_index < (1 << instructions::CONSTANT_INDEX_BITS));
@@ -154,9 +171,23 @@ union Instruction {
     assert(size < (1 << instructions::TYPE_SIZE_BITS));
 
     return { .construct_value = {
+      .opcode = OpCode::CONSTRUCT_VALUE,
       .alignment = alignment,
       .size = size,
     }};
+  }
+
+  static Instruction CreateOffsetAddress(std::uint32_t register_index, std::uint32_t offset) {
+    assert(register_index < (1 << instructions::REGISTER_INDEX_BITS));
+    assert(offset < (1 << instructions::ADDRESS_OFFSET_BITS));
+
+    return {
+      .offset_address_data = {
+        .opcode = OpCode::OFFSET_ADDRESS,
+        .register_index = register_index,
+        .offset = offset,
+      }
+    };
   }
 };
 static_assert(std::is_trivial_v<Instruction>);

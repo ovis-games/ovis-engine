@@ -7,9 +7,14 @@
 
 namespace ovis {
 
-// class Value;
 class ExecutionContext;
 using NativeFunction = Result<>(ExecutionContext*);
+
+namespace detail {
+template <typename T> struct IsNativeFunction : std::false_type {};
+template <> struct IsNativeFunction<NativeFunction> : std::true_type {};
+}
+template <typename T> constexpr bool IsNativeFunction = detail::IsNativeFunction<T>::value;
 
 // The handle serves as a "pointer" to a function. You can call functions using the handle, but you need to know the
 // amount of types of the parameters. You cannot use the handle to receive the function back (multiple functions may
@@ -41,6 +46,10 @@ union FunctionHandle {
   static constexpr FunctionHandle FromNativeFunction(NativeFunction* native_function) {
     return {.native_function = native_function};
   }
+  // template <auto FUNCTION> requires (!IsNativeFunction<decltype(FUNCTION)>)
+  // static constexpr FunctionHandle FromNativeFunction() {
+  //   return FromNativeFunction(&NativeFunctionWrapper<FUNCTION>);
+  // }
   static constexpr bool IsValid(const FunctionHandle& handle) {
     assert(handle.zero == 0);
     return handle.native_function != nullptr;
