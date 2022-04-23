@@ -68,3 +68,57 @@ TEST_CASE("Register non-trivial properties", "[ovis][core][Type]") {
   value.SetProperty("number", std::make_shared<double>(9.0));
   REQUIRE(*value.as<NonTrivial>().number == 9.0);
 }
+
+struct Base {
+  int x;
+};
+struct Derived : public Base {
+  virtual int foo() { return 0; }
+};
+struct Derived2 : public Derived {
+  virtual int foo() override { return 1; }
+};
+struct Unrelated {};
+
+TEST_CASE("Register type with base type", "[ovis][core][Type]") {
+  auto test_module = RegisterTestModule();
+  auto base_type = test_module->RegisterType(ovis::TypeDescription::CreateForNativeType<Base>("Base"));
+  auto derived_type = test_module->RegisterType(ovis::TypeDescription::CreateForNativeType<Derived, Base>("Derived"));
+  auto derived2_type = test_module->RegisterType(ovis::TypeDescription::CreateForNativeType<Derived2, Derived>("Derived2"));
+  auto unrelated_type = test_module->RegisterType(ovis::TypeDescription::CreateForNativeType<Unrelated>("Unrelated"));
+
+  Base base;
+
+  Derived derived;
+  Base* derived_base = &derived;
+
+  Derived2 derived2;
+  Derived* derived2_derived = &derived2;
+  Base* derived2_base = &derived2;
+
+  Unrelated unrelated;
+
+  REQUIRE(base_type->IsDerivedFrom<Base>());
+  REQUIRE(!base_type->IsDerivedFrom(derived_type->id()));
+  REQUIRE(!base_type->IsDerivedFrom(derived2_type->id()));
+  REQUIRE(!base_type->IsDerivedFrom(unrelated_type->id()));
+
+  REQUIRE(derived_type->IsDerivedFrom(base_type->id()));
+  REQUIRE(derived_type->IsDerivedFrom(derived_type->id()));
+  REQUIRE(!derived_type->IsDerivedFrom(derived2_type->id()));
+  REQUIRE(!derived_type->IsDerivedFrom(unrelated_type->id()));
+
+  REQUIRE(derived2_type->IsDerivedFrom(base_type->id()));
+  REQUIRE(derived2_type->IsDerivedFrom(derived_type->id()));
+  REQUIRE(derived2_type->IsDerivedFrom(derived2_type->id()));
+  REQUIRE(!derived2_type->IsDerivedFrom(unrelated_type->id()));
+
+  REQUIRE(!unrelated_type->IsDerivedFrom(base_type->id()));
+  REQUIRE(!unrelated_type->IsDerivedFrom(derived_type->id()));
+  REQUIRE(!unrelated_type->IsDerivedFrom(derived2_type->id()));
+  REQUIRE(unrelated_type->IsDerivedFrom(unrelated_type->id()));
+
+  REQUIRE(derived_type->CastToBase<Base>(&derived) == derived_base);
+  REQUIRE(derived2_type->CastToBase<Derived>(&derived2) == derived2_derived);
+  REQUIRE(derived2_type->CastToBase<Base>(&derived2) == derived2_base);
+}

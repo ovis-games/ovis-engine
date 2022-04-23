@@ -333,7 +333,7 @@ inline Result<ReturnType> ExecutionContext::Call(FunctionHandle handle, Argument
     // No return type, just succeed
     return Success;
   } else {
-    Result<ReturnType> result(top().as<ReturnType>());
+    ReturnType result(top().as<ReturnType>());
     PopValue();
     return result;
   }

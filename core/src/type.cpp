@@ -12,6 +12,38 @@ Type::Type(Id id, std::shared_ptr<Module> module, TypeDescription description)
       full_reference_(fmt::format("{}.{}", module->name(), description.name)),
       description_(std::move(description)) {}
 
+
+bool Type::IsDerivedFrom(Id base_type_id) const {
+  const Type* type = this;
+  do {
+    if (type->id() == base_type_id) {
+      return true;
+    }
+    type = type->base();
+  } while (type != nullptr);
+  return false;
+}
+
+void* Type::CastToBase(Id base_type_id, void* pointer) const {
+  assert(base_type_id != id());
+  const Type* type = this;
+  do {
+    auto to_base_function = type->to_base_function();
+    if (to_base_function == nullptr) {
+      return nullptr;
+    }
+
+    auto result = to_base_function->Call<void*>(pointer);
+    if (!result) {
+      return nullptr;
+    }
+    pointer = *result;
+    type = type->base();
+  } while (type->id() != base_type_id);
+
+  return pointer;
+}
+
 std::shared_ptr<Type> Type::Add(std::shared_ptr<Module> module, TypeDescription description) {
   for (auto& registration : registered_types) {
     if (registration.type == nullptr) {

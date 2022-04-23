@@ -40,7 +40,9 @@ struct TypeDescription {
   std::string name;
   std::uintptr_t alignment_in_bytes;
   std::uintptr_t size_in_bytes;
-  std::shared_ptr<Type> parent;
+  std::shared_ptr<Type> base;
+  std::shared_ptr<Function> to_base;
+  std::shared_ptr<Function> from_base;
   std::vector<TypePropertyDescription> properties;
 
   // Default constructor
@@ -57,10 +59,20 @@ struct TypeDescription {
   // destructible.
   std::shared_ptr<Function> destruct;
 
-  template <typename T, typename ParentType = void> requires (!std::is_base_of_v<SafelyReferenceable, T>)
+  template <typename T, typename ParentType = void>
+  requires (
+    !std::is_base_of_v<SafelyReferenceable, T> &&
+    (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
+    !std::is_same_v<T, ParentType>
+  )
   static TypeDescription CreateForNativeType(std::string_view name);
 
-  template <typename T, typename ParentType = void> requires (std::is_base_of_v<SafelyReferenceable, T>)
+  template <typename T, typename ParentType = void>
+  requires (
+    std::is_base_of_v<SafelyReferenceable, T> &&
+    (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
+    !std::is_same_v<T, ParentType>
+  )
   static TypeDescription CreateForNativeType(std::string_view name);
 };
 
@@ -77,7 +89,7 @@ class Type : public std::enable_shared_from_this<Type> {
 
   std::string_view name() const { return description().name; }
   std::string_view full_reference() const { return full_reference_; }
-  std::weak_ptr<Type> parent() const { return description().parent; }
+  Type* base() const { return description().base.get(); }
   std::weak_ptr<Module> module() const { return module_; }
 
   std::size_t alignment_in_bytes() const { return description().alignment_in_bytes; }
@@ -102,11 +114,33 @@ class Type : public std::enable_shared_from_this<Type> {
   bool trivially_destructible() const { return description().destruct == nullptr; }
   const Function* destruct_function() const { return description().destruct.get(); }
 
+  const Function* to_base_function() const { return description().to_base.get(); }
+  const Function* from_base_function() const { return description().from_base.get(); }
+
+  // Returns true if the type has a base with the specified id or if the type itself has the specified id.
+  bool IsDerivedFrom(Id base_type_id) const;
+  template <typename T> bool IsDerivedFrom() const { return IsDerivedFrom(*Type::GetId<T>()); }
+
+  // Returns nullptr if the base_type_id is not actually a base of the type or if you pass in the id of the type itself
+  // (so you cannot cast a type to "itself").
+  void* CastToBase(Id base_type_id, void* pointer) const;
+  template <typename Base>
+  Base* CastToBase(void* pointer) const {
+    return reinterpret_cast<Base*>(CastToBase(*Type::GetId<Base>(), pointer));
+  }
+
+  // // Returns nullptr if derived_type_id is not actually derived from the type.
+  // void* CastToBase(Id base_type_id, void* pointer) const;
+  // template <typename Base>
+  // Base* CastToBase(void* pointer) const {
+  //   return reinterpret_cast<Base*>(CastToBase(*Type::GetId<Base>(), pointer));
+  // }
+
   const TypePropertyDescription* GetProperty(std::string_view name) const;
   std::span<const TypePropertyDescription> properties() const { return description().properties; }
 
   template <typename T> static std::shared_ptr<Type> Get();
-  template <typename T> static std::optional<Id> GetId();
+  template <typename T> static std::optional<Id> GetId(); //  TODO: Remove optional here!
   static std::shared_ptr<Type> Get(Id id);
 
   static std::shared_ptr<Type> Deserialize(const json& data);
@@ -141,10 +175,10 @@ class Type : public std::enable_shared_from_this<Type> {
 
 namespace ovis {
 
-// inline Type::Type(std::shared_ptr<Module> module, std::string_view name, std::shared_ptr<Type> parent,
+// inline Type::Type(std::shared_ptr<Module> module, std::string_view name, std::shared_ptr<Type> base,
 //                   ConversionFunction to_base, ConversionFunction from_base)
 //     : Type(module, name) {
-//   parent_ = parent;
+//   base_ = base;
 //   from_base_ = from_base;
 //   to_base_ = to_base;
 // }
@@ -184,7 +218,12 @@ inline TypePropertyDescription TypePropertyDescription::Create(std::string_view 
   };
 }
 
-template <typename T, typename ParentType> requires(!std::is_base_of_v<SafelyReferenceable, T>)
+template <typename T, typename ParentType> 
+requires (
+  !std::is_base_of_v<SafelyReferenceable, T> &&
+  (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
+  !std::is_same_v<T, ParentType>
+)
 inline TypeDescription TypeDescription::CreateForNativeType(std::string_view name) {
   static_assert(std::is_copy_constructible_v<T>);
   static_assert(std::is_move_constructible_v<T>);
@@ -195,7 +234,15 @@ inline TypeDescription TypeDescription::CreateForNativeType(std::string_view nam
       .name = std::string(name),
       .alignment_in_bytes = alignof(T),
       .size_in_bytes = sizeof(T),
-      .parent = Type::Get<ParentType>(),
+      .base = Type::Get<ParentType>(),
+      .to_base =
+          std::is_same_v<ParentType, void>
+              ? nullptr
+              : Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::ToBase<ParentType, T>>()),
+      .from_base =
+          std::is_same_v<ParentType, void>
+              ? nullptr
+              : Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::FromBase<ParentType, T>>()),
       .properties = {},
       .construct = Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::DefaultConstruct<T>>()),
       // .copy_construct = std::is_trivially_copy_constructible_v<T>
@@ -219,10 +266,21 @@ inline TypeDescription TypeDescription::CreateForNativeType(std::string_view nam
   };
 }
 
-template <typename T, typename ParentType> requires(std::is_base_of_v<SafelyReferenceable, T>)
+template <typename T, typename ParentType> 
+requires (
+  std::is_base_of_v<SafelyReferenceable, T> &&
+  (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
+  !std::is_same_v<T, ParentType>
+)
 inline TypeDescription TypeDescription::CreateForNativeType(std::string_view name) {
-  return CreateForNativeType<safe_ptr<T>, ParentType>(name);
+  return TypeDescription{
+  };
 }
+
+// template <typename T, typename ParentType> requires(std::is_base_of_v<SafelyReferenceable, T> && !std::is_same_v<T, ParentType>)
+// inline TypeDescription TypeDescription::CreateForNativeType(std::string_view name) {
+//   return CreateForNativeType<T, ParentType>(name);
+// }
 
 // inline bool Type::IsDerivedFrom(std::shared_ptr<Type> type) const {
 //   assert(type != nullptr);
@@ -230,8 +288,8 @@ inline TypeDescription TypeDescription::CreateForNativeType(std::string_view nam
 //   if (type.get() == this) {
 //     return true;
 //   } else {
-//     const auto parent_type = parent_.lock();
-//     return parent_type != nullptr && parent_type->IsDerivedFrom(type);
+//     const auto base_type = base_.lock();
+//     return base_type != nullptr && base_type->IsDerivedFrom(type);
 //   }
 // }
 
@@ -464,9 +522,9 @@ inline const TypePropertyDescription* Type::GetProperty(std::string_view name) c
 // inline json Type::Serialize() const {
 //   json type = json::object();
 //   type["name"] = std::string(name());
-//   const auto parent_type = parent().lock();
-//   if (parent_type) {
-//     type["parent"] = std::string(parent_type->full_reference());
+//   const auto base_type = base().lock();
+//   if (base_type) {
+//     type["base"] = std::string(base_type->full_reference());
 //   }
 
 //   json& properties = type["properties"] = json::object();

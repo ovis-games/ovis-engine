@@ -46,5 +46,15 @@ void Destruct(void* value) {
   reinterpret_cast<T*>(value)->~T();
 }
 
+template <typename Base, typename Derived>
+void* ToBase(void* derived) {
+  return reinterpret_cast<void*>(static_cast<Base*>(reinterpret_cast<Derived*>(derived)));
+}
+
+template <typename Base, typename Derived>
+void* FromBase(void* base) {
+  return reinterpret_cast<void*>(static_cast<Derived*>(reinterpret_cast<Base*>(base)));
+}
+
 }  // namespace type_helper
 }  // namespace ovis
