@@ -6,7 +6,6 @@
 #include <cstring>
 #include <utility>
 
-#include <ovis/utils/type_id.hpp>
 #include <ovis/core/function_handle.hpp>
 
 namespace ovis {

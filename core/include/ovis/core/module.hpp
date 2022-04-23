@@ -43,7 +43,7 @@ class Module : public std::enable_shared_from_this<Module> {
   Module(std::string_view name) : name_(name) {}
 
   std::string name_;
-  std::vector<Type::Id> types_;
+  std::vector<TypeId> types_;
   std::vector<std::shared_ptr<Function>> functions_;
 
   static std::vector<std::shared_ptr<Module>> modules;

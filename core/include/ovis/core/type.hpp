@@ -6,7 +6,7 @@
 
 #include <ovis/utils/json.hpp>
 #include <ovis/utils/result.hpp>
-#include <ovis/utils/type_id.hpp>
+#include <ovis/utils/native_type_id.hpp>
 #include <ovis/utils/versioned_index.hpp>
 #include <ovis/core/type_helper.hpp>
 #include <ovis/core/virtual_machine.hpp>
@@ -14,6 +14,8 @@
 namespace ovis {
 
 class Module;
+
+using TypeId = VersionedIndex<uint32_t, 20>;
 
 struct TypePropertyDescription {
   struct PrimitiveAccess {
@@ -36,7 +38,7 @@ struct TypePropertyDescription {
 };
 
 struct TypeDescription {
-  TypeId native_type_id;
+  NativeTypeId native_type_id;
   std::string name;
   std::uintptr_t alignment_in_bytes;
   std::uintptr_t size_in_bytes;
@@ -81,10 +83,9 @@ class Type : public std::enable_shared_from_this<Type> {
   friend class Module;
 
  public:
-  using Id = VersionedIndex<uint32_t, 20>;
-  static constexpr Id NONE_ID = Id(0);
+  static constexpr TypeId NONE_ID = TypeId(0);
 
-  Id id() const { return id_; }
+  TypeId id() const { return id_; }
   const TypeDescription& description() const { return description_; }
 
   std::string_view name() const { return description().name; }
@@ -118,12 +119,12 @@ class Type : public std::enable_shared_from_this<Type> {
   const Function* from_base_function() const { return description().from_base.get(); }
 
   // Returns true if the type has a base with the specified id or if the type itself has the specified id.
-  bool IsDerivedFrom(Id base_type_id) const;
+  bool IsDerivedFrom(TypeId base_type_id) const;
   template <typename T> bool IsDerivedFrom() const { return IsDerivedFrom(*Type::GetId<T>()); }
 
   // Returns nullptr if the base_type_id is not actually a base of the type or if you pass in the id of the type itself
   // (so you cannot cast a type to "itself").
-  void* CastToBase(Id base_type_id, void* pointer) const;
+  void* CastToBase(TypeId base_type_id, void* pointer) const;
   template <typename Base>
   Base* CastToBase(void* pointer) const {
     return reinterpret_cast<Base*>(CastToBase(*Type::GetId<Base>(), pointer));
@@ -140,26 +141,26 @@ class Type : public std::enable_shared_from_this<Type> {
   std::span<const TypePropertyDescription> properties() const { return description().properties; }
 
   template <typename T> static std::shared_ptr<Type> Get();
-  template <typename T> static std::optional<Id> GetId(); //  TODO: Remove optional here!
-  static std::shared_ptr<Type> Get(Id id);
+  template <typename T> static std::optional<TypeId> GetId(); //  TODO: Remove optional here!
+  static std::shared_ptr<Type> Get(TypeId id);
 
   static std::shared_ptr<Type> Deserialize(const json& data);
 
   // json Serialize() const;
 
  private:
-  Type(Id id, std::shared_ptr<Module> module, TypeDescription description);
+  Type(TypeId id, std::shared_ptr<Module> module, TypeDescription description);
   static std::shared_ptr<Type> Add(std::shared_ptr<Module> module, TypeDescription description);
-  static Result<> Remove(Id id);
+  static Result<> Remove(TypeId id);
 
-  Id id_;
+  TypeId id_;
   std::string full_reference_;
   std::weak_ptr<Module> module_;
   TypeDescription description_;
 
   struct Registration {
-    Id id;
-    TypeId native_type_id;
+    TypeId id;
+    NativeTypeId native_type_id;
     std::shared_ptr<Type> type;
   };
 
@@ -387,7 +388,7 @@ inline std::shared_ptr<Type> Type::Get() {
 }
 
 template <typename T>
-inline std::optional<Type::Id> Type::GetId() {
+inline std::optional<TypeId> Type::GetId() {
   for (const auto& registration : registered_types) {
     if (registration.native_type_id == TypeOf<T>) {
       return registration.id;
@@ -396,7 +397,7 @@ inline std::optional<Type::Id> Type::GetId() {
   return std::nullopt;
 }
 
-inline std::shared_ptr<Type> Type::Get(Id id) {
+inline std::shared_ptr<Type> Type::Get(TypeId id) {
   assert(id.index() < registered_types.size());
   const auto& registration = registered_types[id.index()];
   return registration.id == id ? registration.type : nullptr;

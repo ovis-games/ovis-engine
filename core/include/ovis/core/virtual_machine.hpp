@@ -20,7 +20,7 @@
 #include <ovis/utils/range.hpp>
 #include <ovis/utils/result.hpp>
 #include <ovis/utils/safe_pointer.hpp>
-#include <ovis/utils/type_id.hpp>
+#include <ovis/utils/native_type_id.hpp>
 #include <ovis/utils/versioned_index.hpp>
 #include <ovis/core/function_handle.hpp>
 #include <ovis/core/type_helper.hpp>
@@ -224,7 +224,7 @@ class alignas(16) ValueStorage final {
 
 #ifndef NDEBUG
  public:
-  TypeId native_type_id_ = TypeOf<void>;
+  NativeTypeId native_type_id_ = TypeOf<void>;
 #endif
 };
 

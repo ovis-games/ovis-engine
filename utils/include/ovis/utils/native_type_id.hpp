@@ -6,7 +6,7 @@
 
 namespace ovis {
 
-using TypeId = uint32_t;
+using NativeTypeId = uint32_t;
 
 namespace detail {
 static constexpr uint32_t crc32_table[256] = {
@@ -85,18 +85,18 @@ constexpr uint32_t crc32(std::string_view str) {
 }
 
 template <typename T>
-constexpr TypeId GetTypeId() {
+constexpr NativeTypeId GetTypeId() {
   return detail::crc32(__PRETTY_FUNCTION__);
 }
 
 }  // namespace detail
 
 template <typename T>
-constexpr TypeId GetTypeId() {
+constexpr NativeTypeId GetTypeId() {
   return detail::GetTypeId<std::remove_cvref_t<T>>();
 }
 
 template <typename T>
-constexpr TypeId TypeOf = GetTypeId<T>();
+constexpr NativeTypeId TypeOf = GetTypeId<T>();
 
 }  // namespace ovis

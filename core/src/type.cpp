@@ -6,14 +6,14 @@ namespace ovis {
 std::vector<Type::Registration> Type::registered_types = {
     {.id = Type::NONE_ID, .native_type_id = TypeOf<void>, .type = nullptr}};
 
-Type::Type(Id id, std::shared_ptr<Module> module, TypeDescription description)
+Type::Type(TypeId id, std::shared_ptr<Module> module, TypeDescription description)
     : id_(id),
       module_(module),
       full_reference_(fmt::format("{}.{}", module->name(), description.name)),
       description_(std::move(description)) {}
 
 
-bool Type::IsDerivedFrom(Id base_type_id) const {
+bool Type::IsDerivedFrom(TypeId base_type_id) const {
   const Type* type = this;
   do {
     if (type->id() == base_type_id) {
@@ -24,7 +24,7 @@ bool Type::IsDerivedFrom(Id base_type_id) const {
   return false;
 }
 
-void* Type::CastToBase(Id base_type_id, void* pointer) const {
+void* Type::CastToBase(TypeId base_type_id, void* pointer) const {
   assert(base_type_id != id());
   const Type* type = this;
   do {
@@ -52,7 +52,7 @@ std::shared_ptr<Type> Type::Add(std::shared_ptr<Module> module, TypeDescription 
       return registration.type = std::shared_ptr<Type>(new Type(registration.id, module, std::move(description)));
     }
   }
-  Id id(registered_types.size());
+  TypeId id(registered_types.size());
   registered_types.push_back({
     .id = id,
     .native_type_id = description.native_type_id,
@@ -61,7 +61,7 @@ std::shared_ptr<Type> Type::Add(std::shared_ptr<Module> module, TypeDescription 
   return registered_types.back().type;
 }
 
-Result<> Type::Remove(Id id) {
+Result<> Type::Remove(TypeId id) {
   if (id.index() < registered_types.size() && registered_types[id.index()].id == id) {
     registered_types[id.index()].type = nullptr;
     return Success;

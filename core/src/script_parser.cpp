@@ -6,7 +6,7 @@ namespace ovis {
 namespace {
 
 struct ScopeValue {
-  Type::Id type_id;
+  TypeId type_id;
   std::optional<std::string> variable_name;
 };
 
@@ -25,9 +25,9 @@ struct ScriptFunctionParser {
   void ParseAction(const json& action_definiton, std::string_view path);
   void ParseVariableDeclaration(const json& action_definiton, std::string_view path);
   void ParseFunctionCall(const json& action_definiton, std::string_view path);
-  void ParsePushValue(const json& value_definition, std::string_view path, Type::Id type);
-  void ParsePushVariable(const json& value_definition, std::string_view path, Type::Id type);
-  void ParsePushVariableReference(const json& value_definition, std::string_view path, Type::Id type);
+  void ParsePushValue(const json& value_definition, std::string_view path, TypeId type);
+  void ParsePushVariable(const json& value_definition, std::string_view path, TypeId type);
+  void ParsePushVariableReference(const json& value_definition, std::string_view path, TypeId type);
 
   void CallFunction(const std::shared_ptr<Function> function);
 };
@@ -137,7 +137,7 @@ void ScriptFunctionParser::ParseFunctionCall(const json& action_definiton, std::
   }
 }
 
-void ScriptFunctionParser::ParsePushValue(const json& value_definition, std::string_view path, Type::Id type) {
+void ScriptFunctionParser::ParsePushValue(const json& value_definition, std::string_view path, TypeId type) {
   if (value_definition.is_string()) {
     if (type == Type::GetId<std::string>()) {
       errors.emplace_back("Parsing constant Core.String not implemented yet", path);
@@ -171,7 +171,7 @@ void ScriptFunctionParser::ParsePushValue(const json& value_definition, std::str
   }
 }
 
-void ScriptFunctionParser::ParsePushVariable(const json& value_definition, std::string_view path, Type::Id type) {
+void ScriptFunctionParser::ParsePushVariable(const json& value_definition, std::string_view path, TypeId type) {
   assert(value_definition["id"] == "variable");
 }
 

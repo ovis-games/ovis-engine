@@ -13,12 +13,6 @@
 
 namespace ovis {
 
-struct ValueInfo {
-  TypeId native_type_id;
-  Type::Id vm_type_id;
-  bool is_pointer;
-};
-
 struct ParseScriptError : Error {
   ParseScriptError(std::string_view message) : Error(message) {}
   ParseScriptError(std::string_view message, std::string_view path) : Error(message), path(path) {}
