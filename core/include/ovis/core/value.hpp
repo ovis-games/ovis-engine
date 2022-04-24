@@ -19,6 +19,7 @@ class Value {
   Value& operator=(const Value&);
 
   template <typename T> T& as() { return storage_.as<T>(); }
+  template <typename T> const T& as() const { return storage_.as<T>(); }
   const std::shared_ptr<Type>& type() const { return type_; }
 
   void Reset();
