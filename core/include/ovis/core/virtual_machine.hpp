@@ -16,11 +16,13 @@
 
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/json.hpp>
+#include <ovis/utils/native_type_id.hpp>
 #include <ovis/utils/parameter_pack.hpp>
 #include <ovis/utils/range.hpp>
+#include <ovis/utils/reflection.hpp>
 #include <ovis/utils/result.hpp>
 #include <ovis/utils/safe_pointer.hpp>
-#include <ovis/utils/native_type_id.hpp>
+#include <ovis/utils/type_list.hpp>
 #include <ovis/utils/versioned_index.hpp>
 #include <ovis/core/function_handle.hpp>
 #include <ovis/core/type_helper.hpp>
@@ -342,35 +344,28 @@ inline Result<ReturnType> ExecutionContext::Call(FunctionHandle handle, Argument
 // ValueStorage
 namespace detail {
 
-template <typename T> struct NativeFunctionWrapper;
-
-template <typename R, typename... Args>
-struct NativeFunctionWrapper<R(*)(Args...)> {
-  template <R(*FUNCTION)(Args...)>
-  static Result<> Call(ExecutionContext* context) {
-  const auto input_tuple = GetInputTuple(context, std::make_index_sequence<sizeof...(Args)>{});
-    context->PopValues(sizeof...(Args));
-    if constexpr (!std::is_same_v<void, R>) {
-      context->PushValue(std::apply(FUNCTION, input_tuple));
-    } else {
-      std::apply(FUNCTION, input_tuple);
-    }
-    return Success;
-  }
-
-  template <std::size_t... I>
-  static std::tuple<Args...> GetInputTuple(ExecutionContext* context, std::index_sequence<I...>) {
-    return std::tuple<Args...>(
-      context->top(sizeof...(Args) - I - 1).as<nth_parameter_t<I, Args...>>()...
-    );
-  }
-};
-
+template <typename... Args, std::size_t... I>
+std::tuple<Args...> GetInputTuple(ExecutionContext* context, TypeList<Args...>, std::index_sequence<I...>) {
+  return std::tuple<Args...>(
+    context->top(sizeof...(Args) - I - 1).as<nth_parameter_t<I, Args...>>()...
+  );
 }
+
+}  // namespace detail
 
 template <auto FUNCTION>
 Result<> NativeFunctionWrapper(ExecutionContext* context) {
-  return detail::NativeFunctionWrapper<decltype(FUNCTION)>::template Call<FUNCTION>(context);
+  using ArgumentTypes = typename reflection::Invocable<FUNCTION>::ArgumentTypes;
+  using ReturnType = typename reflection::Invocable<FUNCTION>::ReturnType;
+
+  auto input_tuple = detail::GetInputTuple(context, ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>{});
+  context->PopValues(ArgumentTypes::size);
+  if constexpr (!std::is_same_v<void, ReturnType>) {
+    context->PushValue(std::apply(FUNCTION, input_tuple));
+  } else {
+    std::apply(FUNCTION, input_tuple);
+  }
+  return Success;
 }
 
 template <typename T>

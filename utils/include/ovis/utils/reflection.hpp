@@ -11,17 +11,42 @@ namespace detail {
 template <typename T, typename M> T GetMemberPointerClass(M T::*);
 template <typename T, typename M> M GetMemberPointerMember(M T::*);
 
-template <typename T> struct Function;
+template <typename T> struct Invocable;
 template <typename R, typename... Args>
-struct Function<R(*)(Args...)> {
+struct Invocable<R(*)(Args...)> {
   using ArgumentTypes = TypeList<Args...>;
+  using ReturnType = R;
+};
+template <typename R, typename... Args>
+struct Invocable<R(*)(Args...) noexcept> {
+  using ArgumentTypes = TypeList<Args...>;
+  using ReturnType = R;
+};
+template <typename C, typename R, typename... Args>
+struct Invocable<R(C::*)(Args...)> {
+  using ArgumentTypes = TypeList<C*, Args...>;
+  using ReturnType = R;
+};
+template <typename C, typename R, typename... Args>
+struct Invocable<R(C::*)(Args...) noexcept> {
+  using ArgumentTypes = TypeList<C*, Args...>;
+  using ReturnType = R;
+};
+template <typename C, typename R, typename... Args>
+struct Invocable<R(C::*)(Args...) const> {
+  using ArgumentTypes = TypeList<const C*, Args...>;
+  using ReturnType = R;
+};
+template <typename C, typename R, typename... Args>
+struct Invocable<R(C::*)(Args...) const noexcept> {
+  using ArgumentTypes = TypeList<const C*, Args...>;
   using ReturnType = R;
 };
 
 }  // namespace detail
 
 template <auto FUNCTION>
-struct Function : public detail::Function<decltype(FUNCTION)> {};
+struct Invocable : public detail::Invocable<decltype(FUNCTION)> {};
 
 template <auto MEMBER_POINTER>
 struct MemberPointer {

@@ -137,10 +137,10 @@ std::vector<ValueDeclaration> MakeValueDeclaration(TypeList<ArgumentTypes...>, s
 template <auto FUNCTION> requires(!IsNativeFunction<decltype(FUNCTION)>)
 FunctionDescription FunctionDescription::CreateForNativeFunction(std::string name, std::vector<std::string> input_names,
                                                                  std::vector<std::string> output_names) {
-  auto input_declarations = detail::MakeValueDeclaration(typename reflection::Function<FUNCTION>::ArgumentTypes{}, std::move(input_names));
+  auto input_declarations = detail::MakeValueDeclaration(typename reflection::Invocable<FUNCTION>::ArgumentTypes{}, std::move(input_names));
   ValueDeclaration output_declaration = {
     .name = output_names.size() > 0 ? std::move(output_names[0]) : "0",
-    .type = Type::Get<typename reflection::Function<FUNCTION>::ReturnType>()
+    .type = Type::Get<typename reflection::Invocable<FUNCTION>::ReturnType>()
   };
   return CreateForNativeFunction(&NativeFunctionWrapper<FUNCTION>, std::move(input_declarations), { std::move(output_declaration) }, std::move(name));
 }
