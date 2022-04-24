@@ -12,16 +12,18 @@ namespace ovis {
 
 class Value {
  public:
-  Value() : type_(), is_reference_(false) {}
+  Value() : type_(), is_pointer_(false) {}
   ~Value();
 
   Value(const Value& other);
   Value& operator=(const Value&);
 
-  template <typename T> T& as() { return is_reference_ ? *storage_.as<T*>() : storage_.as<T>(); }
+  template <typename T> T& as() { return is_pointer_ ? *storage_.as<T*>() : storage_.as<T>(); }
   template <typename T> const T& as() const { return storage_.as<T>(); }
   const std::shared_ptr<Type>& type() const { return type_; }
-  bool is_reference() const { return is_reference_; }
+  bool is_pointer() const { return is_pointer_; }
+
+  Value CreateReference();
 
   void Reset();
 
@@ -38,7 +40,7 @@ class Value {
  private:
   ValueStorage storage_;
   std::shared_ptr<Type> type_;
-  bool is_reference_;
+  bool is_pointer_;
 };
 
 }
@@ -98,7 +100,7 @@ inline Value Value::Create(T&& native_value) {
   Value value;
   value.type_ = Type::Get<std::remove_cvref_t<T>>();
   value.storage_.reset(std::forward<T>(native_value));
-  value.is_reference_ = false;
+  value.is_pointer_ = false;
   return value;
 }
 
@@ -108,7 +110,7 @@ inline Value Value::Create(T&& native_value) {
   Value value;
   value.type_ = Type::Get<std::remove_cvref_t<std::remove_pointer_t<T>>>();
   value.storage_.reset(std::forward<T>(native_value));
-  value.is_reference_ = true;
+  value.is_pointer_ = true;
   return value;
 }
 

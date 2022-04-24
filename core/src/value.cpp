@@ -2,7 +2,7 @@
 
 namespace ovis {
 
-Value::Value(const Value& other) : type_(other.type_), is_reference_(other.is_reference_) {
+Value::Value(const Value& other) : type_(other.type_), is_pointer_(other.is_pointer_) {
   if (!type_) {
     return;
   }
@@ -52,7 +52,7 @@ Value& Value::operator=(const Value& other) {
   } else {
     storage_.reset();
     type_ = other.type_;
-    is_reference_ = other.is_reference_;
+    is_pointer_ = other.is_pointer_;
     if (!type_) {
       return *this;
     }
@@ -82,6 +82,16 @@ Value& Value::operator=(const Value& other) {
   }
 
   return *this;
+}
+
+Value Value::CreateReference() {
+  assert(type());
+  assert(type()->is_reference_type());
+
+  auto x = type()->description().reference->get_pointer->Call(storage_.value_pointer());
+
+  Value value;
+  return value;
 }
 
 Result<Value> Value::Construct(std::shared_ptr<Type> type) {
