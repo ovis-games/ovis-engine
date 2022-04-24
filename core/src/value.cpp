@@ -2,7 +2,7 @@
 
 namespace ovis {
 
-Value::Value(const Value& other) : type_(other.type_) {
+Value::Value(const Value& other) : type_(other.type_), is_reference_(other.is_reference_) {
   if (!type_) {
     return;
   }
@@ -52,6 +52,7 @@ Value& Value::operator=(const Value& other) {
   } else {
     storage_.reset();
     type_ = other.type_;
+    is_reference_ = other.is_reference_;
     if (!type_) {
       return *this;
     }

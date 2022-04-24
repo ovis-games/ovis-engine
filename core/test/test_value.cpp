@@ -164,3 +164,15 @@ TEST_CASE("Construct type", "[ovis][core][Value]") {
   REQUIRE(shared_number.use_count() == 1);
 }
 
+TEST_CASE("Store reference", "[ovis][core][Value]") {
+  auto test_module = RegisterValueTestModule();
+  auto number_type = test_module->GetType("Number");
+  double number = 10.0;
+  auto value = ovis::Value::Create(&number);
+  REQUIRE(value.type() == number_type);
+  REQUIRE(value.as<double>() == 10.0);
+  value.as<double>() = 12.0;
+  REQUIRE(value.as<double>() == 12.0);
+  REQUIRE(number == 12.0);
+}
+
