@@ -20,10 +20,10 @@ Value::Value(const Value& other) : type_(other.type_), is_reference_(other.is_re
   }
   assert(type_->construct_function());
   type_->construct_function()->Call(destination);
-  if (type_->trivially_copy_assignable()) {
+  if (type_->trivially_copyable()) {
     std::memcpy(destination, source, type_->size_in_bytes());
   } else {
-    type_->copy_assign_function()->Call(destination, source);
+    type_->copy_function()->Call(destination, source);
   }
   storage_.SetDestructFunction(other.storage_.destruct_function());
 #ifndef NDEBUG
@@ -43,10 +43,10 @@ Value& Value::operator=(const Value& other) {
       source = other.storage_.data();
       destination = storage_.data();
     }
-    if (type()->trivially_copy_assignable()) {
+    if (type()->trivially_copyable()) {
       std::memcpy(destination, source, type_->size_in_bytes());
     } else {
-      type()->copy_assign_function()->Call(destination, source);
+      type()->copy_function()->Call(destination, source);
     }
     return *this;
   } else {
@@ -70,10 +70,10 @@ Value& Value::operator=(const Value& other) {
     }
     assert(type_->construct_function());
     type_->construct_function()->Call(destination);
-    if (type_->trivially_copy_assignable()) {
+    if (type_->trivially_copyable()) {
       std::memcpy(destination, source, type_->size_in_bytes());
     } else {
-      type_->copy_assign_function()->Call(destination, source);
+      type_->copy_function()->Call(destination, source);
     }
     storage_.SetDestructFunction(other.storage_.destruct_function());
 #ifndef NDEBUG

@@ -73,10 +73,10 @@ Result<> Value::SetProperty(std::string_view name, T&& value) {
   if (property->access.index() == 0) {
     const auto primitive_access = std::get<TypePropertyDescription::PrimitiveAccess>(property->access);
     auto property_pointer = static_cast<std::byte*>(storage_.value_pointer()) + primitive_access.offset;
-    if (property_type->trivially_copy_assignable()) {
+    if (property_type->trivially_copyable()) {
       std::memcpy(property_pointer, &value, sizeof(T));
     } else {
-      OVIS_CHECK_RESULT(property_type->copy_assign_function()->Call<void>(property_pointer, &value));
+      OVIS_CHECK_RESULT(property_type->copy_function()->Call<void>(property_pointer, &value));
     }
   } else {
     const auto function_access = std::get<TypePropertyDescription::FunctionAccess>(property->access);

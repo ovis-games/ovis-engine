@@ -47,18 +47,13 @@ struct TypeDescription {
   std::shared_ptr<Function> from_base;
   std::vector<TypePropertyDescription> properties;
 
-  // Default constructor
+  // Default constructor. Must always be valid, even for trivially constructible types to ensure proper initialization
+  // of all members.
   std::shared_ptr<Function> construct;
 
   // If one of the following functions is null, it is assumed that the
-  // type ist trivially copy/move-constrctible/assignable.
-  // std::shared_ptr<Function> copy_construct;
-  // std::shared_ptr<Function> move_construct;
-  std::shared_ptr<Function> copy_assign;
-  // std::shared_ptr<Function> move_assign;
-
-  // If the destruct function is null it is assumed it is trivially
-  // destructible.
+  // type ist trivially copyable/destructible.
+  std::shared_ptr<Function> copy;
   std::shared_ptr<Function> destruct;
 
   template <typename T, typename ParentType = void>
@@ -79,7 +74,6 @@ struct TypeDescription {
 };
 
 class Type : public std::enable_shared_from_this<Type> {
-  friend class Value;
   friend class Module;
 
  public:
@@ -100,17 +94,8 @@ class Type : public std::enable_shared_from_this<Type> {
   bool trivially_constructible() const { return description().construct == nullptr; }
   const Function* construct_function() const { return description().construct.get(); }
 
-  // bool trivially_copy_constructible() const { return description().copy_construct == nullptr; }
-  // const Function* copy_construct_function() const { return description().copy_construct.get(); }
-
-  // bool trivially_move_constructible() const { return description().move_construct == nullptr; }
-  // const Function* move_construct_function() const { return description().move_construct.get(); }
-
-  bool trivially_copy_assignable() const { return description().copy_assign == nullptr; }
-  const Function* copy_assign_function() const { return description().copy_assign.get(); }
-
-  // bool trivially_move_assignable() const { return description().move_assign == nullptr; }
-  // const Function* move_assign_function() const { return description().move_assign.get(); }
+  bool trivially_copyable() const { return description().copy == nullptr; }
+  const Function* copy_function() const { return description().copy.get(); }
 
   bool trivially_destructible() const { return description().destruct == nullptr; }
   const Function* destruct_function() const { return description().destruct.get(); }
@@ -246,21 +231,9 @@ inline TypeDescription TypeDescription::CreateForNativeType(std::string_view nam
               : Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::FromBase<ParentType, T>>()),
       .properties = {},
       .construct = Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::DefaultConstruct<T>>()),
-      // .copy_construct = std::is_trivially_copy_constructible_v<T>
-      //                       ? nullptr
-      //                       :
-      //                       Function::Create(FunctionDescription::CreateForNativeFunction(detail::CopyConstruct<T>)),
-      // .move_construct = std::is_trivially_move_constructible_v<T>
-      //                       ? nullptr
-      //                       :
-      //                       Function::Create(FunctionDescription::CreateForNativeFunction(detail::MoveConstruct<T>)),
-      .copy_assign =
-          std::is_trivially_copy_assignable_v<T>
-              ? nullptr
-              : Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::CopyAssign<T>>()),
-      // .move_assign =
-      //     std::is_trivially_move_assignable_v<T> ? nullptr : Function::MakeNative(detail::MoveAssign<T>, {{}, {}},
-      //     {}),
+      .copy = std::is_trivially_copy_assignable_v<T>
+                  ? nullptr
+                  : Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::CopyAssign<T>>()),
       .destruct = std::is_trivially_destructible_v<T>
                       ? nullptr
                       : Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::Destruct<T>>()),
