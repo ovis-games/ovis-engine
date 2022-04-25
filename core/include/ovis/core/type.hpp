@@ -117,14 +117,14 @@ class Type : public std::enable_shared_from_this<Type> {
 
   // Returns true if the type has a base with the specified id or if the type itself has the specified id.
   bool IsDerivedFrom(TypeId base_type_id) const;
-  template <typename T> bool IsDerivedFrom() const { return IsDerivedFrom(*Type::GetId<T>()); }
+  template <typename T> bool IsDerivedFrom() const { return IsDerivedFrom(Type::GetId<T>()); }
 
   // Returns nullptr if the base_type_id is not actually a base of the type or if you pass in the id of the type itself
   // (so you cannot cast a type to "itself").
   void* CastToBase(TypeId base_type_id, void* pointer) const;
   template <typename Base>
   Base* CastToBase(void* pointer) const {
-    return reinterpret_cast<Base*>(CastToBase(*Type::GetId<Base>(), pointer));
+    return reinterpret_cast<Base*>(CastToBase(Type::GetId<Base>(), pointer));
   }
 
   // // Returns nullptr if derived_type_id is not actually derived from the type.
@@ -138,7 +138,8 @@ class Type : public std::enable_shared_from_this<Type> {
   std::span<const TypePropertyDescription> properties() const { return description().properties; }
 
   template <typename T> static std::shared_ptr<Type> Get();
-  template <typename T> static std::optional<TypeId> GetId(); //  TODO: Remove optional here!
+  template <typename T> static TypeId GetId();
+  static TypeId GetId(NativeTypeId native_type_id);
   static std::shared_ptr<Type> Get(TypeId id);
 
   static std::shared_ptr<Type> Deserialize(const json& data);
@@ -147,6 +148,7 @@ class Type : public std::enable_shared_from_this<Type> {
 
  private:
   Type(TypeId id, std::shared_ptr<Module> module, TypeDescription description);
+  static TypeId FindFreeTypeId();
   static std::shared_ptr<Type> Add(std::shared_ptr<Module> module, TypeDescription description);
   static Result<> Remove(TypeId id);
 
@@ -190,7 +192,7 @@ template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
 inline TypePropertyDescription TypePropertyDescription::Create(std::string_view name) {
   return {
     .name = std::string(name),
-    .type = *Type::GetId<typename reflection::MemberPointer<PROPERTY>::MemberType>(),
+    .type = Type::GetId<typename reflection::MemberPointer<PROPERTY>::MemberType>(),
     .access = PrimitiveAccess {
       .offset = reflection::MemberPointer<PROPERTY>::offset
     }
@@ -407,13 +409,8 @@ inline std::shared_ptr<Type> Type::Get() {
 }
 
 template <typename T>
-inline std::optional<TypeId> Type::GetId() {
-  for (const auto& registration : registered_types) {
-    if (registration.native_type_id == TypeOf<T>) {
-      return registration.id;
-    }
-  }
-  return std::nullopt;
+inline TypeId Type::GetId() {
+  return GetId(TypeOf<T>);
 }
 
 inline std::shared_ptr<Type> Type::Get(TypeId id) {

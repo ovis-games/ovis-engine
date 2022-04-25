@@ -44,26 +44,47 @@ void* Type::CastToBase(TypeId base_type_id, void* pointer) const {
   return pointer;
 }
 
-std::shared_ptr<Type> Type::Add(std::shared_ptr<Module> module, TypeDescription description) {
+TypeId Type::GetId(NativeTypeId native_type_id) {
   for (auto& registration : registered_types) {
-    if (registration.type == nullptr) {
-      registration.id = registration.id.next();
-      registration.native_type_id = description.memory_layout.native_type_id;
-      return registration.type = std::shared_ptr<Type>(new Type(registration.id, module, std::move(description)));
+    if (registration.native_type_id == native_type_id) {
+      return registration.id;
+    }
+  }
+
+  const auto type_id = FindFreeTypeId();
+  registered_types[type_id.index].native_type_id = native_type_id;
+  registered_types[type_id.index].id = type_id;
+  return type_id;
+}
+
+TypeId Type::FindFreeTypeId() {
+  for (auto& registration : registered_types) {
+    if (registration.native_type_id == TypeOf<void> && registration.id != NONE_ID && registration.type == nullptr) {
+      // The entry is not used anymore
+      return registration.id.next();
     }
   }
   TypeId id(registered_types.size());
-  registered_types.push_back({
+  registered_types.push_back(Registration{
     .id = id,
-    .native_type_id = description.memory_layout.native_type_id,
-    .type = std::shared_ptr<Type>(new Type(id, module, std::move(description))),
+    .native_type_id = TypeOf<void>,
+    .type = nullptr,
   });
-  return registered_types.back().type;
+  return id;
+}
+
+std::shared_ptr<Type> Type::Add(std::shared_ptr<Module> module, TypeDescription description) {
+  const auto type_id = description.memory_layout.native_type_id != TypeOf<void>
+                           ? GetId(description.memory_layout.native_type_id)
+                           : FindFreeTypeId();
+  return registered_types[type_id.index].type =
+             std::shared_ptr<Type>(new Type(type_id, module, std::move(description)));
 }
 
 Result<> Type::Remove(TypeId id) {
   if (id.index < registered_types.size() && registered_types[id.index].id == id) {
     registered_types[id.index].type = nullptr;
+    registered_types[id.index].native_type_id = TypeOf<void>;
     return Success;
   } else {
     return Error("Invalid type id");

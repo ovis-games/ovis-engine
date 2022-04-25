@@ -125,7 +125,7 @@ namespace detail {
 
 template <typename... ArgumentTypes>
 std::vector<ValueDeclaration> MakeValueDeclaration(TypeList<ArgumentTypes...>, std::vector<std::string>&& names) {
-  std::array<TypeId, sizeof...(ArgumentTypes)> types = { (*Type::GetId<ArgumentTypes>())... };
+  std::array<TypeId, sizeof...(ArgumentTypes)> types = { Type::GetId<ArgumentTypes>()... };
   std::vector<ValueDeclaration> declarations(sizeof...(ArgumentTypes));
   for (std::size_t i = 0; i < sizeof...(ArgumentTypes); ++i) {
     declarations[i].type = types[i];
@@ -142,7 +142,7 @@ FunctionDescription FunctionDescription::CreateForNativeFunction(std::string nam
   auto input_declarations = detail::MakeValueDeclaration(typename reflection::Invocable<FUNCTION>::ArgumentTypes{}, std::move(input_names));
   ValueDeclaration output_declaration = {
     .name = output_names.size() > 0 ? std::move(output_names[0]) : "0",
-    .type = *Type::GetId<typename reflection::Invocable<FUNCTION>::ReturnType>()
+    .type = Type::GetId<typename reflection::Invocable<FUNCTION>::ReturnType>()
   };
   return CreateForNativeFunction(&NativeFunctionWrapper<FUNCTION>, std::move(input_declarations), { std::move(output_declaration) }, std::move(name));
 }
@@ -195,7 +195,7 @@ inline std::optional<ValueDeclaration> Function::GetOutput(std::size_t output_in
 
 template <typename OutputType = void, typename... InputTypes>
 inline Result<OutputType> Function::Call(InputTypes&&... inputs) const {
-  assert(IsCallableWithArguments<InputTypes...>());
+  // assert(IsCallableWithArguments<InputTypes...>());
   return ExecutionContext::global_context()->Call<OutputType>(handle_, std::forward<InputTypes>(inputs)...);
 }
 
@@ -212,7 +212,7 @@ inline std::uintptr_t Function::instruction_offset() const {
 
 template <typename... ArgumentTypes>
 bool Function::IsCallableWithArguments() const {
-  std::array<TypeId, sizeof...(ArgumentTypes)> argument_type_ids { (*Type::GetId<ArgumentTypes>())... };
+  std::array<TypeId, sizeof...(ArgumentTypes)> argument_type_ids { Type::GetId<ArgumentTypes>()... };
   return IsCallableWithArguments(argument_type_ids);
 }
 
