@@ -5,17 +5,16 @@
 #include <vector>
 
 #include <ovis/utils/json.hpp>
-#include <ovis/utils/result.hpp>
 #include <ovis/utils/native_type_id.hpp>
+#include <ovis/utils/result.hpp>
 #include <ovis/utils/versioned_index.hpp>
 #include <ovis/core/type_helper.hpp>
+#include <ovis/core/type_id.hpp>
 #include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
 
 class Module;
-
-using TypeId = VersionedIndex<uint32_t, 20>;
 
 struct TypePropertyDescription {
   struct PrimitiveAccess {
