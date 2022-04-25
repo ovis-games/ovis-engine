@@ -104,7 +104,7 @@ if (OVIS_BUILD_TESTS)
   target_link_libraries(
     ovis-core-test
     PRIVATE
-      catch2
+      Catch2
       ovis::core
   )
   target_add_assets(

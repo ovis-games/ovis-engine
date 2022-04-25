@@ -45,7 +45,7 @@ if (OVIS_BUILD_TESTS)
   target_link_libraries(
     ovis-rendering-test
     PRIVATE
-      catch2
+      Catch2
       ovis::rendering
   )
 

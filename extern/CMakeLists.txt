@@ -8,7 +8,7 @@ add_subdirectory(middleclass)
 add_subdirectory(stb)
 add_subdirectory(microtar)
 add_subdirectory(box2d)
-add_subdirectory(catch2)
+add_subdirectory(Catch2)
 
 
 if (OVIS_BUILD_BENCHMARKS)

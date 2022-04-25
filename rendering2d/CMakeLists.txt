@@ -37,7 +37,7 @@ if (OVIS_BUILD_TESTS)
   target_link_libraries(
     ovis-rendering2d-test
     PRIVATE
-      catch2
+      Catch2
       ovis::rendering2d
   )
   # target_add_assets(
