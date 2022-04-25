@@ -69,7 +69,7 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(const json& typ
 
     description.properties.push_back({
         .name = property_name,
-        .type = property_type,
+        .type = property_type->id(),
         .access = TypePropertyDescription::PrimitiveAccess { .offset = description.memory_layout.size_in_bytes }
     });
 

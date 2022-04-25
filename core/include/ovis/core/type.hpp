@@ -26,7 +26,7 @@ struct TypePropertyDescription {
   };
 
   std::string name;
-  std::shared_ptr<Type> type;
+  TypeId type;
   std::variant<PrimitiveAccess, FunctionAccess> access;
 
   template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
@@ -190,7 +190,7 @@ template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
 inline TypePropertyDescription TypePropertyDescription::Create(std::string_view name) {
   return {
     .name = std::string(name),
-    .type = Type::Get<typename reflection::MemberPointer<PROPERTY>::MemberType>(),
+    .type = *Type::GetId<typename reflection::MemberPointer<PROPERTY>::MemberType>(),
     .access = PrimitiveAccess {
       .offset = reflection::MemberPointer<PROPERTY>::offset
     }
@@ -203,12 +203,12 @@ inline TypePropertyDescription TypePropertyDescription::Create(std::string_view 
   assert(getter->outputs().size() == 1);
   if (setter != nullptr) {
     assert(setter->inputs().size() == 2);
-    assert(setter->GetInput(1)->type.lock() == getter->GetOutput(0)->type.lock());
+    assert(setter->GetInput(1)->type == getter->GetOutput(0)->type);
   }
 
   return {
     .name = std::string(name),
-    .type = getter->GetOutput(0)->type.lock(),
+    .type = getter->GetOutput(0)->type,
     .access = FunctionAccess {
       .getter = getter,
       .setter = setter,

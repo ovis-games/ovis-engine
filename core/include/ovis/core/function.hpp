@@ -7,6 +7,7 @@
 
 #include <ovis/utils/result.hpp>
 #include <ovis/core/function_handle.hpp>
+#include <ovis/core/type_id.hpp>
 #include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
@@ -18,7 +19,7 @@ template <typename... T> using FunctionResultType = typename FunctionResult<T...
 
 struct ValueDeclaration {
   std::string name;
-  std::weak_ptr<Type> type;
+  TypeId type;
 };
 
 struct NativeFunctionDefinition {
@@ -78,8 +79,8 @@ class Function : public std::enable_shared_from_this<Function> {
   std::optional<ValueDeclaration> GetOutput(std::size_t output_index) const;
   std::optional<ValueDeclaration> GetOutput(std::string_view output_name) const;
 
-  // TODO: implement this function
-  template <typename... InputTypes> bool IsCallableWithArguments() const { return true; }
+  bool IsCallableWithArguments(std::span<const TypeId> argument_types) const;
+  template <typename... InputTypes> bool IsCallableWithArguments() const;
 
   // template <typename... OutputTypes, typename... InputsTypes>
   // FunctionResultType<OutputTypes...> Call(InputsTypes&&... inputs);
@@ -116,6 +117,7 @@ class Function : public std::enable_shared_from_this<Function> {
 }
 
 #include <ovis/core/value.hpp>
+#include <ovis/core/type.hpp>
 
 namespace ovis {
 
@@ -123,7 +125,7 @@ namespace detail {
 
 template <typename... ArgumentTypes>
 std::vector<ValueDeclaration> MakeValueDeclaration(TypeList<ArgumentTypes...>, std::vector<std::string>&& names) {
-  std::array<std::shared_ptr<Type>, sizeof...(ArgumentTypes)> types = { Type::Get<ArgumentTypes>()... };
+  std::array<TypeId, sizeof...(ArgumentTypes)> types = { (*Type::GetId<ArgumentTypes>())... };
   std::vector<ValueDeclaration> declarations(sizeof...(ArgumentTypes));
   for (std::size_t i = 0; i < sizeof...(ArgumentTypes); ++i) {
     declarations[i].type = types[i];
@@ -140,7 +142,7 @@ FunctionDescription FunctionDescription::CreateForNativeFunction(std::string nam
   auto input_declarations = detail::MakeValueDeclaration(typename reflection::Invocable<FUNCTION>::ArgumentTypes{}, std::move(input_names));
   ValueDeclaration output_declaration = {
     .name = output_names.size() > 0 ? std::move(output_names[0]) : "0",
-    .type = Type::Get<typename reflection::Invocable<FUNCTION>::ReturnType>()
+    .type = *Type::GetId<typename reflection::Invocable<FUNCTION>::ReturnType>()
   };
   return CreateForNativeFunction(&NativeFunctionWrapper<FUNCTION>, std::move(input_declarations), { std::move(output_declaration) }, std::move(name));
 }
@@ -206,6 +208,12 @@ inline NativeFunction* Function::native_function_pointer() const {
 inline std::uintptr_t Function::instruction_offset() const {
   assert(handle_.is_script_function);
   return handle_.instruction_offset;
+}
+
+template <typename... ArgumentTypes>
+bool Function::IsCallableWithArguments() const {
+  std::array<TypeId, sizeof...(ArgumentTypes)> argument_type_ids { (*Type::GetId<ArgumentTypes>())... };
+  return IsCallableWithArguments(argument_type_ids);
 }
 
 }  // namespace ovis

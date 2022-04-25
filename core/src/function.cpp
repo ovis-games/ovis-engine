@@ -38,6 +38,20 @@ Function::Function(FunctionDescription description)
   }
 }
 
+bool Function::IsCallableWithArguments(std::span<const TypeId> type_ids) const {
+  if (inputs().size() != type_ids.size()) {
+    return false;
+  }
+
+  for (std::size_t i = 0; i < type_ids.size(); ++i) {
+    if (inputs_[i].type != type_ids[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 std::shared_ptr<Function> Function::Deserialize(const json& data) {
   if (!data.contains("module")) {
     return nullptr;

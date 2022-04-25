@@ -41,7 +41,7 @@ TEST_CASE("Register trivial properties", "[ovis][core][Type]") {
   auto trivial_type_description = ovis::TypeDescription::CreateForNativeType<Trivial>("Trivial");
 
   trivial_type_description.properties.push_back(ovis::TypePropertyDescription::Create<&Trivial::number>("number"));
-  REQUIRE(trivial_type_description.properties[0].type == number_type);
+  REQUIRE(trivial_type_description.properties[0].type == number_type->id());
 
   const auto trivial_type = test_module->RegisterType(trivial_type_description);
   REQUIRE(trivial_type);
@@ -58,7 +58,7 @@ TEST_CASE("Register non-trivial properties", "[ovis][core][Type]") {
   auto non_trivial_type_description = ovis::TypeDescription::CreateForNativeType<NonTrivial>("NonTrivial");
 
   non_trivial_type_description.properties.push_back(ovis::TypePropertyDescription::Create<&NonTrivial::number>("number"));
-  REQUIRE(non_trivial_type_description.properties[0].type == number_type);
+  REQUIRE(non_trivial_type_description.properties[0].type == number_type->id());
 
   const auto non_trivial_type = test_module->RegisterType(non_trivial_type_description);
   REQUIRE(non_trivial_type);

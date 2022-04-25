@@ -67,16 +67,16 @@ Result<> Value::SetProperty(std::string_view name, T&& value) {
     return Error("Type {} does not have a property with the name {}.", type()->name(), name);
   }
 
-  const auto& property_type = property->type;
-  assert(property_type != nullptr);
-  if (property_type->id() != Type::GetId<T>()) {
+  const auto property_type_id = property->type;
+  if (property_type_id != Type::GetId<T>()) {
     return Error("Invalid type for property {} of {}, expected `{}` got `{}`", name, type()->name(),
-                 property_type->name(), Type::Get<T>()->name());
+                 Type::Get(property_type_id)->name(), Type::Get<T>()->name());
   }
 
   if (property->access.index() == 0) {
     const auto primitive_access = std::get<TypePropertyDescription::PrimitiveAccess>(property->access);
     auto property_pointer = static_cast<std::byte*>(storage_.value_pointer()) + primitive_access.offset;
+    const auto& property_type = Type::Get(property_type_id);
     if (property_type->trivially_copyable()) {
       std::memcpy(property_pointer, &value, sizeof(T));
     } else {
