@@ -22,11 +22,11 @@ class SceneObjectComponent
     : public Serializable,
       public DynamicallyLuaReferencableBase,
       public StaticFactory<SceneObjectComponent, std::unique_ptr<SceneObjectComponent>(SceneObject*)> {
-  MAKE_NON_COPY_OR_MOVABLE(SceneObjectComponent);
   friend class SceneObject;
 
  public:
-  explicit inline SceneObjectComponent(SceneObject* object) : scene_object_(object) {}
+  SceneObjectComponent() = default;
+  // explicit inline SceneObjectComponent(SceneObject* object) : scene_object_(object) {}
   virtual ~SceneObjectComponent() = default;
 
   inline SceneObject* scene_object() const { return scene_object_; }
@@ -35,7 +35,7 @@ class SceneObjectComponent
   static void RegisterType(Module* module);
 
  private:
-  SceneObject* scene_object_;
+  SceneObject* scene_object_ = nullptr;
 };
 
 template <typename T, const json* COMPONENT_SCHEMA = nullptr>

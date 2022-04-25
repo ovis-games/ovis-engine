@@ -115,18 +115,18 @@ bool LoadCoreModule() {
     // core_module->RegisterFunction<&CreateString>("Create String", {"value"}, {"result"});
     // core_module->RegisterFunction<&LogText>("Log", {"text"}, {});
 
-    SceneObjectComponent::Register("Core.Transform",
-                                   [](SceneObject* object) { return std::make_unique<Transform>(object); });
-    SceneObjectComponent::Register("Camera", [](SceneObject* object) { return std::make_unique<Camera>(object); });
-    SceneObjectComponent::Register("Core.Animator",
-                                   [](SceneObject* object) { return std::make_unique<Animator>(object); });
+    // SceneObjectComponent::Register("Core.Transform",
+    //                                [](SceneObject* object) { return std::make_unique<Transform>(object); });
+    // SceneObjectComponent::Register("Camera", [](SceneObject* object) { return std::make_unique<Camera>(object); });
+    // SceneObjectComponent::Register("Core.Animator",
+    //                                [](SceneObject* object) { return std::make_unique<Animator>(object); });
     SceneController::Register("AnimatorController", []() { return std::make_unique<AnimatorController>(); });
 
 
     // Vector2::RegisterType(core_module.get());
     // Vector3::RegisterType(core_module.get());
-    // SceneObjectComponent::RegisterType(core_module.get());
-    // Transform::RegisterType(core_module.get());
+    SceneObjectComponent::RegisterType(core_module.get());
+    Transform::RegisterType(core_module.get());
     // Animator::RegisterType(core_module.get());
   }
 

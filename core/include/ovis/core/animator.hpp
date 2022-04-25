@@ -14,8 +14,6 @@ class Animator : public SceneObjectComponent {
   friend class AnimatorController;
 
  public:
-  Animator(SceneObject* object) : SceneObjectComponent(object) {}
-
   // Play animation immediately, active animations will be cancelled.
   void PlayAnimation(std::string_view animation, bool loop = false);
 

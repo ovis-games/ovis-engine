@@ -7,14 +7,15 @@
 #include <unordered_map>
 
 #include <ovis/utils/class.hpp>
-#include <ovis/utils/result.hpp>
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/json.hpp>
 #include <ovis/utils/range.hpp>
+#include <ovis/utils/result.hpp>
 #include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/serialize.hpp>
 #include <ovis/core/scene_object_animation.hpp>
 #include <ovis/core/scene_object_component.hpp>
+#include <ovis/core/value.hpp>
 #include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
@@ -55,11 +56,11 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   template <typename T>
   void ForEachChild(bool recursive, T&& functor);
 
-  Value AddComponent(const std::shared_ptr<Type>& type);
+  Result<Value> AddComponent(const std::shared_ptr<Type>& type);
   template <typename ComponentType> ComponentType* AddComponent();
 
-  Value GetComponent(const std::shared_ptr<Type>& type);
-  Value GetComponent(const std::shared_ptr<Type>& type) const;
+  Result<Value> GetComponent(const std::shared_ptr<Type>& type);
+  Result<Value> GetComponent(const std::shared_ptr<Type>& type) const;
   template <typename ComponentType> ComponentType* GetComponent();
   template <typename ComponentType> const ComponentType* GetComponent() const;
 
@@ -69,9 +70,9 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   bool HasComponent(const std::shared_ptr<Type>& type) const;
   template <typename ComponentType> bool HasComponent() const;
 
-  auto component_types() const { return TransformRange(components_, [](const auto& component) { return component.type; }); }
+  auto component_types() const { return TransformRange(components_, [](const auto& component) { return component.type(); }); }
 
-  bool RemoveComponent(const std::shared_ptr<Type>& type);
+  Result<> RemoveComponent(const std::shared_ptr<Type>& type);
   template <typename ComponentType> bool RemoveComponent();
   void ClearComponents();
 
@@ -92,11 +93,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   std::string path_;
   std::string name_;
   std::vector<safe_ptr<SceneObject>> children_;
-  struct TypedComponent {
-    std::weak_ptr<Type> type;
-    std::unique_ptr<SceneObjectComponent> pointer;
-  };
-  std::vector<TypedComponent> components_;
+  std::vector<Value> components_;
   std::vector<safe_ptr<SceneObjectAnimation>> animations_;
 
   Result<json> ConstructObjectFromTemplate(std::string_view template_asset, std::span<std::string_view> parents = {}) const;
@@ -131,4 +128,39 @@ struct hash<ovis::SceneObject> {
 };
 }  // namespace std
 
-#include <ovis/core/scene_object.inl>
+namespace ovis {
+
+template <typename ComponentType>
+inline ComponentType* SceneObject::AddComponent() {
+  auto component = AddComponent(Type::Get<ComponentType>());
+  return component ? &component->template as<ComponentType>() : nullptr;
+}
+
+template <typename ComponentType>
+inline ComponentType* SceneObject::GetComponent() {
+  auto component = GetComponent(Type::Get<ComponentType>());
+  return component ? &component->template as<ComponentType>() : nullptr;
+}
+
+template <typename ComponentType>
+inline const ComponentType* SceneObject::GetComponent() const {
+  // return GetComponent(vm::Type::Get<ComponentType>()).template Get<ComponentType*>();
+  assert(false && "Not implemented");
+  return nullptr;
+}
+
+template <typename ComponentType>
+inline bool SceneObject::HasComponent() const {
+  // return HasComponent(vm::Type::Get<ComponentType>());
+  assert(false && "Not implemented");
+  return false;
+}
+
+template <typename ComponentType>
+inline bool SceneObject::RemoveComponent() { 
+  // return RemoveComponent(vm::Type::Get<ComponentType>());
+  assert(false && "Not implemented");
+  return false;
+}
+
+}  // namespace ovis

@@ -21,11 +21,17 @@ class Value {
   template <typename T> T& as() {
     return *reinterpret_cast<T*>(GetValuePointer());
   }
+  template <typename T> const T& as() const {
+    return *reinterpret_cast<const T*>(GetValuePointer());
+  }
+
+  const void* GetValuePointer() const;
   void* GetValuePointer();
+
   const std::shared_ptr<Type>& type() const { return type_; }
   bool is_reference() const { return is_reference_; }
 
-  Value CreateReference();
+  Value CreateReference() const;
 
   void Reset();
 

@@ -6,6 +6,7 @@ Value::Value(const Value& other) : type_(other.type_) {
   if (!type_) {
     return;
   }
+  assert(other.type()->description().memory_layout.is_copyable);
 
   const void* source;
   void* destination;
@@ -33,6 +34,10 @@ Value::Value(const Value& other) : type_(other.type_) {
 
 Value& Value::operator=(const Value& other) {
   if (type() == other.type()) {
+    if (!other.type()) {
+      return *this;
+    }
+    assert(other.type()->description().memory_layout.is_copyable);
     const void* source;
     void* destination;
     if (storage_.has_allocated_storage()) {
@@ -55,6 +60,7 @@ Value& Value::operator=(const Value& other) {
     if (!type_) {
       return *this;
     }
+    assert(other.type()->description().memory_layout.is_copyable);
 
     const void* source;
     void* destination;
@@ -84,6 +90,10 @@ Value& Value::operator=(const Value& other) {
 }
 
 void* Value::GetValuePointer() {
+  return const_cast<void*>(static_cast<const Value*>(this)->GetValuePointer());
+}
+
+const void* Value::GetValuePointer() const {
   if (!is_reference()) {
     return storage_.value_pointer();
   }
@@ -93,11 +103,11 @@ void* Value::GetValuePointer() {
   return *value_pointer;
 }
 
-Value Value::CreateReference() {
+Value Value::CreateReference() const {
   assert(type());
   assert(type()->is_reference_type());
 
-  void* value_pointer = GetValuePointer();
+  const void* value_pointer = GetValuePointer();
 
   const auto& reference_description = type()->description().reference;
   Value value;

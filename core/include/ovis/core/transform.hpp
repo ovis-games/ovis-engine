@@ -15,8 +15,6 @@ class Transform : public SceneObjectComponent {
   friend class TransformController;
 
  public:
-  explicit inline Transform(SceneObject* object) : SceneObjectComponent(object) {}
-
   inline Vector3 local_position() const { return position_; }
   inline void SetLocalPosition(Vector3 new_position) {
     position_ = new_position;
