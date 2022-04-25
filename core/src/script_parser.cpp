@@ -46,8 +46,10 @@ Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(const j
 
 Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(const json& type_definition) {
   TypeDescription description = {
-    .alignment_in_bytes = ValueStorage::ALIGNMENT,
-    .size_in_bytes = 0,
+    .memory_layout = {
+      .alignment_in_bytes = ValueStorage::ALIGNMENT,
+      .size_in_bytes = 0,
+    }
   };
   ParseScriptErrors errors;
   std::vector<TypePropertyDescription> properties;
@@ -59,19 +61,19 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(const json& typ
           fmt::format("/properties/{}", property_name));
       continue;
     }
-    if (property_type->alignment_in_bytes() > description.alignment_in_bytes) {
-      description.alignment_in_bytes = property_type->alignment_in_bytes();
+    if (property_type->alignment_in_bytes() > description.memory_layout.alignment_in_bytes) {
+      description.memory_layout.alignment_in_bytes = property_type->alignment_in_bytes();
     }
-    const std::size_t padding_bytes = description.size_in_bytes % property_type->alignment_in_bytes();
-    description.size_in_bytes += padding_bytes;
+    const std::size_t padding_bytes = description.memory_layout.size_in_bytes % property_type->alignment_in_bytes();
+    description.memory_layout.size_in_bytes += padding_bytes;
 
     description.properties.push_back({
         .name = property_name,
         .type = property_type,
-        .access = TypePropertyDescription::PrimitiveAccess { .offset = description.size_in_bytes }
+        .access = TypePropertyDescription::PrimitiveAccess { .offset = description.memory_layout.size_in_bytes }
     });
 
-    description.size_in_bytes += property_type->size_in_bytes();
+    description.memory_layout.size_in_bytes += property_type->size_in_bytes();
   }
 
   return ParseScriptTypeResult{ description };

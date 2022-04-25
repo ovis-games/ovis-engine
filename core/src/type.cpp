@@ -48,14 +48,14 @@ std::shared_ptr<Type> Type::Add(std::shared_ptr<Module> module, TypeDescription 
   for (auto& registration : registered_types) {
     if (registration.type == nullptr) {
       registration.id = registration.id.next();
-      registration.native_type_id = description.native_type_id;
+      registration.native_type_id = description.memory_layout.native_type_id;
       return registration.type = std::shared_ptr<Type>(new Type(registration.id, module, std::move(description)));
     }
   }
   TypeId id(registered_types.size());
   registered_types.push_back({
     .id = id,
-    .native_type_id = description.native_type_id,
+    .native_type_id = description.memory_layout.native_type_id,
     .type = std::shared_ptr<Type>(new Type(id, module, std::move(description))),
   });
   return registered_types.back().type;

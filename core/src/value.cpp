@@ -2,7 +2,7 @@
 
 namespace ovis {
 
-Value::Value(const Value& other) : type_(other.type_), is_pointer_(other.is_pointer_) {
+Value::Value(const Value& other) : type_(other.type_) {
   if (!type_) {
     return;
   }
@@ -52,7 +52,6 @@ Value& Value::operator=(const Value& other) {
   } else {
     storage_.reset();
     type_ = other.type_;
-    is_pointer_ = other.is_pointer_;
     if (!type_) {
       return *this;
     }
@@ -84,13 +83,34 @@ Value& Value::operator=(const Value& other) {
   return *this;
 }
 
+void* Value::GetValuePointer() {
+  if (!is_reference()) {
+    return storage_.value_pointer();
+  }
+
+  auto value_pointer = type()->description().reference->get_pointer->Call<void*>(storage_.value_pointer());
+  assert(value_pointer);
+  return *value_pointer;
+}
+
 Value Value::CreateReference() {
   assert(type());
   assert(type()->is_reference_type());
 
-  auto x = type()->description().reference->get_pointer->Call(storage_.value_pointer());
+  void* value_pointer = GetValuePointer();
 
+  const auto& reference_description = type()->description().reference;
   Value value;
+  void* reference_pointer = value.storage_.AllocateIfNecessary(reference_description->memory_layout.alignment_in_bytes,
+                                                               reference_description->memory_layout.size_in_bytes);
+  const auto constructor_result = reference_description->memory_layout.construct->Call<void>(reference_pointer);
+  assert(constructor_result);
+
+  const auto set_pointer_result = reference_description->set_pointer->Call<void>(reference_pointer, value_pointer);
+  assert(set_pointer_result);
+  value.type_ = type();
+  value.is_reference_ = true;
+
   return value;
 }
 

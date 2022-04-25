@@ -13,7 +13,7 @@ TEST_CASE("Register a module", "[ovis][core][Module]") {
     double number;
   };
   const auto some_type_description = ovis::TypeDescription::CreateForNativeType<SomeType>("SomeType");
-  REQUIRE(some_type_description.native_type_id == ovis::TypeOf<SomeType>);
+  REQUIRE(some_type_description.memory_layout.native_type_id == ovis::TypeOf<SomeType>);
   const auto some_type = test_module->RegisterType(some_type_description);
   REQUIRE(some_type != nullptr);
   REQUIRE(some_type->id() != ovis::Type::NONE_ID);

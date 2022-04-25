@@ -37,36 +37,48 @@ struct TypePropertyDescription {
                                         std::shared_ptr<Function> setter = nullptr);
 };
 
-struct TypeDescription {
+// This structure defined the memory information of a type.
+struct TypeMemoryLayout {
   NativeTypeId native_type_id;
-  std::string name;
+
+  std::uint32_t is_constructible : 1;
+  std::uint32_t is_copyable : 1;
+
   std::uintptr_t alignment_in_bytes;
   std::uintptr_t size_in_bytes;
+
+  // If is_copy_constructible is true, this member must point to a function that constructs the type.
+  std::shared_ptr<Function> construct;
+  // If is_copyable is true, this member may point to a function that copies the type. Otherwise it is assumed the type
+  // is trivially copyable.
+  std::shared_ptr<Function> copy;
+  // This member may point to a function that destructs the type. Otherwise, it is assumed the type is trivially
+  // destructible.
+  std::shared_ptr<Function> destruct;
+
+  template <typename T>
+  static TypeMemoryLayout CreateForNativeType();
+};
+
+struct TypeReferenceDescription {
+  TypeMemoryLayout memory_layout;
+  std::shared_ptr<Function> get_pointer;
+  std::shared_ptr<Function> set_pointer;
+
+  template <typename T> static std::optional<TypeReferenceDescription> CreateFromNativeType();
+};
+
+struct TypeDescription {
+  std::string name;
   std::shared_ptr<Type> base;
   std::shared_ptr<Function> to_base;
   std::shared_ptr<Function> from_base;
   std::vector<TypePropertyDescription> properties;
-
-  // Default constructor. Must always be valid, even for trivially constructible types to ensure proper initialization
-  // of all members.
-  std::shared_ptr<Function> construct;
-
-  // If one of the following functions is null, it is assumed that the
-  // type ist trivially copyable/destructible.
-  std::shared_ptr<Function> copy;
-  std::shared_ptr<Function> destruct;
+  TypeMemoryLayout memory_layout;
+  std::optional<TypeReferenceDescription> reference;
 
   template <typename T, typename ParentType = void>
   requires (
-    !std::is_base_of_v<SafelyReferenceable, T> &&
-    (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
-    !std::is_same_v<T, ParentType>
-  )
-  static TypeDescription CreateForNativeType(std::string_view name);
-
-  template <typename T, typename ParentType = void>
-  requires (
-    std::is_base_of_v<SafelyReferenceable, T> &&
     (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
     !std::is_same_v<T, ParentType>
   )
@@ -86,19 +98,20 @@ class Type : public std::enable_shared_from_this<Type> {
   std::string_view full_reference() const { return full_reference_; }
   Type* base() const { return description().base.get(); }
   std::weak_ptr<Module> module() const { return module_; }
+  bool is_reference_type() const { return description().reference.has_value(); }
 
-  std::size_t alignment_in_bytes() const { return description().alignment_in_bytes; }
-  std::size_t size_in_bytes() const { return description().size_in_bytes; }
+  std::size_t alignment_in_bytes() const { return description().memory_layout.alignment_in_bytes; }
+  std::size_t size_in_bytes() const { return description().memory_layout.size_in_bytes; }
   bool is_stored_inline() const { return ValueStorage::IsTypeStoredInline(alignment_in_bytes(), size_in_bytes()); }
 
-  bool trivially_constructible() const { return description().construct == nullptr; }
-  const Function* construct_function() const { return description().construct.get(); }
+  bool trivially_constructible() const { return description().memory_layout.construct == nullptr; }
+  const Function* construct_function() const { return description().memory_layout.construct.get(); }
 
-  bool trivially_copyable() const { return description().copy == nullptr; }
-  const Function* copy_function() const { return description().copy.get(); }
+  bool trivially_copyable() const { return description().memory_layout.copy == nullptr; }
+  const Function* copy_function() const { return description().memory_layout.copy.get(); }
 
-  bool trivially_destructible() const { return description().destruct == nullptr; }
-  const Function* destruct_function() const { return description().destruct.get(); }
+  bool trivially_destructible() const { return description().memory_layout.destruct == nullptr; }
+  const Function* destruct_function() const { return description().memory_layout.destruct.get(); }
 
   const Function* to_base_function() const { return description().to_base.get(); }
   const Function* from_base_function() const { return description().from_base.get(); }
@@ -204,22 +217,72 @@ inline TypePropertyDescription TypePropertyDescription::Create(std::string_view 
   };
 }
 
+namespace detail {
+
+template <typename T>
+std::shared_ptr<Function> GetConstrucFunction() {
+  if constexpr (std::is_default_constructible_v<T>) {
+    return Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::DefaultConstruct<T>>());
+  } else {
+    return nullptr;
+  }
+}
+
+template <typename T>
+std::shared_ptr<Function> GetCopyFunction() {
+  if constexpr (std::is_copy_assignable_v<T> && !std::is_trivially_copy_assignable_v<T>) {
+    return Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::CopyAssign<T>>());
+  } else {
+    return nullptr;
+  }
+}
+
+template <typename T>
+std::shared_ptr<Function> GetDestructFunction() {
+  if constexpr (!std::is_trivially_destructible_v<T>) {
+    return Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::Destruct<T>>());
+  } else {
+    return nullptr;
+  }
+}
+
+}  // namespace detail
+
+template <typename T>
+inline TypeMemoryLayout TypeMemoryLayout::CreateForNativeType() {
+  return {
+    .native_type_id = TypeOf<T>,
+    .is_constructible = std::is_default_constructible_v<T>,
+    .is_copyable = std::is_copy_assignable_v<T>,
+    .alignment_in_bytes = alignof(T),
+    .size_in_bytes = sizeof(T),
+    .construct = detail::GetConstrucFunction<T>(),
+    .copy =  detail::GetCopyFunction<T>(),
+    .destruct = detail::GetDestructFunction<T>(),
+  };
+}
+
+template <typename T>
+std::optional<TypeReferenceDescription> TypeReferenceDescription::CreateFromNativeType() {
+  if constexpr (std::is_base_of_v<SafelyReferenceable, T>) {
+    return TypeReferenceDescription {
+      .memory_layout = TypeMemoryLayout::CreateForNativeType<safe_ptr<T>>(),
+      .get_pointer = Function::Create(FunctionDescription::CreateForNativeFunction<&safe_ptr<T>::get>()),
+      .set_pointer = Function::Create(FunctionDescription::CreateForNativeFunction<&safe_ptr<T>::reset>()),
+    };
+  } else {
+    return std::nullopt;
+  }
+}
+
 template <typename T, typename ParentType> 
 requires (
-  !std::is_base_of_v<SafelyReferenceable, T> &&
   (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
   !std::is_same_v<T, ParentType>
 )
 inline TypeDescription TypeDescription::CreateForNativeType(std::string_view name) {
-  static_assert(std::is_copy_constructible_v<T>);
-  static_assert(std::is_move_constructible_v<T>);
-  static_assert(std::is_copy_assignable_v<T>);
-  static_assert(std::is_move_assignable_v<T>);
   return TypeDescription{
-      .native_type_id = TypeOf<T>,
       .name = std::string(name),
-      .alignment_in_bytes = alignof(T),
-      .size_in_bytes = sizeof(T),
       .base = Type::Get<ParentType>(),
       .to_base =
           std::is_same_v<ParentType, void>
@@ -230,24 +293,8 @@ inline TypeDescription TypeDescription::CreateForNativeType(std::string_view nam
               ? nullptr
               : Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::FromBase<ParentType, T>>()),
       .properties = {},
-      .construct = Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::DefaultConstruct<T>>()),
-      .copy = std::is_trivially_copy_assignable_v<T>
-                  ? nullptr
-                  : Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::CopyAssign<T>>()),
-      .destruct = std::is_trivially_destructible_v<T>
-                      ? nullptr
-                      : Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::Destruct<T>>()),
-  };
-}
-
-template <typename T, typename ParentType> 
-requires (
-  std::is_base_of_v<SafelyReferenceable, T> &&
-  (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
-  !std::is_same_v<T, ParentType>
-)
-inline TypeDescription TypeDescription::CreateForNativeType(std::string_view name) {
-  return TypeDescription{
+      .memory_layout = TypeMemoryLayout::CreateForNativeType<T>(),
+      .reference = TypeReferenceDescription::CreateFromNativeType<T>(),
   };
 }
 

@@ -164,15 +164,35 @@ TEST_CASE("Construct type", "[ovis][core][Value]") {
   REQUIRE(shared_number.use_count() == 1);
 }
 
-TEST_CASE("Store reference", "[ovis][core][Value]") {
-  auto test_module = RegisterValueTestModule();
-  auto number_type = test_module->GetType("Number");
-  double number = 10.0;
-  auto value = ovis::Value::Create(&number);
-  REQUIRE(value.type() == number_type);
-  REQUIRE(value.as<double>() == 10.0);
-  value.as<double>() = 12.0;
-  REQUIRE(value.as<double>() == 12.0);
-  REQUIRE(number == 12.0);
-}
+struct SomeReferenceType : public ovis::SafelyReferenceable {
+  double number;
+};
 
+TEST_CASE("Store reference", "[ovis][core][Value]") {
+  auto test_module = RegisterTestModule();
+
+  auto some_reference_type = test_module->RegisterType(ovis::TypeDescription::CreateForNativeType<SomeReferenceType>("SomeReferenceType"));
+  REQUIRE(some_reference_type->is_reference_type());
+
+  auto value = ovis::Value::Construct(some_reference_type);
+  REQUIRE(value);
+  REQUIRE(value->as<SomeReferenceType>().number == 0);
+  value->as<SomeReferenceType>().number = 10;
+  REQUIRE(value->as<SomeReferenceType>().number == 10);
+
+  auto value_copy = *value;
+  REQUIRE(value->as<SomeReferenceType>().number == 10);
+
+  auto reference_to_value = ovis::Value::Create(&value->as<SomeReferenceType>());
+  REQUIRE(reference_to_value.is_reference());
+  REQUIRE(reference_to_value.as<SomeReferenceType>().number == 10);
+
+  auto another_reference_to_value = value->CreateReference();
+  REQUIRE(another_reference_to_value.is_reference());
+  REQUIRE(another_reference_to_value.as<SomeReferenceType>().number == 10);
+
+  value->as<SomeReferenceType>().number = 12;
+  REQUIRE(value_copy.as<SomeReferenceType>().number == 10);
+  REQUIRE(reference_to_value.as<SomeReferenceType>().number == 12);
+  REQUIRE(another_reference_to_value.as<SomeReferenceType>().number == 12);
+}

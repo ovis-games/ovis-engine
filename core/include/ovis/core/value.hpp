@@ -12,16 +12,18 @@ namespace ovis {
 
 class Value {
  public:
-  Value() : type_(), is_pointer_(false) {}
+  Value() : type_(), is_reference_(false) {}
   ~Value();
 
   Value(const Value& other);
   Value& operator=(const Value&);
 
-  template <typename T> T& as() { return is_pointer_ ? *storage_.as<T*>() : storage_.as<T>(); }
-  template <typename T> const T& as() const { return storage_.as<T>(); }
+  template <typename T> T& as() {
+    return *reinterpret_cast<T*>(GetValuePointer());
+  }
+  void* GetValuePointer();
   const std::shared_ptr<Type>& type() const { return type_; }
-  bool is_pointer() const { return is_pointer_; }
+  bool is_reference() const { return is_reference_; }
 
   Value CreateReference();
 
@@ -40,7 +42,7 @@ class Value {
  private:
   ValueStorage storage_;
   std::shared_ptr<Type> type_;
-  bool is_pointer_;
+  bool is_reference_ : 1;
 };
 
 }
@@ -97,20 +99,37 @@ Result<T> Value::GetProperty(std::string_view name) {
 template <typename T>
 requires (!std::is_pointer_v<T>)
 inline Value Value::Create(T&& native_value) {
+  assert(Type::Get<std::remove_cvref_t<T>>());
+
   Value value;
   value.type_ = Type::Get<std::remove_cvref_t<T>>();
   value.storage_.reset(std::forward<T>(native_value));
-  value.is_pointer_ = false;
   return value;
 }
 
 template <typename T>
 requires (std::is_pointer_v<T>)
 inline Value Value::Create(T&& native_value) {
+  assert(Type::Get<std::remove_cvref_t<std::remove_pointer_t<T>>>());
+
   Value value;
   value.type_ = Type::Get<std::remove_cvref_t<std::remove_pointer_t<T>>>();
-  value.storage_.reset(std::forward<T>(native_value));
-  value.is_pointer_ = true;
+  if (value.type()->is_reference_type()) {
+    const TypeReferenceDescription& reference_desc = *value.type()->description().reference;
+    value.storage_.AllocateIfNecessary(reference_desc.memory_layout.alignment_in_bytes,
+                                       reference_desc.memory_layout.size_in_bytes);
+    const auto construct_result = reference_desc.memory_layout.construct->Call<void>(value.storage_.value_pointer());
+    assert(construct_result);
+
+    const auto set_pointer_result = reference_desc.set_pointer->Call<void>(value.storage_.value_pointer(), native_value);
+    assert(set_pointer_result);
+
+    value.is_reference_ = true;
+  } else {
+    value.storage_.reset(std::forward<T>(native_value));
+    value.is_reference_ = false;
+  }
+
   return value;
 }
 
