@@ -62,8 +62,8 @@ std::shared_ptr<Type> Type::Add(std::shared_ptr<Module> module, TypeDescription 
 }
 
 Result<> Type::Remove(TypeId id) {
-  if (id.index() < registered_types.size() && registered_types[id.index()].id == id) {
-    registered_types[id.index()].type = nullptr;
+  if (id.index < registered_types.size() && registered_types[id.index].id == id) {
+    registered_types[id.index].type = nullptr;
     return Success;
   } else {
     return Error("Invalid type id");

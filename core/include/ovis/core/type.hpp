@@ -417,8 +417,8 @@ inline std::optional<TypeId> Type::GetId() {
 }
 
 inline std::shared_ptr<Type> Type::Get(TypeId id) {
-  assert(id.index() < registered_types.size());
-  const auto& registration = registered_types[id.index()];
+  assert(id.index < registered_types.size());
+  const auto& registration = registered_types[id.index];
   return registration.id == id ? registration.type : nullptr;
 }
 
