@@ -107,6 +107,7 @@ Result<Value> SceneObject::AddComponent(const std::shared_ptr<Type>& type) {
   }
 
   components_.emplace_back(std::make_unique<Value>(type));
+  components_.back()->as<SceneObjectComponent>().scene_object_ = this;
   return components_.back()->CreateReference();
 }
 
