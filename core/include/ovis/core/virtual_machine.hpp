@@ -88,17 +88,6 @@ class ExecutionContext {
   void PushStackFrame();
   void PopStackFrame();
 
-  Value& GetValue(std::size_t position, std::size_t stack_frame_offset = 0);
-
-  // Returns an arbitrary value from the stack. In case T is a tuple it will be filled with the values at positions
-  // [position, position + tuple_size_v<T>).
-  template <typename T> WrappedType<T> GetValue(std::size_t position, std::size_t stack_frame_offset = 0);
-
-  Value& GetTopValue(std::size_t offset_from_top = 0);
-  // Returns an arbitrary value from the top of the stack. In case T is a tuple it will be filled with the values at
-  // offsets: (offset_from_top + tuple_size_v<T>, offset_from_top).
-  template <typename T> WrappedType<T> GetTopValue(std::size_t offset_from_top = 0);
-
   std::span<const ValueStorage> registers() const;
   std::span<const ValueStorage> current_function_scope_registers() const;
   Result<> Execute(std::span<const vm::Instruction> instructions, std::span<const ValueStorage> constants);
