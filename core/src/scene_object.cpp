@@ -106,19 +106,16 @@ Result<Value> SceneObject::AddComponent(const std::shared_ptr<Type>& type) {
     return Error("Object '{}' already has the component '{}'.", path(), type->name());
   }
 
-  auto component = Value::Construct(type);
-  OVIS_CHECK_RESULT(component);
-
-  components_.push_back(std::move(*component));
-  return components_.back().CreateReference();
+  components_.emplace_back(std::make_unique<Value>(type));
+  return components_.back()->CreateReference();
 }
 
 Result<Value> SceneObject::GetComponent(const std::shared_ptr<Type>& type) {
   assert(type);
 
   for (const auto& component : components_) {
-    if (component.type() == type) {
-      return component.CreateReference();
+    if (component->type() == type) {
+      return component->CreateReference();
     }
   }
   return Error("Object {} does not have component", path(), type->name());
@@ -135,7 +132,7 @@ Result<Value> SceneObject::GetComponent(const std::shared_ptr<Type>& type) {
 
 bool SceneObject::HasComponent(const std::shared_ptr<Type>& type) const {
   for (const auto& component : components_) {
-    if (component.type() == type) {
+    if (component->type() == type) {
       return true;
     }
   }
@@ -169,9 +166,9 @@ json SceneObject::Serialize() const {
 
   auto& components = serialized_object["components"] = json::object();
   for (const auto& component : components_) {
-    const auto component_type = component.type();
+    const auto component_type = component->type();
     assert(component_type != nullptr);
-    components[std::string(component_type->full_reference())] = component.as<SceneObjectComponent>().Serialize();
+    components[std::string(component_type->full_reference())] = component->as<SceneObjectComponent>().Serialize();
   }
   auto& children = serialized_object["children"] = json::object();
   for (const auto& child : children_) {

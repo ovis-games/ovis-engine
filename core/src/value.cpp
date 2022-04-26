@@ -2,29 +2,54 @@
 
 namespace ovis {
 
-Value::Value(const Value& other) : type_(other.type_) {
+Value::Value(TypeId type_id) : Value(Type::Get(type_id)) {
+}
+
+Value::Value(std::shared_ptr<Type> type) : type_(std::move(type)), is_reference_(false) {
   if (!type_) {
     return;
   }
-  assert(other.type()->description().memory_layout.is_copyable);
+
+  void* stored_value_pointer = storage_.AllocateIfNecessary(type_->alignment_in_bytes(), type_->size_in_bytes());
+
+  assert(type_->construct_function());
+  const auto constructor_result =
+      ExecutionContext::global_context()->Call<void>(type_->construct_function()->handle(), stored_value_pointer);
+  if (!constructor_result) {
+    storage_.reset();
+    type_.reset();
+  }
+
+  if (auto destructor = type_->destruct_function(); destructor) {
+    storage_.SetDestructFunction(destructor->handle());
+  }
+}
+
+Value::Value(const Value& other) : type_(other.type_), is_reference_(other.is_reference_) {
+  if (!type_) {
+    return;
+  }
+  const auto& memory_layout =
+      other.is_reference() ? type()->description().reference->memory_layout : type()->description().memory_layout;
+  assert(memory_layout.is_copyable);
 
   const void* source;
   void* destination;
 
   if (other.storage_.has_allocated_storage()) {
-    storage_.Allocate(type_->alignment_in_bytes(), type_->size_in_bytes());
+    storage_.Allocate(memory_layout.alignment_in_bytes, memory_layout.size_in_bytes);
     source = other.storage_.allocated_storage_pointer();
     destination = storage_.allocated_storage_pointer();
   } else {
     source = other.storage_.data();
     destination = storage_.data();
   }
-  assert(type_->construct_function());
-  type_->construct_function()->Call(destination);
-  if (type_->trivially_copyable()) {
-    std::memcpy(destination, source, type_->size_in_bytes());
+  assert(memory_layout.construct);
+  memory_layout.construct->Call(destination);
+  if (memory_layout.copy) {
+    memory_layout.copy->Call(destination, source);
   } else {
-    type_->copy_function()->Call(destination, source);
+    std::memcpy(destination, source, memory_layout.size_in_bytes);
   }
   storage_.SetDestructFunction(other.storage_.destruct_function());
 #ifndef NDEBUG
@@ -120,26 +145,6 @@ Value Value::CreateReference() const {
   assert(set_pointer_result);
   value.type_ = type();
   value.is_reference_ = true;
-
-  return value;
-}
-
-Result<Value> Value::Construct(std::shared_ptr<Type> type) {
-  assert(type);
-
-  Value value;
-  void* stored_value_pointer = value.storage_.AllocateIfNecessary(type->alignment_in_bytes(), type->size_in_bytes());
-
-  assert(type->construct_function());
-  const auto constructor_result =
-      ExecutionContext::global_context()->Call<void>(type->construct_function()->handle(), stored_value_pointer);
-  OVIS_CHECK_RESULT(constructor_result);  // If the constructor failed the storage is freed by the destructor of value
-
-  if (auto destructor = type->destruct_function(); destructor) {
-    value.storage_.SetDestructFunction(destructor->handle());
-  }
-
-  value.type_ = std::move(type);
 
   return value;
 }

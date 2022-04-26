@@ -13,6 +13,8 @@ namespace ovis {
 class Value {
  public:
   Value() : type_(), is_reference_(false) {}
+  Value(TypeId type_id);
+  Value(std::shared_ptr<Type> type);
   ~Value();
 
   Value(const Value& other);
@@ -42,8 +44,6 @@ class Value {
   static Value Create(T&& native_value);
   template <typename T> requires (std::is_pointer_v<T>)
   static Value Create(T&& native_value);
-
-  static Result<Value> Construct(std::shared_ptr<Type> type);
 
  private:
   ValueStorage storage_;

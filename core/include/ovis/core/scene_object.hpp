@@ -70,7 +70,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   bool HasComponent(const std::shared_ptr<Type>& type) const;
   template <typename ComponentType> bool HasComponent() const;
 
-  auto component_types() const { return TransformRange(components_, [](const auto& component) { return component.type(); }); }
+  auto component_types() const { return TransformRange(components_, [](const auto& component) { return component->type(); }); }
 
   Result<> RemoveComponent(const std::shared_ptr<Type>& type);
   template <typename ComponentType> bool RemoveComponent();
@@ -93,7 +93,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   std::string path_;
   std::string name_;
   std::vector<safe_ptr<SceneObject>> children_;
-  std::vector<Value> components_;
+  std::vector<std::unique_ptr<Value>> components_;
   std::vector<safe_ptr<SceneObjectAnimation>> animations_;
 
   Result<json> ConstructObjectFromTemplate(std::string_view template_asset, std::span<std::string_view> parents = {}) const;

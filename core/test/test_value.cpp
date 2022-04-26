@@ -141,26 +141,24 @@ TEST_CASE("Copy assign non-trivial value", "[ovis][core][Value]") {
 TEST_CASE("Construct trivial type", "[ovis][core][Value]") {
   auto test_module = RegisterValueTestModule();
   auto number_type = test_module->GetType("Number");
-  auto number_value = ovis::Value::Construct(number_type);
-  REQUIRE(number_value);
-  REQUIRE(number_value->type() == ovis::Type::Get<double>());
-  REQUIRE(number_value->as<double>() == 0.0);
+  ovis::Value number_value(number_type);
+  REQUIRE(number_value.type() == ovis::Type::Get<double>());
+  REQUIRE(number_value.as<double>() == 0.0);
 }
 
 TEST_CASE("Construct type", "[ovis][core][Value]") {
   auto test_module = RegisterValueTestModule();
   auto shared_number_type = test_module->GetType("SharedNumber");
-  auto shared_number_value = ovis::Value::Construct(shared_number_type);
-  REQUIRE(shared_number_value);
-  REQUIRE(shared_number_value->type() == ovis::Type::Get<std::shared_ptr<double>>());
-  REQUIRE(shared_number_value->as<std::shared_ptr<double>>() == nullptr);
+  ovis::Value shared_number_value(shared_number_type);
+  REQUIRE(shared_number_value.type() == ovis::Type::Get<std::shared_ptr<double>>());
+  REQUIRE(shared_number_value.as<std::shared_ptr<double>>() == nullptr);
 
   auto shared_number = std::make_shared<double>(8.0);
   REQUIRE(shared_number.use_count() == 1);
-  shared_number_value->as<SharedDouble>() = shared_number;
+  shared_number_value.as<SharedDouble>() = shared_number;
   REQUIRE(shared_number.use_count() == 2);
-  REQUIRE(shared_number_value->as<SharedDouble>() != nullptr);
-  shared_number_value->Reset();
+  REQUIRE(shared_number_value.as<SharedDouble>() != nullptr);
+  shared_number_value.Reset();
   REQUIRE(shared_number.use_count() == 1);
 }
 
@@ -174,25 +172,25 @@ TEST_CASE("Store reference", "[ovis][core][Value]") {
   auto some_reference_type = test_module->RegisterType(ovis::TypeDescription::CreateForNativeType<SomeReferenceType>("SomeReferenceType"));
   REQUIRE(some_reference_type->is_reference_type());
 
-  auto value = ovis::Value::Construct(some_reference_type);
-  REQUIRE(value);
-  REQUIRE(value->as<SomeReferenceType>().number == 0);
-  value->as<SomeReferenceType>().number = 10;
-  REQUIRE(value->as<SomeReferenceType>().number == 10);
+  ovis::Value value(some_reference_type);
+  REQUIRE(value.type() == some_reference_type);
+  REQUIRE(value.as<SomeReferenceType>().number == 0);
+  value.as<SomeReferenceType>().number = 10;
+  REQUIRE(value.as<SomeReferenceType>().number == 10);
 
-  auto value_copy = *value;
-  REQUIRE(value->as<SomeReferenceType>().number == 10);
+  // auto value_copy = value;
+  // REQUIRE(value.as<SomeReferenceType>().number == 10);
 
-  auto reference_to_value = ovis::Value::Create(&value->as<SomeReferenceType>());
+  auto reference_to_value = ovis::Value::Create(&value.as<SomeReferenceType>());
   REQUIRE(reference_to_value.is_reference());
   REQUIRE(reference_to_value.as<SomeReferenceType>().number == 10);
 
-  auto another_reference_to_value = value->CreateReference();
+  auto another_reference_to_value = value.CreateReference();
   REQUIRE(another_reference_to_value.is_reference());
   REQUIRE(another_reference_to_value.as<SomeReferenceType>().number == 10);
 
-  value->as<SomeReferenceType>().number = 12;
-  REQUIRE(value_copy.as<SomeReferenceType>().number == 10);
+  value.as<SomeReferenceType>().number = 12;
+  // REQUIRE(value_copy.as<SomeReferenceType>().number == 10);
   REQUIRE(reference_to_value.as<SomeReferenceType>().number == 12);
   REQUIRE(another_reference_to_value.as<SomeReferenceType>().number == 12);
 }
