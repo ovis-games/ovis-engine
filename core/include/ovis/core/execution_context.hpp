@@ -1,13 +1,15 @@
 #pragma once
 
 #include <vector>
+#include <span>
 
 #include <ovis/utils/result.hpp>
 #include <ovis/core/function_handle.hpp>
-#include <ovis/core/virtual_machine.hpp>
 #include <ovis/core/virtual_machine_instructions.hpp>
 
 namespace ovis {
+
+class ValueStorage;
 
 class ExecutionContext {
  public:

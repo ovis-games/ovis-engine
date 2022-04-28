@@ -17,6 +17,8 @@
 namespace ovis {
 
 class Module;
+class Function;
+class Type;
 
 struct TypePropertyDescription {
   struct PrimitiveAccess {

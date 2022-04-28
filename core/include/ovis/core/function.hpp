@@ -9,10 +9,12 @@
 #include <ovis/utils/result.hpp>
 #include <ovis/utils/json.hpp>
 #include <ovis/core/function_handle.hpp>
+#include <ovis/core/virtual_machine_instructions.hpp>
 #include <ovis/core/type_id.hpp>
-#include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
+
+class Value;
 
 template <typename... T> struct FunctionResult { using type = std::tuple<T...>; };
 template <typename T> struct FunctionResult <T> { using type = T; };
@@ -116,7 +118,7 @@ class Function : public std::enable_shared_from_this<Function> {
   }
 };
 
-}
+}  // namespace ovis
 
 #include <ovis/core/value.hpp>
 #include <ovis/core/type.hpp>
