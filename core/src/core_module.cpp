@@ -94,9 +94,9 @@ bool LoadCoreModule() {
     // core_module->RegisterFunction<&And>("And", {"a", "b"}, {"result"});
     // core_module->RegisterFunction<&Or>("Or", {"a", "b"}, {"result"});
 
-    // auto number_type = core_module->RegisterType<double>("Number");
-    // assert(number_type != nullptr);
-    // assert(Type::Get<double>() != nullptr);
+    auto number_type = core_module->RegisterType(TypeDescription::CreateForNativeType<double>("Number"));
+    assert(number_type != nullptr);
+    assert(Type::Get<double>() != nullptr);
 
     // core_module->RegisterFunction<&CreateNumber>("Create Number", {"value"}, {"result"});
     // core_module->RegisterFunction<&Negate>("Negate", {"value"}, {"result"});
