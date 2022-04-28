@@ -27,10 +27,11 @@ add_library(
   include/ovis/core/math.hpp src/math.cpp
   include/ovis/core/script_function.hpp src/script_function.cpp
   include/ovis/core/script_parser.hpp src/script_parser.cpp
-  include/ovis/core/virtual_machine.hpp src/virtual_machine.cpp
   include/ovis/core/type.hpp src/type.cpp
   include/ovis/core/function.hpp src/function.cpp
   include/ovis/core/module.hpp src/module.cpp
+  include/ovis/core/virtual_machine.hpp src/virtual_machine.cpp
+  include/ovis/core/execution_context.hpp src/execution_context.cpp
   include/ovis/core/value.hpp src/value.cpp
   include/ovis/core/value_storage.hpp src/value_storage.cpp
 )

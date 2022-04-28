@@ -8,8 +8,10 @@
 #include <ovis/utils/native_type_id.hpp>
 #include <ovis/utils/result.hpp>
 #include <ovis/utils/versioned_index.hpp>
+#include <ovis/utils/safe_pointer.hpp>
 #include <ovis/core/type_helper.hpp>
 #include <ovis/core/type_id.hpp>
+#include <ovis/core/value_storage.hpp>
 #include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {

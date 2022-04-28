@@ -4,8 +4,10 @@
 #include <optional>
 #include <span>
 #include <vector>
+#include <variant>
 
 #include <ovis/utils/result.hpp>
+#include <ovis/utils/json.hpp>
 #include <ovis/core/function_handle.hpp>
 #include <ovis/core/type_id.hpp>
 #include <ovis/core/virtual_machine.hpp>
@@ -118,6 +120,7 @@ class Function : public std::enable_shared_from_this<Function> {
 
 #include <ovis/core/value.hpp>
 #include <ovis/core/type.hpp>
+#include <ovis/core/execution_context.hpp>
 
 namespace ovis {
 
