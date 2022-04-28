@@ -2,35 +2,28 @@
 
 namespace ovis {
 
-Value::Value(TypeId type_id) : Value(Type::Get(type_id)) {
-}
+Value::Value(NotNull<Type*> type) : virtual_machine_(type->virtual_machine()), type_id_(type->id()), is_reference_(false) {
+  void* stored_value_pointer = storage_.AllocateIfNecessary(type->alignment_in_bytes(), type->size_in_bytes());
 
-Value::Value(std::shared_ptr<Type> type) : type_(std::move(type)), is_reference_(false) {
-  if (!type_) {
-    return;
-  }
-
-  void* stored_value_pointer = storage_.AllocateIfNecessary(type_->alignment_in_bytes(), type_->size_in_bytes());
-
-  assert(type_->construct_function());
+  assert(type->construct_function());
   const auto constructor_result =
-      ExecutionContext::global_context()->Call<void>(type_->construct_function()->handle(), stored_value_pointer);
+      ExecutionContext::global_context()->Call<void>(type->construct_function()->handle(), stored_value_pointer);
   if (!constructor_result) {
     storage_.reset();
-    type_.reset();
   }
 
-  if (auto destructor = type_->destruct_function(); destructor) {
+  if (auto destructor = type->destruct_function(); destructor) {
     storage_.SetDestructFunction(destructor->handle());
   }
 }
 
-Value::Value(const Value& other) : type_(other.type_), is_reference_(other.is_reference_) {
-  if (!type_) {
+Value::Value(const Value& other) : virtual_machine_(other.virtual_machine()), type_id_(other.type_id()), is_reference_(other.is_reference()) {
+  const auto type = this->type();
+  if (!type) {
     return;
   }
   const auto& memory_layout =
-      other.is_reference() ? type()->description().reference->memory_layout : type()->description().memory_layout;
+      other.is_reference() ? type->description().reference->memory_layout : type->description().memory_layout;
   assert(memory_layout.is_copyable);
 
   const void* source;
@@ -58,7 +51,7 @@ Value::Value(const Value& other) : type_(other.type_), is_reference_(other.is_re
 }
 
 Value& Value::operator=(const Value& other) {
-  if (type() == other.type()) {
+  if (type_id() == other.type_id()) {
     if (!other.type()) {
       return *this;
     }
@@ -73,16 +66,20 @@ Value& Value::operator=(const Value& other) {
       source = other.storage_.data();
       destination = storage_.data();
     }
-    if (type()->trivially_copyable()) {
-      std::memcpy(destination, source, type_->size_in_bytes());
+    
+    auto type = this->type();
+    if (type->trivially_copyable()) {
+      std::memcpy(destination, source, type->size_in_bytes());
     } else {
-      type()->copy_function()->Call(destination, source);
+      type->copy_function()->Call(destination, source);
     }
     return *this;
   } else {
     storage_.reset();
-    type_ = other.type_;
-    if (!type_) {
+    type_id_ = other.type_id_;
+
+    auto type = this->type();
+    if (!type) {
       return *this;
     }
     assert(other.type()->description().memory_layout.is_copyable);
@@ -91,19 +88,19 @@ Value& Value::operator=(const Value& other) {
     void* destination;
 
     if (other.storage_.has_allocated_storage()) {
-      storage_.Allocate(type_->alignment_in_bytes(), type_->size_in_bytes());
+      storage_.Allocate(type->alignment_in_bytes(), type->size_in_bytes());
       source = other.storage_.allocated_storage_pointer();
       destination = storage_.allocated_storage_pointer();
     } else {
       source = other.storage_.data();
       destination = storage_.data();
     }
-    assert(type_->construct_function());
-    type_->construct_function()->Call(destination);
-    if (type_->trivially_copyable()) {
-      std::memcpy(destination, source, type_->size_in_bytes());
+    assert(type->construct_function());
+    type->construct_function()->Call(destination);
+    if (type->trivially_copyable()) {
+      std::memcpy(destination, source, type->size_in_bytes());
     } else {
-      type_->copy_function()->Call(destination, source);
+      type->copy_function()->Call(destination, source);
     }
     storage_.SetDestructFunction(other.storage_.destruct_function());
 #ifndef NDEBUG
@@ -112,6 +109,11 @@ Value& Value::operator=(const Value& other) {
   }
 
   return *this;
+}
+
+void Value::Reset() {
+  type_id_ = Type::NONE_ID;
+  storage_.reset();
 }
 
 void* Value::GetValuePointer() {
@@ -135,7 +137,7 @@ Value Value::CreateReference() const {
   const void* value_pointer = GetValuePointer();
 
   const auto& reference_description = type()->description().reference;
-  Value value;
+  Value value(virtual_machine());
   void* reference_pointer = value.storage_.AllocateIfNecessary(reference_description->memory_layout.alignment_in_bytes,
                                                                reference_description->memory_layout.size_in_bytes);
   const auto constructor_result = reference_description->memory_layout.construct->Call<void>(reference_pointer);
@@ -143,7 +145,7 @@ Value Value::CreateReference() const {
 
   const auto set_pointer_result = reference_description->set_pointer->Call<void>(reference_pointer, value_pointer);
   assert(set_pointer_result);
-  value.type_ = type();
+  value.type_id_ = type_id_;
   value.is_reference_ = true;
 
   return value;

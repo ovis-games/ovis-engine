@@ -16,9 +16,12 @@ struct Scope {
 };
 
 struct ScriptFunctionParser {
+  VirtualMachine* virtual_machine;
   std::vector<Scope> scopes;
   ParseScriptFunctionResult result;
   ParseScriptErrors errors;
+
+  ScriptFunctionParser(VirtualMachine* virtual_machine) : virtual_machine(virtual_machine) {}
 
   void Parse(const json& action_definiton);
   void ParseActions(const json& action_definiton, std::string_view path);
@@ -34,8 +37,8 @@ struct ScriptFunctionParser {
 
 }  // namespace
 
-Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(const json& function_definition) {
-  ScriptFunctionParser parser;
+Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(VirtualMachine* virtual_machine, const json& function_definition) {
+  ScriptFunctionParser parser(virtual_machine);
   parser.Parse(function_definition);
   if (parser.errors.size() > 0) {
     return parser.errors;
@@ -44,7 +47,7 @@ Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(const j
   }
 }
 
-Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(const json& type_definition) {
+Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine* virtual_machine, const json& type_definition) {
   TypeDescription description = {
     .memory_layout = {
       .alignment_in_bytes = ValueStorage::ALIGNMENT,
@@ -116,14 +119,14 @@ void ScriptFunctionParser::ParseVariableDeclaration(const json& action_definiton
 
   assert(type->construct_function());
 
-  result.constants.push_back(Value::Create(type->construct_function()->handle()));
-  result.constants.push_back(Value::Create(type->destruct_function()->handle()));
-  result.instructions.push_back(vm::Instruction::CreatePushTrivialConstant(0));
-  result.instructions.push_back(vm::Instruction::CreatePushTrivialConstant(1));
+  result.constants.push_back(Value::Create(virtual_machine, type->construct_function()->handle()));
+  result.constants.push_back(Value::Create(virtual_machine, type->destruct_function()->handle()));
+  result.instructions.push_back(Instruction::CreatePushTrivialConstant(0));
+  result.instructions.push_back(Instruction::CreatePushTrivialConstant(1));
   if (type->is_stored_inline()) {
-    result.instructions.push_back(vm::Instruction::CreateConstructInlineValue());
+    result.instructions.push_back(Instruction::CreateConstructInlineValue());
   } else {
-    result.instructions.push_back(vm::Instruction::CreateConstructValue(type->alignment_in_bytes(), type->size_in_bytes()));
+    result.instructions.push_back(Instruction::CreateConstructValue(type->alignment_in_bytes(), type->size_in_bytes()));
   }
 }
 
@@ -141,24 +144,24 @@ void ScriptFunctionParser::ParseFunctionCall(const json& action_definiton, std::
 
 void ScriptFunctionParser::ParsePushValue(const json& value_definition, std::string_view path, TypeId type) {
   if (value_definition.is_string()) {
-    if (type == Type::GetId<std::string>()) {
+    if (type == virtual_machine->GetTypeId<std::string>()) {
       errors.emplace_back("Parsing constant Core.String not implemented yet", path);
     } else {
-      const auto requested_type = Type::Get(type);
+      const auto requested_type = virtual_machine->GetType(type);
       errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->full_reference() : "Unknown", "Core.String"));
     }
   } else if (value_definition.is_number()) {
-    if (type == Type::GetId<double>()) {
+    if (type == virtual_machine->GetTypeId<double>()) {
       errors.emplace_back("Parsing constant Core.Number not implemented yet", path);
     } else {
-      const auto requested_type = Type::Get(type);
+      const auto requested_type = virtual_machine->GetType(type);
       errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->full_reference() : "Unknown", "Core.Number"));
     }
   } else if (value_definition.is_boolean()) {
-    if (type == Type::GetId<bool>()) {
+    if (type == virtual_machine->GetTypeId<bool>()) {
       errors.emplace_back("Parsing constant Core.Number not implemented yet", path);
     } else {
-      const auto requested_type = Type::Get(type);
+      const auto requested_type = virtual_machine->GetType(type);
       errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->full_reference() : "Unknown", "Core.Boolean"));
     }
   } else if (value_definition.is_object()) {
@@ -422,7 +425,7 @@ void ScriptFunctionParser::ParsePushVariable(const json& value_definition, std::
 //         .path = path,
 //     });
 //   } else {
-//     ParsePush(*condition, path, Type::Get<bool>());
+//     ParsePush(*condition, path, virtual_machine->GetType<bool>());
 
 //     const std::size_t instruction_count_before = instructions.size();
 //     instructions.push_back(instructions::JumpIfFalse{});
@@ -453,7 +456,7 @@ void ScriptFunctionParser::ParsePushVariable(const json& value_definition, std::
 //     });
 //   } else {
 //     const std::ptrdiff_t instruction_count_before_push = instructions.size();
-//     ParsePush(*condition, path, Type::Get<bool>());
+//     ParsePush(*condition, path, virtual_machine->GetType<bool>());
 //     const std::ptrdiff_t instruction_count_after_push = instructions.size();
 
 //     instructions.push_back(instructions::JumpIfFalse{});
@@ -517,7 +520,7 @@ void ScriptFunctionParser::ParsePushVariable(const json& value_definition, std::
 
 // void ScriptFunctionParser::ParsePush(const json& value_definition, const std::string& path, std::shared_ptr<Type> required_type, std::size_t stack_frame_offset) {
 //   auto push = [&](auto value) {
-//     const auto input_type = Type::Get<decltype(value)>();
+//     const auto input_type = virtual_machine->GetType<decltype(value)>();
 //     if (!required_type || required_type == input_type) {
 //       instructions.push_back(instructions::PushConstant{
 //           .value = Value::Create(value),

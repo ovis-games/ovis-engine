@@ -300,7 +300,7 @@ void Vector2::RegisterType(Module* module) {
   // vector2_type["POSITIVE_Z"] = sol::property(Vector2::PositiveZ);
   // vector2_type["NEGATIVE_Z"] = sol::property(Vector2::NegativeZ);
 
-  auto vector2_description = TypeDescription::CreateForNativeType<Vector2>("Vector2");
+  auto vector2_description = TypeDescription::CreateForNativeType<Vector2>(&vm, "Vector2");
   // vector3_type->RegisterProperty<&Vector3::x>("x");
   module->RegisterType(vector2_description);
   // module->RegisterConstructor<Vector2, float, float>("Create Vector2", {"x", "y"}, "Vector2");

@@ -3,14 +3,14 @@
 #include "test_utils.hpp"
 #include <ovis/core/value.hpp>
 
-using SharedDouble = std::shared_ptr<double>;
+// using SharedDouble = std::shared_ptr<double>;
 
-std::shared_ptr<ovis::Module> RegisterValueTestModule() {
-  auto module = RegisterTestModule();
-  // module->RegisterType(ovis::TypeDescription::CreateForNativeType<double>("Number"));
-  module->RegisterType(ovis::TypeDescription::CreateForNativeType<SharedDouble>("SharedNumber"));
-  return module;
-}
+// std::shared_ptr<ovis::Module> RegisterValueTestModule() {
+//   auto module = RegisterTestModule();
+//   // module->RegisterType(ovis::TypeDescription::CreateForNativeType<double>("Number"));
+//   module->RegisterType(ovis::TypeDescription::CreateForNativeType<SharedDouble>("SharedNumber"));
+//   return module;
+// }
 
 TEST_CASE("Construct trivial value", "[ovis][core][Value]") {
   auto test_module = RegisterValueTestModule();

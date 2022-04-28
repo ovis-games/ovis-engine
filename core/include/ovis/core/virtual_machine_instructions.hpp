@@ -5,7 +5,6 @@
 #include <type_traits>
 
 namespace ovis {
-namespace vm {
 
 enum class OpCode : std::uint32_t {
   EXIT,
@@ -282,5 +281,4 @@ inline Instruction IsNumberGreater(std::uint32_t result, std::uint32_t first, st
 
 }  // namespace instructions
 
-}  // namespace vm
 }  // namespace ovis

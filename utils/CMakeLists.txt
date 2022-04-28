@@ -14,6 +14,7 @@ add_library(
   include/ovis/utils/serialize.hpp src/serialize.cpp
   include/ovis/utils/platform.hpp src/platform.cpp
   include/ovis/utils/small_vector.hpp src/small_vector.cpp
+  include/ovis/utils/not_null.hpp src/not_null.cpp
   include/ovis/utils/safe_pointer.hpp src/safe_pointer.cpp
   include/ovis/utils/static_factory.hpp src/static_factory.cpp
   include/ovis/utils/versioned_index.hpp src/versioned_index.cpp

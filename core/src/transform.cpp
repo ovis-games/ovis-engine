@@ -183,7 +183,7 @@ void Transform::RegisterType(sol::table* module) {
 }
 
 void Transform::RegisterType(Module* module) {
-  auto transform_description = TypeDescription::CreateForNativeType<Transform, SceneObjectComponent>("Transform");
+  auto transform_description = TypeDescription::CreateForNativeType<Transform, SceneObjectComponent>(&vm, "Transform");
   module->RegisterType(transform_description);
   // transform_type->RegisterProperty<&Transform::local_position, &Transform::SetLocalPosition>("Local Position");
   

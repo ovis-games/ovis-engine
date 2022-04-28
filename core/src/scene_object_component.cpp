@@ -17,7 +17,7 @@ void SceneObjectComponent::RegisterType(sol::table* module) {
 }
 
 void SceneObjectComponent::RegisterType(Module* module) {
-  auto scene_object_component_description = TypeDescription::CreateForNativeType<SceneObjectComponent>("SceneObjectComponent");
+  auto scene_object_component_description = TypeDescription::CreateForNativeType<SceneObjectComponent>(&vm, "SceneObjectComponent");
   module->RegisterType(scene_object_component_description);
 }
 

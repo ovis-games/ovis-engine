@@ -56,18 +56,18 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   template <typename T>
   void ForEachChild(bool recursive, T&& functor);
 
-  Result<Value> AddComponent(const std::shared_ptr<Type>& type);
+  Result<Value> AddComponent(TypeId component_type);
   template <typename ComponentType> ComponentType* AddComponent();
 
-  Result<Value> GetComponent(const std::shared_ptr<Type>& type);
-  Result<Value> GetComponent(const std::shared_ptr<Type>& type) const;
+  Result<Value> GetComponent(TypeId component_type);
+  Result<Value> GetComponent(TypeId component_type) const;
   template <typename ComponentType> ComponentType* GetComponent();
   template <typename ComponentType> const ComponentType* GetComponent() const;
 
   // std::span<vm::Value> components() { return components_; }
   // std::span<const vm::Value> components() const { return components_; }
 
-  bool HasComponent(const std::shared_ptr<Type>& type) const;
+  bool HasComponent(TypeId component_type) const;
   template <typename ComponentType> bool HasComponent() const;
 
   auto component_types() const { return TransformRange(components_, [](const auto& component) { return component->type(); }); }
@@ -132,13 +132,13 @@ namespace ovis {
 
 template <typename ComponentType>
 inline ComponentType* SceneObject::AddComponent() {
-  auto component = AddComponent(Type::Get<ComponentType>());
+  auto component = AddComponent(VirtualMachine::main()->GetTypeId<ComponentType>());
   return component ? &component->template as<ComponentType>() : nullptr;
 }
 
 template <typename ComponentType>
 inline ComponentType* SceneObject::GetComponent() {
-  auto component = GetComponent(Type::Get<ComponentType>());
+  auto component = GetComponent(VirtualMachine::main()->GetTypeId<ComponentType>());
   return component ? &component->template as<ComponentType>() : nullptr;
 }
 

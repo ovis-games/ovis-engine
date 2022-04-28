@@ -8,7 +8,6 @@
 #include <ovis/core/script_parser.hpp>
 
 using namespace ovis;
-using namespace ovis::vm;
 
 #define REQUIRE_RESULT(expr) \
   do { \

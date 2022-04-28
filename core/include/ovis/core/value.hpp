@@ -5,6 +5,7 @@
 #include <string_view>
 #include <type_traits>
 
+#include <ovis/utils/not_null.hpp>
 #include <ovis/core/type.hpp>
 #include <ovis/core/value_storage.hpp>
 
@@ -12,13 +13,16 @@ namespace ovis {
 
 class Value {
  public:
-  Value() : type_(), is_reference_(false) {}
-  Value(TypeId type_id);
-  Value(std::shared_ptr<Type> type);
+  Value(NotNull<VirtualMachine*> virtual_machine)
+      : virtual_machine_(virtual_machine), type_id_(Type::NONE_ID), is_reference_(false) {}
+  Value(NotNull<VirtualMachine*> virtual_machine, TypeId type_id) : Value(virtual_machine->GetType(type_id)) {}
+  Value(NotNull<Type*> type);
   ~Value();
 
   Value(const Value& other);
   Value& operator=(const Value&);
+
+  NotNull<VirtualMachine*> virtual_machine() const;
 
   template <typename T> T& as() {
     return *reinterpret_cast<T*>(GetValuePointer());
@@ -30,7 +34,8 @@ class Value {
   const void* GetValuePointer() const;
   void* GetValuePointer();
 
-  const std::shared_ptr<Type>& type() const { return type_; }
+  TypeId type_id() const { return type_id_; }
+  Type* type() const { return virtual_machine()->GetType(type_id()); }
   bool is_reference() const { return is_reference_; }
 
   Value CreateReference() const;
@@ -41,13 +46,14 @@ class Value {
   template <typename T> Result<T> GetProperty(std::string_view name);
 
   template <typename T> requires (!std::is_pointer_v<T>)
-  static Value Create(T&& native_value);
+  static Value Create(VirtualMachine* virtual_machine, T&& native_value);
   template <typename T> requires (std::is_pointer_v<T>)
-  static Value Create(T&& native_value);
+  static Value Create(VirtualMachine* virtual_machine, T&& native_value);
 
  private:
   ValueStorage storage_;
-  std::shared_ptr<Type> type_;
+  NotNull<VirtualMachine*> virtual_machine_;
+  TypeId type_id_;
   bool is_reference_ : 1;
 };
 
@@ -61,11 +67,6 @@ class Value {
 
 namespace ovis {
 
-inline void Value::Reset() {
-  type_.reset();
-  storage_.reset();
-}
-
 template <typename T>
 Result<> Value::SetProperty(std::string_view name, T&& value) {
   const auto property = type()->GetProperty(name);
@@ -74,15 +75,15 @@ Result<> Value::SetProperty(std::string_view name, T&& value) {
   }
 
   const auto property_type_id = property->type;
-  if (property_type_id != Type::GetId<T>()) {
+  if (property_type_id != virtual_machine()->GetTypeId<T>()) {
     return Error("Invalid type for property {} of {}, expected `{}` got `{}`", name, type()->name(),
-                 Type::Get(property_type_id)->name(), Type::Get<T>()->name());
+                 virtual_machine()->GetType(property_type_id)->name(), virtual_machine()->GetType<T>()->name());
   }
 
   if (property->access.index() == 0) {
     const auto primitive_access = std::get<TypePropertyDescription::PrimitiveAccess>(property->access);
     auto property_pointer = static_cast<std::byte*>(storage_.value_pointer()) + primitive_access.offset;
-    const auto& property_type = Type::Get(property_type_id);
+    const auto& property_type = virtual_machine()->GetType(property_type_id);
     if (property_type->trivially_copyable()) {
       std::memcpy(property_pointer, &value, sizeof(T));
     } else {
@@ -104,22 +105,22 @@ Result<T> Value::GetProperty(std::string_view name) {
 
 template <typename T>
 requires (!std::is_pointer_v<T>)
-inline Value Value::Create(T&& native_value) {
-  assert(Type::Get<std::remove_cvref_t<T>>());
+inline Value Value::Create(VirtualMachine* virtual_machine, T&& native_value) {
+  assert(virtual_machine->GetType<std::remove_cvref_t<T>>());
 
-  Value value;
-  value.type_ = Type::Get<std::remove_cvref_t<T>>();
+  Value value(virtual_machine);
+  value.type_id_ = virtual_machine->GetTypeId<std::remove_cvref_t<T>>();
   value.storage_.reset(std::forward<T>(native_value));
   return value;
 }
 
 template <typename T>
 requires (std::is_pointer_v<T>)
-inline Value Value::Create(T&& native_value) {
-  assert(Type::Get<std::remove_cvref_t<std::remove_pointer_t<T>>>());
+inline Value Value::Create(VirtualMachine* virtual_machine, T&& native_value) {
+  assert(virtual_machine->GetType<std::remove_cvref_t<std::remove_pointer_t<T>>>());
 
-  Value value;
-  value.type_ = Type::Get<std::remove_cvref_t<std::remove_pointer_t<T>>>();
+  Value value(virtual_machine);
+  value.type_id_ = virtual_machine->GetTypeId<std::remove_cvref_t<std::remove_pointer_t<T>>>();
   if (value.type()->is_reference_type()) {
     const TypeReferenceDescription& reference_desc = *value.type()->description().reference;
     value.storage_.AllocateIfNecessary(reference_desc.memory_layout.alignment_in_bytes,

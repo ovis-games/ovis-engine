@@ -94,15 +94,16 @@ bool SceneObject::ContainsChildObject(std::string_view object_name) {
   return FindChild(object_name) != children_.end();
 }
 
-Result<Value> SceneObject::AddComponent(const std::shared_ptr<Type>& type) {
+Result<Value> SceneObject::AddComponent(TypeId component_type) {
+  const auto& type = vm.GetType(component_type);
   if (!type) {
-    return Error("Invalid object component");
+    return Error("Invalid component type");
   }
   if (!type->IsDerivedFrom<SceneObjectComponent>()) {
     return Error("{} does not derived from SceneObjectComponent", type->full_reference());
   }
 
-  if (HasComponent(type)) {
+  if (HasComponent(component_type)) {
     return Error("Object '{}' already has the component '{}'.", path(), type->name());
   }
 
@@ -111,15 +112,18 @@ Result<Value> SceneObject::AddComponent(const std::shared_ptr<Type>& type) {
   return components_.back()->CreateReference();
 }
 
-Result<Value> SceneObject::GetComponent(const std::shared_ptr<Type>& type) {
-  assert(type);
-
+Result<Value> SceneObject::GetComponent(TypeId component_type) {
   for (const auto& component : components_) {
-    if (component->type() == type) {
+    if (component->type_id() == component_type) {
       return component->CreateReference();
     }
   }
-  return Error("Object {} does not have component", path(), type->name());
+  const auto type = vm.GetType(component_type);
+  if (type) {
+    return Error("Object {} does not have component", path(), type->name());
+  } else {
+    return Error("Invalid component type");
+  }
 }
 
 // Value SceneObject::GetComponent(const std::shared_ptr<Type>& type) const {
@@ -131,9 +135,9 @@ Result<Value> SceneObject::GetComponent(const std::shared_ptr<Type>& type) {
 //   return Value::None();
 // }
 
-bool SceneObject::HasComponent(const std::shared_ptr<Type>& type) const {
+bool SceneObject::HasComponent(TypeId component_type) const {
   for (const auto& component : components_) {
-    if (component->type() == type) {
+    if (component->type_id() == component_type) {
       return true;
     }
   }
@@ -193,8 +197,8 @@ bool SceneObject::Deserialize(const json& serialized_object) {
     const json& components = object_json->at("components");
     assert(components.is_object());
     for (const auto& [component_id, component_json] : components.items()) {
-      const auto type = Type::Deserialize(component_id);
-      if (!type) {
+      const auto type_id = vm.GetTypeId(component_id);
+      if (type_id == Type::NONE_ID) {
         LogE(
             "Scene object deserialization failed: cannot add component `{}` to object. This type has not been "
             "registered.",
@@ -202,9 +206,10 @@ bool SceneObject::Deserialize(const json& serialized_object) {
         ClearComponents();
         return false;
       }
-      auto component = AddComponent(type);
+      auto component = AddComponent(type_id);
       if (!component) {
-        LogE("Failed to add component: {}", type->name());
+        // TODO: OVIS_CHECK_RESULT
+        // LogE("Failed to add component: {}", type->name());
         return false;
       }
       if (!component->as<SceneObjectComponent>().Deserialize(component_json)) {

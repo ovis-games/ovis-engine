@@ -3,18 +3,19 @@
 #include <memory>
 #include <optional>
 #include <span>
-#include <vector>
 #include <variant>
+#include <vector>
 
-#include <ovis/utils/result.hpp>
 #include <ovis/utils/json.hpp>
+#include <ovis/utils/result.hpp>
 #include <ovis/core/function_handle.hpp>
-#include <ovis/core/virtual_machine_instructions.hpp>
 #include <ovis/core/type_id.hpp>
+#include <ovis/core/virtual_machine_instructions.hpp>
 
 namespace ovis {
 
 class Value;
+class VirtualMachine;
 
 template <typename... T> struct FunctionResult { using type = std::tuple<T...>; };
 template <typename T> struct FunctionResult <T> { using type = T; };
@@ -31,7 +32,7 @@ struct NativeFunctionDefinition {
 };
 
 struct ScriptFunctionDefinition {
-  std::vector<vm::Instruction> instructions;
+  std::vector<Instruction> instructions;
   std::vector<Value> constants;
 };
 
@@ -42,9 +43,9 @@ struct FunctionDescription {
   std::variant<NativeFunctionDefinition, ScriptFunctionDefinition> definition;
 
   template <auto FUNCTION> requires (!IsNativeFunction<decltype(FUNCTION)>)
-  static FunctionDescription CreateForNativeFunction(std::string name = "", std::vector<std::string> input_names = {},
+  static FunctionDescription CreateForNativeFunction(VirtualMachine* virtual_machine, std::string name = "", std::vector<std::string> input_names = {},
                                                      std::vector<std::string> output_names = {});
-  static FunctionDescription CreateForNativeFunction(NativeFunction* function_pointer,
+  static FunctionDescription CreateForNativeFunction(VirtualMachine* virtual_machine, NativeFunction* function_pointer,
                                                      std::vector<ValueDeclaration> inputs,
                                                      std::vector<ValueDeclaration> outputs, std::string name = "");
 };
@@ -59,6 +60,7 @@ class Function : public std::enable_shared_from_this<Function> {
 
   std::string_view name() const { return name_; }
   std::string_view text() const { return text_; }
+  VirtualMachine* virtual_machine() const { return virtual_machine_; }
 
   // Returns the native function pointer. It is only valid to call this function if the function is actually a native
   // function. Can be checked via is_native_function().
@@ -101,9 +103,10 @@ class Function : public std::enable_shared_from_this<Function> {
  private:
   // Function(std::string_view name, NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
   //          std::vector<ValueDeclaration> outputs);
-  // Function(std::string_view name, std::span<vm::Instruction> instructions, std::span<Value> constants,
+  // Function(std::string_view name, std::span<Instruction> instructions, std::span<Value> constants,
   //          std::vector<ValueDeclaration> inputs, std::vector<ValueDeclaration> outputs);
 
+  VirtualMachine* virtual_machine_;
   std::string name_;
   std::string text_;
   FunctionHandle handle_; // This handle has always the unused bit set to 0.
@@ -120,17 +123,18 @@ class Function : public std::enable_shared_from_this<Function> {
 
 }  // namespace ovis
 
-#include <ovis/core/value.hpp>
-#include <ovis/core/type.hpp>
 #include <ovis/core/execution_context.hpp>
+#include <ovis/core/type.hpp>
+#include <ovis/core/value.hpp>
+#include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
 
 namespace detail {
 
 template <typename... ArgumentTypes>
-std::vector<ValueDeclaration> MakeValueDeclaration(TypeList<ArgumentTypes...>, std::vector<std::string>&& names) {
-  std::array<TypeId, sizeof...(ArgumentTypes)> types = { Type::GetId<ArgumentTypes>()... };
+std::vector<ValueDeclaration> MakeValueDeclaration(VirtualMachine* virtual_machine, TypeList<ArgumentTypes...>, std::vector<std::string>&& names) {
+  std::array<TypeId, sizeof...(ArgumentTypes)> types = { virtual_machine->GetTypeId<ArgumentTypes>()... };
   std::vector<ValueDeclaration> declarations(sizeof...(ArgumentTypes));
   for (std::size_t i = 0; i < sizeof...(ArgumentTypes); ++i) {
     declarations[i].type = types[i];
@@ -141,15 +145,18 @@ std::vector<ValueDeclaration> MakeValueDeclaration(TypeList<ArgumentTypes...>, s
 
 }  // namespace detail
 
-template <auto FUNCTION> requires(!IsNativeFunction<decltype(FUNCTION)>)
-FunctionDescription FunctionDescription::CreateForNativeFunction(std::string name, std::vector<std::string> input_names,
-                                                                 std::vector<std::string> output_names) {
-  auto input_declarations = detail::MakeValueDeclaration(typename reflection::Invocable<FUNCTION>::ArgumentTypes{}, std::move(input_names));
+template <auto FUNCTION>
+requires(!IsNativeFunction<decltype(FUNCTION)>) FunctionDescription FunctionDescription::CreateForNativeFunction(
+    VirtualMachine* virtual_machine, std::string name, std::vector<std::string> input_names,
+    std::vector<std::string> output_names) {
+  auto input_declarations = detail::MakeValueDeclaration(
+      virtual_machine, typename reflection::Invocable<FUNCTION>::ArgumentTypes{}, std::move(input_names));
   ValueDeclaration output_declaration = {
     .name = output_names.size() > 0 ? std::move(output_names[0]) : "0",
-    .type = Type::GetId<typename reflection::Invocable<FUNCTION>::ReturnType>()
+    .type = virtual_machine->GetTypeId<typename reflection::Invocable<FUNCTION>::ReturnType>()
   };
-  return CreateForNativeFunction(&NativeFunctionWrapper<FUNCTION>, std::move(input_declarations), { std::move(output_declaration) }, std::move(name));
+  return CreateForNativeFunction(virtual_machine, &NativeFunctionWrapper<FUNCTION>, std::move(input_declarations),
+                                 {std::move(output_declaration)}, std::move(name));
 }
 
 inline std::optional<std::size_t> Function::GetInputIndex(std::string_view input_name) const {
@@ -217,7 +224,7 @@ inline std::uintptr_t Function::instruction_offset() const {
 
 template <typename... ArgumentTypes>
 bool Function::IsCallableWithArguments() const {
-  std::array<TypeId, sizeof...(ArgumentTypes)> argument_type_ids { Type::GetId<ArgumentTypes>()... };
+  std::array<TypeId, sizeof...(ArgumentTypes)> argument_type_ids{virtual_machine()->GetTypeId<ArgumentTypes>()...};
   return IsCallableWithArguments(argument_type_ids);
 }
 

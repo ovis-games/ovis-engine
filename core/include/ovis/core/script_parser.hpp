@@ -24,24 +24,24 @@ using ParseScriptErrors = std::vector<ParseScriptError>;
 struct ParseScriptFunctionResult {
   std::vector<ValueDeclaration> inputs;
   std::vector<ValueDeclaration> outputs;
-  std::vector<vm::Instruction> instructions;
+  std::vector<Instruction> instructions;
   std::vector<Value> constants;
   // ScriptFunction::DebugInfo debug_info;
 };
 
-Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(const json& function_definition);
+Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(VirtualMachine* virtual_machine, const json& function_definition);
 
 struct ParseScriptTypeResult {
   TypeDescription type_description;
   std::vector<Value> construct_constants;
-  std::vector<vm::Instruction> construct_instructions;
+  std::vector<Instruction> construct_instructions;
   std::vector<Value> copy_constants;
-  std::vector<vm::Instruction> copy_instructions;
+  std::vector<Instruction> copy_instructions;
   std::vector<Value> destruct_constants;
-  std::vector<vm::Instruction> destruct_instructions;
+  std::vector<Instruction> destruct_instructions;
 };
 
-Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(const json& type_definition);
+Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine* virtual_machine, const json& type_definition);
 
 // class ScriptFunctionParser {
 //   struct ScopeValue {

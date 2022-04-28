@@ -83,20 +83,21 @@ void LogText(std::string text) {
 }
 
 bool LoadCoreModule() {
-  if (Module::Get("Core") == nullptr) {
-    auto core_module = Module::Register("Core");
+  if (vm.GetModule("Core") == nullptr) {
+    auto core_module = vm.RegisterModule("Core");
     assert(core_module->name() == "Core");
 
-    core_module->RegisterType(TypeDescription::CreateForNativeType<bool>("Boolean"));
+    core_module->RegisterType(TypeDescription::CreateForNativeType<bool>(&vm, "Boolean"));
 
     // core_module->RegisterFunction<&CreateBoolean>("Create Boolean", {"value"}, {"result"});
     // core_module->RegisterFunction<&Not>("Not", {"value"}, {"result"});
     // core_module->RegisterFunction<&And>("And", {"a", "b"}, {"result"});
     // core_module->RegisterFunction<&Or>("Or", {"a", "b"}, {"result"});
 
-    auto number_type = core_module->RegisterType(TypeDescription::CreateForNativeType<double>("Number"));
+    auto number_type = core_module->RegisterType(TypeDescription::CreateForNativeType<double>(&vm, "Number"));
     assert(number_type != nullptr);
-    assert(Type::Get<double>() != nullptr);
+    assert(vm.GetType<double>() != nullptr);
+    assert(number_type == vm.GetType<double>());
 
     // core_module->RegisterFunction<&CreateNumber>("Create Number", {"value"}, {"result"});
     // core_module->RegisterFunction<&Negate>("Negate", {"value"}, {"result"});

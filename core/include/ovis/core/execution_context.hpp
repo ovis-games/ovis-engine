@@ -32,7 +32,7 @@ class ExecutionContext {
 
   std::span<const ValueStorage> registers() const;
   std::span<const ValueStorage> current_function_scope_registers() const;
-  Result<> Execute(std::span<const vm::Instruction> instructions, std::span<const ValueStorage> constants);
+  Result<> Execute(std::span<const Instruction> instructions, std::span<const ValueStorage> constants);
 
   template <typename ReturnType, typename... ArgumentTypes>
   Result<ReturnType> Call(FunctionHandle handle, ArgumentTypes&&... arguments);
