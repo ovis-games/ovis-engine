@@ -77,6 +77,7 @@ std::shared_ptr<Type> Type::Add(std::shared_ptr<Module> module, TypeDescription 
   const auto type_id = description.memory_layout.native_type_id != TypeOf<void>
                            ? GetId(description.memory_layout.native_type_id)
                            : FindFreeTypeId();
+  assert(registered_types[type_id.index].type == nullptr);
   return registered_types[type_id.index].type =
              std::shared_ptr<Type>(new Type(type_id, module, std::move(description)));
 }

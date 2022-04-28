@@ -7,7 +7,7 @@ using SharedDouble = std::shared_ptr<double>;
 
 std::shared_ptr<ovis::Module> RegisterValueTestModule() {
   auto module = RegisterTestModule();
-  module->RegisterType(ovis::TypeDescription::CreateForNativeType<double>("Number"));
+  // module->RegisterType(ovis::TypeDescription::CreateForNativeType<double>("Number"));
   module->RegisterType(ovis::TypeDescription::CreateForNativeType<SharedDouble>("SharedNumber"));
   return module;
 }
@@ -140,7 +140,7 @@ TEST_CASE("Copy assign non-trivial value", "[ovis][core][Value]") {
 
 TEST_CASE("Construct trivial type", "[ovis][core][Value]") {
   auto test_module = RegisterValueTestModule();
-  auto number_type = test_module->GetType("Number");
+  auto number_type = ovis::Type::Get<double>();
   ovis::Value number_value(number_type);
   REQUIRE(number_value.type() == ovis::Type::Get<double>());
   REQUIRE(number_value.as<double>() == 0.0);
