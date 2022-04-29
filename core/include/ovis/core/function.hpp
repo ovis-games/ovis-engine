@@ -88,12 +88,13 @@ class Function : public std::enable_shared_from_this<Function> {
   bool IsCallableWithArguments(std::span<const TypeId> argument_types) const;
   template <typename... InputTypes> bool IsCallableWithArguments() const;
 
-  // template <typename... OutputTypes, typename... InputsTypes>
-  // FunctionResultType<OutputTypes...> Call(InputsTypes&&... inputs);
-  // template <typename... OutputTypes, typename... InputsTypes>
-  // FunctionResultType<OutputTypes...> Call(ExecutionContext* context, InputsTypes&&... inputs);
+  // Call on main ExecutionContext of the VirtualMachine
   template <typename OutputType, typename... InputsTypes>
   Result<OutputType> Call(InputsTypes&&... inputs) const;
+
+  // Call with custom ExecutionContext
+  template <typename OutputType, typename... InputsTypes>
+  Result<OutputType> Call(ExecutionContext* execution_context, InputsTypes&&... inputs) const;
 
   json Serialize() const;
   static std::shared_ptr<Function> Deserialize(const json& data);
@@ -101,11 +102,6 @@ class Function : public std::enable_shared_from_this<Function> {
   static std::shared_ptr<Function> Create(FunctionDescription description);
 
  private:
-  // Function(std::string_view name, NativeFunction* function_pointer, std::vector<ValueDeclaration> inputs,
-  //          std::vector<ValueDeclaration> outputs);
-  // Function(std::string_view name, std::span<Instruction> instructions, std::span<Value> constants,
-  //          std::vector<ValueDeclaration> inputs, std::vector<ValueDeclaration> outputs);
-
   VirtualMachine* virtual_machine_;
   std::string name_;
   std::string text_;
@@ -207,8 +203,14 @@ inline std::optional<ValueDeclaration> Function::GetOutput(std::size_t output_in
 
 template <typename OutputType = void, typename... InputTypes>
 inline Result<OutputType> Function::Call(InputTypes&&... inputs) const {
+  return Call<OutputType>(virtual_machine()->main_execution_context(), std::forward<InputTypes>(inputs)...);
+}
+
+template <typename OutputType = void, typename... InputTypes>
+inline Result<OutputType> Function::Call(ExecutionContext* execution_context, InputTypes&&... inputs) const {
   // assert(IsCallableWithArguments<InputTypes...>());
-  return ExecutionContext::global_context()->Call<OutputType>(handle_, std::forward<InputTypes>(inputs)...);
+  assert(execution_context->virtual_machine() == virtual_machine());
+  return execution_context->Call<OutputType>(handle_, std::forward<InputTypes>(inputs)...);
 }
 
 inline NativeFunction* Function::native_function_pointer() const {

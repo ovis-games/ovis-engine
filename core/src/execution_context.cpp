@@ -3,6 +3,13 @@
 
 namespace ovis {
 
+ExecutionContext::ExecutionContext(NotNull<VirtualMachine*> virtual_machine, std::size_t register_count)
+    : virtual_machine_(virtual_machine), registers_(std::make_unique<ValueStorage[]>(register_count)) {
+  register_count_ = register_count;
+  used_register_count_ = 0;
+  // stack_frames_.push({ .register_offset = 0 });
+}
+
 ValueStorage& ExecutionContext::top(std::size_t offset) {
   assert(offset < used_register_count_);
   return registers_[used_register_count_ - (offset + 1)];
@@ -41,13 +48,6 @@ std::span<const ValueStorage> ExecutionContext::registers() const {
 
 std::span<const ValueStorage> ExecutionContext::current_function_scope_registers() const {
   return {registers_.get(), used_register_count_};
-}
-
-ExecutionContext::ExecutionContext(std::size_t register_count) {
-  registers_ = std::make_unique<ValueStorage[]>(register_count);
-  register_count_ = register_count;
-  used_register_count_ = 0;
-  // stack_frames_.push({ .register_offset = 0 });
 }
 
 Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, std::span<const ValueStorage> constants) {

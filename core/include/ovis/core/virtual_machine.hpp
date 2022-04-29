@@ -27,6 +27,8 @@ class VirtualMachine {
  public:
   VirtualMachine(std::size_t constants_capacity = 1024, std::size_t instruction_capacity = 1024 * 1024);
 
+  ExecutionContext* main_execution_context() { return &main_execution_context_; }
+
   // Registers a new function with the specified instructions and constants
   std::size_t RegisterFunction(std::span<const Instruction> instructions, std::span<const Value> constants);
   const Instruction* GetInstructionPointer(std::size_t offset) const;
@@ -36,7 +38,7 @@ class VirtualMachine {
   void DeregisterModule(std::string_view name);
   std::shared_ptr<Module> GetModule(std::string_view name);
   auto registered_modules() {
-    return TransformRange(modules, [](const auto& module) { return module.get(); });
+    return TransformRange(registered_modules_, [](const auto& module) { return module.get(); });
   }
 
   template <typename T> TypeId GetTypeId();
@@ -45,8 +47,6 @@ class VirtualMachine {
   Type* GetType(TypeId id);
   TypeId GetTypeId(const json& json);
   Type* GetType(const json& json);
-
-  static VirtualMachine* main();
 
  private:
   ExecutionContext main_execution_context_;
@@ -64,7 +64,7 @@ class VirtualMachine {
   std::shared_ptr<Type> AddType(std::shared_ptr<Module> module, TypeDescription description);
   Result<> RemoveType(TypeId id);
 
-  std::vector<std::shared_ptr<Module>> modules;
+  std::vector<std::shared_ptr<Module>> registered_modules_;
 };
 
 extern VirtualMachine vm;
@@ -86,4 +86,9 @@ TypeId VirtualMachine::GetTypeId() {
   return type_id;
 }
 
+template <typename T>
+Type* VirtualMachine::GetType() {
+  return registered_types[GetTypeId<T>().index].type.get();
 }
+
+}  // namespace ovis

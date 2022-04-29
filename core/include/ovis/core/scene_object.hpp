@@ -132,13 +132,13 @@ namespace ovis {
 
 template <typename ComponentType>
 inline ComponentType* SceneObject::AddComponent() {
-  auto component = AddComponent(VirtualMachine::main()->GetTypeId<ComponentType>());
+  auto component = AddComponent(vm.GetTypeId<ComponentType>());
   return component ? &component->template as<ComponentType>() : nullptr;
 }
 
 template <typename ComponentType>
 inline ComponentType* SceneObject::GetComponent() {
-  auto component = GetComponent(VirtualMachine::main()->GetTypeId<ComponentType>());
+  auto component = GetComponent(vm.GetTypeId<ComponentType>());
   return component ? &component->template as<ComponentType>() : nullptr;
 }
 

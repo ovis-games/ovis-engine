@@ -17,6 +17,7 @@ class Function;
 
 class Module : public std::enable_shared_from_this<Module> {
  public:
+  Module(VirtualMachine* virtual_machine, std::string_view name) : virtual_machine_(virtual_machine), name_(name) {}
   ~Module();
 
   std::string_view name() const { return name_; }
@@ -37,8 +38,6 @@ class Module : public std::enable_shared_from_this<Module> {
   json Serialize() const;
 
  private:
-  Module(std::string_view name) : name_(name) {}
-
   VirtualMachine* virtual_machine_;
   std::string name_;
   std::vector<TypeId> types_;

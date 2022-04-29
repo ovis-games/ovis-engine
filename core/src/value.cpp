@@ -6,8 +6,8 @@ Value::Value(NotNull<Type*> type) : virtual_machine_(type->virtual_machine()), t
   void* stored_value_pointer = storage_.AllocateIfNecessary(type->alignment_in_bytes(), type->size_in_bytes());
 
   assert(type->construct_function());
-  const auto constructor_result =
-      ExecutionContext::global_context()->Call<void>(type->construct_function()->handle(), stored_value_pointer);
+  const auto constructor_result = virtual_machine()->main_execution_context()->Call<void>(
+      type->construct_function()->handle(), stored_value_pointer);
   if (!constructor_result) {
     storage_.reset();
   }

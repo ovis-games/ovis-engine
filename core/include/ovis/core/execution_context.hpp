@@ -4,16 +4,20 @@
 #include <span>
 
 #include <ovis/utils/result.hpp>
+#include <ovis/utils/not_null.hpp>
 #include <ovis/core/function_handle.hpp>
 #include <ovis/core/virtual_machine_instructions.hpp>
 
 namespace ovis {
 
 class ValueStorage;
+class VirtualMachine;
 
 class ExecutionContext {
  public:
-  ExecutionContext(std::size_t register_count = 1024);
+  ExecutionContext(NotNull<VirtualMachine*> virtual_machine, std::size_t register_count = 1024);
+
+  NotNull<VirtualMachine*> virtual_machine() { return virtual_machine_; }
 
   ValueStorage& top(std::size_t offset = 0);
 
@@ -37,21 +41,18 @@ class ExecutionContext {
   template <typename ReturnType, typename... ArgumentTypes>
   Result<ReturnType> Call(FunctionHandle handle, ArgumentTypes&&... arguments);
 
-  static ExecutionContext* global_context() { return &global; }
-
  private:
   struct StackFrame {
     std::size_t register_offset;
   };
 
+  NotNull<VirtualMachine*> virtual_machine_;
   std::unique_ptr<ValueStorage[]> registers_;
   std::size_t register_count_;
   std::size_t used_register_count_;
   // Every exuction frame always has the base stack frame that cannot be popped
   // which simplifies the code
   std::vector<StackFrame> stack_frames_;
-
-  static ExecutionContext global;
 };
 
 template <auto FUNCTION>

@@ -22,7 +22,7 @@ class Value {
   Value(const Value& other);
   Value& operator=(const Value&);
 
-  NotNull<VirtualMachine*> virtual_machine() const;
+  NotNull<VirtualMachine*> virtual_machine() const { return virtual_machine_; }
 
   template <typename T> T& as() {
     return *reinterpret_cast<T*>(GetValuePointer());

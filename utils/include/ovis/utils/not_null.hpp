@@ -10,6 +10,10 @@ template <typename T> class NotNull;
 
 template <typename T>
 class NotNull<T*> {
+  template <typename U> friend bool operator==(NotNull<U*> lhs, NotNull<U*> rhs);
+  template <typename U> friend bool operator==(U* lhs, NotNull<U*> rhs);
+  template <typename U> friend bool operator==(NotNull<U*> lhs, U* rhs);
+
 public:
   NotNull() = delete;
   NotNull(std::nullptr_t) = delete;
@@ -48,5 +52,35 @@ public:
  private:
   T* pointer_;
 };
+
+template <typename T>
+bool operator==(NotNull<T*> lhs, NotNull<T*> rhs) {
+  return lhs.pointer_ == rhs.pointer_;
+}
+
+template <typename T>
+bool operator==(T* lhs, NotNull<T*> rhs) {
+  return lhs == rhs.pointer_;
+}
+
+template <typename T>
+bool operator==(NotNull<T> lhs, T* rhs) {
+  return lhs.pointer_ == rhs;
+}
+
+template <typename T>
+bool operator!=(NotNull<T*> lhs, NotNull<T*> rhs) {
+  return !(lhs == rhs);
+}
+
+template <typename T>
+bool operator!=(T* lhs, NotNull<T*> rhs) {
+  return !(lhs == rhs);
+}
+
+template <typename T>
+bool operator!=(NotNull<T> lhs, T* rhs) {
+  return !(lhs == rhs);
+}
 
 }  // namespace ovis

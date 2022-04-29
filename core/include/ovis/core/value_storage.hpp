@@ -5,6 +5,7 @@
 #include <type_traits>
 
 #include <ovis/utils/native_type_id.hpp>
+#include <ovis/utils/not_null.hpp>
 #include <ovis/core/function_handle.hpp>
 
 namespace ovis {
@@ -38,18 +39,18 @@ class alignas(16) ValueStorage final {
   ValueStorage& operator=(ValueStorage&& other) = delete;
 
   // The destructor will call the destructor and clean up any allocated storage
-  ~ValueStorage() { reset(); }
+  ~ValueStorage() { assert(!destruct_function()); }
 
   // Reset the storage to a new value. This will allocate storage if necessary and set the cleanup function automatically.
   template <typename T> void reset(T&& value);
   // Call this version if you know the currently stored value is not dynamically allocated and trivially destructible.
   template <typename T> void reset_trivial(T&& value);
 
-  // Reset the storeate without a new value
-  void reset();
-  // Call this version if you know the currently stored value is not dynamically allocated and trivially destructible.
-  void reset_trivial();
+  // Destroys the value inside the storage
+  void Reset(NotNull<ExecutionContext*> execution_context);
 
+  // Call this version if you know the currently stored value is not dynamically allocated and trivially destructible.
+  void ResetTrivial();
 
   // Allocates storage if the value defined by alignment and size cannot be stored inline.
   void* AllocateIfNecessary(std::size_t alignment, std::size_t size);
