@@ -64,7 +64,7 @@ bool operator==(T* lhs, NotNull<T*> rhs) {
 }
 
 template <typename T>
-bool operator==(NotNull<T> lhs, T* rhs) {
+bool operator==(NotNull<T*> lhs, T* rhs) {
   return lhs.pointer_ == rhs;
 }
 
@@ -79,7 +79,7 @@ bool operator!=(T* lhs, NotNull<T*> rhs) {
 }
 
 template <typename T>
-bool operator!=(NotNull<T> lhs, T* rhs) {
+bool operator!=(NotNull<T*> lhs, T* rhs) {
   return !(lhs == rhs);
 }
 

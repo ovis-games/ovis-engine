@@ -9,9 +9,8 @@ namespace ovis {
 Type::Type(TypeId id, std::shared_ptr<Module> module, TypeDescription description)
     : id_(id),
       module_(module),
-      full_reference_(fmt::format("{}.{}", module->name(), description.name)),
+      full_reference_(module ? fmt::format("{}.{}", module->name(), description.name) : description.name),
       description_(std::move(description)) {}
-
 
 bool Type::IsDerivedFrom(TypeId base_type_id) const {
   const Type* type = this;

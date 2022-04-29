@@ -3,13 +3,14 @@
 
 namespace ovis {
 
-void ValueStorage::reset() {
+void ValueStorage::Reset(NotNull<ExecutionContext*> execution_context) {
   const bool is_storage_allocated = has_allocated_storage();
   auto destruct = destruct_function();
   if (destruct) {
-    if (ExecutionContext::global_context()->Call<void>(destruct, value_pointer())) {
+    if (execution_context->Call<void>(destruct, value_pointer())) {
       SetDestructFunction(FunctionHandle::Null());
     } else {
+      // No Result<> type here as we do not know how to recover from failed destructors anyway
       throw std::runtime_error("Failed to destruct object");
     }
   }
@@ -22,7 +23,7 @@ void ValueStorage::reset() {
 #endif
 }
 
-void ValueStorage::reset_trivial() {
+void ValueStorage::ResetTrivial() {
   assert(!has_allocated_storage());
   assert(!destruct_function());
 #ifndef NDEBUG

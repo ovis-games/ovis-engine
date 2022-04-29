@@ -79,9 +79,11 @@ namespace ovis {
 template <typename T>
 TypeId VirtualMachine::GetTypeId() {
   auto type_id = GetTypeId(TypeOf<T>);
-  if (!registered_types[type_id.index].type) {
-    registered_types[type_id.index].type =
-        std::make_shared<Type>(type_id, nullptr, TypeDescription::CreateForNativeType<T>(&vm, ""));
+  if constexpr (!std::is_same_v<void,T> && !std::is_same_v<void*,T>) {
+    if (!registered_types[type_id.index].type) {
+      registered_types[type_id.index].type =
+          std::make_shared<Type>(type_id, nullptr, TypeDescription::CreateForNativeType<T>(&vm, ""));
+    }
   }
   return type_id;
 }

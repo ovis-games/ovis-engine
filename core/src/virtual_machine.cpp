@@ -44,8 +44,18 @@ VirtualMachine vm;
 
 VirtualMachine::VirtualMachine(std::size_t constants_capacity, std::size_t instruction_capacity)
     : constants_(std::make_unique<ValueStorage[]>(constants_capacity)),
-      instructions_(std::make_unique<Instruction[]>(instruction_capacity)) {
-  registered_types.push_back({.id = Type::NONE_ID, .native_type_id = TypeOf<void>});
+      instructions_(std::make_unique<Instruction[]>(instruction_capacity)),
+      main_execution_context_(this) {
+  registered_types.push_back({
+    .id = Type::NONE_ID,
+    .native_type_id = TypeOf<void>,
+    .type = std::make_shared<Type>(Type::NONE_ID, nullptr, TypeDescription::CreateForNativeType<void>(this, "None"))
+  });
+  registered_types.push_back({
+    .id = TypeId(1),
+    .native_type_id = TypeOf<void*>,
+    .type = std::make_shared<Type>(TypeId(1), nullptr, TypeDescription::CreateForNativeType<void*>(this, "MemoryAddress"))
+  });
 }
 
 std::shared_ptr<Module> VirtualMachine::RegisterModule(std::string_view name) {
@@ -102,6 +112,28 @@ TypeId VirtualMachine::FindFreeTypeId() {
   TypeId id(registered_types.size());
   registered_types.push_back({ .id = id });
   return id;
+}
+
+std::shared_ptr<Type> VirtualMachine::AddType(std::shared_ptr<Module> module, TypeDescription description) {
+  assert(description.name.length() > 0);
+
+  const auto type_id = description.memory_layout.native_type_id != TypeOf<void>
+                           ? GetTypeId(description.memory_layout.native_type_id)
+                           : FindFreeTypeId();
+  assert(registered_types[type_id.index].type == nullptr);
+  return registered_types[type_id.index].type =
+             std::shared_ptr<Type>(new Type(type_id, module, std::move(description)));
+}
+
+Result<> VirtualMachine::RemoveType(TypeId id) {
+  if (id.index < registered_types.size() && registered_types[id.index].id == id) {
+    registered_types[id.index].id = registered_types[id.index].id.next();
+    registered_types[id.index].type = nullptr;
+    registered_types[id.index].native_type_id = TypeOf<void>;
+    return Success;
+  } else {
+    return Error("Invalid type id");
+  }
 }
 
 }  // namespace ovis

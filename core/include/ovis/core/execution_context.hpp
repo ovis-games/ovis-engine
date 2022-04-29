@@ -95,7 +95,7 @@ template <typename T>
 void ExecutionContext::PushValue(T&& value) {
   // OVIS_CHECK_RESULT(PushValue());
   PushUninitializedValue();
-  top().reset(std::forward<T>(value));
+  top().Store(std::forward<T>(value));
   // return Success;
 }
 

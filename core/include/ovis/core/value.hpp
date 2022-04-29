@@ -110,7 +110,7 @@ inline Value Value::Create(VirtualMachine* virtual_machine, T&& native_value) {
 
   Value value(virtual_machine);
   value.type_id_ = virtual_machine->GetTypeId<std::remove_cvref_t<T>>();
-  value.storage_.reset(std::forward<T>(native_value));
+  value.storage_.Store(std::forward<T>(native_value));
   return value;
 }
 
@@ -133,7 +133,7 @@ inline Value Value::Create(VirtualMachine* virtual_machine, T&& native_value) {
 
     value.is_reference_ = true;
   } else {
-    value.storage_.reset(std::forward<T>(native_value));
+    value.storage_.Store(std::forward<T>(native_value));
     value.is_reference_ = false;
   }
 

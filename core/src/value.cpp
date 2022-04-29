@@ -9,7 +9,7 @@ Value::Value(NotNull<Type*> type) : virtual_machine_(type->virtual_machine()), t
   const auto constructor_result = virtual_machine()->main_execution_context()->Call<void>(
       type->construct_function()->handle(), stored_value_pointer);
   if (!constructor_result) {
-    storage_.reset();
+    storage_.Deallocate();
   }
 
   if (auto destructor = type->destruct_function(); destructor) {
@@ -75,7 +75,7 @@ Value& Value::operator=(const Value& other) {
     }
     return *this;
   } else {
-    storage_.reset();
+    storage_.Reset(virtual_machine()->main_execution_context());
     type_id_ = other.type_id_;
 
     auto type = this->type();
@@ -113,7 +113,7 @@ Value& Value::operator=(const Value& other) {
 
 void Value::Reset() {
   type_id_ = Type::NONE_ID;
-  storage_.reset();
+  storage_.Reset(virtual_machine()->main_execution_context());
 }
 
 void* Value::GetValuePointer() {

@@ -29,7 +29,7 @@ void ExecutionContext::PushUninitializedValues(std::size_t count) {
 void ExecutionContext::PopTrivialValues(std::size_t count) {
   assert(count <= used_register_count_);
   for (auto i : IRange(count)) {
-    registers_[used_register_count_ - (i + 1)].reset_trivial();
+    registers_[used_register_count_ - (i + 1)].ResetTrivial();
   }
   used_register_count_ -= count;
 }
@@ -37,7 +37,7 @@ void ExecutionContext::PopTrivialValues(std::size_t count) {
 void ExecutionContext::PopValues(std::size_t count) {
   assert(count <= used_register_count_);
   for (auto i : IRange(count)) {
-    registers_[used_register_count_ - (i + 1)].reset();
+    registers_[used_register_count_ - (i + 1)].Reset(this);
   }
   used_register_count_ -= count;
 }

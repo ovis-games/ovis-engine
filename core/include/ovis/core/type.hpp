@@ -280,7 +280,7 @@ inline TypeDescription TypeDescription::CreateForNativeType(VirtualMachine* virt
   return TypeDescription{
     .virtual_machine = virtual_machine,
     .name = std::string(name),
-    .base = virtual_machine->GetTypeId<ParentType>(),
+    .base = std::is_same_v<ParentType, void> ? Type::NONE_ID : virtual_machine->GetTypeId<ParentType>(),
     .to_base =
         std::is_same_v<ParentType, void>
             ? nullptr

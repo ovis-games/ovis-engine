@@ -39,12 +39,10 @@ class alignas(16) ValueStorage final {
   ValueStorage& operator=(ValueStorage&& other) = delete;
 
   // The destructor will call the destructor and clean up any allocated storage
-  ~ValueStorage() { assert(!destruct_function()); }
+  ~ValueStorage() { assert(!destruct_function()); assert(!has_allocated_storage()); }
 
-  // Reset the storage to a new value. This will allocate storage if necessary and set the cleanup function automatically.
-  template <typename T> void reset(T&& value);
-  // Call this version if you know the currently stored value is not dynamically allocated and trivially destructible.
-  template <typename T> void reset_trivial(T&& value);
+  // Stores a value inside the ValueStorage
+  template <typename T> void Store(T&& value);
 
   // Destroys the value inside the storage
   void Reset(NotNull<ExecutionContext*> execution_context);
@@ -154,8 +152,9 @@ inline const T& ValueStorage::as() const {
 
 
 template <typename T>
-inline void ValueStorage::reset(T&& value) {
-  reset();
+inline void ValueStorage::Store(T&& value) {
+  assert(!destruct_function());
+  assert(!has_allocated_storage());
 
   using StoredType = std::remove_reference_t<T>;
   if constexpr (alignof(T) > ALIGNMENT || sizeof(T) > SIZE) {
