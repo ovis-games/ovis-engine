@@ -15,7 +15,9 @@ class VirtualMachine;
 
 class ExecutionContext {
  public:
-  ExecutionContext(NotNull<VirtualMachine*> virtual_machine, std::size_t register_count = 1024);
+  static constexpr std::size_t DEFAULT_STACK_SIZE = 1024; // 16KB stack size
+
+  ExecutionContext(NotNull<VirtualMachine*> virtual_machine, std::size_t register_count = DEFAULT_STACK_SIZE);
 
   NotNull<VirtualMachine*> virtual_machine() { return virtual_machine_; }
 

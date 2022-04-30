@@ -42,10 +42,10 @@ VirtualMachine vm;
 // }  // namespace vm
 //
 
-VirtualMachine::VirtualMachine(std::size_t constants_capacity, std::size_t instruction_capacity)
-    : constants_(std::make_unique<ValueStorage[]>(constants_capacity)),
+VirtualMachine::VirtualMachine(std::size_t constant_capacity, std::size_t instruction_capacity, std::size_t main_execution_context_stack_size)
+    : constants_(std::make_unique<ValueStorage[]>(constant_capacity)),
       instructions_(std::make_unique<Instruction[]>(instruction_capacity)),
-      main_execution_context_(this) {
+      main_execution_context_(this, main_execution_context_stack_size) {
   registered_types_.push_back({
     .id = Type::NONE_ID,
     .native_type_id = TypeOf<void>,

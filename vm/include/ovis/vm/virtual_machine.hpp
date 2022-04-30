@@ -25,7 +25,12 @@ class VirtualMachine {
   friend class Module;
 
  public:
-  VirtualMachine(std::size_t constants_capacity = 1024, std::size_t instruction_capacity = 1024 * 1024);
+  static constexpr std::size_t DEFAULT_CONSTANT_CAPACITY = 1024; // 16KB constant storage
+  static constexpr std::size_t DEFAULT_INSTRUCTION_CAPACITY = 1024 * 1024; // 4MB instruction storage
+
+  VirtualMachine(std::size_t constants_capacity = DEFAULT_CONSTANT_CAPACITY,
+                 std::size_t instruction_capacity = DEFAULT_INSTRUCTION_CAPACITY,
+                 std::size_t main_execution_context_stack_size = ExecutionContext::DEFAULT_STACK_SIZE);
 
   ExecutionContext* main_execution_context() { return &main_execution_context_; }
 
