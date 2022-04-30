@@ -6,7 +6,7 @@
 
 using namespace ovis;
 
-TEST_CASE("Test built-in types", "[ovis][vm]") {
+TEST_CASE("Test built-in types", "[ovis][vm][Type]") {
   VirtualMachine vm;
 
   SECTION("None type") {
@@ -42,7 +42,7 @@ TEST_CASE("Test built-in types", "[ovis][vm]") {
   }
 }
 
-TEST_CASE("Test type registration", "[ovis][vm]") {
+TEST_CASE("Test type registration", "[ovis][vm][Type]") {
   VirtualMachine vm;
   auto test_module = vm.RegisterModule("Test");
 
@@ -187,6 +187,3 @@ TEST_CASE("Test type registration", "[ovis][vm]") {
     REQUIRE(derived2_type->CastToBase<Base>(&derived2) == derived2_base);
   }
 }
-
-
-
