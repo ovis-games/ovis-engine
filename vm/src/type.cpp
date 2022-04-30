@@ -3,15 +3,56 @@
 
 namespace ovis {
 
-// std::vector<Type::Registration> Type::registered_types = {
-//     {.id = Type::NONE_ID, .native_type_id = TypeOf<void>, .type = nullptr}};
+bool operator==(const TypeMemoryLayout& lhs, const TypeMemoryLayout& rhs) {
+  return
+    lhs.native_type_id == rhs.native_type_id && 
+    lhs.is_constructible == rhs.is_constructible && 
+    lhs.is_copyable == rhs.is_copyable && 
+    lhs.alignment_in_bytes == rhs.alignment_in_bytes && 
+    lhs.size_in_bytes == rhs.size_in_bytes && 
+    lhs.construct->handle() == rhs.construct->handle() && 
+    ((!lhs.copy && !rhs.copy) || (lhs.copy && rhs.copy && lhs.copy->handle() == rhs.copy->handle())) && 
+    ((!lhs.destruct && !rhs.destruct) || (lhs.destruct && rhs.destruct && lhs.destruct->handle() == rhs.destruct->handle()));
+}
 
-Type::Type(TypeId id, std::shared_ptr<Module> module, TypeDescription description)
-    : id_(id),
-      module_(module),
-      full_reference_(module ? fmt::format("{}.{}", module->name(), description.name) : description.name),
-      description_(std::move(description)),
-      virtual_machine_(description_.virtual_machine) {}
+bool operator!=(const TypeMemoryLayout& lhs, const TypeMemoryLayout& rhs) {
+  return !(lhs == rhs);
+}
+
+Type::Type(TypeId id, TypeDescription description) : id_(id), description_(std::move(description)) {
+  if (module()) {
+    module()->AddType(id);
+  }
+}
+
+Type::~Type() {
+  if (module()) {
+    module()->RemoveType(id());
+  }
+}
+
+void Type::UpdateDescription(const TypeDescription& description) {
+  // The memory layout is not allowed to change
+  assert(description_.memory_layout == description.memory_layout);
+
+  // A module may only be added but not changed!
+  assert(!description_.module || description_.module == description.module);
+  if (!description_.module && description.module) {
+    description.module->AddType(id());
+  }
+
+  description_ = description;
+}
+
+std::string Type::GetReferenceString() const {
+  if (name().length() == 0) {
+    return "Unknown";
+  } else if (module() == nullptr) {
+    return std::string(name());
+  } else {
+    return fmt::format("{}.{}", module()->name(), name());
+  }
+}
 
 bool Type::IsDerivedFrom(TypeId base_type_id) const {
   const Type* type = this;
@@ -43,56 +84,5 @@ void* Type::CastToBase(TypeId base_type_id, void* pointer) const {
 
   return pointer;
 }
-
-// TypeId Type::GetId(NativeTypeId native_type_id) {
-//   for (auto& registration : registered_types) {
-//     if (registration.native_type_id == native_type_id) {
-//       return registration.id;
-//     }
-//   }
-
-//   const auto type_id = FindFreeTypeId();
-//   registered_types[type_id.index].native_type_id = native_type_id;
-//   registered_types[type_id.index].id = type_id;
-//   return type_id;
-// }
-
-// TypeId Type::FindFreeTypeId() {
-//   for (auto& registration : registered_types) {
-//     if (registration.native_type_id == TypeOf<void> && registration.id != NONE_ID && registration.type == nullptr) {
-//       // The entry is not used anymore
-//       return registration.id.next();
-//     }
-//   }
-//   TypeId id(registered_types.size());
-//   registered_types.push_back(Registration{
-//     .id = id,
-//     .native_type_id = TypeOf<void>,
-//     .type = nullptr,
-//   });
-//   return id;
-// }
-
-// std::shared_ptr<Type> Type::Add(std::shared_ptr<Module> module, TypeDescription description) {
-//   const auto type_id = description.memory_layout.native_type_id != TypeOf<void>
-//                            ? GetId(description.memory_layout.native_type_id)
-//                            : FindFreeTypeId();
-//   assert(registered_types[type_id.index].type == nullptr);
-//   return registered_types[type_id.index].type =
-//              std::shared_ptr<Type>(new Type(type_id, module, std::move(description)));
-// }
-
-// Result<> Type::Remove(TypeId id) {
-//   if (id.index < registered_types.size() && registered_types[id.index].id == id) {
-//     registered_types[id.index].type = nullptr;
-//     registered_types[id.index].native_type_id = TypeOf<void>;
-//     return Success;
-//   } else {
-//     return Error("Invalid type id");
-//   }
-// }
-
-// std::shared_ptr<Type> Type::Deserialize(const json& data) {
-// }
 
 }  // namespace ovis

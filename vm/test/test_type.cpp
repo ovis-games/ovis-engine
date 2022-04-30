@@ -47,19 +47,23 @@ TEST_CASE("Test type registration", "[ovis][vm]") {
   auto test_module = vm.RegisterModule("Test");
 
   SECTION("On-the-fly typeid generation") {
-    struct SomeType {};
+    struct SomeBase {};
+    struct SomeType : public SomeBase {};
     const auto some_type_id = vm.GetTypeId<SomeType>();
     REQUIRE(some_type_id != Type::NONE_ID);
 
-    Type* some_type = vm.GetType(some_type_id);
+    const Type* some_type = vm.GetType(some_type_id);
     REQUIRE(some_type != nullptr);
     REQUIRE(some_type->id() == some_type_id);
     REQUIRE(some_type->name() == "");
-    // REQUIRE(some_type->module() == nullptr);
+    REQUIRE(some_type->module() == nullptr);
+    REQUIRE(some_type->base_id() == Type::NONE_ID);
     REQUIRE(some_type->size_in_bytes() == sizeof(SomeType));
     REQUIRE(some_type->alignment_in_bytes() == alignof(SomeType));
     REQUIRE(some_type->trivially_copyable());
     REQUIRE(some_type->trivially_destructible());
+
+    REQUIRE(vm.RegisterType(TypeDescription::CreateForNativeType<SomeType, SomeBase>(&vm, "SomeType", test_module.get())) == some_type);
   }
 }
 

@@ -62,6 +62,8 @@ struct TypeMemoryLayout {
   template <typename T>
   static TypeMemoryLayout CreateForNativeType(VirtualMachine* virtual_machine);
 };
+bool operator==(const TypeMemoryLayout& lhs, const TypeMemoryLayout& rhs);
+bool operator!=(const TypeMemoryLayout& lhs, const TypeMemoryLayout& rhs);
 
 struct TypeReferenceDescription {
   TypeMemoryLayout memory_layout;
@@ -73,6 +75,7 @@ struct TypeReferenceDescription {
 
 struct TypeDescription {
   VirtualMachine* virtual_machine;
+  Module* module;
   std::string name;
   TypeId base;
   std::shared_ptr<Function> to_base;
@@ -86,26 +89,30 @@ struct TypeDescription {
     (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
     (!std::is_same_v<T, ParentType> || std::is_same_v<T, void>)
   )
-  static TypeDescription CreateForNativeType(VirtualMachine* virtual_machine, std::string_view name);
+  static TypeDescription CreateForNativeType(VirtualMachine* virtual_machine, std::string_view name, Module* module = nullptr);
 };
 
 class Type : public std::enable_shared_from_this<Type> {
   friend class Module;
 
  public:
-  Type(TypeId id, std::shared_ptr<Module> module, TypeDescription description);
+  Type(TypeId id, TypeDescription description);
+  ~Type();
 
   static constexpr TypeId NONE_ID = TypeId(0);
 
   TypeId id() const { return id_; }
   const TypeDescription& description() const { return description_; }
+  void UpdateDescription(const TypeDescription& description);
 
+  std::string GetReferenceString() const;
+
+  // Some helpers for accessing the description
   std::string_view name() const { return description().name; }
-  std::string_view full_reference() const { return full_reference_; }
   TypeId base_id() const { return description().base; }
-  std::weak_ptr<Module> module() const { return module_; }
+  Module* module() const { return description().module; }
   bool is_reference_type() const { return description().reference.has_value(); }
-  VirtualMachine* virtual_machine() const { return virtual_machine_; }
+  VirtualMachine* virtual_machine() const { return description().virtual_machine; }
 
   std::size_t alignment_in_bytes() const { return description().memory_layout.alignment_in_bytes; }
   std::size_t size_in_bytes() const { return description().memory_layout.size_in_bytes; }
@@ -140,10 +147,7 @@ class Type : public std::enable_shared_from_this<Type> {
 
  private:
   TypeId id_;
-  std::string full_reference_;
-  std::weak_ptr<Module> module_;
   TypeDescription description_;
-  VirtualMachine* virtual_machine_;
 };
 
 }  // namespace ovis
@@ -276,9 +280,10 @@ requires (
   (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
   (!std::is_same_v<T, ParentType> || std::is_same_v<T, void>)
 )
-inline TypeDescription TypeDescription::CreateForNativeType(VirtualMachine* virtual_machine, std::string_view name) {
+inline TypeDescription TypeDescription::CreateForNativeType(VirtualMachine* virtual_machine, std::string_view name, Module* module) {
   return TypeDescription{
     .virtual_machine = virtual_machine,
+    .module = module,
     .name = std::string(name),
     .base = std::is_same_v<ParentType, void> ? Type::NONE_ID : virtual_machine->GetTypeId<ParentType>(),
     .to_base =

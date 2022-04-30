@@ -147,21 +147,21 @@ void ScriptFunctionParser::ParsePushValue(const json& value_definition, std::str
       errors.emplace_back("Parsing constant Core.String not implemented yet", path);
     } else {
       const auto requested_type = virtual_machine->GetType(type);
-      errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->full_reference() : "Unknown", "Core.String"));
+      errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->GetReferenceString() : "Unknown", "Core.String"));
     }
   } else if (value_definition.is_number()) {
     if (type == virtual_machine->GetTypeId<double>()) {
       errors.emplace_back("Parsing constant Core.Number not implemented yet", path);
     } else {
       const auto requested_type = virtual_machine->GetType(type);
-      errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->full_reference() : "Unknown", "Core.Number"));
+      errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->GetReferenceString() : "Unknown", "Core.Number"));
     }
   } else if (value_definition.is_boolean()) {
     if (type == virtual_machine->GetTypeId<bool>()) {
       errors.emplace_back("Parsing constant Core.Number not implemented yet", path);
     } else {
       const auto requested_type = virtual_machine->GetType(type);
-      errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->full_reference() : "Unknown", "Core.Boolean"));
+      errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->GetReferenceString() : "Unknown", "Core.Boolean"));
     }
   } else if (value_definition.is_object()) {
     const std::string& id = value_definition["id"];

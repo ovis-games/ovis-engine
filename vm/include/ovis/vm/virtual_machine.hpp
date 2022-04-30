@@ -41,11 +41,19 @@ class VirtualMachine {
     return TransformRange(registered_modules_, [](const auto& module) { return module.get(); });
   }
 
+  template <typename T, typename ParentType = void> Type* RegisterType(std::string_view name, Module* module = nullptr);
+  Type* RegisterType(TypeDescription description);
+
+  Result<> DeregisterType(TypeId type_id);
+  Result<> DeregisterType(NotNull<Type*> type);
+
   template <typename T> TypeId GetTypeId();
-  template <typename T> Type* GetType();
   TypeId GetTypeId(NativeTypeId native_type_id);
-  Type* GetType(TypeId id);
   TypeId GetTypeId(const json& json);
+
+  template <typename T> Type* GetType();
+  Type* GetType(TypeId id);
+  Type* GetType(NativeTypeId id);
   Type* GetType(const json& json);
 
  private:
@@ -53,18 +61,16 @@ class VirtualMachine {
   std::unique_ptr<ValueStorage[]> constants_;
   std::unique_ptr<Instruction[]> instructions_;
 
+  std::vector<std::shared_ptr<Module>> registered_modules_;
+
   struct TypeRegistration {
     TypeId id;
     NativeTypeId native_type_id;
     std::shared_ptr<Type> type;
   };
-  std::vector<TypeRegistration> registered_types;
-
+  std::vector<TypeRegistration> registered_types_;
   TypeId FindFreeTypeId();
-  std::shared_ptr<Type> AddType(std::shared_ptr<Module> module, TypeDescription description);
-  Result<> RemoveType(TypeId id);
 
-  std::vector<std::shared_ptr<Module>> registered_modules_;
 };
 
 extern VirtualMachine vm;
@@ -76,13 +82,18 @@ extern VirtualMachine vm;
 
 namespace ovis {
 
+template <typename T, typename ParentType = void>
+Type* RegisterType(std::string_view name, Module* module) {
+  return RegisterType(TypeDescription::CreateForNativeType<T, ParentType>(name, module));
+}
+
 template <typename T>
 TypeId VirtualMachine::GetTypeId() {
   auto type_id = GetTypeId(TypeOf<T>);
   if constexpr (!std::is_same_v<void,T> && !std::is_same_v<void*,T>) {
-    if (!registered_types[type_id.index].type) {
-      registered_types[type_id.index].type =
-          std::make_shared<Type>(type_id, nullptr, TypeDescription::CreateForNativeType<T>(&vm, ""));
+    if (!registered_types_[type_id.index].type) {
+      registered_types_[type_id.index].type =
+          std::make_shared<Type>(type_id, TypeDescription::CreateForNativeType<T>(&vm, ""));
     }
   }
   return type_id;
@@ -90,7 +101,7 @@ TypeId VirtualMachine::GetTypeId() {
 
 template <typename T>
 Type* VirtualMachine::GetType() {
-  return registered_types[GetTypeId<T>().index].type.get();
+  return registered_types_[GetTypeId<T>().index].type.get();
 }
 
 }  // namespace ovis

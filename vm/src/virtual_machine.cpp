@@ -46,15 +46,15 @@ VirtualMachine::VirtualMachine(std::size_t constants_capacity, std::size_t instr
     : constants_(std::make_unique<ValueStorage[]>(constants_capacity)),
       instructions_(std::make_unique<Instruction[]>(instruction_capacity)),
       main_execution_context_(this) {
-  registered_types.push_back({
+  registered_types_.push_back({
     .id = Type::NONE_ID,
     .native_type_id = TypeOf<void>,
-    .type = std::make_shared<Type>(Type::NONE_ID, nullptr, TypeDescription::CreateForNativeType<void>(this, "None"))
+    .type = std::make_shared<Type>(Type::NONE_ID, TypeDescription::CreateForNativeType<void>(this, "None"))
   });
-  AddType(nullptr, TypeDescription::CreateForNativeType<void*>(this, "MemoryAddress"));
-  AddType(nullptr, TypeDescription::CreateForNativeType<bool>(this, "Boolean"));
-  AddType(nullptr, TypeDescription::CreateForNativeType<double>(this, "Number"));
-  AddType(nullptr, TypeDescription::CreateForNativeType<std::string>(this, "String"));
+  RegisterType(TypeDescription::CreateForNativeType<void*>(this, "MemoryAddress"));
+  RegisterType(TypeDescription::CreateForNativeType<bool>(this, "Boolean"));
+  RegisterType(TypeDescription::CreateForNativeType<double>(this, "Number"));
+  RegisterType(TypeDescription::CreateForNativeType<std::string>(this, "String"));
 }
 
 std::shared_ptr<Module> VirtualMachine::RegisterModule(std::string_view name) {
@@ -77,25 +77,61 @@ std::shared_ptr<Module> VirtualMachine::GetModule(std::string_view name) {
   return nullptr;
 }
 
+Type* VirtualMachine::RegisterType(TypeDescription description) {
+  assert(description.name.length() > 0);
+  assert(description.memory_layout.native_type_id == TypeOf<void> ||
+         GetType(description.memory_layout.native_type_id) == nullptr ||
+         GetType(description.memory_layout.native_type_id)->name().length() == 0);
+
+  const auto type_id = description.memory_layout.native_type_id != TypeOf<void>
+                           ? GetTypeId(description.memory_layout.native_type_id)
+                           : FindFreeTypeId();
+  if (registered_types_[type_id.index].type) {
+    registered_types_[type_id.index].type->UpdateDescription(description);
+  } else {
+    registered_types_[type_id.index].type = std::shared_ptr<Type>(new Type(type_id, std::move(description)));
+  }
+  return registered_types_[type_id.index].type.get();
+}
+
+Result<> VirtualMachine::DeregisterType(TypeId type_id) {
+  if (type_id.index < registered_types_.size() && registered_types_[type_id.index].id == type_id) {
+    registered_types_[type_id.index].id = registered_types_[type_id.index].id.next();
+    registered_types_[type_id.index].type = nullptr;
+    registered_types_[type_id.index].native_type_id = TypeOf<void>;
+    return Success;
+  } else {
+    return Error("Invalid type id");
+  }
+}
+
+Result<> VirtualMachine::DeregisterType(NotNull<Type*> type) {
+  return DeregisterType(type->id());
+}
+
 TypeId VirtualMachine::GetTypeId(NativeTypeId native_type_id) {
-  for (const auto& type_registration : registered_types) {
+  for (const auto& type_registration : registered_types_) {
     if (type_registration.native_type_id == native_type_id) {
       return type_registration.id;
     }
   }
   const auto id = FindFreeTypeId();
-  registered_types[id.index].native_type_id = native_type_id;
+  registered_types_[id.index].native_type_id = native_type_id;
   return id;
-}
-
-Type* VirtualMachine::GetType(TypeId id) {
-  assert(id.index < registered_types.size());
-  return registered_types[id.index].id == id ? registered_types[id.index].type.get() : nullptr;
 }
 
 TypeId VirtualMachine::GetTypeId(const json& data) {
   const auto type = GetType(data);
   return type ? type->id() : Type::NONE_ID;
+}
+
+Type* VirtualMachine::GetType(TypeId id) {
+  assert(id.index < registered_types_.size());
+  return registered_types_[id.index].id == id ? registered_types_[id.index].type.get() : nullptr;
+}
+
+Type* VirtualMachine::GetType(NativeTypeId native_type_id) {
+  return GetType(GetTypeId(native_type_id));
 }
 
 Type* VirtualMachine::GetType(const json& data) {
@@ -139,37 +175,15 @@ Type* VirtualMachine::GetType(const json& data) {
 }
 
 TypeId VirtualMachine::FindFreeTypeId() {
-  for (const auto& type_registration : registered_types) {
+  for (const auto& type_registration : registered_types_) {
     if (type_registration.native_type_id == TypeOf<void> && type_registration.type == nullptr &&
         type_registration.id != Type::NONE_ID) {
       return type_registration.id;
     }
   }
-  TypeId id(registered_types.size());
-  registered_types.push_back({ .id = id });
+  TypeId id(registered_types_.size());
+  registered_types_.push_back({ .id = id });
   return id;
-}
-
-std::shared_ptr<Type> VirtualMachine::AddType(std::shared_ptr<Module> module, TypeDescription description) {
-  assert(description.name.length() > 0);
-
-  const auto type_id = description.memory_layout.native_type_id != TypeOf<void>
-                           ? GetTypeId(description.memory_layout.native_type_id)
-                           : FindFreeTypeId();
-  assert(registered_types[type_id.index].type == nullptr);
-  return registered_types[type_id.index].type =
-             std::shared_ptr<Type>(new Type(type_id, module, std::move(description)));
-}
-
-Result<> VirtualMachine::RemoveType(TypeId id) {
-  if (id.index < registered_types.size() && registered_types[id.index].id == id) {
-    registered_types[id.index].id = registered_types[id.index].id.next();
-    registered_types[id.index].type = nullptr;
-    registered_types[id.index].native_type_id = TypeOf<void>;
-    return Success;
-  } else {
-    return Error("Invalid type id");
-  }
 }
 
 }  // namespace ovis
