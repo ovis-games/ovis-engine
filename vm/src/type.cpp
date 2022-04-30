@@ -61,7 +61,7 @@ bool Type::IsDerivedFrom(TypeId base_type_id) const {
       return true;
     }
     type = virtual_machine()->GetType(type->base_id());
-  } while (type != nullptr);
+  } while (type != nullptr && type->id() != Type::NONE_ID);
   return false;
 }
 

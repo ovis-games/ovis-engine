@@ -28,7 +28,7 @@ class VirtualMachine {
   static constexpr std::size_t DEFAULT_CONSTANT_CAPACITY = 1024; // 16KB constant storage
   static constexpr std::size_t DEFAULT_INSTRUCTION_CAPACITY = 1024 * 1024; // 4MB instruction storage
 
-  VirtualMachine(std::size_t constants_capacity = DEFAULT_CONSTANT_CAPACITY,
+  VirtualMachine(std::size_t constant_capacity = DEFAULT_CONSTANT_CAPACITY,
                  std::size_t instruction_capacity = DEFAULT_INSTRUCTION_CAPACITY,
                  std::size_t main_execution_context_stack_size = ExecutionContext::DEFAULT_STACK_SIZE);
 
@@ -78,7 +78,7 @@ class VirtualMachine {
 
 };
 
-extern VirtualMachine vm;
+// extern VirtualMachine vm;
 
 }  // namespace ovis
 
@@ -98,7 +98,7 @@ TypeId VirtualMachine::GetTypeId() {
   if constexpr (!std::is_same_v<void,T> && !std::is_same_v<void*,T>) {
     if (!registered_types_[type_id.index].type) {
       registered_types_[type_id.index].type =
-          std::make_shared<Type>(type_id, TypeDescription::CreateForNativeType<T>(&vm, ""));
+          std::make_shared<Type>(type_id, TypeDescription::CreateForNativeType<T>(this, ""));
     }
   }
   return type_id;

@@ -5,7 +5,7 @@
 
 namespace ovis {
 
-VirtualMachine vm;
+// VirtualMachine vm;
 
 // namespace vm {
 
@@ -182,7 +182,7 @@ TypeId VirtualMachine::FindFreeTypeId() {
     }
   }
   TypeId id(registered_types_.size());
-  registered_types_.push_back({ .id = id });
+  registered_types_.push_back({ .id = id, .native_type_id = TypeOf<void> });
   return id;
 }
 
