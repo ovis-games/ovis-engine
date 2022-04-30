@@ -1,4 +1,4 @@
-#include <ovis/vm/script_parser.hpp>
+#include <ovis/vm/script_function_parser.hpp>
 
 namespace ovis {
 
@@ -46,40 +46,6 @@ Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(Virtual
   }
 }
 
-Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine* virtual_machine, const json& type_definition) {
-  TypeDescription description = {
-    .memory_layout = {
-      .alignment_in_bytes = ValueStorage::ALIGNMENT,
-      .size_in_bytes = 0,
-    }
-  };
-  ParseScriptErrors errors;
-  std::vector<TypePropertyDescription> properties;
-  for (const auto& [property_name, property_definition] : type_definition["properties"].items()) {
-    const auto& property_type = Type::Deserialize(property_definition.at("type"));
-    if (!property_type) {
-      errors.emplace_back(
-          fmt::format("Invalid type for property {}: {}", property_name, property_definition.at("type")),
-          fmt::format("/properties/{}", property_name));
-      continue;
-    }
-    if (property_type->alignment_in_bytes() > description.memory_layout.alignment_in_bytes) {
-      description.memory_layout.alignment_in_bytes = property_type->alignment_in_bytes();
-    }
-    const std::size_t padding_bytes = description.memory_layout.size_in_bytes % property_type->alignment_in_bytes();
-    description.memory_layout.size_in_bytes += padding_bytes;
-
-    description.properties.push_back({
-        .name = property_name,
-        .type = property_type->id(),
-        .access = TypePropertyDescription::PrimitiveAccess { .offset = description.memory_layout.size_in_bytes }
-    });
-
-    description.memory_layout.size_in_bytes += property_type->size_in_bytes();
-  }
-
-  return ParseScriptTypeResult{ description };
-}
 
 namespace {
 
@@ -100,9 +66,8 @@ void ScriptFunctionParser::ParseAction(const json& action_definiton, std::string
   const std::string& id = action_definiton["id"];
   if (id == "variable") {
     ParseVariableDeclaration(action_definiton, path);
-  }
-  else if (id == "function_call") {
-    ParseFunctionCall(action_definiton, path);
+  } else if (id == "function_call") {
+    // ParseFunctionCall(action_definiton, path);
   } else {
     errors.emplace_back(fmt::format("Invalid action id: {}", id), path);
   }
@@ -110,7 +75,7 @@ void ScriptFunctionParser::ParseAction(const json& action_definiton, std::string
 
 void ScriptFunctionParser::ParseVariableDeclaration(const json& action_definiton, std::string_view path) {
   assert(action_definiton["id"] == "variable");
-  const auto type = Type::Deserialize(action_definiton["type"]);
+  const auto type = virtual_machine->GetType(action_definiton.at("type"));
   if (!type) {
     errors.emplace_back(fmt::format("Unknown variable type {}", action_definiton["type"].dump()), path);
     return;
@@ -119,7 +84,8 @@ void ScriptFunctionParser::ParseVariableDeclaration(const json& action_definiton
   assert(type->construct_function());
 
   result.constants.push_back(Value::Create(virtual_machine, type->construct_function()->handle()));
-  result.constants.push_back(Value::Create(virtual_machine, type->destruct_function()->handle()));
+  result.constants.push_back(Value::Create(
+      virtual_machine, type->trivially_destructible() ? FunctionHandle::Null() : type->destruct_function()->handle()));
   result.instructions.push_back(Instruction::CreatePushTrivialConstant(0));
   result.instructions.push_back(Instruction::CreatePushTrivialConstant(1));
   if (type->is_stored_inline()) {
@@ -129,17 +95,17 @@ void ScriptFunctionParser::ParseVariableDeclaration(const json& action_definiton
   }
 }
 
-void ScriptFunctionParser::ParseFunctionCall(const json& action_definiton, std::string_view path) {
-  assert(action_definiton["id"] == "function_call");
-  const auto function = Function::Deserialize(action_definiton["function"]);
-  if (!function) {
-    errors.emplace_back(fmt::format("Unknown function: {}", action_definiton["function"].dump(), path));
-    return;
-  }
+// void ScriptFunctionParser::ParseFunctionCall(const json& action_definiton, std::string_view path) {
+//   assert(action_definiton["id"] == "function_call");
+//   const auto function = Function::Deserialize(action_definiton["function"]);
+//   if (!function) {
+//     errors.emplace_back(fmt::format("Unknown function: {}", action_definiton["function"].dump(), path));
+//     return;
+//   }
   
-  for (const auto& input : function->inputs()) {
-  }
-}
+//   for (const auto& input : function->inputs()) {
+//   }
+// }
 
 void ScriptFunctionParser::ParsePushValue(const json& value_definition, std::string_view path, TypeId type) {
   if (value_definition.is_string()) {

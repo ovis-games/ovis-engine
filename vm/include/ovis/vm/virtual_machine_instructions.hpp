@@ -19,7 +19,7 @@ enum class OpCode : std::uint32_t {
   CALL_FUNCTION,
   CALL_NATIVE_FUNCTION,
   CALL_SCRIPT_FUNCTION,
-  SET_CONSTANT_OFFSET,
+  SET_CONSTANT_BASE_OFFSET,
   RETURN,
 
   SUBTRACT_NUMBERS,
@@ -119,6 +119,12 @@ struct CallNativeFunctionData {
 };
 static_assert(sizeof(CallNativeFunctionData ) == sizeof(std::uint32_t));
 
+struct ReturnData {
+  OpCode opcode : OPCODE_BITS;
+  std::uint32_t output_count : 8;
+};
+static_assert(sizeof(ReturnData ) == sizeof(std::uint32_t));
+
 struct JumpData {
   OpCode opcode : OPCODE_BITS;
   std::int32_t offset : JUMP_OFFSET_BITS;
@@ -140,6 +146,11 @@ struct OffsetAddressData {
 };
 static_assert(sizeof(OffsetAddressData) == sizeof(std::uint32_t));
 
+struct SetConstantBaseOffsetData {
+  OpCode opcode : OPCODE_BITS;
+  std::uint32_t base_offset : 24;
+};
+
 }  // namespace instructions
 
 union Instruction {
@@ -153,6 +164,8 @@ union Instruction {
   instructions::CopyTrivialValueData copy_trivial_value;
   instructions::NumberOperationData number_operation_data;
   instructions::OffsetAddressData offset_address_data;
+  instructions::ReturnData return_data;
+  instructions::SetConstantBaseOffsetData set_constant_base_offset_data;
 
   static Instruction CreatePushTrivialConstant(std::uint32_t constant_index) {
     assert(constant_index < (1 << instructions::CONSTANT_INDEX_BITS));
@@ -176,6 +189,16 @@ union Instruction {
     }};
   }
 
+  static Instruction CreateReturn(std::uint32_t output_count) {
+    assert(output_count < (1 << 8));
+    return {
+      .return_data = {
+        .opcode = OpCode::RETURN,
+        .output_count = output_count,
+      },
+    };
+  }
+
   static Instruction CreateOffsetAddress(std::uint32_t register_index, std::uint32_t offset) {
     assert(register_index < (1 << instructions::REGISTER_INDEX_BITS));
     assert(offset < (1 << instructions::ADDRESS_OFFSET_BITS));
@@ -185,6 +208,16 @@ union Instruction {
         .opcode = OpCode::OFFSET_ADDRESS,
         .register_index = register_index,
         .offset = offset,
+      }
+    };
+  }
+
+  static Instruction CreateSetConstantBaseOffset(std::uint32_t base_offset) {
+    assert(base_offset < (1 << 24));
+    return {
+      .set_constant_base_offset_data = {
+        .opcode = OpCode::SET_CONSTANT_BASE_OFFSET,
+        .base_offset = base_offset,
       }
     };
   }

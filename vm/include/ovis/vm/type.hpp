@@ -143,8 +143,6 @@ class Type : public std::enable_shared_from_this<Type> {
   const TypePropertyDescription* GetProperty(std::string_view name) const;
   std::span<const TypePropertyDescription> properties() const { return description().properties; }
 
-  static std::shared_ptr<Type> Deserialize(const json& data);
-
  private:
   TypeId id_;
   TypeDescription description_;
@@ -301,27 +299,6 @@ inline TypeDescription TypeDescription::CreateForNativeType(VirtualMachine* virt
     .reference = TypeReferenceDescription::CreateFromNativeType<T>(virtual_machine),
   };
 }
-
-// template <typename T>
-// inline std::shared_ptr<Type> Type::Get() {
-//   for (const auto& registration : registered_types) {
-//     if (registration.native_type_id == TypeOf<T>) {
-//       return registration.type;
-//     }
-//   }
-//   return nullptr;
-// }
-
-// template <typename T>
-// inline TypeId Type::GetId() {
-//   return GetId(TypeOf<T>);
-// }
-
-// inline std::shared_ptr<Type> Type::Get(TypeId id) {
-//   assert(id.index < registered_types.size());
-//   const auto& registration = registered_types[id.index];
-//   return registration.id == id ? registration.type : nullptr;
-// }
 
 template <typename T>
 bool Type::IsDerivedFrom() const {

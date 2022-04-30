@@ -15,11 +15,12 @@
 namespace ovis {
 
 // Forward declarations
+struct TypeDescription;
 class Type;
+class Function;
 class Value;
 class ValueStorage;
 class Module;
-struct TypeDescription;
 
 class VirtualMachine {
   friend class Module;
@@ -34,10 +35,13 @@ class VirtualMachine {
 
   ExecutionContext* main_execution_context() { return &main_execution_context_; }
 
-  // Registers a new function with the specified instructions and constants
-  std::size_t RegisterFunction(std::span<const Instruction> instructions, std::span<const Value> constants);
+  // Inserts the instructions and returns the offset
+  std::size_t InsertInstructions(std::span<const Instruction> instructions);
   const Instruction* GetInstructionPointer(std::size_t offset) const;
-  std::span<ValueStorage> GetConstantRange(std::size_t offset, std::size_t count);
+
+  // Inserts the constants and returns the offset
+  std::size_t InsertConstants(std::span<const Value> constants);
+  const ValueStorage* GetConstantPointer(std::size_t offset) const;
 
   std::shared_ptr<Module> RegisterModule(std::string_view name);
   void DeregisterModule(std::string_view name);

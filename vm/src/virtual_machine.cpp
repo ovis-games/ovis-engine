@@ -142,19 +142,19 @@ Type* VirtualMachine::GetType(const json& data) {
     std::string_view type_string = data.get_ref<const std::string&>();
     auto period_position = type_string.find('.');
     if (period_position == std::string_view::npos) {
-      return nullptr;
+      type_name = type_string;
+    } else {
+      module_name = type_string.substr(0, period_position);
+      type_name = type_string.substr(period_position + 1);
     }
-    module_name = type_string.substr(0, period_position);
-    type_name = type_string.substr(period_position + 1);
   } else if (data.is_object()) {
-    if (!data.contains("module")) {
-      return nullptr;
+    if (data.contains("module")) {
+      const auto& module_json = data.at("module");
+      if (!module_json.is_string()) {
+        return nullptr;
+      }
+      module_name = module_json.get_ref<const std::string&>();
     }
-    const auto& module_json = data.at("module");
-    if (!module_json.is_string()) {
-      return nullptr;
-    }
-    module_name = module_json.get_ref<const std::string&>();
     if (!data.contains("name")) {
       return nullptr;
     }
@@ -167,11 +167,20 @@ Type* VirtualMachine::GetType(const json& data) {
     return nullptr;
   }
 
-  const std::shared_ptr<Module> module = GetModule(module_name);
-  if (module == nullptr) {
+  if (module_name.length() > 0) {
+    const std::shared_ptr<Module> module = GetModule(module_name);
+    if (module == nullptr) {
+      return nullptr;
+    }
+    return module->GetType(type_name);
+  } else {
+    for (const auto& registered_type : registered_types_) {
+      if (registered_type.type && registered_type.type->module() == nullptr && registered_type.type->name() == type_name) {
+        return registered_type.type.get();
+      }
+    }
     return nullptr;
   }
-  return module->GetType(type_name);
 }
 
 TypeId VirtualMachine::FindFreeTypeId() {

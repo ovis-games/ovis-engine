@@ -8,7 +8,9 @@ add_library(
   include/ovis/vm/function.hpp src/function.cpp
   include/ovis/vm/value_storage.hpp src/value_storage.cpp
   include/ovis/vm/value.hpp src/value.cpp
-  include/ovis/vm/script_parser.hpp src/script_parser.cpp
+  include/ovis/vm/parse_script_error.hpp src/parse_script_error.cpp
+  include/ovis/vm/script_function_parser.hpp src/script_function_parser.cpp
+  include/ovis/vm/script_type_parser.hpp src/script_type_parser.cpp
 )
 add_library(ovis::vm ALIAS ovis-vm)
 
@@ -34,14 +36,14 @@ if (OVIS_BUILD_TESTS)
   add_executable(
     ovis-vm-test
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_type.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_function.cpp
     # ${CMAKE_CURRENT_SOURCE_DIR}/test/virtual_machine.cpp
     # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
-    # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_animations.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_type.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
     # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_module.cpp
     # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_value.cpp
-    # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_function_parser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_function_parser.cpp
     # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_type_parsing.cpp
   )
 

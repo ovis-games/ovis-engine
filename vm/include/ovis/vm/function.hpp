@@ -97,9 +97,6 @@ class Function : public std::enable_shared_from_this<Function> {
   template <typename OutputType, typename... InputsTypes>
   Result<OutputType> Call(ExecutionContext* execution_context, InputsTypes&&... inputs) const;
 
-  json Serialize() const;
-  static std::shared_ptr<Function> Deserialize(const json& data);
-
   static std::shared_ptr<Function> Create(FunctionDescription description);
 
  private:
@@ -146,14 +143,21 @@ template <auto FUNCTION>
 requires(!IsNativeFunction<decltype(FUNCTION)>) FunctionDescription FunctionDescription::CreateForNativeFunction(
     VirtualMachine* virtual_machine, std::string name, std::vector<std::string> input_names,
     std::vector<std::string> output_names) {
+
   auto input_declarations = detail::MakeValueDeclaration(
       virtual_machine, typename reflection::Invocable<FUNCTION>::ArgumentTypes{}, std::move(input_names));
-  ValueDeclaration output_declaration = {
-    .name = output_names.size() > 0 ? std::move(output_names[0]) : "0",
-    .type = virtual_machine->GetTypeId<typename reflection::Invocable<FUNCTION>::ReturnType>()
-  };
+
+  std::vector<ValueDeclaration> output_declarations;
+  using ReturnType = typename reflection::Invocable<FUNCTION>::ReturnType;
+  if constexpr (!std::is_same_v<void, ReturnType>) {
+    output_declarations.push_back({
+      .name = output_names.size() > 0 ? std::move(output_names[0]) : "0",
+      .type = virtual_machine->GetTypeId<ReturnType>()
+    });
+  }
+
   return CreateForNativeFunction(virtual_machine, &NativeFunctionWrapper<FUNCTION>, std::move(input_declarations),
-                                 {std::move(output_declaration)}, std::move(name));
+                                 std::move(output_declarations), std::move(name));
 }
 
 inline std::optional<std::size_t> Function::GetInputIndex(std::string_view input_name) const {
