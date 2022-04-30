@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "Core.Transform",
+  "title": "Transform",
+  "description": "A component that describes the transformation relative to it's parent.",
+  "type": "object",
+  "properties": {
+    "position": {
+      "$ref": "Core.Vector3.schema.json"
+    },
+    "rotation": {
+      "$ref": "Core.Vector3.schema.json"
+    },
+    "scale": {
+      "$ref": "Core.Vector3.schema.json"
+    }
+  },
+  "additionalProperties": false
+}

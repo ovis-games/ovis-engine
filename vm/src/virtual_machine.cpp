@@ -1,0 +1,176 @@
+#include <ovis/vm/function.hpp>
+#include <ovis/vm/module.hpp>
+#include <ovis/vm/type.hpp>
+#include <ovis/vm/virtual_machine.hpp>
+
+namespace ovis {
+
+VirtualMachine vm;
+
+// namespace vm {
+
+// namespace {
+// std::vector<Instruction> code;
+// std::array<ValueStorage, 1024> data;
+// std::size_t data_value_count = 0;
+// }  // namespace
+
+// std::size_t AllocateInstructions(std::size_t count) {
+//   const std::size_t offset = code.size();
+//   // TODO: Add "UNUSED INSTRUCTION"
+//   code.resize(code.size() + count);
+//   return offset;
+// }
+
+// std::span<Instruction> GetInstructionRange(std::size_t offset, std::size_t count) {
+//   assert(offset + count <= code.size());
+//   return { code.data() + offset, count };
+// }
+
+// std::size_t AllocateConstants(std::size_t count) {
+//   assert(data_value_count + count <= data.size());
+//   std::size_t offset = data_value_count;
+//   data_value_count += count;
+//   return offset;
+// }
+
+// std::span<ValueStorage> GetConstantRange(std::size_t offset, std::size_t count) {
+//   assert(offset + count <= data.size());
+//   return { data.data() + offset, count };
+// }
+
+// }  // namespace vm
+//
+
+VirtualMachine::VirtualMachine(std::size_t constants_capacity, std::size_t instruction_capacity)
+    : constants_(std::make_unique<ValueStorage[]>(constants_capacity)),
+      instructions_(std::make_unique<Instruction[]>(instruction_capacity)),
+      main_execution_context_(this) {
+  registered_types.push_back({
+    .id = Type::NONE_ID,
+    .native_type_id = TypeOf<void>,
+    .type = std::make_shared<Type>(Type::NONE_ID, nullptr, TypeDescription::CreateForNativeType<void>(this, "None"))
+  });
+  AddType(nullptr, TypeDescription::CreateForNativeType<void*>(this, "MemoryAddress"));
+  AddType(nullptr, TypeDescription::CreateForNativeType<bool>(this, "Boolean"));
+  AddType(nullptr, TypeDescription::CreateForNativeType<double>(this, "Number"));
+  AddType(nullptr, TypeDescription::CreateForNativeType<std::string>(this, "String"));
+}
+
+std::shared_ptr<Module> VirtualMachine::RegisterModule(std::string_view name) {
+  if (GetModule(name)) {
+    return nullptr;
+  }
+
+  registered_modules_.push_back(std::make_shared<Module>(this, name));
+  return registered_modules_.back();
+}
+
+void DeregisterModule(std::string_view name);
+
+std::shared_ptr<Module> VirtualMachine::GetModule(std::string_view name) {
+  for (const auto& module : registered_modules_) {
+    if (module->name() == name) {
+      return module;
+    }
+  }
+  return nullptr;
+}
+
+TypeId VirtualMachine::GetTypeId(NativeTypeId native_type_id) {
+  for (const auto& type_registration : registered_types) {
+    if (type_registration.native_type_id == native_type_id) {
+      return type_registration.id;
+    }
+  }
+  const auto id = FindFreeTypeId();
+  registered_types[id.index].native_type_id = native_type_id;
+  return id;
+}
+
+Type* VirtualMachine::GetType(TypeId id) {
+  assert(id.index < registered_types.size());
+  return registered_types[id.index].id == id ? registered_types[id.index].type.get() : nullptr;
+}
+
+TypeId VirtualMachine::GetTypeId(const json& data) {
+  const auto type = GetType(data);
+  return type ? type->id() : Type::NONE_ID;
+}
+
+Type* VirtualMachine::GetType(const json& data) {
+  std::string_view module_name;
+  std::string_view type_name;
+
+  if (data.is_string()) {
+    std::string_view type_string = data.get_ref<const std::string&>();
+    auto period_position = type_string.find('.');
+    if (period_position == std::string_view::npos) {
+      return nullptr;
+    }
+    module_name = type_string.substr(0, period_position);
+    type_name = type_string.substr(period_position + 1);
+  } else if (data.is_object()) {
+    if (!data.contains("module")) {
+      return nullptr;
+    }
+    const auto& module_json = data.at("module");
+    if (!module_json.is_string()) {
+      return nullptr;
+    }
+    module_name = module_json.get_ref<const std::string&>();
+    if (!data.contains("name")) {
+      return nullptr;
+    }
+    const auto& name_json = data.at("name");
+    if (!name_json.is_string()) {
+      return nullptr;
+    }
+    type_name = name_json.get_ref<const std::string&>();
+  } else {
+    return nullptr;
+  }
+
+  const std::shared_ptr<Module> module = GetModule(module_name);
+  if (module == nullptr) {
+    return nullptr;
+  }
+  return module->GetType(type_name);
+}
+
+TypeId VirtualMachine::FindFreeTypeId() {
+  for (const auto& type_registration : registered_types) {
+    if (type_registration.native_type_id == TypeOf<void> && type_registration.type == nullptr &&
+        type_registration.id != Type::NONE_ID) {
+      return type_registration.id;
+    }
+  }
+  TypeId id(registered_types.size());
+  registered_types.push_back({ .id = id });
+  return id;
+}
+
+std::shared_ptr<Type> VirtualMachine::AddType(std::shared_ptr<Module> module, TypeDescription description) {
+  assert(description.name.length() > 0);
+
+  const auto type_id = description.memory_layout.native_type_id != TypeOf<void>
+                           ? GetTypeId(description.memory_layout.native_type_id)
+                           : FindFreeTypeId();
+  assert(registered_types[type_id.index].type == nullptr);
+  return registered_types[type_id.index].type =
+             std::shared_ptr<Type>(new Type(type_id, module, std::move(description)));
+}
+
+Result<> VirtualMachine::RemoveType(TypeId id) {
+  if (id.index < registered_types.size() && registered_types[id.index].id == id) {
+    registered_types[id.index].id = registered_types[id.index].id.next();
+    registered_types[id.index].type = nullptr;
+    registered_types[id.index].native_type_id = TypeOf<void>;
+    return Success;
+  } else {
+    return Error("Invalid type id");
+  }
+}
+
+}  // namespace ovis
+

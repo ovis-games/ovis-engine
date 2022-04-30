@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "Core.Type.schema.json",
+  "title": "Type",
+  "anyOf": [
+    { "#ref": "Core.TypeObject.schema.json" },
+    { "#ref": "Core.TypeString.schema.json" }
+  ]
+}
