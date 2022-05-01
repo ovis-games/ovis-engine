@@ -26,9 +26,11 @@ class Value {
   NotNull<VirtualMachine*> virtual_machine() const { return virtual_machine_; }
 
   template <typename T> T& as() {
+    assert(GetValuePointer());
     return *reinterpret_cast<T*>(GetValuePointer());
   }
   template <typename T> const T& as() const {
+    assert(GetValuePointer());
     return *reinterpret_cast<const T*>(GetValuePointer());
   }
 

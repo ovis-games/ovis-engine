@@ -3,111 +3,42 @@
 namespace ovis {
 
 Value::Value(NotNull<Type*> type) : virtual_machine_(type->virtual_machine()), type_id_(type->id()), is_reference_(false) {
-  void* stored_value_pointer = storage_.AllocateIfNecessary(type->alignment_in_bytes(), type->size_in_bytes());
-
-  assert(type->construct_function());
-  const auto constructor_result = virtual_machine()->main_execution_context()->Call<void>(
-      type->construct_function()->handle(), stored_value_pointer);
-  if (!constructor_result) {
-    storage_.Deallocate();
-  }
-
-  if (auto destructor = type->destruct_function(); destructor) {
-    storage_.SetDestructFunction(destructor->handle());
-  }
+  storage_.Construct(type->virtual_machine()->main_execution_context(), type->description().memory_layout);
 }
 
-Value::Value(const Value& other) : virtual_machine_(other.virtual_machine()), type_id_(other.type_id()), is_reference_(other.is_reference()) {
-  const auto type = this->type();
+Value::Value(const Value& other) : virtual_machine_(other.virtual_machine()), type_id_(Type::NONE_ID), is_reference_(false) {
+  const auto type = other.type();
   if (!type) {
     return;
   }
-  const auto& memory_layout =
-      other.is_reference() ? type->description().reference->memory_layout : type->description().memory_layout;
-  assert(memory_layout.is_copyable);
-
-  const void* source;
-  void* destination;
-
-  if (other.storage_.has_allocated_storage()) {
-    storage_.Allocate(memory_layout.alignment_in_bytes, memory_layout.size_in_bytes);
-    source = other.storage_.allocated_storage_pointer();
-    destination = storage_.allocated_storage_pointer();
-  } else {
-    source = other.storage_.data();
-    destination = storage_.data();
+  const TypeMemoryLayout& memory_layout = other.is_reference() ? type->description().reference->memory_layout : type->description().memory_layout;
+  if (!storage_.Construct(virtual_machine()->main_execution_context(), memory_layout)) {
+    return;
   }
-  assert(memory_layout.construct);
-  memory_layout.construct->Call(destination);
-  if (memory_layout.copy) {
-    memory_layout.copy->Call(destination, source);
-  } else {
-    std::memcpy(destination, source, memory_layout.size_in_bytes);
+  if (!ValueStorage::Copy(virtual_machine()->main_execution_context(), memory_layout, &storage_, &other.storage_)) {
+    storage_.Reset(virtual_machine()->main_execution_context());
+    return;
   }
-  storage_.SetDestructFunction(other.storage_.destruct_function());
-#ifndef NDEBUG
-  storage_.native_type_id_ = other.storage_.native_type_id_;
-#endif
+  type_id_ = other.type_id_;
+  is_reference_ = other.is_reference_;
 }
 
 Value& Value::operator=(const Value& other) {
-  if (type_id() == other.type_id()) {
-    if (!other.type()) {
-      return *this;
-    }
-    assert(other.type()->description().memory_layout.is_copyable);
-    const void* source;
-    void* destination;
-    if (storage_.has_allocated_storage()) {
-      assert(other.storage_.has_allocated_storage());
-      source = other.storage_.allocated_storage_pointer();
-      destination = storage_.allocated_storage_pointer();
-    } else {
-      source = other.storage_.data();
-      destination = storage_.data();
-    }
-    
-    auto type = this->type();
-    if (type->trivially_copyable()) {
-      std::memcpy(destination, source, type->size_in_bytes());
-    } else {
-      type->copy_function()->Call(destination, source);
-    }
-    return *this;
-  } else {
+  const TypeMemoryLayout& memory_layout = other.is_reference() ? other.type()->description().reference->memory_layout
+                                                               : other.type()->description().memory_layout;
+  if (type_id() != other.type_id() || other.virtual_machine() != virtual_machine()) {
     storage_.Reset(virtual_machine()->main_execution_context());
-    type_id_ = other.type_id_;
-
-    auto type = this->type();
-    if (!type) {
-      return *this;
+    virtual_machine_ = other.virtual_machine_;
+    if (other.type_id_ != Type::NONE_ID) {
+      storage_.Construct(virtual_machine()->main_execution_context(), memory_layout);
     }
-    assert(other.type()->description().memory_layout.is_copyable);
-
-    const void* source;
-    void* destination;
-
-    if (other.storage_.has_allocated_storage()) {
-      storage_.Allocate(type->alignment_in_bytes(), type->size_in_bytes());
-      source = other.storage_.allocated_storage_pointer();
-      destination = storage_.allocated_storage_pointer();
-    } else {
-      source = other.storage_.data();
-      destination = storage_.data();
-    }
-    assert(type->construct_function());
-    type->construct_function()->Call(destination);
-    if (type->trivially_copyable()) {
-      std::memcpy(destination, source, type->size_in_bytes());
-    } else {
-      type->copy_function()->Call(destination, source);
-    }
-    storage_.SetDestructFunction(other.storage_.destruct_function());
-#ifndef NDEBUG
-    storage_.native_type_id_ = other.storage_.native_type_id_;
-#endif
   }
-
+  assert(virtual_machine() == other.virtual_machine());
+  assert(storage_.native_type_id_ == other.storage_.native_type_id_);
+  assert(storage_.destruct_function() == other.storage_.destruct_function());
+  ValueStorage::Copy(virtual_machine()->main_execution_context(), memory_layout, &storage_, &other.storage_);
+  is_reference_ = other.is_reference_;
+  type_id_ = other.type_id_;
   return *this;
 }
 
@@ -136,14 +67,14 @@ Value Value::CreateReference() const {
 
   const void* value_pointer = GetValuePointer();
 
-  const auto& reference_description = type()->description().reference;
+  const auto& reference_description = *type()->description().reference;
   Value value(virtual_machine());
-  void* reference_pointer = value.storage_.AllocateIfNecessary(reference_description->memory_layout.alignment_in_bytes,
-                                                               reference_description->memory_layout.size_in_bytes);
-  const auto constructor_result = reference_description->memory_layout.construct->Call<void>(reference_pointer);
-  assert(constructor_result);
+  const auto construct_result = value.storage_.Construct(virtual_machine()->main_execution_context(), reference_description.memory_layout);
+  assert(construct_result);
 
-  const auto set_pointer_result = reference_description->set_pointer->Call<void>(reference_pointer, value_pointer);
+  auto reference_pointer = value.storage_.value_pointer();
+
+  const auto set_pointer_result = reference_description.set_pointer->Call<void>(reference_pointer, value_pointer);
   assert(set_pointer_result);
   value.type_id_ = type_id_;
   value.is_reference_ = true;
