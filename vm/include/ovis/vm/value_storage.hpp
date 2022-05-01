@@ -10,6 +10,10 @@
 
 namespace ovis {
 
+class VirtualMachine;
+class Type;
+struct TypeMemoryLayout;
+
 class alignas(16) ValueStorage final {
  public:
   constexpr static std::size_t ALIGNMENT = 8;
@@ -41,20 +45,17 @@ class alignas(16) ValueStorage final {
   // The destructor will call the destructor and clean up any allocated storage
   ~ValueStorage() { assert(!destruct_function()); assert(!has_allocated_storage()); }
 
-  // Stores a value inside the ValueStorage
-  template <typename T> void Store(T&& value);
 
-  // Destroys the value inside the storage
-  void Reset(NotNull<ExecutionContext*> execution_context);
+  // Returns a pointer to the internal data. Storage was allocated via Allocate() it will contain the pointer to the storage.
+  const void* data() const { return &data_; }
+  void* data() { return &data_; }
 
-  // Call this version if you know the currently stored value is not dynamically allocated and trivially destructible.
-  void ResetTrivial();
 
   // Allocates storage if the value defined by alignment and size cannot be stored inline.
   void* AllocateIfNecessary(std::size_t alignment, std::size_t size);
 
   // Sets up dynamically allocated storage
-  void Allocate(std::size_t alignment, std::size_t size);
+  void* Allocate(std::size_t alignment, std::size_t size);
 
   // Deallocates allocated storage. Only call this if Allocate() was called before and the value has already been constructed.
   void Deallocate();
@@ -74,17 +75,30 @@ class alignas(16) ValueStorage final {
     return *reinterpret_cast<void* const*>(&data_);
   }
 
+  // Returns a pointer to the stored value. If the storage was allocated its value is returned, otherwise a pointer to
+  // the internal storage is returned.
+  const void* value_pointer() const { return has_allocated_storage() ? allocated_storage_pointer() : data(); }
+  void* value_pointer() { return has_allocated_storage() ? allocated_storage_pointer() : data(); }
+
+
   // Sets the desctuction function for the value.
   void SetDestructFunction(FunctionHandle destructor);
+
   // Returns the desctruction function.
   FunctionHandle destruct_function() const;
 
-  // Returns a pointer to the internal data. Storage was allocated via Allocate() it will contain the pointer to the storage.
-  const void* data() const { return &data_; }
-  void* data() { return &data_; }
 
-  const void* value_pointer() const { return has_allocated_storage() ? allocated_storage_pointer() : data(); }
-  void* value_pointer() { return has_allocated_storage() ? allocated_storage_pointer() : data(); }
+  // Stores a value inside the ValueStorage
+  template <typename T> void Store(T&& value);
+
+  // Construct a type
+  Result<> Construct(NotNull<ExecutionContext*> execution_context, const TypeMemoryLayout& layout);
+
+  // Destroys the value inside the storage
+  void Reset(NotNull<ExecutionContext*> execution_context);
+
+  // Call this version if you know the currently stored value is not dynamically allocated and trivially destructible.
+  void ResetTrivial();
 
   // Returns the value as a reference to T. THIS METHOD WILL NOT CHECK FOR THE ALLOCATED STORAGE BIT! It assumes that
   // the value is stored internally if possible based on size and alignment.
@@ -93,6 +107,11 @@ class alignas(16) ValueStorage final {
 
   // Trivially copies the value from source to destination. Neither the source nor the destination should have allocated storage.
   static void CopyTrivially(ValueStorage* destination, const ValueStorage* source);
+
+  // Copies the value stored inside source to destination. The destination has to be constructed to the same type before
+  // (see Construct()).
+  static Result<> Copy(NotNull<ExecutionContext*> execution_context, const TypeMemoryLayout& layout,
+                       NotNull<ValueStorage*> destination, NotNull<const ValueStorage*> source);
 
  private:
   std::aligned_storage_t<SIZE, ALIGNMENT> data_;

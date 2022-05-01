@@ -34,23 +34,23 @@ TEST_CASE("Function", "[ovis][vm][Function]") {
     REQUIRE(*foo2_result == 42.0);
   }
 
-  SECTION("Create script function") {
-    FunctionDescription function_description {
-      .virtual_machine = &vm,
-      .name = "test",
-      .inputs = { { .name = "input", .type = vm.GetTypeId<double>() } },
-      .outputs = { { .name = "outputs", .type = vm.GetTypeId<double>() } },
-      .definition = ScriptFunctionDefinition {
-        .instructions = {
-          Instruction::CreatePushTrivialConstant(0),
-          instructions::MultiplyNumbers(-1, 0, 1),
-          Instruction::CreateReturn(0),
-        },
-        .constants = {
-          Value::Create(&vm, 2.0),
-        },
-      },
-    };
-    const auto function = Function::Create(function_description);
-  }
+  // SECTION("Create script function") {
+  //   FunctionDescription function_description {
+  //     .virtual_machine = &vm,
+  //     .name = "test",
+  //     .inputs = { { .name = "input", .type = vm.GetTypeId<double>() } },
+  //     .outputs = { { .name = "outputs", .type = vm.GetTypeId<double>() } },
+  //     .definition = ScriptFunctionDefinition {
+  //       .instructions = {
+  //         Instruction::CreatePushTrivialConstant(0),
+  //         instructions::MultiplyNumbers(-1, 0, 1),
+  //         Instruction::CreateReturn(0),
+  //       },
+  //       .constants = {
+  //         Value::Create(&vm, 2.0),
+  //       },
+  //     },
+  //   };
+  //   const auto function = Function::Create(function_description);
+  // }
 }

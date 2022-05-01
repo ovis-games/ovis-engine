@@ -8,6 +8,7 @@
 #include <ovis/utils/not_null.hpp>
 #include <ovis/vm/type.hpp>
 #include <ovis/vm/value_storage.hpp>
+#include <ovis/vm/virtual_machine.hpp>
 
 namespace ovis {
 

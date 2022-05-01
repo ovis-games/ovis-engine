@@ -155,4 +155,4 @@ Value::~Value() {
   storage_.Reset(virtual_machine()->main_execution_context());
 }
 
-}
+}  // namespace ovis
