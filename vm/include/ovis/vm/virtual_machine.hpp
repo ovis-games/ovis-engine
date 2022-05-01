@@ -91,9 +91,9 @@ class VirtualMachine {
 
 namespace ovis {
 
-template <typename T, typename ParentType = void>
-Type* RegisterType(std::string_view name, Module* module) {
-  return RegisterType(TypeDescription::CreateForNativeType<T, ParentType>(name, module));
+template <typename T, typename ParentType>
+Type* VirtualMachine::RegisterType(std::string_view name, Module* module) {
+  return RegisterType(TypeDescription::CreateForNativeType<T, ParentType>(this, name, module));
 }
 
 template <typename T>
