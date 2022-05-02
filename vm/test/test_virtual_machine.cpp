@@ -7,6 +7,10 @@ using namespace ovis;
 TEST_CASE("Test virtual machine", "[ovis][vm][VirtualMachine]") {
   VirtualMachine vm;
 
+  SECTION("Instruction 0 should be the exit instruction") {
+    REQUIRE(vm.GetInstructionPointer(0)->opcode == OpCode::EXIT);
+  }
+
   SECTION("Insert instructions") {
     std::array instructions = {
       Instruction::CreateConstructValue(4, 4),

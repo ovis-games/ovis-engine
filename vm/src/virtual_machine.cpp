@@ -60,6 +60,8 @@ VirtualMachine::VirtualMachine(std::size_t constant_capacity, std::size_t instru
   RegisterType(TypeDescription::CreateForNativeType<bool>(this, "Boolean"));
   RegisterType(TypeDescription::CreateForNativeType<double>(this, "Number"));
   RegisterType(TypeDescription::CreateForNativeType<std::string>(this, "String"));
+
+  InsertInstructions(std::array{ instructions::Exit() });
 }
 
 VirtualMachine::~VirtualMachine() {
