@@ -8,15 +8,18 @@ namespace ovis {
 
 enum class OpCode : std::uint32_t {
   EXIT,
+
   PUSH,
   POP,
   POP_TRIVIAL,
+
   CONSTRUCT_INLINE_VALUE,
   CONSTRUCT_VALUE,
   COPY_TRIVIAL_VALUE,
   PUSH_TRIVIAL_CONSTANT,
 
   CALL_NATIVE_FUNCTION,
+  PUSH_EXECUTION_STATE,
   CALL_SCRIPT_FUNCTION,
   SET_CONSTANT_BASE_OFFSET,
   RETURN,
@@ -24,6 +27,7 @@ enum class OpCode : std::uint32_t {
   SUBTRACT_NUMBERS,
   MULTIPLY_NUMBERS,
   IS_NUMBER_GREATER,
+
   JUMP,
   JUMP_IF_TRUE,
   JUMP_IF_FALSE,
@@ -186,6 +190,12 @@ union Instruction {
       .alignment = alignment,
       .size = size,
     }};
+  }
+
+  static Instruction CreatePushExecutionState() {
+    return {
+      .opcode = OpCode::PUSH_EXECUTION_STATE,
+    };
   }
 
   static Instruction CreateReturn(std::uint32_t output_count) {

@@ -18,9 +18,13 @@ struct ScriptFunctionParser {
   VirtualMachine* virtual_machine;
   std::vector<Scope> scopes;
   ParseScriptFunctionResult result;
+  ScriptFunctionDefinition& definition;
   ParseScriptErrors errors;
 
-  ScriptFunctionParser(VirtualMachine* virtual_machine) : virtual_machine(virtual_machine) {}
+  ScriptFunctionParser(VirtualMachine* virtual_machine)
+      : virtual_machine(virtual_machine),
+        result({.function_description = {.definition = ScriptFunctionDefinition{}}}),
+        definition(std::get<1>(result.function_description.definition)) {}
 
   void Parse(const json& action_definiton);
   void ParseActions(const json& action_definiton, std::string_view path);
@@ -83,15 +87,15 @@ void ScriptFunctionParser::ParseVariableDeclaration(const json& action_definiton
 
   assert(type->construct_function());
 
-  result.constants.push_back(Value::Create(virtual_machine, type->construct_function()->handle()));
-  result.constants.push_back(Value::Create(
+  definition.constants.push_back(Value::Create(virtual_machine, type->construct_function()->handle()));
+  definition.constants.push_back(Value::Create(
       virtual_machine, type->trivially_destructible() ? FunctionHandle::Null() : type->destruct_function()->handle()));
-  result.instructions.push_back(Instruction::CreatePushTrivialConstant(0));
-  result.instructions.push_back(Instruction::CreatePushTrivialConstant(1));
+  definition.instructions.push_back(Instruction::CreatePushTrivialConstant(0));
+  definition.instructions.push_back(Instruction::CreatePushTrivialConstant(1));
   if (type->is_stored_inline()) {
-    result.instructions.push_back(Instruction::CreateConstructInlineValue());
+    definition.instructions.push_back(Instruction::CreateConstructInlineValue());
   } else {
-    result.instructions.push_back(Instruction::CreateConstructValue(type->alignment_in_bytes(), type->size_in_bytes()));
+    definition.instructions.push_back(Instruction::CreateConstructValue(type->alignment_in_bytes(), type->size_in_bytes()));
   }
 }
 

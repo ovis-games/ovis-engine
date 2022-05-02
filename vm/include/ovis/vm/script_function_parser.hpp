@@ -13,10 +13,7 @@
 namespace ovis {
 
 struct ParseScriptFunctionResult {
-  std::vector<ValueDeclaration> inputs;
-  std::vector<ValueDeclaration> outputs;
-  std::vector<Instruction> instructions;
-  std::vector<Value> constants;
+  FunctionDescription function_description;
   // ScriptFunction::DebugInfo debug_info;
 };
 

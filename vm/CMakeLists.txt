@@ -43,10 +43,10 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_type.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_function.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_execution_context.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_type_parsing.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_function_parser.cpp
     # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
     # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_module.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_function_parser.cpp
-    # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_type_parsing.cpp
   )
 
   target_link_libraries(

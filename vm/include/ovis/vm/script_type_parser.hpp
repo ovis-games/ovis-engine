@@ -15,12 +15,9 @@ namespace ovis {
 
 struct ParseScriptTypeResult {
   TypeDescription type_description;
-  std::vector<Value> construct_constants;
-  std::vector<Instruction> construct_instructions;
-  std::vector<Value> copy_constants;
-  std::vector<Instruction> copy_instructions;
-  std::vector<Value> destruct_constants;
-  std::vector<Instruction> destruct_instructions;
+  // FunctionDescription construct_function;
+  // FunctionDescription copy_function;
+  // FunctionDescription destruct_function;
 };
 
 Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine* virtual_machine, const json& type_definition);

@@ -1,44 +1,32 @@
+#include "test_utils.hpp"
 #include <iostream>
 
 #include <catch2/catch.hpp>
 
 #include <ovis/utils/log.hpp>
-#include <ovis/core/core_module.hpp>
-#include <ovis/core/script_function.hpp>
-#include <ovis/core/script_parser.hpp>
+#include <ovis/vm/script_type_parser.hpp>
 
 using namespace ovis;
-using namespace ovis::vm;
-
-#define REQUIRE_RESULT(expr) \
-  do { \
-    auto&& require_result = expr; \
-    if (!require_result) { \
-      for (const auto& error : require_result.error()) { \
-        UNSCOPED_INFO(fmt::format("{}: {}", error.path.value_or(""), error.message)); \
-      } \
-    } \
-    REQUIRE(require_result); \
-  } while (false)
 
 TEST_CASE("Parse parse variable declaration", "[ovis][core][ScriptTypeParser]") {
-  const auto parse_result = ParseScriptType(R"(
+  VirtualMachine vm;
+
+  const auto parse_result = ParseScriptType(&vm, R"(
   {
     "name": "SomeType",
     "properties" : {
       "SomeBoolean": {
-        "type": "Core.Boolean"
+        "type": "Boolean"
       },
       "SomeNumber": {
-        "type": "Core.Number"
+        "type": "Number"
       }
     }
   }
   )"_json);
   REQUIRE_RESULT(parse_result);
 
-  REQUIRE(parse_result->type != nullptr);
-  REQUIRE(parse_result->type->name() == "SomeType");
-  REQUIRE(parse_result->type->alignment_in_bytes() == 8);
-  REQUIRE(parse_result->type->size_in_bytes() == 16);
+  REQUIRE(parse_result->type_description.name == "SomeType");
+  REQUIRE(parse_result->type_description.memory_layout.alignment_in_bytes == 8);
+  REQUIRE(parse_result->type_description.memory_layout.size_in_bytes == 16);
 }
