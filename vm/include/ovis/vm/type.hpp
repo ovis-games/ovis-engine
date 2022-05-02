@@ -112,6 +112,7 @@ class Type : public std::enable_shared_from_this<Type> {
   TypeId base_id() const { return description().base; }
   Module* module() const { return description().module; }
   bool is_reference_type() const { return description().reference.has_value(); }
+  const TypeMemoryLayout& memory_layout() const { return description().memory_layout; }
   VirtualMachine* virtual_machine() const { return description().virtual_machine; }
 
   std::size_t alignment_in_bytes() const { return description().memory_layout.alignment_in_bytes; }
