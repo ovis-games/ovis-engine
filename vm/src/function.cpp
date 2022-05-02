@@ -36,13 +36,11 @@ Function::Function(FunctionDescription description)
     auto native_definition = std::get<NativeFunctionDefinition>(description.definition);
     handle_ = FunctionHandle::FromNativeFunction(native_definition.function_pointer);
   } else {
-    // auto script_definition = std::get<ScriptFunctionDefinition>(description.definition);
-    // const auto constants_offset = virtual_machine()->InsertConstants(script_definition.constants);
-    // script_definition.instructions.insert(script_definition.instructions.begin(),
-    //                                       Instruction::CreateSetConstantBaseOffset(constants_offset));
-    // virtual_machine()->InsertInstructions(script_definition.instructions);
-    
-    assert(false && "Not implemented yet");
+    auto script_definition = std::get<ScriptFunctionDefinition>(description.definition);
+    const auto constants_offset = virtual_machine()->InsertConstants(script_definition.constants);
+    script_definition.instructions.insert(script_definition.instructions.begin(),
+                                          Instruction::CreateSetConstantBaseOffset(constants_offset));
+    handle_ = FunctionHandle::FromScriptFunction(virtual_machine()->InsertInstructions(script_definition.instructions));
   }
 }
 

@@ -46,10 +46,14 @@ union FunctionHandle {
   static constexpr FunctionHandle FromNativeFunction(NativeFunction* native_function) {
     return {.native_function = native_function};
   }
-  // template <auto FUNCTION> requires (!IsNativeFunction<decltype(FUNCTION)>)
-  // static constexpr FunctionHandle FromNativeFunction() {
-  //   return FromNativeFunction(&NativeFunctionWrapper<FUNCTION>);
-  // }
+  static constexpr FunctionHandle FromScriptFunction(std::uintptr_t instruction_offset) {
+    return {
+      .zero = 0,
+      .is_script_function = 1,
+      .instruction_offset = instruction_offset
+    };
+  }
+
   static constexpr bool IsValid(const FunctionHandle& handle) {
     assert(handle.zero == 0);
     return handle.native_function != nullptr;

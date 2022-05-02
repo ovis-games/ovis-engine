@@ -94,7 +94,7 @@ std::size_t VirtualMachine::InsertConstants(std::span<const Value> constants) {
 }
 
 const ValueStorage* VirtualMachine::GetConstantPointer(std::size_t offset) const {
-  assert(offset < constant_count_);
+  assert(offset == 0 || offset < constant_count_);
   return constants_.get() + offset;
 }
 

@@ -1,5 +1,6 @@
 #include <ovis/utils/range.hpp>
 #include <ovis/vm/execution_context.hpp>
+#include <ovis/vm/virtual_machine.hpp>
 
 namespace ovis {
 
@@ -7,7 +8,6 @@ ExecutionContext::ExecutionContext(NotNull<VirtualMachine*> virtual_machine, std
     : virtual_machine_(virtual_machine), registers_(std::make_unique<ValueStorage[]>(register_count)) {
   register_count_ = register_count;
   used_register_count_ = 0;
-  // stack_frames_.push({ .register_offset = 0 });
 }
 
 ValueStorage& ExecutionContext::top(std::size_t offset) {
@@ -50,9 +50,12 @@ std::span<const ValueStorage> ExecutionContext::current_function_scope_registers
   return {registers_.get(), used_register_count_};
 }
 
-Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, std::span<const ValueStorage> constants) {
-  std::size_t program_counter = 0;
-  while (program_counter < instructions.size()) {
+Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
+  const Instruction* const instructions = virtual_machine()->GetInstructionPointer(0);
+  const ValueStorage* const constants = virtual_machine()->GetConstantPointer(0);
+  std::size_t program_counter = instruction_offset;
+
+  while (true) {
     Instruction instruction = instructions[program_counter];
     switch (static_cast<OpCode>(instruction.opcode)) {
       case OpCode::EXIT: {
@@ -95,7 +98,7 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
         const std::size_t constant_index = instruction.push_trivial_constant.constant;
         // if (constant_index < constants.size()) {
         PushUninitializedValue();
-        ValueStorage::CopyTrivially(&top(), &constants[constant_index]);
+        ValueStorage::CopyTrivially(&top(), &constants[constant_offset_ + constant_index]);
         ++program_counter;
         // } else {
         //   return Error("Invalid constant index");
@@ -108,6 +111,22 @@ Result<> ExecutionContext::Execute(std::span<const Instruction> instructions, st
         PopTrivialValue();
         function_pointer(this);
         ++program_counter;
+        break;
+      }
+
+      case OpCode::SET_CONSTANT_BASE_OFFSET: {
+        constant_offset_ = instruction.set_constant_base_offset_data.base_offset;
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::RETURN: {
+        const auto output_count = instruction.return_data.output_count;
+        program_counter = GetStackValue<std::uint32_t>(stack_offset_ + GetReturnAddressOffset(output_count));
+        constant_offset_ = GetStackValue<std::uint32_t>(stack_offset_ + GetConstantOffset(output_count));
+        const auto old_stack_offset = stack_offset_;
+        stack_offset_ = GetStackValue<std::uint32_t>(stack_offset_ + GetConstantOffset(output_count));
+        PopValues(used_register_count_ - (old_stack_offset + output_count));
         break;
       }
 

@@ -1,11 +1,18 @@
 #pragma once
 
-#include <ovis/core/module.hpp>
+#include <catch2/catch.hpp>
 
-inline std::shared_ptr<ovis::Module> RegisterTestModule() {
-  // if (ovis::Module::Get("Test") != nullptr) {
-  //   ovis::Module::Deregister("Test");
-  // }
-  // return ovis::Module::Register("Test");
-  return nullptr;
-}
+#include <ovis/utils/result.hpp>
+
+// template <typename T, typename E>
+// class SucceededMatcher : Catch::MatcherBase<ovis::Result<T, E>> {
+//   SucceededMatcher() {};
+
+//   bool match(const T& in) const override {
+//     return in;
+//   }
+
+//   std::string describe() const override {
+//     return 
+//   }
+// };
