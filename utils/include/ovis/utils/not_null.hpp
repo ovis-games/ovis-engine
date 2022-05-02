@@ -49,6 +49,14 @@ public:
     return *pointer_;
   }
 
+  T& operator[](std::size_t index) {
+    return pointer_[index];
+  }
+
+  const T& operator[](std::size_t index) const {
+    return pointer_[index];
+  }
+
  private:
   T* pointer_;
 };
