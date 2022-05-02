@@ -7,44 +7,58 @@ Value::Value(NotNull<Type*> type) : virtual_machine_(type->virtual_machine()), t
 }
 
 Value::Value(const Value& other) : virtual_machine_(other.virtual_machine()), type_id_(Type::NONE_ID), is_reference_(false) {
-  const auto type = other.type();
-  if (!type) {
-    return;
+  if (other.has_value()) {
+    other.CopyTo(this);
   }
-  const TypeMemoryLayout& memory_layout = other.is_reference() ? type->description().reference->memory_layout : type->description().memory_layout;
-  if (!storage_.Construct(virtual_machine()->main_execution_context(), memory_layout)) {
-    return;
-  }
-  if (!ValueStorage::Copy(virtual_machine()->main_execution_context(), memory_layout, &storage_, &other.storage_)) {
-    storage_.Reset(virtual_machine()->main_execution_context());
-    return;
-  }
-  type_id_ = other.type_id_;
-  is_reference_ = other.is_reference_;
 }
 
 Value& Value::operator=(const Value& other) {
-  const TypeMemoryLayout& memory_layout = other.is_reference() ? other.type()->description().reference->memory_layout
-                                                               : other.type()->description().memory_layout;
-  if (type_id() != other.type_id() || other.virtual_machine() != virtual_machine()) {
-    storage_.Reset(virtual_machine()->main_execution_context());
-    virtual_machine_ = other.virtual_machine_;
-    if (other.type_id_ != Type::NONE_ID) {
-      storage_.Construct(virtual_machine()->main_execution_context(), memory_layout);
-    }
+  if (other.has_value()) {
+    other.CopyTo(this);
   }
-  assert(virtual_machine() == other.virtual_machine());
-  assert(storage_.native_type_id_ == other.storage_.native_type_id_);
-  assert(storage_.destruct_function() == other.storage_.destruct_function());
-  ValueStorage::Copy(virtual_machine()->main_execution_context(), memory_layout, &storage_, &other.storage_);
-  is_reference_ = other.is_reference_;
-  type_id_ = other.type_id_;
   return *this;
 }
 
 void Value::Reset() {
-  type_id_ = Type::NONE_ID;
-  storage_.Reset(virtual_machine()->main_execution_context());
+  if (has_value()) {
+    type_id_ = Type::NONE_ID;
+    storage_.Reset(virtual_machine()->main_execution_context());
+  }
+}
+
+Result<> Value::CopyTo(NotNull<Value*> other) const {
+  return CopyTo(virtual_machine()->main_execution_context(), other);
+}
+
+Result<> Value::CopyTo(NotNull<ExecutionContext*> execution_context, NotNull<Value*> other) const {
+  assert(has_value());
+  assert(memory_layout());
+
+  // Technical this would be allowed, however it seems that this might be a mistake? If not remove the assertion and
+  // assign the new virtual machine (and please write a test for it!).
+  assert(other->virtual_machine() == virtual_machine());
+
+  if (other->type_id() != type_id()) {
+    other->Reset();
+    OVIS_CHECK_RESULT(other->storage_.Construct(execution_context, *memory_layout()));
+    other->type_id_ = type_id();
+    other->is_reference_ = is_reference();
+  } 
+  OVIS_CHECK_RESULT(ValueStorage::Copy(execution_context, type()->memory_layout(), &other->storage_, &storage_));
+  return Success;
+}
+
+Result<> Value::CopyTo(NotNull<ValueStorage*> storage) const {
+  return CopyTo(virtual_machine()->main_execution_context(), storage);
+}
+
+Result<> Value::CopyTo(NotNull<ExecutionContext*> execution_context, NotNull<ValueStorage*> storage) const {
+  assert(has_value());
+  const TypeMemoryLayout& memory_layout =
+      is_reference() ? type()->description().reference->memory_layout : type()->memory_layout();
+  OVIS_CHECK_RESULT(storage->Construct(execution_context, memory_layout));
+  OVIS_CHECK_RESULT(ValueStorage::Copy(execution_context, memory_layout, storage, &storage_));
+  return Success;
 }
 
 void* Value::GetValuePointer() {

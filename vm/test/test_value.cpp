@@ -75,6 +75,25 @@ TEST_CASE("Value", "[ovis][vm][Value]") {
     REQUIRE(other_shared_double.use_count() == 1);
   }
 
+  SECTION("Copy to storage") {
+    auto shared_double = std::make_shared<double>(8.0);
+    REQUIRE(shared_double.use_count() == 1);
+
+    Value value = Value::Create(&vm, shared_double);
+    REQUIRE(shared_double.use_count() == 2);
+
+    ValueStorage storage;
+    value.CopyTo(&storage);
+    REQUIRE(shared_double.use_count() == 3);
+    REQUIRE(storage.as<SharedDouble>() == shared_double);
+
+    value.Reset();
+    REQUIRE(shared_double.use_count() == 2);
+
+    storage.Reset(vm.main_execution_context());
+    REQUIRE(shared_double.use_count() == 1);
+  }
+
   SECTION("Construct trivial type") {
     auto number_type = vm.GetType<double>();
     ovis::Value number_value(number_type);

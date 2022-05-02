@@ -39,11 +39,21 @@ class Value {
 
   TypeId type_id() const { return type_id_; }
   Type* type() const { return virtual_machine()->GetType(type_id()); }
+  const TypeMemoryLayout* memory_layout() const {
+    return has_value() ? (is_reference() ? &type()->description().reference->memory_layout : &type()->memory_layout())
+                       : nullptr;
+  }
   bool is_reference() const { return is_reference_; }
+  bool has_value() const { return type_id() != Type::NONE_ID; }
 
   Value CreateReference() const;
 
   void Reset();
+
+  Result<> CopyTo(NotNull<Value*> other) const;
+  Result<> CopyTo(NotNull<ExecutionContext*> execution_context, NotNull<Value*> other) const;
+  Result<> CopyTo(NotNull<ValueStorage*> storage) const;
+  Result<> CopyTo(NotNull<ExecutionContext*> execution_context, NotNull<ValueStorage*> storage) const;
 
   template <typename T> Result<> SetProperty(std::string_view name, T&& value);
   template <typename T> Result<T> GetProperty(std::string_view name);
