@@ -1,5 +1,6 @@
 #include <catch2/catch.hpp>
 
+#include "test_utils.hpp"
 #include <ovis/vm/function.hpp>
 #include <ovis/vm/virtual_machine.hpp>
 
@@ -24,7 +25,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
     };
     const auto function = Function::Create(function_description);
     REQUIRE(function);
-    REQUIRE(function->Call());
+    REQUIRE_RESULT(function->Call());
   }
 
   SECTION("Call function with simple return") {
@@ -50,7 +51,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
     const auto function = Function::Create(function_description);
     REQUIRE(function);
     const auto function_result = function->Call<double>();
-    REQUIRE(function_result);
+    REQUIRE_RESULT(function_result);
     REQUIRE(*function_result == 42.0);
   }
 
@@ -78,7 +79,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
     const auto function = Function::Create(function_description);
     REQUIRE(function);
     const auto function_result = function->Call<double>(21.0);
-    REQUIRE(function_result);
+    REQUIRE_RESULT(function_result);
     REQUIRE(*function_result == 42.0);
   }
 }
