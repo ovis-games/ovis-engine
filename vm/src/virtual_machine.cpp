@@ -42,9 +42,14 @@ namespace ovis {
 // }  // namespace vm
 //
 
-VirtualMachine::VirtualMachine(std::size_t constant_capacity, std::size_t instruction_capacity, std::size_t main_execution_context_stack_size)
+VirtualMachine::VirtualMachine(std::size_t constant_capacity, std::size_t instruction_capacity,
+                               std::size_t main_execution_context_stack_size)
     : constants_(std::make_unique<ValueStorage[]>(constant_capacity)),
+      constant_capacity_(constant_capacity),
+      constant_count_(0),
       instructions_(std::make_unique<Instruction[]>(instruction_capacity)),
+      instruction_capacity_(instruction_capacity),
+      instruction_count_(0),
       main_execution_context_(this, main_execution_context_stack_size) {
   registered_types_.push_back({
     .id = Type::NONE_ID,
@@ -55,6 +60,40 @@ VirtualMachine::VirtualMachine(std::size_t constant_capacity, std::size_t instru
   RegisterType(TypeDescription::CreateForNativeType<bool>(this, "Boolean"));
   RegisterType(TypeDescription::CreateForNativeType<double>(this, "Number"));
   RegisterType(TypeDescription::CreateForNativeType<std::string>(this, "String"));
+}
+
+VirtualMachine::~VirtualMachine() {
+  for (auto i : IRange(constant_count_)) {
+    constants_.get()[i].Reset(main_execution_context());
+  }
+}
+
+std::size_t VirtualMachine::InsertInstructions(std::span<const Instruction> instructions) {
+  assert(instruction_count_ + instructions.size() <= instruction_capacity_);
+  const auto offset = instruction_count_;
+  std::memcpy(instructions_.get() + offset, instructions.data(), instructions.size_bytes());
+  instruction_count_ += instructions.size();
+  return offset;
+}
+
+const Instruction* VirtualMachine::GetInstructionPointer(std::size_t offset) const {
+  assert(offset < instruction_count_);
+  return instructions_.get() + offset;
+}
+
+std::size_t VirtualMachine::InsertConstants(std::span<const Value> constants) {
+  assert(constant_count_ + constants.size() <= constant_capacity_);
+  const auto offset = constant_count_;
+  for (auto i : IRange(constants.size())) {
+    constants[i].CopyTo(constants_.get() + offset + i);
+  }
+  constant_count_ += constants.size();
+  return offset;
+}
+
+const ValueStorage* VirtualMachine::GetConstantPointer(std::size_t offset) const {
+  assert(offset < constant_count_);
+  return constants_.get() + offset;
 }
 
 std::shared_ptr<Module> VirtualMachine::RegisterModule(std::string_view name) {

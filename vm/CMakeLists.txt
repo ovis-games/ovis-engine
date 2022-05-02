@@ -37,11 +37,11 @@ if (OVIS_BUILD_TESTS)
     ovis-vm-test
 
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_virtual_machine.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_value_storage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_value.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_type.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_function.cpp
-    # ${CMAKE_CURRENT_SOURCE_DIR}/test/virtual_machine.cpp
     # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
     # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_module.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_function_parser.cpp

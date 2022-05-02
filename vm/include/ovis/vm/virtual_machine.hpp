@@ -22,7 +22,7 @@ class Value;
 class ValueStorage;
 class Module;
 
-class VirtualMachine {
+class VirtualMachine final {
   friend class Module;
 
  public:
@@ -32,6 +32,7 @@ class VirtualMachine {
   VirtualMachine(std::size_t constant_capacity = DEFAULT_CONSTANT_CAPACITY,
                  std::size_t instruction_capacity = DEFAULT_INSTRUCTION_CAPACITY,
                  std::size_t main_execution_context_stack_size = ExecutionContext::DEFAULT_STACK_SIZE);
+  ~VirtualMachine();
 
   ExecutionContext* main_execution_context() { return &main_execution_context_; }
 
@@ -68,7 +69,11 @@ class VirtualMachine {
  private:
   ExecutionContext main_execution_context_;
   std::unique_ptr<ValueStorage[]> constants_;
+  const std::size_t constant_capacity_;
+  std::size_t constant_count_;
   std::unique_ptr<Instruction[]> instructions_;
+  const std::size_t instruction_capacity_;
+  std::size_t instruction_count_;
 
   std::vector<std::shared_ptr<Module>> registered_modules_;
 
