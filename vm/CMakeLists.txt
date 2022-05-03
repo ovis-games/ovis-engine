@@ -2,6 +2,7 @@ add_library(
   ovis-vm
   
   include/ovis/vm/virtual_machine.hpp src/virtual_machine.cpp
+  include/ovis/vm/virtual_machine_instructions.hpp src/virtual_machine_instructions.cpp
   include/ovis/vm/execution_context.hpp src/execution_context.cpp
   include/ovis/vm/module.hpp src/module.cpp
   include/ovis/vm/type.hpp src/type.cpp

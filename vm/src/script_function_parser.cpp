@@ -87,16 +87,16 @@ void ScriptFunctionParser::ParseVariableDeclaration(const json& action_definiton
 
   assert(type->construct_function());
 
-  definition.constants.push_back(Value::Create(virtual_machine, type->construct_function()->handle()));
-  definition.constants.push_back(Value::Create(
-      virtual_machine, type->trivially_destructible() ? FunctionHandle::Null() : type->destruct_function()->handle()));
-  definition.instructions.push_back(Instruction::CreatePushTrivialConstant(0));
-  definition.instructions.push_back(Instruction::CreatePushTrivialConstant(1));
-  if (type->is_stored_inline()) {
-    definition.instructions.push_back(Instruction::CreateConstructInlineValue());
-  } else {
-    definition.instructions.push_back(Instruction::CreateConstructValue(type->alignment_in_bytes(), type->size_in_bytes()));
-  }
+  // definition.constants.push_back(Value::Create(virtual_machine, type->construct_function()->handle()));
+  // definition.constants.push_back(Value::Create(
+  //     virtual_machine, type->trivially_destructible() ? FunctionHandle::Null() : type->destruct_function()->handle()));
+  // definition.instructions.push_back(Instruction::CreatePushTrivialConstant(0));
+  // definition.instructions.push_back(Instruction::CreatePushTrivialConstant(1));
+  // if (type->is_stored_inline()) {
+  //   definition.instructions.push_back(Instruction::CreateConstructInlineValue());
+  // } else {
+  //   definition.instructions.push_back(Instruction::CreateConstructValue(type->alignment_in_bytes(), type->size_in_bytes()));
+  // }
 }
 
 // void ScriptFunctionParser::ParseFunctionCall(const json& action_definiton, std::string_view path) {

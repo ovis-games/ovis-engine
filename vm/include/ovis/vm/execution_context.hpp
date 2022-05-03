@@ -24,11 +24,12 @@ class VirtualMachine;
 // For script functions the calling convention is as follows:
 // [output (0...n), return address, constant offset, stack offset, arguments (0...n), function address]
 
-class ExecutionContext {
+class ExecutionContext final {
  public:
   static constexpr std::size_t DEFAULT_STACK_SIZE = 1024; // 16KB stack size
 
   ExecutionContext(NotNull<VirtualMachine*> virtual_machine, std::size_t register_count = DEFAULT_STACK_SIZE);
+  ~ExecutionContext();
 
   NotNull<VirtualMachine*> virtual_machine() { return virtual_machine_; }
 
@@ -44,6 +45,8 @@ class ExecutionContext {
   void PopValues(std::size_t count);
   void PopAll() { PopValues(used_register_count_); }
 
+  std::size_t stack_size() const { return used_register_count_; }
+  std::size_t stack_capacity() const { return register_count_; }
   template <typename T> requires(!std::is_same_v<std::remove_cv_t<T>, ValueStorage>)
   T& GetStackValue(std::size_t offset);
   ValueStorage& GetStackValue(std::size_t offset);
@@ -141,6 +144,7 @@ T& ExecutionContext::GetStackValue(std::size_t offset) {
 }
 
 inline ValueStorage& ExecutionContext::GetStackValue(std::size_t offset) {
+  assert(offset < stack_size());
   return *(registers_.get() + offset);
 }
 

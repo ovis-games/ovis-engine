@@ -10,6 +10,10 @@ ExecutionContext::ExecutionContext(NotNull<VirtualMachine*> virtual_machine, std
   used_register_count_ = 0;
 }
 
+ExecutionContext::~ExecutionContext() {
+  PopAll();
+}
+
 ValueStorage& ExecutionContext::top(std::size_t offset) {
   assert(offset < used_register_count_);
   return registers_[used_register_count_ - (offset + 1)];
@@ -58,52 +62,84 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
   while (true) {
     Instruction instruction = instructions[program_counter];
     switch (static_cast<OpCode>(instruction.opcode)) {
-      case OpCode::EXIT: {
+      case OpCode::HALT: {
         return Success;
       }
 
       case OpCode::PUSH: {
-        PushUninitializedValues(instruction.push_pop.count);
-        ++program_counter;
-        break;
-      }
-
-      case OpCode::POP: {
-        PopValues(instruction.push_pop.count);
-        ++program_counter;
-        break;
-      }
-
-      case OpCode::POP_TRIVIAL: {
-        PopTrivialValues(instruction.push_pop.count);
-        ++program_counter;
-        break;
-      }
-
-      case OpCode::COPY_TRIVIAL_VALUE: {
-        const std::size_t destination_index = instruction.copy_trivial_value.destination;
-        const std::size_t source_index = instruction.copy_trivial_value.source;
-        // if (destination_index >= used_register_count_) {
-        //   return Error("Destination out of bounds");
-        // }
-        // if (source_index >= used_register_count_) {
-        //   return Error("Source out of bounds");
-        // }
-        ValueStorage::CopyTrivially(&registers_[destination_index], &registers_[source_index]);
+        PushUninitializedValues(instruction.stack_index_data.stack_index);
         ++program_counter;
         break;
       }
 
       case OpCode::PUSH_TRIVIAL_CONSTANT: {
-        const std::size_t constant_index = instruction.push_trivial_constant.constant;
-        // if (constant_index < constants.size()) {
-        PushUninitializedValue();
-        ValueStorage::CopyTrivially(&top(), &constants[constant_offset_ + constant_index]);
+        PushUninitializedValues(1);
+        ValueStorage::CopyTrivially(
+          &top(),
+          &constants[constant_offset_ + instruction.constant_index_data.constant_index]
+        );
         ++program_counter;
-        // } else {
-        //   return Error("Invalid constant index");
-        // }
         break;
+      }
+
+      case OpCode::PUSH_ALLOCATED: {
+        PushUninitializedValues(1);
+        top().Allocate(instruction.allocate_data.alignment, instruction.allocate_data.size);
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::PUSH_STACK_VALUE_DATA_ADDRESS: {
+        const auto& value = GetStackValue(instruction.stack_index_data.stack_index);
+        PushValue(value.data());
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::PUSH_STACK_VALUE_ALLOCATED_ADDRESS: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::PUSH_CONSTANT_DATA_ADDRESS: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::PUSH_CONSTANT_ALLOCATED_ADDRESS: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::POP: {
+        PopValues(instruction.stack_index_data.stack_index);
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::POP_TRIVIAL: {
+        PopTrivialValues(instruction.stack_index_data.stack_index);
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::ASSIGN_TRIVIAL: {
+        assert(false && "Not implemented yet");
+      }
+
+      case OpCode::COPY_TRIVIAL: {
+        assert(false && "Not implemented yet");
+      }
+
+      case OpCode::MEMORY_COPY: {
+        assert(false && "Not implemented yet");
+      }
+
+      case OpCode::OFFSET_ADDRESS: {
+        assert(false && "Not implemented yet");
       }
 
       case OpCode::CALL_NATIVE_FUNCTION: {
@@ -112,6 +148,14 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
         function_pointer(this);
         ++program_counter;
         break;
+      }
+
+      case OpCode::PUSH_EXECUTION_STATE: {
+        assert(false && "Not implemented yet");
+      }
+
+      case OpCode::CALL_SCRIPT_FUNCTION: {
+        assert(false && "Not implemented yet");
       }
 
       case OpCode::SET_CONSTANT_BASE_OFFSET: {
@@ -127,6 +171,84 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
         const auto old_stack_offset = stack_offset_;
         stack_offset_ = GetStackValue<std::uint32_t>(stack_offset_ + GetConstantOffset(output_count));
         PopValues(used_register_count_ - (old_stack_offset + output_count));
+        break;
+      }
+
+      case OpCode::NOT: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::AND: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::OR: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::ADD_NUMBERS: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::SUBTRACT_NUMBERS: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::MULTIPLY_NUMBERS: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::DIVIDE_NUMBERS: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::IS_NUMBER_GREATER: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::IS_NUMBER_LESS: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::IS_NUMBER_GREATER_EQUAL: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::IS_NUMBER_LESS_EQUAL: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::IS_NUMBER_EQUAL: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
+        break;
+      }
+
+      case OpCode::IS_NUMBER_NOT_EQUAL: {
+        assert(false && "Not implemented yet");
+        ++program_counter;
         break;
       }
 
@@ -146,39 +268,6 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
         const auto condition = top().as<bool>();
         PopTrivialValue();
         program_counter += condition ? 1 : instruction.jump_data.offset;
-        break;
-      }
-
-      case OpCode::SUBTRACT_NUMBERS: {
-        assert(instruction.number_operation_data.result < used_register_count_);
-        assert(instruction.number_operation_data.first < used_register_count_);
-        assert(instruction.number_operation_data.second < used_register_count_);
-        registers_[instruction.number_operation_data.result].as<double>() =
-            registers_[instruction.number_operation_data.first].as<double>() -
-            registers_[instruction.number_operation_data.second].as<double>();
-        ++program_counter;
-        break;
-      }
-
-      case OpCode::MULTIPLY_NUMBERS: {
-        assert(instruction.number_operation_data.result < used_register_count_);
-        assert(instruction.number_operation_data.first < used_register_count_);
-        assert(instruction.number_operation_data.second < used_register_count_);
-        registers_[instruction.number_operation_data.result].as<double>() =
-            registers_[instruction.number_operation_data.first].as<double>() *
-            registers_[instruction.number_operation_data.second].as<double>();
-        ++program_counter;
-        break;
-      }
-
-      case OpCode::IS_NUMBER_GREATER: {
-        assert(instruction.number_operation_data.result < used_register_count_);
-        assert(instruction.number_operation_data.first < used_register_count_);
-        assert(instruction.number_operation_data.second < used_register_count_);
-        registers_[instruction.number_operation_data.result].as<bool>() =
-            registers_[instruction.number_operation_data.first].as<double>() >
-            registers_[instruction.number_operation_data.second].as<double>();
-        ++program_counter;
         break;
       }
 

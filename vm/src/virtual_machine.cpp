@@ -5,43 +5,6 @@
 
 namespace ovis {
 
-// VirtualMachine vm;
-
-// namespace vm {
-
-// namespace {
-// std::vector<Instruction> code;
-// std::array<ValueStorage, 1024> data;
-// std::size_t data_value_count = 0;
-// }  // namespace
-
-// std::size_t AllocateInstructions(std::size_t count) {
-//   const std::size_t offset = code.size();
-//   // TODO: Add "UNUSED INSTRUCTION"
-//   code.resize(code.size() + count);
-//   return offset;
-// }
-
-// std::span<Instruction> GetInstructionRange(std::size_t offset, std::size_t count) {
-//   assert(offset + count <= code.size());
-//   return { code.data() + offset, count };
-// }
-
-// std::size_t AllocateConstants(std::size_t count) {
-//   assert(data_value_count + count <= data.size());
-//   std::size_t offset = data_value_count;
-//   data_value_count += count;
-//   return offset;
-// }
-
-// std::span<ValueStorage> GetConstantRange(std::size_t offset, std::size_t count) {
-//   assert(offset + count <= data.size());
-//   return { data.data() + offset, count };
-// }
-
-// }  // namespace vm
-//
-
 VirtualMachine::VirtualMachine(std::size_t constant_capacity, std::size_t instruction_capacity,
                                std::size_t main_execution_context_stack_size)
     : constants_(std::make_unique<ValueStorage[]>(constant_capacity)),
@@ -61,7 +24,7 @@ VirtualMachine::VirtualMachine(std::size_t constant_capacity, std::size_t instru
   RegisterType(TypeDescription::CreateForNativeType<double>(this, "Number"));
   RegisterType(TypeDescription::CreateForNativeType<std::string>(this, "String"));
 
-  InsertInstructions(std::array{ instructions::Exit() });
+  InsertInstructions(std::array{ Instruction::CreateHalt() });
 }
 
 VirtualMachine::~VirtualMachine() {

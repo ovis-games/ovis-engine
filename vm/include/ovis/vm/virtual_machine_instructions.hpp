@@ -13,16 +13,18 @@ enum class OpCode : std::uint32_t {
   // Stack manipulation
   PUSH,
   PUSH_TRIVIAL_CONSTANT,
+  PUSH_ALLOCATED,
   PUSH_STACK_VALUE_DATA_ADDRESS,
   PUSH_STACK_VALUE_ALLOCATED_ADDRESS,
   PUSH_CONSTANT_DATA_ADDRESS,
   PUSH_CONSTANT_ALLOCATED_ADDRESS,
   POP,
   POP_TRIVIAL,
+  ASSIGN_TRIVIAL,
 
   // Value manipulation
   COPY_TRIVIAL,
-  ALLOCATE,
+  MEMORY_COPY,
   OFFSET_ADDRESS,
 
   // Function calling
@@ -47,6 +49,7 @@ enum class OpCode : std::uint32_t {
   IS_NUMBER_GREATER_EQUAL,
   IS_NUMBER_LESS_EQUAL,
   IS_NUMBER_EQUAL,
+  IS_NUMBER_NOT_EQUAL,
 
   // Jumps
   JUMP,
@@ -60,44 +63,51 @@ enum class OpCode : std::uint32_t {
 namespace instructions {
 
 constexpr std::size_t OPCODE_BITS = 8;
-constexpr std::size_t STACK_OFFSET_BITS = 8;
-constexpr std::size_t TYPE_ALIGN_BITS = 3;
-constexpr std::size_t TYPE_SIZE_BITS = 11;
-constexpr std::size_t CONSTANT_INDEX_BITS = 10;
-constexpr std::size_t JUMP_OFFSET_BITS = 24;
+constexpr std::size_t STACK_INDEX_BITS = 12;
+constexpr std::size_t TYPE_ALIGN_BITS = 12;
+constexpr std::size_t TYPE_SIZE_BITS = 12;
+constexpr std::size_t CONSTANT_INDEX_BITS = 12;
 constexpr std::size_t ADDRESS_OFFSET_BITS = 12;
+constexpr std::size_t JUMP_OFFSET_BITS = 24;
+constexpr std::size_t CONSTANT_OFFSET_BITS = 24;
 
 static_assert(static_cast<std::uint32_t>(OpCode::COUNT) < (1 << OPCODE_BITS));
 
-struct StackOffsetData {
+struct StackIndexData {
   OpCode opcode : OPCODE_BITS;
-  std::uint32_t offset : STACK_OFFSET_BITS;
+  std::uint32_t stack_index : STACK_INDEX_BITS;
 };
-static_assert(sizeof(StackOffsetData) == sizeof(std::uint32_t));
+static_assert(sizeof(StackIndexData) == sizeof(std::uint32_t));
 
-struct ConstantData {
+struct ConstantIndexData {
   OpCode opcode : OPCODE_BITS;
-  std::uint32_t constant : CONSTANT_INDEX_BITS;
+  std::uint32_t constant_index : CONSTANT_INDEX_BITS;
 };
-static_assert(sizeof(ConstantData) == sizeof(std::uint32_t));
+static_assert(sizeof(ConstantIndexData) == sizeof(std::uint32_t));
 
-struct StackSourcesDestinationData {
+struct StackAddressesData {
   OpCode opcode : OPCODE_BITS;
-  std::uint32_t destination : STACK_OFFSET_BITS;
-  std::uint32_t source1 : STACK_OFFSET_BITS;
-  std::uint32_t source2 : STACK_OFFSET_BITS;
+  std::uint32_t address1 : STACK_INDEX_BITS;
+  std::uint32_t address2 : STACK_INDEX_BITS;
 };
-static_assert(sizeof(StackSourcesDestinationData) == sizeof(std::uint32_t));
+static_assert(sizeof(StackAddressesData) == sizeof(std::uint32_t));
+
+struct AllocateData {
+  OpCode opcode : OPCODE_BITS;
+  std::uint32_t alignment : TYPE_ALIGN_BITS;
+  std::uint32_t size : TYPE_SIZE_BITS;
+};
+static_assert(sizeof(StackAddressesData) == sizeof(std::uint32_t));
 
 struct CallNativeFunctionData {
   OpCode opcode : OPCODE_BITS;
-  std::uint32_t input_count : 8;
+  std::uint32_t input_count : STACK_INDEX_BITS;
 };
 static_assert(sizeof(CallNativeFunctionData ) == sizeof(std::uint32_t));
 
 struct ReturnData {
   OpCode opcode : OPCODE_BITS;
-  std::uint32_t output_count : 8;
+  std::uint32_t output_count : STACK_INDEX_BITS;
 };
 static_assert(sizeof(ReturnData ) == sizeof(std::uint32_t));
 
@@ -107,17 +117,9 @@ struct JumpData {
 };
 static_assert(sizeof(JumpData) == sizeof(std::uint32_t));
 
-struct NumberOperationData {
-  OpCode opcode : OPCODE_BITS;
-  std::uint32_t result : 8;
-  std::uint32_t first : 8;
-  std::uint32_t second : 8;
-};
-static_assert(sizeof(NumberOperationData ) == sizeof(std::uint32_t));
-
 struct OffsetAddressData {
   OpCode opcode : OPCODE_BITS;
-  std::uint32_t register_index : REGISTER_INDEX_BITS;
+  std::uint32_t register_index : STACK_INDEX_BITS;
   std::uint32_t offset : ADDRESS_OFFSET_BITS;
 };
 static_assert(sizeof(OffsetAddressData) == sizeof(std::uint32_t));
@@ -126,29 +128,38 @@ struct SetConstantBaseOffsetData {
   OpCode opcode : OPCODE_BITS;
   std::uint32_t base_offset : 24;
 };
+static_assert(sizeof(SetConstantBaseOffsetData) == sizeof(std::uint32_t));
 
 }  // namespace instructions
 
 union Instruction {
   OpCode opcode : instructions::OPCODE_BITS;
-
-  instructions::PushPopData push_pop;
-  // instructions::ConstructValue construct_value;
-  instructions::CopyTrivialValueData copy_trivial_value;
-  instructions::PushTrivialConstantData push_trivial_constant;
-  instructions::CallNativeFunctionData call_native_function;
-  instructions::JumpData jump_data;
-  instructions::NumberOperationData number_operation_data;
-  instructions::OffsetAddressData offset_address_data;
+  instructions::StackIndexData stack_index_data;
+  instructions::ConstantIndexData constant_index_data;
+  instructions::AllocateData allocate_data;
+  instructions::StackAddressesData stack_addresses_data;
+  instructions::CallNativeFunctionData call_native_data;
   instructions::ReturnData return_data;
+  instructions::JumpData jump_data;
+  instructions::OffsetAddressData offset_address_data;
   instructions::SetConstantBaseOffsetData set_constant_base_offset_data;
+
 
   static Instruction CreateHalt();
 
   static Instruction CreatePush(std::uint32_t count);
+  static Instruction CreatePushTrivialConstant(std::uint32_t constant_index);
+  static Instruction CreatePushAllocated(std::uint32_t alignment, std::uint32_t size_in_bytes);
+  static Instruction CreatePushStackValueDataAddress(std::uint32_t stack_index);
+  static Instruction CreatePushStackValueAllocatedAddress(std::uint32_t stack_index);
+  static Instruction CreatePushConstantDataAddress(std::uint32_t constant_index);
+  static Instruction CreatePushConstantAllocatedAddress(std::uint32_t constant_index);
   static Instruction CreatePop(std::uint32_t count);
   static Instruction CreatePopTrivial(std::uint32_t count);
+  static Instruction CreateAssignTrivial(std::uint32_t stack_index);
 
+  static Instruction CreateCopyTrivial(std::uint32_t destination, std::uint32_t source);
+  static Instruction CreateMemoryCopy(std::uint32_t destination, std::uint32_t source);
   static Instruction CreateOffsetAddress(std::uint32_t register_index, std::uint32_t offset);
 
   static Instruction CreateCallNativeFunction(std::uint32_t input_count);
@@ -160,9 +171,11 @@ union Instruction {
   static Instruction CreateJumpIfTrue(std::int32_t offset);
   static Instruction CreateJumpIfFalse(std::int32_t offset);
 
-  static Instruction CreateSubtractNumbers(std::uint32_t result, std::uint32_t first, std::uint32_t second);
-  static Instruction CreateMultiplyNumbers(std::uint32_t result, std::uint32_t first, std::uint32_t second);
-  static Instruction CreateIsNumberGreater(std::uint32_t result, std::uint32_t first, std::uint32_t second);
+  static Instruction CreateAddNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index);
+  static Instruction CreateSubtractNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index);
+  static Instruction CreateMultiplyNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index);
+  static Instruction CreateDivideNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index);
+  static Instruction CreateIsNumberGreater(std::uint32_t lhs_index, std::uint32_t rhs_index);
 };
 static_assert(std::is_trivial_v<Instruction>);
 static_assert(sizeof(Instruction) == 4);

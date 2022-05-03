@@ -8,12 +8,12 @@ TEST_CASE("Test virtual machine", "[ovis][vm][VirtualMachine]") {
   VirtualMachine vm;
 
   SECTION("Instruction 0 should be the exit instruction") {
-    REQUIRE(vm.GetInstructionPointer(0)->opcode == OpCode::EXIT);
+    REQUIRE(vm.GetInstructionPointer(0)->opcode == OpCode::HALT);
   }
 
   SECTION("Insert instructions") {
     std::array instructions = {
-      Instruction::CreateConstructValue(4, 4),
+      Instruction::CreateHalt(),
     };
     const auto offset = vm.InsertInstructions(instructions);
     const auto instruction_pointer = vm.GetInstructionPointer(offset);

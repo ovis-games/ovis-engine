@@ -47,7 +47,6 @@ TEST_CASE("Function", "[ovis][vm][Function]") {
       .definition = ScriptFunctionDefinition {
         .instructions = {
           Instruction::CreatePushTrivialConstant(0),
-          instructions::MultiplyNumbers(-1, 0, 1),
           Instruction::CreateReturn(0),
         },
         .constants = {

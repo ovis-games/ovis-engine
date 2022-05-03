@@ -161,7 +161,7 @@ inline T& ValueStorage::as() {
 
 template <typename T>
 inline const T& ValueStorage::as() const {
-  assert(TypeOf<T> == native_type_id_);
+  // assert(TypeOf<T> == native_type_id_);
   if constexpr (stored_inline<T>) {
     return *reinterpret_cast<const T*>(data());
   } else {
