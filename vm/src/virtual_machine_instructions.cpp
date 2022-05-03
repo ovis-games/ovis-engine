@@ -122,6 +122,28 @@ Instruction Instruction::CreateCopyTrivial(std::uint32_t destination, std::uint3
   };
 }
 
+Instruction Instruction::CreateMemoryCopy(std::uint32_t size) {
+  assert(size < (1 << instructions::TYPE_SIZE_BITS));
+  return {
+    .allocate_data = {
+      .opcode = OpCode::MEMORY_COPY,
+      .size = size,
+    }
+  };
+}
+
+Instruction Instruction::CreateOffsetAddress(std::uint32_t stack_index, std::uint32_t offset) {
+  assert(stack_index < (1 << instructions::STACK_INDEX_BITS));
+  assert(offset < (1 << instructions::ADDRESS_OFFSET_BITS));
+  return {
+    .offset_address_data = {
+      .opcode = OpCode::OFFSET_ADDRESS,
+      .stack_index = stack_index,
+      .offset = offset,
+    }
+  };
+}
+
 Instruction Instruction::CreateSetConstantBaseOffset(std::uint32_t base_offset) {
   assert(base_offset < (1 << 24));
   return {

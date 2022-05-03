@@ -54,7 +54,6 @@ class ExecutionContext final {
   std::span<const ValueStorage> registers() const;
   std::span<const ValueStorage> current_function_scope_registers() const;
   Result<> Execute(std::uintptr_t instruction_offset);
-  Result<> Execute(NotNull<const Instruction*> instructions);
 
   template <typename ReturnType, typename... ArgumentTypes>
   Result<ReturnType> Call(FunctionHandle handle, ArgumentTypes&&... arguments);

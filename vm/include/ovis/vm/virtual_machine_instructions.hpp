@@ -119,7 +119,7 @@ static_assert(sizeof(JumpData) == sizeof(std::uint32_t));
 
 struct OffsetAddressData {
   OpCode opcode : OPCODE_BITS;
-  std::uint32_t register_index : STACK_INDEX_BITS;
+  std::uint32_t stack_index : STACK_INDEX_BITS;
   std::uint32_t offset : ADDRESS_OFFSET_BITS;
 };
 static_assert(sizeof(OffsetAddressData) == sizeof(std::uint32_t));
@@ -159,8 +159,8 @@ union Instruction {
   static Instruction CreateAssignTrivial(std::uint32_t stack_index);
 
   static Instruction CreateCopyTrivial(std::uint32_t destination, std::uint32_t source);
-  static Instruction CreateMemoryCopy(std::uint32_t destination, std::uint32_t source);
-  static Instruction CreateOffsetAddress(std::uint32_t register_index, std::uint32_t offset);
+  static Instruction CreateMemoryCopy(std::uint32_t size);
+  static Instruction CreateOffsetAddress(std::uint32_t stack_index, std::uint32_t offset);
 
   static Instruction CreateCallNativeFunction(std::uint32_t input_count);
   static Instruction CreatePushExecutionState();

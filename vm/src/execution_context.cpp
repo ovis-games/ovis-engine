@@ -97,19 +97,22 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
       }
 
       case OpCode::PUSH_STACK_VALUE_ALLOCATED_ADDRESS: {
-        assert(false && "Not implemented yet");
+        const auto& value = GetStackValue(instruction.stack_index_data.stack_index);
+        PushValue(value.allocated_storage_pointer());
         ++program_counter;
         break;
       }
 
       case OpCode::PUSH_CONSTANT_DATA_ADDRESS: {
-        assert(false && "Not implemented yet");
+        const auto& constant = constants[constant_offset_ + instruction.constant_index_data.constant_index];
+        PushValue(constant.data());
         ++program_counter;
         break;
       }
 
       case OpCode::PUSH_CONSTANT_ALLOCATED_ADDRESS: {
-        assert(false && "Not implemented yet");
+        const auto& constant = constants[constant_offset_ + instruction.constant_index_data.constant_index];
+        PushValue(constant.allocated_storage_pointer());
         ++program_counter;
         break;
       }
@@ -127,19 +130,30 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
       }
 
       case OpCode::ASSIGN_TRIVIAL: {
-        assert(false && "Not implemented yet");
+        ValueStorage::CopyTrivially(&GetStackValue(stack_offset_ + instruction.stack_index_data.stack_index), &top());
+        PopTrivialValue();
+        ++program_counter;
+        break;
       }
 
       case OpCode::COPY_TRIVIAL: {
-        assert(false && "Not implemented yet");
+        ValueStorage::CopyTrivially(&GetStackValue(stack_offset_ + instruction.stack_index_data.stack_index), &top());
+        ++program_counter;
+        break;
       }
 
       case OpCode::MEMORY_COPY: {
-        assert(false && "Not implemented yet");
+        std::memcpy(top(1).as<void*>(), top(0).as<const void*>(), instruction.allocate_data.size);
+        PopTrivialValues(2);
+        ++program_counter;
+        break;
       }
 
       case OpCode::OFFSET_ADDRESS: {
-        assert(false && "Not implemented yet");
+        GetStackValue<std::uint8_t*>(instruction.offset_address_data.stack_index) +=
+            instruction.offset_address_data.offset;
+        ++program_counter;
+        break;
       }
 
       case OpCode::CALL_NATIVE_FUNCTION: {
