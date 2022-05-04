@@ -29,7 +29,7 @@ enum class OpCode : std::uint32_t {
 
   // Function calling
   CALL_NATIVE_FUNCTION,
-  PUSH_EXECUTION_STATE,
+  PREPARE_SCRIPT_FUNCTION_CALL,
   CALL_SCRIPT_FUNCTION,
   SET_CONSTANT_BASE_OFFSET,
   RETURN,
@@ -163,7 +163,8 @@ union Instruction {
   static Instruction CreateOffsetAddress(std::uint32_t stack_index, std::uint32_t offset);
 
   static Instruction CreateCallNativeFunction(std::uint32_t input_count);
-  static Instruction CreatePushExecutionState();
+  static Instruction CreatePrepareScriptFunctionCall(std::uint32_t output_count);
+  static Instruction CreateScriptFunctionCall(std::uint32_t input_count);
   static Instruction CreateSetConstantBaseOffset(std::uint32_t base_offset);
   static Instruction CreateReturn(std::uint32_t output_count);
 

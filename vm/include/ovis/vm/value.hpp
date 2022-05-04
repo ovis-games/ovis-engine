@@ -58,9 +58,11 @@ class Value {
   template <typename T> Result<> SetProperty(std::string_view name, T&& value);
   template <typename T> Result<T> GetProperty(std::string_view name);
 
-  template <typename T> requires (!std::is_pointer_v<T>)
+  template <typename T>
+  requires (!std::is_pointer_v<T> || std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
   static Value Create(VirtualMachine* virtual_machine, T&& native_value);
-  template <typename T> requires (std::is_pointer_v<T>)
+  template <typename T>
+  requires (std::is_pointer_v<T> && !std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
   static Value Create(VirtualMachine* virtual_machine, T&& native_value);
 
  private:
@@ -117,7 +119,7 @@ Result<T> Value::GetProperty(std::string_view name) {
 }
 
 template <typename T>
-requires (!std::is_pointer_v<T>)
+requires (!std::is_pointer_v<T> || std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
 inline Value Value::Create(VirtualMachine* virtual_machine, T&& native_value) {
   assert(virtual_machine->GetType<std::remove_cvref_t<T>>());
 
@@ -128,7 +130,7 @@ inline Value Value::Create(VirtualMachine* virtual_machine, T&& native_value) {
 }
 
 template <typename T>
-requires (std::is_pointer_v<T>)
+requires (std::is_pointer_v<T> && !std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
 inline Value Value::Create(VirtualMachine* virtual_machine, T&& native_value) {
   assert(virtual_machine->GetType<std::remove_cvref_t<std::remove_pointer_t<T>>>());
 

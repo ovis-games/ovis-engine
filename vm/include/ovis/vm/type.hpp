@@ -274,6 +274,32 @@ std::optional<TypeReferenceDescription> TypeReferenceDescription::CreateFromNati
   }
 }
 
+namespace detail {
+
+template <typename T, typename ParentType> requires (!std::is_same_v<ParentType, void>)
+std::shared_ptr<Function> CreateToBaseFunction(VirtualMachine* virtual_machine) {
+  return Function::Create(
+      FunctionDescription::CreateForNativeFunction<&type_helper::ToBase<ParentType, T>>(virtual_machine));
+}
+
+template <typename T, typename ParentType> requires (std::is_same_v<ParentType, void>)
+std::shared_ptr<Function> CreateToBaseFunction(VirtualMachine* virtual_machine) {
+  return nullptr;
+}
+
+template <typename T, typename ParentType> requires (!std::is_same_v<ParentType, void>)
+std::shared_ptr<Function> CreateFromBaseFunction(VirtualMachine* virtual_machine) {
+  return Function::Create(
+      FunctionDescription::CreateForNativeFunction<&type_helper::FromBase<ParentType, T>>(virtual_machine));
+}
+
+template <typename T, typename ParentType> requires (std::is_same_v<ParentType, void>)
+std::shared_ptr<Function> CreateFromBaseFunction(VirtualMachine* virtual_machine) {
+  return nullptr;
+}
+
+}
+
 template <typename T, typename ParentType> 
 requires (
   (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
@@ -285,16 +311,8 @@ inline TypeDescription TypeDescription::CreateForNativeType(VirtualMachine* virt
     .module = module,
     .name = std::string(name),
     .base = std::is_same_v<ParentType, void> ? Type::NONE_ID : virtual_machine->GetTypeId<ParentType>(),
-    .to_base =
-        std::is_same_v<ParentType, void>
-            ? nullptr
-            : Function::Create(
-                  FunctionDescription::CreateForNativeFunction<&type_helper::ToBase<ParentType, T>>(virtual_machine)),
-    .from_base =
-        std::is_same_v<ParentType, void>
-            ? nullptr
-            : Function::Create(FunctionDescription::CreateForNativeFunction<&type_helper::FromBase<ParentType, T>>(
-                  virtual_machine)),
+    .to_base = detail::CreateToBaseFunction<T, ParentType>(virtual_machine),
+    .from_base = detail::CreateFromBaseFunction<T, ParentType>(virtual_machine),
     .properties = {},
     .memory_layout = TypeMemoryLayout::CreateForNativeType<T>(virtual_machine),
     .reference = TypeReferenceDescription::CreateFromNativeType<T>(virtual_machine),

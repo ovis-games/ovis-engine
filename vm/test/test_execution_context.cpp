@@ -239,9 +239,57 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
     }
 
     SECTION("CALL_NATIVE_FUNCTION") {
+      struct Foo {
+        static double Add(double first, double second) {
+          return first + second;
+        }
+      };
+
+      const auto constant_offset = vm.InsertConstants(std::array{
+        Value::Create(&vm, &NativeFunctionWrapper<&Foo::Add>),
+        Value::Create(&vm, 20.0),
+        Value::Create(&vm, 22.0),
+      });
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(2),
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateCallNativeFunction(2),
+      }));
+      REQUIRE_RESULT(execute_result);
+      REQUIRE(execution_context->stack_size() == 1);
+
+      const auto& value = execution_context->GetStackValue(0);
+      REQUIRE(!value.has_allocated_storage());
+      REQUIRE(value.as<double>() == 42.0);
     }
+
     SECTION("PUSH_EXECUTION_STATE") {
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePrepareScriptFunctionCall(3),
+      }));
+      REQUIRE_RESULT(execute_result);
+      REQUIRE(execution_context->stack_size() == 6);
+
+      // 3 reserved slots for the outputs
+      for (auto i : IRange(3)) {
+        const auto& output = execution_context->GetStackValue(i);
+        REQUIRE(!output.has_allocated_storage());
+      }
+
+      // Return address is not set yet
+      const auto& return_address = execution_context->GetStackValue(3);
+      REQUIRE(!return_address.has_allocated_storage());
+
+      const auto& constant_offset = execution_context->GetStackValue(4);
+      REQUIRE(!constant_offset.has_allocated_storage());
+      REQUIRE(constant_offset.as<std::uint32_t>() == 0);
+
+      const auto& stack_offset = execution_context->GetStackValue(4);
+      REQUIRE(!stack_offset.has_allocated_storage());
+      REQUIRE(stack_offset.as<std::uint32_t>() == 0);
     }
+
     SECTION("CALL_SCRIPT_FUNCTION") {
     }
     SECTION("SET_CONSTANT_BASE_OFFSET") {

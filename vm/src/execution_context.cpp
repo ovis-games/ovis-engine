@@ -164,7 +164,7 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
         break;
       }
 
-      case OpCode::PUSH_EXECUTION_STATE: {
+      case OpCode::PREPARE_SCRIPT_FUNCTION_CALL: {
         assert(false && "Not implemented yet");
       }
 

@@ -144,6 +144,27 @@ Instruction Instruction::CreateOffsetAddress(std::uint32_t stack_index, std::uin
   };
 }
 
+Instruction Instruction::CreateCallNativeFunction(std::uint32_t input_count) {
+  assert(input_count < (1 << instructions::STACK_INDEX_BITS));
+  return {
+    .stack_index_data = {
+      .opcode = OpCode::CALL_NATIVE_FUNCTION,
+      .stack_index = input_count
+    }
+  };
+}
+
+Instruction Instruction::CreatePrepareScriptFunctionCall(std::uint32_t output_count) {
+  assert(output_count < (1 << instructions::STACK_INDEX_BITS));
+
+  return {
+    .stack_index_data = {
+      .opcode = OpCode::PREPARE_SCRIPT_FUNCTION_CALL,
+      .stack_index = output_count
+    }
+  };
+}
+
 Instruction Instruction::CreateSetConstantBaseOffset(std::uint32_t base_offset) {
   assert(base_offset < (1 << 24));
   return {
@@ -183,15 +204,6 @@ Instruction Instruction::CreateMultiplyNumbers(std::uint32_t lhs_index, std::uin
 //       .opcode = OpCode::OFFSET_ADDRESS,
 //       .register_index = register_index,
 //       .offset = offset,
-//     }
-//   };
-// }
-
-// Instruction Instruction::CreateCallNativeFunction(std::uint32_t input_count) {
-//   return {
-//     .call_native_function = {
-//       .opcode = OpCode::CALL_NATIVE_FUNCTION,
-//       .input_count = input_count
 //     }
 //   };
 // }
