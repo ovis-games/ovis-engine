@@ -47,6 +47,9 @@ class ExecutionContext final {
 
   std::size_t stack_size() const { return used_register_count_; }
   std::size_t stack_capacity() const { return register_count_; }
+  std::uint32_t stack_offset() const { return stack_offset_; }
+  std::uint32_t constant_offset() const { return constant_offset_; }
+
   template <typename T> requires(!std::is_same_v<std::remove_cv_t<T>, ValueStorage>)
   T& GetStackValue(std::size_t offset);
   ValueStorage& GetStackValue(std::size_t offset);

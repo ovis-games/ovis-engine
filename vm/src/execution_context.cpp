@@ -137,7 +137,10 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
       }
 
       case OpCode::COPY_TRIVIAL: {
-        ValueStorage::CopyTrivially(&GetStackValue(stack_offset_ + instruction.stack_index_data.stack_index), &top());
+        ValueStorage::CopyTrivially(
+          &GetStackValue(stack_offset_ + instruction.stack_addresses_data.address1),
+          &GetStackValue(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }
@@ -165,11 +168,22 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
       }
 
       case OpCode::PREPARE_SCRIPT_FUNCTION_CALL: {
-        assert(false && "Not implemented yet");
+        PushUninitializedValues(instruction.stack_index_data.stack_index + 3);
+        top(1).Store(constant_offset_);
+        top(0).Store(stack_offset_);
+        ++program_counter;
+        break;
       }
 
       case OpCode::CALL_SCRIPT_FUNCTION: {
-        assert(false && "Not implemented yet");
+        const auto output_count = instruction.stack_addresses_data.address1;
+        const auto input_count = instruction.stack_addresses_data.address2;
+        const auto function_address = top().as<std::uint32_t>();
+        PopTrivialValue();
+        top(input_count + 2).Store(program_counter + 1);
+        program_counter = function_address;
+        stack_offset_ = stack_size() - (input_count + output_count + 3);
+        break;
       }
 
       case OpCode::SET_CONSTANT_BASE_OFFSET: {
@@ -183,85 +197,121 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
         program_counter = GetStackValue<std::uint32_t>(stack_offset_ + GetReturnAddressOffset(output_count));
         constant_offset_ = GetStackValue<std::uint32_t>(stack_offset_ + GetConstantOffset(output_count));
         const auto old_stack_offset = stack_offset_;
-        stack_offset_ = GetStackValue<std::uint32_t>(stack_offset_ + GetConstantOffset(output_count));
+        stack_offset_ = GetStackValue<std::uint32_t>(stack_offset_ + GetStackOffset(output_count));
         PopValues(used_register_count_ - (old_stack_offset + output_count));
         break;
       }
 
       case OpCode::NOT: {
-        assert(false && "Not implemented yet");
+        PushValue(!GetStackValue<bool>(stack_offset_ + instruction.stack_addresses_data.address1));
         ++program_counter;
         break;
       }
 
       case OpCode::AND: {
-        assert(false && "Not implemented yet");
+        PushValue(
+          GetStackValue<bool>(stack_offset_ + instruction.stack_addresses_data.address1) &&
+          GetStackValue<bool>(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }
 
       case OpCode::OR: {
-        assert(false && "Not implemented yet");
+        PushValue(
+          GetStackValue<bool>(stack_offset_ + instruction.stack_addresses_data.address1) ||
+          GetStackValue<bool>(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }
 
       case OpCode::ADD_NUMBERS: {
-        assert(false && "Not implemented yet");
+        PushValue(
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) +
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }
 
       case OpCode::SUBTRACT_NUMBERS: {
-        assert(false && "Not implemented yet");
+        PushValue(
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) -
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }
 
       case OpCode::MULTIPLY_NUMBERS: {
-        assert(false && "Not implemented yet");
+        PushValue(
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) *
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }
 
       case OpCode::DIVIDE_NUMBERS: {
-        assert(false && "Not implemented yet");
+        PushValue(
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) /
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }
 
       case OpCode::IS_NUMBER_GREATER: {
-        assert(false && "Not implemented yet");
+        PushValue(
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) >
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }
 
       case OpCode::IS_NUMBER_LESS: {
-        assert(false && "Not implemented yet");
+        PushValue(
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) <
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }
 
       case OpCode::IS_NUMBER_GREATER_EQUAL: {
-        assert(false && "Not implemented yet");
+        PushValue(
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) >=
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }
 
       case OpCode::IS_NUMBER_LESS_EQUAL: {
-        assert(false && "Not implemented yet");
+        PushValue(
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) <=
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }
 
       case OpCode::IS_NUMBER_EQUAL: {
-        assert(false && "Not implemented yet");
+        PushValue(
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) ==
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }
 
       case OpCode::IS_NUMBER_NOT_EQUAL: {
-        assert(false && "Not implemented yet");
+        PushValue(
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) !=
+          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
+        );
         ++program_counter;
         break;
       }

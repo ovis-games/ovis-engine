@@ -164,19 +164,28 @@ union Instruction {
 
   static Instruction CreateCallNativeFunction(std::uint32_t input_count);
   static Instruction CreatePrepareScriptFunctionCall(std::uint32_t output_count);
-  static Instruction CreateScriptFunctionCall(std::uint32_t input_count);
+  static Instruction CreateScriptFunctionCall(std::uint32_t output_count, std::uint32_t input_count);
   static Instruction CreateSetConstantBaseOffset(std::uint32_t base_offset);
   static Instruction CreateReturn(std::uint32_t output_count);
 
-  static Instruction CreateJump(std::int32_t offset);
-  static Instruction CreateJumpIfTrue(std::int32_t offset);
-  static Instruction CreateJumpIfFalse(std::int32_t offset);
+  static Instruction CreateNot(std::uint32_t input_index);
+  static Instruction CreateAnd(std::uint32_t lhs_index, std::uint32_t rhs_index);
+  static Instruction CreateOr(std::uint32_t lhs_index, std::uint32_t rhs_index);
 
   static Instruction CreateAddNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index);
   static Instruction CreateSubtractNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index);
   static Instruction CreateMultiplyNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index);
   static Instruction CreateDivideNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index);
   static Instruction CreateIsNumberGreater(std::uint32_t lhs_index, std::uint32_t rhs_index);
+  static Instruction CreateIsNumberLess(std::uint32_t lhs_index, std::uint32_t rhs_index);
+  static Instruction CreateIsNumberGreaterEqual(std::uint32_t lhs_index, std::uint32_t rhs_index);
+  static Instruction CreateIsNumberLessEqual(std::uint32_t lhs_index, std::uint32_t rhs_index);
+  static Instruction CreateIsNumberEqual(std::uint32_t lhs_index, std::uint32_t rhs_index);
+  static Instruction CreateIsNumberNotEqual(std::uint32_t lhs_index, std::uint32_t rhs_index);
+
+  static Instruction CreateJump(std::int32_t offset);
+  static Instruction CreateJumpIfTrue(std::int32_t offset);
+  static Instruction CreateJumpIfFalse(std::int32_t offset);
 };
 static_assert(std::is_trivial_v<Instruction>);
 static_assert(sizeof(Instruction) == 4);

@@ -165,6 +165,19 @@ Instruction Instruction::CreatePrepareScriptFunctionCall(std::uint32_t output_co
   };
 }
 
+Instruction Instruction::CreateScriptFunctionCall(std::uint32_t output_count, std::uint32_t input_count) {
+  assert(output_count < (1 << instructions::STACK_INDEX_BITS));
+  assert(input_count < (1 << instructions::STACK_INDEX_BITS));
+
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::CALL_SCRIPT_FUNCTION,
+      .address1 = output_count,
+      .address2 = input_count,
+    }
+  };
+}
+
 Instruction Instruction::CreateSetConstantBaseOffset(std::uint32_t base_offset) {
   assert(base_offset < (1 << 24));
   return {
@@ -185,6 +198,63 @@ Instruction Instruction::CreateReturn(std::uint32_t output_count) {
   };
 }
 
+Instruction Instruction::CreateNot(std::uint32_t input_index) {
+  assert(input_index < (1 << instructions::STACK_INDEX_BITS));
+
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::NOT,
+      .address1 = input_index,
+    }
+  };
+}
+
+Instruction Instruction::CreateAnd(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+  assert(lhs_index < (1 << instructions::STACK_INDEX_BITS));
+  assert(rhs_index < (1 << instructions::STACK_INDEX_BITS));
+
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::AND,
+      .address1 = lhs_index,
+      .address2 = rhs_index,
+    }
+  };
+}
+
+Instruction Instruction::CreateOr(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+  assert(lhs_index < (1 << instructions::STACK_INDEX_BITS));
+  assert(rhs_index < (1 << instructions::STACK_INDEX_BITS));
+
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::OR,
+      .address1 = lhs_index,
+      .address2 = rhs_index,
+    }
+  };
+}
+
+Instruction Instruction::CreateAddNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::ADD_NUMBERS,
+      .address1 = lhs_index,
+      .address2 = rhs_index,
+    }
+  };
+}
+
+Instruction Instruction::CreateSubtractNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::SUBTRACT_NUMBERS,
+      .address1 = lhs_index,
+      .address2 = rhs_index,
+    }
+  };
+}
+
 Instruction Instruction::CreateMultiplyNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index) {
   return {
     .stack_addresses_data = {
@@ -195,70 +265,107 @@ Instruction Instruction::CreateMultiplyNumbers(std::uint32_t lhs_index, std::uin
   };
 }
 
-// Instruction Instruction::CreateOffsetAddress(std::uint32_t register_index, std::uint32_t offset) {
-//   assert(register_index < (1 << instructions::REGISTER_INDEX_BITS));
-//   assert(offset < (1 << instructions::ADDRESS_OFFSET_BITS));
+Instruction Instruction::CreateDivideNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::DIVIDE_NUMBERS,
+      .address1 = lhs_index,
+      .address2 = rhs_index,
+    }
+  };
+}
 
-//   return {
-//     .offset_address_data = {
-//       .opcode = OpCode::OFFSET_ADDRESS,
-//       .register_index = register_index,
-//       .offset = offset,
-//     }
-//   };
-// }
+Instruction Instruction::CreateIsNumberGreater(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::IS_NUMBER_GREATER,
+      .address1 = lhs_index,
+      .address2 = rhs_index,
+    }
+  };
+}
 
-// Instruction Instruction::CreateJump(std::int32_t offset) {
-//   return {.jump_data = {.opcode = OpCode::JUMP, .offset = offset}};
-// }
+Instruction Instruction::CreateIsNumberLess(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::IS_NUMBER_LESS,
+      .address1 = lhs_index,
+      .address2 = rhs_index,
+    }
+  };
+}
 
-// Instruction Instruction::CreateJumpIfTrue(std::int32_t offset) {
-//   return {.jump_data = {.opcode = OpCode::JUMP_IF_TRUE, .offset = offset}};
-// }
+Instruction Instruction::CreateIsNumberGreaterEqual(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::IS_NUMBER_GREATER_EQUAL,
+      .address1 = lhs_index,
+      .address2 = rhs_index,
+    }
+  };
+}
 
-// Instruction Instruction::CreateJumpIfFalse(std::int32_t offset) {
-//   return {.jump_data = {.opcode = OpCode::JUMP_IF_FALSE, .offset = offset}};
-// }
+Instruction Instruction::CreateIsNumberLessEqual(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::IS_NUMBER_LESS_EQUAL,
+      .address1 = lhs_index,
+      .address2 = rhs_index,
+    }
+  };
+}
 
-// Instruction Instruction::CreateSubtractNumbers(std::uint32_t result, std::uint32_t first, std::uint32_t second) {
-//   return {
-//     .number_operation_data = {
-//       .opcode = OpCode::SUBTRACT_NUMBERS,
-//       .result = result,
-//       .first = first,
-//       .second = second
-//     }
-//   };
-// }
+Instruction Instruction::CreateIsNumberEqual(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::IS_NUMBER_EQUAL,
+      .address1 = lhs_index,
+      .address2 = rhs_index,
+    }
+  };
+}
 
+Instruction Instruction::CreateIsNumberNotEqual(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+  return {
+    .stack_addresses_data = {
+      .opcode = OpCode::IS_NUMBER_NOT_EQUAL,
+      .address1 = lhs_index,
+      .address2 = rhs_index,
+    }
+  };
+}
 
-// Instruction Instruction::CreateIsNumberGreater(std::uint32_t result, std::uint32_t first, std::uint32_t second) {
-//   return {
-//     .number_operation_data = {
-//       .opcode = OpCode::IS_NUMBER_GREATER,
-//       .result = result,
-//       .first = first,
-//       .second = second
-//     }
-//   };
-// }
+Instruction Instruction::CreateJump(std::int32_t offset) {
+  assert(offset < (1 << instructions::JUMP_OFFSET_BITS));
 
-// Instruction Instruction::CreateConstructInlineValue() { return {.opcode = OpCode::CONSTRUCT_INLINE_VALUE}; }
-// Instruction Instruction::CreateConstructValue(std::uint32_t alignment, std::uint32_t size) {
-//   assert(alignment < (1 << instructions::TYPE_ALIGN_BITS));
-//   assert(size < (1 << instructions::TYPE_SIZE_BITS));
+  return {
+    .jump_data = {
+      .opcode = OpCode::JUMP,
+      .offset = offset
+    }
+  };
+}
 
-//   return { .construct_value = {
-//     .opcode = OpCode::CONSTRUCT_VALUE,
-//     .alignment = alignment,
-//     .size = size,
-//   }};
-// }
+Instruction Instruction::CreateJumpIfTrue(std::int32_t offset) {
+  assert(offset < (1 << instructions::JUMP_OFFSET_BITS));
 
-// Instruction Instruction::CreatePushExecutionState() {
-//   return {
-//     .opcode = OpCode::PUSH_EXECUTION_STATE,
-//   };
-// }
+  return {
+    .jump_data = {
+      .opcode = OpCode::JUMP_IF_TRUE,
+      .offset = offset
+    }
+  };
+}
+
+Instruction Instruction::CreateJumpIfFalse(std::int32_t offset) {
+  assert(offset < (1 << instructions::JUMP_OFFSET_BITS));
+
+  return {
+    .jump_data = {
+      .opcode = OpCode::JUMP_IF_FALSE,
+      .offset = offset
+    }
+  };
+}
 
 }  // namespace ovis

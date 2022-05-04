@@ -11,9 +11,14 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
   ExecutionContext* execution_context = vm.main_execution_context();
 
   SECTION("Test instructions") {
+    struct BigType {
+      double d1;
+      double d2;
+    };
+
     SECTION("HALT") {
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
-        Instruction::CreateHalt()
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 0);
@@ -21,7 +26,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("PUSH") {
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
-        Instruction::CreatePush(2)
+        Instruction::CreatePush(2),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 2);
@@ -38,7 +44,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
         Value::Create(&vm, 42.0)
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
-        Instruction::CreatePushTrivialConstant(0)
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 1);
@@ -50,7 +57,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("PUSH_ALLOCATED") {
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
-        Instruction::CreatePushAllocated(128, 128)
+        Instruction::CreatePushAllocated(128, 128),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 1);
@@ -66,7 +74,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
-        Instruction::CreatePushStackValueDataAddress(0)
+        Instruction::CreatePushStackValueDataAddress(0),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 2);
@@ -83,7 +92,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
     SECTION("PUSH_STACK_VALUE_ALLOCATED_ADDRESS") {
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushAllocated(32, 32),
-        Instruction::CreatePushStackValueAllocatedAddress(0)
+        Instruction::CreatePushStackValueAllocatedAddress(0),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 2);
@@ -101,7 +111,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
         Value::Create(&vm, 42.0)
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
-        Instruction::CreatePushConstantDataAddress(0)
+        Instruction::CreatePushConstantDataAddress(0),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 1);
@@ -112,15 +123,12 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
     }
 
     SECTION("PUSH_CONSTANT_ALLOCATED_ADDRESS") {
-      struct BigType {
-        double d1;
-        double d2;
-      };
       const auto constant_offset = vm.InsertConstants(std::array{
         Value::Create(&vm, BigType{ .d1 = 42.0, .d2 = 420.0 })
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
-        Instruction::CreatePushConstantAllocatedAddress(0)
+        Instruction::CreatePushConstantAllocatedAddress(0),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 1);
@@ -136,6 +144,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
         Instruction::CreatePush(5),
         Instruction::CreatePop(2),
         Instruction::CreatePop(1),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 2);
@@ -146,6 +155,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
         Instruction::CreatePush(5),
         Instruction::CreatePopTrivial(1),
         Instruction::CreatePopTrivial(2),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 2);
@@ -160,6 +170,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
         Instruction::CreatePushTrivialConstant(0),
         Instruction::CreatePushTrivialConstant(1),
         Instruction::CreateAssignTrivial(0),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 1);
@@ -178,6 +189,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
         Instruction::CreatePushTrivialConstant(0),
         Instruction::CreatePushTrivialConstant(1),
         Instruction::CreateCopyTrivial(0, 1),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 2);
@@ -192,10 +204,6 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
     }
 
     SECTION("MEMORY_COPY") {
-      struct BigType {
-        double d1;
-        double d2;
-      };
       const auto constant_offset = vm.InsertConstants(std::array{
         Value::Create(&vm, BigType{ .d1 = 42.0, .d2 = 420.0 })
       });
@@ -204,6 +212,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
         Instruction::CreatePushStackValueAllocatedAddress(0),
         Instruction::CreatePushConstantAllocatedAddress(0),
         Instruction::CreateMemoryCopy(sizeof(BigType)),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 1);
@@ -226,6 +235,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
         Instruction::CreatePushTrivialConstant(0),
         Instruction::CreatePushStackValueDataAddress(0),
         Instruction::CreateOffsetAddress(1, 4),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 2);
@@ -255,6 +265,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
         Instruction::CreatePushTrivialConstant(2),
         Instruction::CreatePushTrivialConstant(0),
         Instruction::CreateCallNativeFunction(2),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 1);
@@ -264,9 +275,10 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
       REQUIRE(value.as<double>() == 42.0);
     }
 
-    SECTION("PUSH_EXECUTION_STATE") {
+    SECTION("PREPARE_SCRIPT_FUNCTION_CALL") {
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePrepareScriptFunctionCall(3),
+        Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
       REQUIRE(execution_context->stack_size() == 6);
@@ -291,42 +303,261 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
     }
 
     SECTION("CALL_SCRIPT_FUNCTION") {
+      const auto constant_offset = vm.InsertConstants(std::array{
+        Value::Create<std::uint32_t>(&vm, 0),
+        Value::Create<std::uint32_t>(&vm, 10),
+      });
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePush(2), // Just some values to test the stack offset value
+        Instruction::CreatePush(1), // Output
+        Instruction::CreatePush(1), // Return address
+        Instruction::CreatePushTrivialConstant(0), // constant offset
+        Instruction::CreatePushTrivialConstant(0), // stack offset
+        Instruction::CreatePush(2), // Inputs
+        Instruction::CreatePushTrivialConstant(1), // function address
+        Instruction::CreateScriptFunctionCall(1, 2),
+        Instruction::CreatePush(100), // should not go here
+        Instruction::CreateHalt(),
+      }));
+      REQUIRE_RESULT(execute_result);
+      REQUIRE(execution_context->stack_size() == 8);
+
+      REQUIRE(execution_context->stack_offset() == 2);
+      REQUIRE(execution_context->GetStackValue(execution_context->stack_offset() + 1).as<std::uint32_t>() == 9);
     }
+
     SECTION("SET_CONSTANT_BASE_OFFSET") {
+      const auto constant_offset = vm.InsertConstants(std::array{
+        Value::Create(&vm, 0.0),
+        Value::Create(&vm, 1.0),
+        Value::Create(&vm, BigType{ .d1 = 12.0, .d2 = 134.0 }),
+      });
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreateSetConstantBaseOffset(1),
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreatePushConstantDataAddress(0),
+        Instruction::CreatePushConstantAllocatedAddress(1),
+        Instruction::CreateHalt(),
+      }));
+      REQUIRE_RESULT(execute_result);
+      REQUIRE(execution_context->stack_size() == 3);
+      REQUIRE(execution_context->GetStackValue<double>(0) == 1.0);
+      REQUIRE(execution_context->GetStackValue<void*>(1) == vm.GetConstantPointer(1)->data());
+      REQUIRE(*execution_context->GetStackValue<double*>(1) == 1.0);
+      REQUIRE(execution_context->GetStackValue<void*>(2) == vm.GetConstantPointer(2)->allocated_storage_pointer());
+      REQUIRE(execution_context->GetStackValue<BigType*>(2)->d1 == 12.0);
+      REQUIRE(execution_context->GetStackValue<BigType*>(2)->d2 == 134.0);
     }
+
     SECTION("RETURN") {
+      const auto constant_offset = vm.InsertConstants(std::array{
+        Value::Create(&vm, 11), // Return adress
+        Value::Create(&vm, 42.0), // Interesting value
+        Value::Create(&vm, 34.0), // output value
+        Value::Create<std::uint32_t>(&vm, 5), // constant offset
+        Value::Create<std::uint32_t>(&vm, 0), // stack offset
+        Value::Create(&vm, 1337.0),
+      });
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePushTrivialConstant(2),  // Output
+        Instruction::CreatePushTrivialConstant(0),  // Return address
+        Instruction::CreatePushTrivialConstant(3),  // constant offset
+        Instruction::CreatePushTrivialConstant(4),  // stack offset
+        Instruction::CreatePush(100),               // Inputs and other values inside the "function"
+        Instruction::CreateReturn(1),
+        Instruction::CreatePush(100),               // should never be executed
+        Instruction::CreatePush(100),               // should never be executed
+        Instruction::CreatePush(100),               // should never be executed
+        Instruction::CreatePush(100),               // should never be executed
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateHalt(),
+      }));
+      REQUIRE_RESULT(execute_result);
+      REQUIRE(execution_context->stack_size() == 2);
+      REQUIRE(execution_context->constant_offset() == 5);
+      REQUIRE(execution_context->stack_offset() == 0);
+      // REQUIRE(execution_context->GetStackValue<double>(100) == 42.0);
+      REQUIRE(execution_context->GetStackValue<double>(0) == 34.0);
+      REQUIRE(execution_context->GetStackValue<double>(1) == 1337.0);
     }
+
     SECTION("NOT") {
+      const auto constant_offset = vm.InsertConstants(std::array{
+        Value::Create(&vm, true),
+      });
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateNot(0),
+        Instruction::CreateNot(1),
+        Instruction::CreateHalt(),
+      }));
+      REQUIRE(execute_result);
+      REQUIRE(execution_context->stack_size() == 3);
+      REQUIRE(execution_context->GetStackValue<bool>(0) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(1) == false);
+      REQUIRE(execution_context->GetStackValue<bool>(2) == true);
     }
+
     SECTION("AND") {
+      const auto constant_offset = vm.InsertConstants(std::array{
+        Value::Create(&vm, true),
+        Value::Create(&vm, false),
+      });
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateAnd(0, 0),
+        Instruction::CreateAnd(0, 1),
+        Instruction::CreateAnd(1, 0),
+        Instruction::CreateAnd(1, 1),
+        Instruction::CreateHalt(),
+      }));
+      REQUIRE(execute_result);
+      REQUIRE(execution_context->stack_size() == 6);
+      REQUIRE(execution_context->GetStackValue<bool>(0) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(1) == false);
+      REQUIRE(execution_context->GetStackValue<bool>(2) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(3) == false);
+      REQUIRE(execution_context->GetStackValue<bool>(4) == false);
+      REQUIRE(execution_context->GetStackValue<bool>(5) == false);
     }
+
     SECTION("OR") {
+      const auto constant_offset = vm.InsertConstants(std::array{
+        Value::Create(&vm, true),
+        Value::Create(&vm, false),
+      });
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateOr(0, 0),
+        Instruction::CreateOr(0, 1),
+        Instruction::CreateOr(1, 0),
+        Instruction::CreateOr(1, 1),
+        Instruction::CreateHalt(),
+      }));
+      REQUIRE(execute_result);
+      REQUIRE(execution_context->stack_size() == 6);
+      REQUIRE(execution_context->GetStackValue<bool>(0) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(1) == false);
+      REQUIRE(execution_context->GetStackValue<bool>(2) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(3) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(4) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(5) == false);
     }
-    SECTION("ADD_NUMBERS") {
+
+    SECTION("(ADD/SUBTRACT/MULTIPLY/DIVIDE)_NUMBERS") {
+      const auto constant_offset = vm.InsertConstants(std::array{
+        Value::Create(&vm, 2.0),
+        Value::Create(&vm, 21.0),
+      });
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateAddNumbers(0, 1),
+        Instruction::CreateSubtractNumbers(1, 0),
+        Instruction::CreateMultiplyNumbers(0, 1),
+        Instruction::CreateDivideNumbers(1, 0),
+        Instruction::CreateHalt(),
+      }));
+      REQUIRE(execute_result);
+      REQUIRE(execution_context->stack_size() == 6);
+      REQUIRE(execution_context->GetStackValue<double>(0) == 2.0);
+      REQUIRE(execution_context->GetStackValue<double>(1) == 21.0);
+      REQUIRE(execution_context->GetStackValue<double>(2) == 23.0);
+      REQUIRE(execution_context->GetStackValue<double>(3) == 19.0);
+      REQUIRE(execution_context->GetStackValue<double>(4) == 42.0);
+      REQUIRE(execution_context->GetStackValue<double>(5) == 10.5);
     }
-    SECTION("SUBTRACT_NUMBERS") {
+
+    SECTION("IS_NUMBER_(GREATER/LESS/GREATER_EQUAL/LESS_EQUAL/EQUAL/NOT_EQUAL)") {
+      const auto constant_offset = vm.InsertConstants(std::array{
+        Value::Create(&vm, 2.0),
+        Value::Create(&vm, 21.0),
+      });
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateIsNumberGreater(1, 0),
+        Instruction::CreateIsNumberGreater(1, 1),
+        Instruction::CreateIsNumberLess(0, 1),
+        Instruction::CreateIsNumberLess(1, 0),
+        Instruction::CreateIsNumberGreaterEqual(1, 1),
+        Instruction::CreateIsNumberGreaterEqual(0, 1),
+        Instruction::CreateIsNumberLessEqual(1, 1),
+        Instruction::CreateIsNumberLessEqual(1, 0),
+        Instruction::CreateIsNumberEqual(1, 1),
+        Instruction::CreateIsNumberEqual(1, 0),
+        Instruction::CreateIsNumberNotEqual(1, 0),
+        Instruction::CreateIsNumberNotEqual(1, 1),
+        Instruction::CreateHalt(),
+      }));
+      REQUIRE(execute_result);
+      REQUIRE(execution_context->stack_size() == 14);
+
+      REQUIRE(execution_context->GetStackValue<double>(0) == 2.0);
+      REQUIRE(execution_context->GetStackValue<double>(1) == 21.0);
+
+      REQUIRE(execution_context->GetStackValue<bool>(2) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(3) == false);
+      REQUIRE(execution_context->GetStackValue<bool>(4) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(5) == false);
+      REQUIRE(execution_context->GetStackValue<bool>(6) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(7) == false);
+      REQUIRE(execution_context->GetStackValue<bool>(8) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(9) == false);
+      REQUIRE(execution_context->GetStackValue<bool>(10) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(11) == false);
+      REQUIRE(execution_context->GetStackValue<bool>(12) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(13) == false);
     }
-    SECTION("MULTIPLY_NUMBERS") {
-    }
-    SECTION("DIVIDE_NUMBERS") {
-    }
-    SECTION("IS_NUMBER_GREATER") {
-    }
-    SECTION("IS_NUMBER_LESS") {
-    }
-    SECTION("IS_NUMBER_GREATER_EQUAL") {
-    }
-    SECTION("IS_NUMBER_LESS_EQUAL") {
-    }
-    SECTION("IS_NUMBER_EQUAL") {
-    }
-    SECTION("IS_NUMBER_NOT_EQUAL") {
-    }
+
     SECTION("JUMP") {
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreateJump(3),
+        Instruction::CreateJump(3),
+        Instruction::CreatePush(100),
+        Instruction::CreateJump(-2),
+        Instruction::CreateHalt(),
+      }));
+      REQUIRE(execute_result);
+      REQUIRE(execution_context->stack_size() == 0);
     }
+
     SECTION("JUMP_IF_TRUE") {
+      const auto constant_offset = vm.InsertConstants(std::array{
+        Value::Create(&vm, true),
+        Value::Create(&vm, false),
+      });
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateJumpIfTrue(2),
+        Instruction::CreatePush(100),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateJumpIfTrue(2),
+        Instruction::CreatePush(1),
+        Instruction::CreateHalt(),
+      }));
+      REQUIRE_RESULT(execute_result);
+      REQUIRE(execution_context->stack_size() == 1);
     }
+
     SECTION("JUMP_IF_FALSE") {
+      const auto constant_offset = vm.InsertConstants(std::array{
+        Value::Create(&vm, true),
+        Value::Create(&vm, false),
+      });
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateJumpIfFalse(2),
+        Instruction::CreatePush(100),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateJumpIfFalse(2),
+        Instruction::CreatePush(1),
+        Instruction::CreateHalt(),
+      }));
+      REQUIRE_RESULT(execute_result);
+      REQUIRE(execution_context->stack_size() == 100);
     }
   }
 
@@ -348,58 +579,58 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
     REQUIRE_RESULT(function->Call());
   }
 
-  // SECTION("Call function with simple return") {
-  //   FunctionDescription function_description {
-  //     .virtual_machine = &vm,
-  //     .name = "test",
-  //     .inputs = {},
-  //     .outputs = { { .name = "something", .type = vm.GetTypeId<double>() } },
-  //     .definition = ScriptFunctionDefinition {
-  //       .instructions = {
-  //         Instruction::CreatePushTrivialConstant(0),
-  //         Instruction::CreateCopyTrivial(
-  //           ExecutionContext::GetFunctionBaseOffset(1, 0),
-  //           ExecutionContext::GetOutputOffset(0)
-  //         ),
-  //         Instruction::CreateReturn(1),
-  //       },
-  //       .constants = {
-  //         Value::Create(&vm, 42.0),
-  //       },
-  //     },
-  //   };
-  //   const auto function = Function::Create(function_description);
-  //   REQUIRE(function);
-  //   const auto function_result = function->Call<double>();
-  //   REQUIRE_RESULT(function_result);
-  //   REQUIRE(*function_result == 42.0);
-  // }
+  SECTION("Call function with simple return") {
+    FunctionDescription function_description {
+      .virtual_machine = &vm,
+      .name = "test",
+      .inputs = {},
+      .outputs = { { .name = "something", .type = vm.GetTypeId<double>() } },
+      .definition = ScriptFunctionDefinition {
+        .instructions = {
+          Instruction::CreatePushTrivialConstant(0),
+          Instruction::CreateCopyTrivial(
+            ExecutionContext::GetOutputOffset(0),
+            ExecutionContext::GetFunctionBaseOffset(1, 0)
+          ),
+          Instruction::CreateReturn(1),
+        },
+        .constants = {
+          Value::Create(&vm, 42.0),
+        },
+      },
+    };
+    const auto function = Function::Create(function_description);
+    REQUIRE(function);
+    const auto function_result = function->Call<double>();
+    REQUIRE_RESULT(function_result);
+    REQUIRE(*function_result == 42.0);
+  }
 
-  // SECTION("Call function with inputs") {
-  //   FunctionDescription function_description {
-  //     .virtual_machine = &vm,
-  //     .name = "test",
-  //     .inputs = { { .name = "something", .type = vm.GetTypeId<double>() } },
-  //     .outputs = { { .name = "something", .type = vm.GetTypeId<double>() } },
-  //     .definition = ScriptFunctionDefinition {
-  //       .instructions = {
-  //         Instruction::CreatePushTrivialConstant(0),
-  //         Instruction::CreateMultiplyNumbers(
-  //           ExecutionContext::GetInputOffset(1, 0),
-  //           ExecutionContext::GetFunctionBaseOffset(1, 1)
-  //         ),
-  //         Instruction::CreateAssignTrivial(ExecutionContext::GetOutputOffset(0)),
-  //         Instruction::CreateReturn(1),
-  //       },
-  //       .constants = {
-  //         Value::Create(&vm, 2.0),
-  //       },
-  //     },
-  //   };
-  //   const auto function = Function::Create(function_description);
-  //   REQUIRE(function);
-  //   const auto function_result = function->Call<double>(21.0);
-  //   REQUIRE_RESULT(function_result);
-  //   REQUIRE(*function_result == 42.0);
-  // }
+  SECTION("Call function with inputs") {
+    FunctionDescription function_description {
+      .virtual_machine = &vm,
+      .name = "test",
+      .inputs = { { .name = "something", .type = vm.GetTypeId<double>() } },
+      .outputs = { { .name = "something", .type = vm.GetTypeId<double>() } },
+      .definition = ScriptFunctionDefinition {
+        .instructions = {
+          Instruction::CreatePushTrivialConstant(0),
+          Instruction::CreateMultiplyNumbers(
+            ExecutionContext::GetInputOffset(1, 0),
+            ExecutionContext::GetFunctionBaseOffset(1, 1)
+          ),
+          Instruction::CreateAssignTrivial(ExecutionContext::GetOutputOffset(0)),
+          Instruction::CreateReturn(1),
+        },
+        .constants = {
+          Value::Create(&vm, 2.0),
+        },
+      },
+    };
+    const auto function = Function::Create(function_description);
+    REQUIRE(function);
+    const auto function_result = function->Call<double>(21.0);
+    REQUIRE_RESULT(function_result);
+    REQUIRE(*function_result == 42.0);
+  }
 }
