@@ -6,7 +6,9 @@ namespace ovis {
 Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine* virtual_machine,
                                                                  const json& type_definition) {
   TypeDescription description = {
+    .virtual_machine = virtual_machine,
     .memory_layout = {
+      .is_constructible = true,
       .alignment_in_bytes = ValueStorage::ALIGNMENT,
       .size_in_bytes = 0,
     }
@@ -48,23 +50,29 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
         .access = TypePropertyDescription::PrimitiveAccess { .offset = description.memory_layout.size_in_bytes }
     });
 
+    construct_function_definition.instructions.push_back(
+        Instruction::CreatePushTrivialStackValue(ExecutionContext::GetInputOffset(0, 0)));
+    construct_function_definition.instructions.push_back(Instruction::CreateOffsetAddress(
+        ExecutionContext::GetFunctionBaseOffset(0, 1), description.memory_layout.size_in_bytes));
+    if (property_type->construct_function()->is_script_function()) {
+      construct_function_definition.instructions.push_back(Instruction::CreatePrepareScriptFunctionCall(0));
+      construct_function_definition.instructions.push_back(
+          Instruction::CreatePushTrivialStackValue(ExecutionContext::GetFunctionBaseOffset(0, 1)));
+      construct_function_definition.instructions.push_back(Instruction::CreatePushTrivialConstant(construct_function_definition.constants.size()));
+      construct_function_definition.instructions.push_back(Instruction::CreateScriptFunctionCall(0, 1));
+    } else {
+      construct_function_definition.instructions.push_back(
+          Instruction::CreatePushTrivialStackValue(ExecutionContext::GetFunctionBaseOffset(0, 1)));
+      construct_function_definition.instructions.push_back(Instruction::CreatePushTrivialConstant(construct_function_definition.constants.size()));
+      construct_function_definition.instructions.push_back(Instruction::CreateCallNativeFunction(1));
+    }
+    construct_function_definition.instructions.push_back(Instruction::CreatePop(1));
     construct_function_definition.constants.push_back(Value::Create(virtual_machine, property_type->construct_function()->handle()));
-    const std::size_t argument_offset =
-        ExecutionContext::GetFunctionBaseOffset(0, 1) +
-        (property_type->construct_function()->is_script_function() ? ExecutionContext::GetInputOffset(0, 0) : 0);
-
-    // if (property_type->construct_function()->is_script_function()) {
-    //   construct_function_definition.instructions.push_back(Instruction::CreatePushExecutionState());
-    // }
-    // construct_function_definition.instructions.push_back(instructions::Push(1));
-    // construct_function_definition.instructions.push_back(
-    //     instructions::CopyTrivialValue(argument_offset, ExecutionContext::GetInputOffset(0, 0)));
-    // construct_function_definition.instructions.push_back(Instruction::CreateOffsetAddress(argument_offset, description.memory_layout.size_in_bytes));
-    // construct_function_definition.instructions.push_back(Instruction::CreatePushTrivialConstant(0));
-    // construct_function_definition.instructions.push_back(Instruction::CallScriptFunction());
 
     description.memory_layout.size_in_bytes += property_type->size_in_bytes();
   }
+
+  description.memory_layout.construct = Function::Create(construct_function);
 
   using ResultType = Result<ParseScriptTypeResult, ParseScriptErrors>;
   return errors.size() > 0 ? ResultType(errors) : ParseScriptTypeResult{ description };
