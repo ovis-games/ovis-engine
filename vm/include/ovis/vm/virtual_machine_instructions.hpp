@@ -13,6 +13,7 @@ enum class OpCode : std::uint32_t {
   // Stack manipulation
   PUSH,
   PUSH_TRIVIAL_CONSTANT,
+  PUSH_TRIVIAL_STACK_VALUE,
   PUSH_ALLOCATED,
   PUSH_STACK_VALUE_DATA_ADDRESS,
   PUSH_STACK_VALUE_ALLOCATED_ADDRESS,
@@ -149,6 +150,7 @@ union Instruction {
 
   static Instruction CreatePush(std::uint32_t count);
   static Instruction CreatePushTrivialConstant(std::uint32_t constant_index);
+  static Instruction CreatePushTrivialStackValue(std::uint32_t stack_index);
   static Instruction CreatePushAllocated(std::uint32_t alignment, std::uint32_t size_in_bytes);
   static Instruction CreatePushStackValueDataAddress(std::uint32_t stack_index);
   static Instruction CreatePushStackValueAllocatedAddress(std::uint32_t stack_index);

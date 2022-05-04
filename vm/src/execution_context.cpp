@@ -82,6 +82,16 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
         break;
       }
 
+      case OpCode::PUSH_TRIVIAL_STACK_VALUE: {
+        PushUninitializedValues(1);
+        ValueStorage::CopyTrivially(
+          &top(),
+          &GetStackValue(stack_offset_ + instruction.stack_index_data.stack_index)
+        );
+        ++program_counter;
+        break;
+      }
+
       case OpCode::PUSH_ALLOCATED: {
         PushUninitializedValues(1);
         top().Allocate(instruction.allocate_data.alignment, instruction.allocate_data.size);

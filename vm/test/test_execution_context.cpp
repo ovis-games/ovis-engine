@@ -55,6 +55,24 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
       REQUIRE(value.as<double>() == 42.0);
     }
 
+    SECTION("PUSH_TRIVIAL_STACK_VALUE") {
+      const auto constant_offset = vm.InsertConstants(std::array{
+        Value::Create(&vm, 42.0)
+      });
+      const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreatePushTrivialStackValue(0),
+        Instruction::CreateHalt(),
+      }));
+      REQUIRE_RESULT(execute_result);
+      REQUIRE(execution_context->stack_size() == 2);
+
+      const auto& value = execution_context->GetStackValue(0);
+      REQUIRE(!value.has_allocated_storage());
+      REQUIRE(value.as<double>() == 42.0);
+      REQUIRE(execution_context->GetStackValue<double>(1) == 42.0);
+    }
+
     SECTION("PUSH_ALLOCATED") {
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushAllocated(128, 128),

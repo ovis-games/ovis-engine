@@ -26,6 +26,16 @@ Instruction Instruction::CreatePushTrivialConstant(std::uint32_t constant_index)
   };
 }
 
+Instruction Instruction::CreatePushTrivialStackValue(std::uint32_t stack_index) {
+  assert(stack_index < (1 << instructions::STACK_INDEX_BITS));
+  return {
+    .constant_index_data = {
+      .opcode = OpCode::PUSH_TRIVIAL_STACK_VALUE,
+      .constant_index = stack_index,
+    }
+  };
+}
+
 Instruction Instruction::CreatePushAllocated(std::uint32_t alignment, std::uint32_t size_in_bytes) {
   assert(alignment < (1 << instructions::TYPE_ALIGN_BITS));
   assert(size_in_bytes < (1 << instructions::TYPE_SIZE_BITS));
