@@ -1,5 +1,6 @@
 #include <catch2/catch.hpp>
 
+#include "test_utils.hpp"
 #include <ovis/vm/value.hpp>
 
 using namespace ovis;
@@ -145,6 +146,48 @@ TEST_CASE("Value", "[ovis][vm][Value]") {
     // REQUIRE(value_copy.as<SomeReferenceType>().number == 10);
     REQUIRE(reference_to_value.as<SomeReferenceType>().number == 12);
     REQUIRE(another_reference_to_value.as<SomeReferenceType>().number == 12);
+  }
+
+  SECTION("Properties") {
+    struct SomeType {
+      bool some_bool = true;
+      double some_number = 42.0;
+    };
+    auto type_desc = TypeDescription::CreateForNativeType<SomeType>(&vm, "SomeType");
+    type_desc.properties.push_back(TypePropertyDescription::Create<&SomeType::some_bool>(&vm, "SomeBool"));
+    type_desc.properties.push_back(TypePropertyDescription::Create<&SomeType::some_number>(&vm, "SomeNumber"));
+    auto type = vm.RegisterType(type_desc);
+
+    Value some_value(type);
+
+    SomeType& some_type_reference = some_value.as<SomeType>();
+    REQUIRE(some_type_reference.some_bool == true);
+    REQUIRE(some_type_reference.some_number == 42.0);
+
+    {
+      const auto get_some_bool_result = some_value.GetProperty<bool>("SomeBool");
+      REQUIRE_RESULT(get_some_bool_result);
+      REQUIRE(*get_some_bool_result == true);
+
+      const auto get_some_double_result = some_value.GetProperty<double>("SomeNumber");
+      REQUIRE_RESULT(get_some_double_result);
+      REQUIRE(*get_some_double_result == 42.0);
+    }
+
+    REQUIRE_RESULT(some_value.SetProperty("SomeBool", false));
+    REQUIRE_RESULT(some_value.SetProperty("SomeNumber", 43.0));
+    REQUIRE(some_type_reference.some_bool == false);
+    REQUIRE(some_type_reference.some_number == 43.0);
+
+    {
+      const auto get_some_bool_result = some_value.GetProperty<bool>("SomeBool");
+      REQUIRE_RESULT(get_some_bool_result);
+      REQUIRE(*get_some_bool_result == false);
+
+      const auto get_some_double_result = some_value.GetProperty<double>("SomeNumber");
+      REQUIRE_RESULT(get_some_double_result);
+      REQUIRE(*get_some_double_result == 43.0);
+    }
   }
 }
 

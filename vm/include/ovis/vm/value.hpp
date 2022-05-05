@@ -115,7 +115,34 @@ Result<> Value::SetProperty(std::string_view name, T&& value) {
 
 template <typename T>
 Result<T> Value::GetProperty(std::string_view name) {
+  const auto property = type()->GetProperty(name);
+  if (!property) {
+    return Error("Type {} does not have a property with the name {}.", type()->name(), name);
+  }
 
+  const auto property_type_id = property->type;
+  if (property_type_id != virtual_machine()->GetTypeId<T>()) {
+    return Error("Invalid type for property {} of {}, expected `{}` got `{}`", name, type()->name(),
+                 virtual_machine()->GetType(property_type_id)->name(), virtual_machine()->GetType<T>()->name());
+  }
+
+  if (property->access.index() == 0) {
+    const auto primitive_access = std::get<TypePropertyDescription::PrimitiveAccess>(property->access);
+    auto property_pointer = static_cast<std::byte*>(storage_.value_pointer()) + primitive_access.offset;
+    const auto& property_type = virtual_machine()->GetType(property_type_id);
+
+    T result;
+    if (property_type->trivially_copyable()) {
+      std::memcpy(&result, property_pointer, sizeof(T));
+    } else {
+      void* result_pointer = &result;
+      OVIS_CHECK_RESULT(property_type->copy_function()->Call<void>(result_pointer, property_pointer));
+    }
+    return result;
+  } else {
+    const auto function_access = std::get<TypePropertyDescription::FunctionAccess>(property->access);
+    return function_access.setter->Call<T>(storage_.value_pointer());
+  }
 }
 
 template <typename T>
