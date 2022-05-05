@@ -163,7 +163,7 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
       }
 
       case OpCode::OFFSET_ADDRESS: {
-        GetStackValue<std::uint8_t*>(instruction.offset_address_data.stack_index) +=
+        GetStackValue<std::uint8_t*>(stack_offset_ + instruction.offset_address_data.stack_index) +=
             instruction.offset_address_data.offset;
         ++program_counter;
         break;
