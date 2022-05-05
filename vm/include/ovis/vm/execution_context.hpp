@@ -161,6 +161,7 @@ inline Result<ReturnType> ExecutionContext::Call(FunctionHandle handle, Argument
     PushValue(std::uint32_t(0)); // Return address (0 = exit)
     PushValue(constant_offset_); // Constant offset
     PushValue(stack_offset_); // Stack offset
+    stack_offset_ = stack_size() - 3 - (std::is_same_v<ReturnType, void> ? 0 : 1);
   }
 
   // Push arguments
