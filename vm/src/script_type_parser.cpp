@@ -40,8 +40,9 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
     if (property_type->alignment_in_bytes() > description.memory_layout.alignment_in_bytes) {
       description.memory_layout.alignment_in_bytes = property_type->alignment_in_bytes();
     }
-    const std::size_t padding_bytes = property_type->alignment_in_bytes() -
-                                      (description.memory_layout.size_in_bytes % property_type->alignment_in_bytes());
+    const std::size_t padding_bytes = (property_type->alignment_in_bytes() - (description.memory_layout.size_in_bytes %
+                                                                              property_type->alignment_in_bytes())) %
+                                      property_type->alignment_in_bytes();
     description.memory_layout.size_in_bytes += padding_bytes;
 
     description.properties.push_back({
