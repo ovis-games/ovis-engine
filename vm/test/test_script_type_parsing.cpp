@@ -12,7 +12,7 @@ TEST_CASE("Parse parse variable declaration", "[ovis][core][ScriptTypeParser]") 
   VirtualMachine vm;
   auto test_module = vm.RegisterModule("Test");
   struct TestType {
-    double x = 100.0;
+    std::shared_ptr<double> x = std::make_shared<double>(100.0);
   };
   auto test_type = vm.RegisterType<TestType>("Test", test_module.get());
 
@@ -36,7 +36,7 @@ TEST_CASE("Parse parse variable declaration", "[ovis][core][ScriptTypeParser]") 
 
   REQUIRE(parse_result->type_description.name == "SomeType");
   REQUIRE(parse_result->type_description.memory_layout.alignment_in_bytes == 8);
-  REQUIRE(parse_result->type_description.memory_layout.size_in_bytes == 24);
+  REQUIRE(parse_result->type_description.memory_layout.size_in_bytes == 16 + sizeof(std::shared_ptr<double>));
   REQUIRE(parse_result->type_description.properties.size() == 3);
   REQUIRE(parse_result->type_description.properties[0].name == "SomeBoolean");
   REQUIRE(parse_result->type_description.properties[0].type == vm.GetTypeId<bool>());
@@ -52,36 +52,57 @@ TEST_CASE("Parse parse variable declaration", "[ovis][core][ScriptTypeParser]") 
   REQUIRE(type);
 
   Value value(type);
+  REQUIRE(vm.main_execution_context()->stack_size() == 0); // There should not be any leftover values on the stack
 
   {
     const auto some_boolean_result = value.GetProperty<bool>("SomeBoolean");
+    REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
     REQUIRE_RESULT(some_boolean_result);
     REQUIRE(*some_boolean_result == false);
 
     const auto some_number_result = value.GetProperty<double>("SomeNumber");
+    REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
     REQUIRE_RESULT(some_number_result);
     REQUIRE(*some_number_result == 0.0);
 
     const auto some_test_result = value.GetProperty<TestType>("SomeTest");
+    REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
     REQUIRE_RESULT(some_test_result);
-    REQUIRE(some_test_result->x == 100.0);
+    REQUIRE(*some_test_result->x == 100.0);
+
+    const auto some_test_result2 = value.GetProperty<TestType>("SomeTest");
+    REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
+    REQUIRE_RESULT(some_test_result2);
+    REQUIRE(*some_test_result2->x == 100.0);
   }
 
+  
   REQUIRE_RESULT(value.SetProperty("SomeBoolean", true));
+  REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
   REQUIRE_RESULT(value.SetProperty("SomeNumber", 42.0));
-  REQUIRE_RESULT(value.SetProperty("SomeTest", TestType{ .x = 123.0 }));
+  REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
+  REQUIRE_RESULT(value.SetProperty("SomeTest", TestType{ .x = std::make_shared<double>(123.0) }));
+  REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
 
   {
     const auto some_boolean_result = value.GetProperty<bool>("SomeBoolean");
+    REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
     REQUIRE_RESULT(some_boolean_result);
     REQUIRE(*some_boolean_result == true);
 
     const auto some_number_result = value.GetProperty<double>("SomeNumber");
+    REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
     REQUIRE_RESULT(some_number_result);
     REQUIRE(*some_number_result == 42.0);
 
     const auto some_test_result = value.GetProperty<TestType>("SomeTest");
+    REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
     REQUIRE_RESULT(some_test_result);
-    REQUIRE(some_test_result->x == 123.0);
+    REQUIRE(*some_test_result->x == 123.0);
+    REQUIRE(some_test_result->x.use_count() == 2);
+
+    value.Reset();
+    REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
+    REQUIRE(some_test_result->x.use_count() == 1);
   }
 }
