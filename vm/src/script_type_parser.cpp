@@ -29,6 +29,17 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
   };
   ScriptFunctionDefinition& construct_function_definition = std::get<1>(construct_function.definition);
 
+  FunctionDescription copy_function = {
+    .virtual_machine = virtual_machine,
+    .inputs = {{ .name = "pointer", .type = virtual_machine->GetTypeId<void*>() }},
+    .outputs = {},
+    .definition = ScriptFunctionDefinition{},
+  };
+  ScriptFunctionDefinition& copy_function_definition = std::get<1>(copy_function.definition);
+
+  bool every_property_trivially_copyable = true;
+  bool every_property_copyable = true;
+
   FunctionDescription destruct_function = {
     .virtual_machine = virtual_machine,
     .inputs = {{ .name = "pointer", .type = virtual_machine->GetTypeId<void*>() }},
@@ -83,6 +94,46 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
     });
     construct_function_definition.constants.push_back(Value::Create(virtual_machine, property_type->construct_function()->handle()));
 
+    // Copy function instructions
+    if (!property_type->description().memory_layout.is_copyable) {
+      every_property_copyable = false;
+    } else {
+      copy_function_definition.instructions.insert(copy_function_definition.instructions.end(), {
+        Instruction::CreatePushTrivialStackValue(ExecutionContext::GetInputOffset(0, 0)),
+        Instruction::CreateOffsetAddress(ExecutionContext::GetFunctionBaseOffset(0, 2), description.memory_layout.size_in_bytes),
+        Instruction::CreatePushTrivialStackValue(ExecutionContext::GetInputOffset(0, 1)),
+        Instruction::CreateOffsetAddress(ExecutionContext::GetFunctionBaseOffset(0, 2) + 1, description.memory_layout.size_in_bytes)
+      });
+
+      if (property_type->trivially_copyable()) {
+        copy_function_definition.instructions.insert(copy_function_definition.instructions.end(), {
+          Instruction::CreateMemoryCopy(property_type->size_in_bytes()),
+        });
+      } else {
+        every_property_trivially_copyable = false;
+        if (property_type->copy_function()->is_script_function()) {
+          copy_function_definition.instructions.insert(copy_function_definition.instructions.end(), {
+            Instruction::CreatePrepareScriptFunctionCall(0),
+            Instruction::CreatePushTrivialStackValue(ExecutionContext::GetFunctionBaseOffset(0, 2)),
+            Instruction::CreatePushTrivialStackValue(ExecutionContext::GetFunctionBaseOffset(0, 2) + 1),
+            Instruction::CreatePushTrivialConstant(copy_function_definition.constants.size()),
+            Instruction::CreateScriptFunctionCall(0, 2)
+          });
+        } else {
+          copy_function_definition.instructions.insert(copy_function_definition.instructions.end(), {
+            Instruction::CreatePushTrivialStackValue(ExecutionContext::GetFunctionBaseOffset(0, 2)),
+            Instruction::CreatePushTrivialStackValue(ExecutionContext::GetFunctionBaseOffset(0, 2) + 1),
+            Instruction::CreatePushTrivialConstant(copy_function_definition.constants.size()),
+            Instruction::CreateCallNativeFunction(2)
+          });
+        }
+        copy_function_definition.instructions.insert(copy_function_definition.instructions.end(), {
+          Instruction::CreatePop(2)
+        });
+        copy_function_definition.constants.push_back(Value::Create(virtual_machine, property_type->copy_function()->handle()));
+      }
+    }
+
     // Destruct function instructions
     if (!property_type->trivially_destructible()) {
       destruct_function_definition.instructions.insert(destruct_function_definition.instructions.end(), {
@@ -112,11 +163,23 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
     description.memory_layout.size_in_bytes += property_type->size_in_bytes();
   }
 
+  if (description.properties.size() > 0) {
+    assert(construct_function_definition.instructions.size() > 0);
+  }
   construct_function_definition.instructions.push_back(Instruction::CreateReturn(0));
   description.memory_layout.construct = Function::Create(construct_function);
 
-  destruct_function_definition.instructions.push_back(Instruction::CreateReturn(0));
-  description.memory_layout.destruct = Function::Create(destruct_function);
+  description.memory_layout.is_copyable = every_property_copyable;
+  if (every_property_copyable && !every_property_trivially_copyable) {
+    copy_function_definition.instructions.push_back(Instruction::CreateReturn(0));
+    description.memory_layout.copy = Function::Create(copy_function);
+  }
+
+  // If there are no destruction instructions the type is trivially destructible
+  if (destruct_function_definition.instructions.size() > 0) {
+    destruct_function_definition.instructions.push_back(Instruction::CreateReturn(0));
+    description.memory_layout.destruct = Function::Create(destruct_function);
+  }
 
   using ResultType = Result<ParseScriptTypeResult, ParseScriptErrors>;
   return errors.size() > 0 ? ResultType(errors) : ParseScriptTypeResult{ description };

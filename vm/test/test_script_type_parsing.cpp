@@ -101,6 +101,28 @@ TEST_CASE("Parse parse variable declaration", "[ovis][core][ScriptTypeParser]") 
     REQUIRE(*some_test_result->x == 123.0);
     REQUIRE(some_test_result->x.use_count() == 2);
 
+    {
+      Value copy(value);
+      REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
+      REQUIRE(some_test_result->x.use_count() == 3);
+
+      const auto some_boolean_result = copy.GetProperty<bool>("SomeBoolean");
+      REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
+      REQUIRE_RESULT(some_boolean_result);
+      REQUIRE(*some_boolean_result == true);
+
+      const auto some_number_result = copy.GetProperty<double>("SomeNumber");
+      REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
+      REQUIRE_RESULT(some_number_result);
+      REQUIRE(*some_number_result == 42.0);
+
+      const auto some_test_result = copy.GetProperty<TestType>("SomeTest");
+      REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
+      REQUIRE_RESULT(some_test_result);
+      REQUIRE(*some_test_result->x == 123.0);
+      REQUIRE(some_test_result->x.use_count() == 4);
+    }
+
     value.Reset();
     REQUIRE(vm.main_execution_context()->stack_size() == 0);  // There should not be any leftover values on the stack
     REQUIRE(some_test_result->x.use_count() == 1);
