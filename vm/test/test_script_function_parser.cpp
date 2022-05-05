@@ -20,22 +20,37 @@ using namespace ovis;
 
 TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
   VirtualMachine vm;
-
+  
   SECTION("Variable declaration") {
     const auto parse_result = ParseScriptFunction(&vm, R"(
     {
+      "inputs": [
+        {
+          "type": "Number",
+          "name": "some_number"
+        },
+        {
+          "type": "Number",
+          "name": "some_number3"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "Number",
+          "name": "some_number2"
+        }
+      ],
       "actions": [
         {
-          "id": "variable",
+          "id": "variable_declaration",
           "type": "Number"
         }
       ]
     }
     )"_json);
     REQUIRE_RESULT(parse_result);
-
-    // REQUIRE(parse_result->instructions.size() == 3);
-    // REQUIRE(parse_result->instructions[0].opcode == OpCode::PUSH);
-    // REQUIRE(parse_result->instructions[0].push_pop.count == 1);
+    const FunctionDescription& function_description = parse_result->function_description;
+    REQUIRE(function_description.inputs.size() == 2);
+    REQUIRE(function_description.outputs.size() == 1);
   }
 }

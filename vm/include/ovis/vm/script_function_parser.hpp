@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <deque>
 
 #include <ovis/utils/json.hpp>
 #include <ovis/utils/result.hpp>
@@ -18,5 +19,53 @@ struct ParseScriptFunctionResult {
 };
 
 Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(VirtualMachine* virtual_machine, const json& function_definition);
+
+struct ScriptFunctionScopeValue {
+  TypeId type_id;
+  std::optional<std::string> name;
+  uint32_t index;
+};
+
+struct ScriptFunctionScope {
+  ScriptFunctionScope * parent = nullptr;
+  uint32_t base_index;
+  std::vector<ScriptFunctionScopeValue> values;
+
+  const ScriptFunctionScopeValue* GetVariable(std::string_view name);
+  Result<uint32_t, ParseScriptError> AddVariable(TypeId type, std::string_view name = "");
+};
+
+struct ScriptFunctionParser {
+  VirtualMachine* virtual_machine;
+  std::deque<ScriptFunctionScope> scopes;
+  ParseScriptFunctionResult result;
+  ScriptFunctionDefinition& definition;
+  ParseScriptErrors errors;
+
+  ScriptFunctionParser(VirtualMachine* virtual_machine)
+      : virtual_machine(virtual_machine),
+        result({.function_description = {.definition = ScriptFunctionDefinition{}}}),
+        definition(std::get<1>(result.function_description.definition)) {}
+
+  void Parse(const json& function_definition);
+  void ParseOutputs(const json& outputs, std::string_view path);
+  void ParseInputs(const json& inputs, std::string_view path);
+  void ParseActions(const json& action_definiton, std::string_view path);
+  void ParseAction(const json& action_definiton, std::string_view path);
+  void ParseVariableDeclaration(const json& action_definiton, std::string_view path);
+  void ParseFunctionCall(const json& action_definiton, std::string_view path);
+  void ParsePushValue(const json& value_definition, std::string_view path, TypeId type);
+  void ParsePushVariable(const json& value_definition, std::string_view path, TypeId type);
+  void ParsePushVariableReference(const json& value_definition, std::string_view path, TypeId type);
+
+  void CallFunction(const std::shared_ptr<Function> function);
+
+  ScriptFunctionScope* PushScope();
+  void PopScope();
+  ScriptFunctionScope* current_scope();
+
+  template <typename T> std::uint32_t InsertConstant(T&& value);
+  void InsertInstructions(std::initializer_list<Instruction> instructions);
+};
 
 }  // namespace ovis

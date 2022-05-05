@@ -1,44 +1,8 @@
+#include <deque>
+
 #include <ovis/vm/script_function_parser.hpp>
 
 namespace ovis {
-
-namespace {
-
-struct ScopeValue {
-  TypeId type_id;
-  std::optional<std::string> variable_name;
-};
-
-struct Scope {
-  Scope* parent = nullptr;
-  std::vector<ScopeValue> values;
-};
-
-struct ScriptFunctionParser {
-  VirtualMachine* virtual_machine;
-  std::vector<Scope> scopes;
-  ParseScriptFunctionResult result;
-  ScriptFunctionDefinition& definition;
-  ParseScriptErrors errors;
-
-  ScriptFunctionParser(VirtualMachine* virtual_machine)
-      : virtual_machine(virtual_machine),
-        result({.function_description = {.definition = ScriptFunctionDefinition{}}}),
-        definition(std::get<1>(result.function_description.definition)) {}
-
-  void Parse(const json& action_definiton);
-  void ParseActions(const json& action_definiton, std::string_view path);
-  void ParseAction(const json& action_definiton, std::string_view path);
-  void ParseVariableDeclaration(const json& action_definiton, std::string_view path);
-  void ParseFunctionCall(const json& action_definiton, std::string_view path);
-  void ParsePushValue(const json& value_definition, std::string_view path, TypeId type);
-  void ParsePushVariable(const json& value_definition, std::string_view path, TypeId type);
-  void ParsePushVariableReference(const json& value_definition, std::string_view path, TypeId type);
-
-  void CallFunction(const std::shared_ptr<Function> function);
-};
-
-}  // namespace
 
 Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(VirtualMachine* virtual_machine, const json& function_definition) {
   ScriptFunctionParser parser(virtual_machine);
@@ -50,13 +14,62 @@ Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(Virtual
   }
 }
 
+const ScriptFunctionScopeValue* ScriptFunctionScope::GetVariable(std::string_view name) {
+  for (const auto& variable : values) {
+    if (variable.name == name) {
+      return &variable;
+    }
+  }
+  return parent ? parent->GetVariable(name) : nullptr;
+}
 
-namespace {
+Result<uint32_t, ParseScriptError> ScriptFunctionScope::AddVariable(TypeId type, std::string_view name) {
+  if (name.length() > 0 && GetVariable(name)) {
+    return ParseScriptError("Duplicate variable name: {}", name);
+  }
+  values.push_back(ScriptFunctionScopeValue{
+    .type_id = type,
+    .name = name.length() > 0 ? std::optional(std::string(name)) : std::nullopt,
+    .index = static_cast<uint32_t>(base_index + values.size()),
+  });
+  return values.back().index;
+}
 
 void ScriptFunctionParser::Parse(const json& json_definition) {
   // TODO: check format
-  scopes.push_back({});
+  PushScope();
+  ParseOutputs(json_definition["outputs"], "/outputs");
+  current_scope()->AddVariable(Type::NONE_ID);
+  current_scope()->AddVariable(Type::NONE_ID);
+  current_scope()->AddVariable(Type::NONE_ID);
+  ParseInputs(json_definition["inputs"], "/inputs");
   ParseActions(json_definition["actions"], "/actions");
+}
+
+void ScriptFunctionParser::ParseOutputs(const json& outputs, std::string_view path) {
+  assert(outputs.is_array());
+  
+  for (const auto& output : outputs) {
+    assert(output.contains("name"));
+    assert(output.contains("type"));
+    const auto& type = output.at("type");
+    const std::string& name = output.at("name");
+    const auto type_id = virtual_machine->GetTypeId(type);
+    current_scope()->AddVariable(type_id, name);
+    result.function_description.outputs.push_back({ .name = name, .type = type_id });
+  }
+}
+
+void ScriptFunctionParser::ParseInputs(const json& inputs, std::string_view path) {
+  for (const auto& input : inputs) {
+    assert(input.contains("name"));
+    assert(input.contains("type"));
+    const auto& type = input.at("type");
+    const std::string& name = input.at("name");
+    const auto type_id = virtual_machine->GetTypeId(type);
+    current_scope()->AddVariable(type_id, name);
+    result.function_description.inputs.push_back({ .name = name, .type = type_id });
+  }
 }
 
 void ScriptFunctionParser::ParseActions(const json& actions_definiton, std::string_view path) {
@@ -68,7 +81,7 @@ void ScriptFunctionParser::ParseActions(const json& actions_definiton, std::stri
 
 void ScriptFunctionParser::ParseAction(const json& action_definiton, std::string_view path) {
   const std::string& id = action_definiton["id"];
-  if (id == "variable") {
+  if (id == "variable_declaration") {
     ParseVariableDeclaration(action_definiton, path);
   } else if (id == "function_call") {
     // ParseFunctionCall(action_definiton, path);
@@ -78,7 +91,7 @@ void ScriptFunctionParser::ParseAction(const json& action_definiton, std::string
 }
 
 void ScriptFunctionParser::ParseVariableDeclaration(const json& action_definiton, std::string_view path) {
-  assert(action_definiton["id"] == "variable");
+  assert(action_definiton["id"] == "variable_declaration");
   const auto type = virtual_machine->GetType(action_definiton.at("type"));
   if (!type) {
     errors.emplace_back(fmt::format("Unknown variable type {}", action_definiton["type"].dump()), path);
@@ -86,6 +99,9 @@ void ScriptFunctionParser::ParseVariableDeclaration(const json& action_definiton
   }
 
   assert(type->construct_function());
+  InsertInstructions({
+    // type->is_stored_inline() ? :
+  });
 
   // definition.constants.push_back(Value::Create(virtual_machine, type->construct_function()->handle()));
   // definition.constants.push_back(Value::Create(
@@ -149,8 +165,41 @@ void ScriptFunctionParser::ParsePushVariable(const json& value_definition, std::
   assert(value_definition["id"] == "variable");
 }
 
-}  // namespace
+ScriptFunctionScope* ScriptFunctionParser::PushScope() {
+  if (scopes.size() == 0) {
+    scopes.push_back({
+      .parent = nullptr,
+      .base_index = 0,
+    });
+  } else {
+    scopes.push_back({
+      .parent = current_scope(),
+      .base_index = static_cast<uint32_t>(current_scope()->base_index + current_scope()->values.size()),
+    });
+  }
+  return &scopes.back();
+}
 
+void ScriptFunctionParser::PopScope() {
+  // Last scope cannot be popped!
+  assert(current_scope()->parent);
+  InsertInstructions({ Instruction::CreatePop(current_scope()->values.size()) });
+  scopes.pop_back();
+}
+
+ScriptFunctionScope* ScriptFunctionParser::current_scope() {
+  return &scopes.back();
+}
+
+template <typename T> std::uint32_t ScriptFunctionParser::InsertConstant(T&& value) {
+  const auto offset = definition.constants.size();
+  definition.constants.push_back(Value::Create(virtual_machine, value));
+  return offset;
+}
+
+void ScriptFunctionParser::InsertInstructions(std::initializer_list<Instruction> instructions) {
+  definition.instructions.insert(definition.instructions.end(), instructions);
+}
 
 // std::vector<Function::ValueDeclaration> ScriptFunctionParser::ParseInputOutputDeclarations(
 //     const json& value_declarations, std::string path) {
@@ -585,10 +634,10 @@ void ScriptFunctionParser::ParsePushVariable(const json& value_definition, std::
 //   }
 // }
 
-// std::optional<ScriptFunction::DebugInfo::Scope::Variable> ScriptFunctionParser::GetLocalVariable(std::string_view name) {
+// std::optional<ScriptFunction::DebugInfo::ScriptFunctionScope::Variable> ScriptFunctionParser::GetLocalVariable(std::string_view name) {
 //   std::size_t scope_index = current_scope_index;
 //   do {
-//     const ScriptFunction::DebugInfo::Scope& scope = debug_info.scope_info[scope_index];
+//     const ScriptFunction::DebugInfo::ScriptFunctionScope& scope = debug_info.scope_info[scope_index];
 //     for (const auto& variable : scope.variables) {
 //       if (variable.declaration.name == name) {
 //         return variable;
