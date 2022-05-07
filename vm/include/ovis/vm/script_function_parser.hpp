@@ -32,7 +32,11 @@ struct ScriptFunctionScope {
   std::vector<ScriptFunctionScopeValue> values;
 
   const ScriptFunctionScopeValue* GetVariable(std::string_view name);
-  Result<uint32_t, ParseScriptError> AddVariable(TypeId type, std::string_view name = "");
+  Result<uint32_t, ParseScriptError> AddVariable(TypeId type, std::string_view name);
+
+  NotNull<ScriptFunctionScopeValue*> PushValue(TypeId type);
+  uint32_t PopValue();
+  uint32_t current_stack_offset() { return base_index + values.size(); }
 };
 
 struct ScriptFunctionParser {
@@ -44,7 +48,8 @@ struct ScriptFunctionParser {
 
   ScriptFunctionParser(VirtualMachine* virtual_machine)
       : virtual_machine(virtual_machine),
-        result({.function_description = {.definition = ScriptFunctionDefinition{}}}),
+        result(
+            {.function_description = {.virtual_machine = virtual_machine, .definition = ScriptFunctionDefinition{}}}),
         definition(std::get<1>(result.function_description.definition)) {}
 
   void Parse(const json& function_definition);
@@ -52,7 +57,10 @@ struct ScriptFunctionParser {
   void ParseInputs(const json& inputs, std::string_view path);
   void ParseActions(const json& action_definiton, std::string_view path);
   void ParseAction(const json& action_definiton, std::string_view path);
+  void ParseReturn(const json& return_definition, std::string_view path);
   void ParseVariableDeclaration(const json& action_definiton, std::string_view path);
+
+  TypeId ParseExpression(const json& expression_definition, std::string_view path);
   void ParseFunctionCall(const json& action_definiton, std::string_view path);
   void ParsePushValue(const json& value_definition, std::string_view path, TypeId type);
   void ParsePushVariable(const json& value_definition, std::string_view path, TypeId type);
@@ -65,7 +73,12 @@ struct ScriptFunctionParser {
   ScriptFunctionScope* current_scope();
 
   template <typename T> std::uint32_t InsertConstant(T&& value);
-  void InsertInstructions(std::initializer_list<Instruction> instructions);
+  template <typename T> void InsertPushConstantInstructions(std::string_view path, T&& value);
+  ScriptFunctionScopeValue* InsertConstructTypeInstruction(std::string_view path, NotNull<const Type*> type);
+  void InsertAssignInstructions(std::string_view path, NotNull<const Type*> type, uint32_t destination_index);
+  void InsertPrepareFunctionCallInstructions(std::string_view path, NotNull<const Function*> function);
+  void InsertFunctionCallInstructions(std::string_view path, NotNull<const Function*> function);
+  void InsertInstructions(std::string_view path, std::initializer_list<Instruction> instructions);
 };
 
 }  // namespace ovis

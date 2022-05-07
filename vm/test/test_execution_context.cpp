@@ -299,23 +299,17 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
         Instruction::CreateHalt(),
       }));
       REQUIRE_RESULT(execute_result);
-      REQUIRE(execution_context->stack_size() == 6);
-
-      // 3 reserved slots for the outputs
-      for (auto i : IRange(3)) {
-        const auto& output = execution_context->GetStackValue(i);
-        REQUIRE(!output.has_allocated_storage());
-      }
+      REQUIRE(execution_context->stack_size() == 3);
 
       // Return address is not set yet
-      const auto& return_address = execution_context->GetStackValue(3);
+      const auto& return_address = execution_context->GetStackValue(0);
       REQUIRE(!return_address.has_allocated_storage());
 
-      const auto& constant_offset = execution_context->GetStackValue(4);
+      const auto& constant_offset = execution_context->GetStackValue(1);
       REQUIRE(!constant_offset.has_allocated_storage());
       REQUIRE(constant_offset.as<std::uint32_t>() == 0);
 
-      const auto& stack_offset = execution_context->GetStackValue(4);
+      const auto& stack_offset = execution_context->GetStackValue(2);
       REQUIRE(!stack_offset.has_allocated_storage());
       REQUIRE(stack_offset.as<std::uint32_t>() == 0);
     }

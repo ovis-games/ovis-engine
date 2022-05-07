@@ -178,7 +178,7 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
       }
 
       case OpCode::PREPARE_SCRIPT_FUNCTION_CALL: {
-        PushUninitializedValues(instruction.stack_index_data.stack_index + 3);
+        PushUninitializedValues(3);
         top(1).Store(constant_offset_);
         top(0).Store(stack_offset_);
         ++program_counter;

@@ -35,14 +35,33 @@ Result<uint32_t, ParseScriptError> ScriptFunctionScope::AddVariable(TypeId type,
   return values.back().index;
 }
 
+
+NotNull<ScriptFunctionScopeValue*> ScriptFunctionScope::PushValue(TypeId type) {
+  values.push_back({
+    .type_id = type,
+    .index = static_cast<uint32_t>(values.size()),
+  });
+  return &values.back();
+}
+
+uint32_t ScriptFunctionScope::PopValue() {
+  const auto index = values.back().index;
+  values.pop_back();
+  return index;
+}
+
 void ScriptFunctionParser::Parse(const json& json_definition) {
   // TODO: check format
   PushScope();
-  ParseOutputs(json_definition["outputs"], "/outputs");
-  current_scope()->AddVariable(Type::NONE_ID);
-  current_scope()->AddVariable(Type::NONE_ID);
-  current_scope()->AddVariable(Type::NONE_ID);
-  ParseInputs(json_definition["inputs"], "/inputs");
+  if (json_definition.contains("outputs")) {
+    ParseOutputs(json_definition["outputs"], "/outputs");
+  }
+  current_scope()->PushValue(virtual_machine->GetTypeId<uint32_t>());
+  current_scope()->PushValue(virtual_machine->GetTypeId<uint32_t>());
+  current_scope()->PushValue(virtual_machine->GetTypeId<uint32_t>());
+  if (json_definition.contains("inputs")) {
+    ParseInputs(json_definition["inputs"], "/inputs");
+  }
   ParseActions(json_definition["actions"], "/actions");
 }
 
@@ -81,7 +100,9 @@ void ScriptFunctionParser::ParseActions(const json& actions_definiton, std::stri
 
 void ScriptFunctionParser::ParseAction(const json& action_definiton, std::string_view path) {
   const std::string& id = action_definiton["id"];
-  if (id == "variable_declaration") {
+  if (id == "return") {
+    ParseReturn(action_definiton, path);
+  } else if (id == "variable_declaration") {
     ParseVariableDeclaration(action_definiton, path);
   } else if (id == "function_call") {
     // ParseFunctionCall(action_definiton, path);
@@ -90,29 +111,57 @@ void ScriptFunctionParser::ParseAction(const json& action_definiton, std::string
   }
 }
 
-void ScriptFunctionParser::ParseVariableDeclaration(const json& action_definiton, std::string_view path) {
-  assert(action_definiton["id"] == "variable_declaration");
-  const auto type = virtual_machine->GetType(action_definiton.at("type"));
+void ScriptFunctionParser::ParseReturn(const json& return_definition, std::string_view path) {
+  assert(return_definition["id"] == "return");
+
+  const auto& outputs = return_definition["outputs"];
+
+  for (const auto& output : IndexRange(result.function_description.outputs)) {
+    if (!outputs.contains(output->name)) {
+      errors.emplace_back(path, "Missing return value: {}", output->name);
+      continue;
+    }
+
+    const auto type = ParseExpression(outputs[output->name], fmt::format("{}/outputs/{}", path, output->name));
+    if (type != output->type) {
+      errors.emplace_back(path, "Incorrect return type for output {}. Expected {}, got {}", output->name,
+                          virtual_machine->GetType(output->type)->name(), virtual_machine->GetType(type)->name());
+      continue;
+    }
+    assert(current_scope()->values.back().type_id == type);
+    InsertAssignInstructions(path, virtual_machine->GetType(type), ExecutionContext::GetOutputOffset(output.index()));
+  }
+  InsertInstructions(path, {
+    Instruction::CreateReturn(result.function_description.outputs.size()),
+  });
+}
+
+void ScriptFunctionParser::ParseVariableDeclaration(const json& variable_declaration, std::string_view path) {
+  assert(variable_declaration["id"] == "variable_declaration");
+  const auto type = virtual_machine->GetType(variable_declaration.at("type"));
   if (!type) {
-    errors.emplace_back(fmt::format("Unknown variable type {}", action_definiton["type"].dump()), path);
+    errors.emplace_back(fmt::format("Unknown variable type {}", variable_declaration["type"].dump()), path);
     return;
   }
 
-  assert(type->construct_function());
-  InsertInstructions({
-    // type->is_stored_inline() ? :
-  });
+  const std::string& variable_name = variable_declaration["name"];
 
-  // definition.constants.push_back(Value::Create(virtual_machine, type->construct_function()->handle()));
-  // definition.constants.push_back(Value::Create(
-  //     virtual_machine, type->trivially_destructible() ? FunctionHandle::Null() : type->destruct_function()->handle()));
-  // definition.instructions.push_back(Instruction::CreatePushTrivialConstant(0));
-  // definition.instructions.push_back(Instruction::CreatePushTrivialConstant(1));
-  // if (type->is_stored_inline()) {
-  //   definition.instructions.push_back(Instruction::CreateConstructInlineValue());
-  // } else {
-  //   definition.instructions.push_back(Instruction::CreateConstructValue(type->alignment_in_bytes(), type->size_in_bytes()));
-  // }
+}
+
+TypeId ScriptFunctionParser::ParseExpression(const json& expression_definition, std::string_view path) {
+  if (expression_definition.is_number()) {
+    InsertPushConstantInstructions(path, static_cast<double>(expression_definition));
+    assert(current_scope()->values.back().type_id == virtual_machine->GetTypeId<double>());
+  } else if (expression_definition.is_string()) {
+    InsertPushConstantInstructions(path, static_cast<std::string>(expression_definition));
+    assert(current_scope()->values.back().type_id == virtual_machine->GetTypeId<std::string>());
+  } else if (expression_definition.is_boolean()) {
+    InsertPushConstantInstructions(path, static_cast<bool>(expression_definition));
+    assert(current_scope()->values.back().type_id == virtual_machine->GetTypeId<bool>());
+  } else {
+    errors.emplace_back(path, "Unknown expression: {}", expression_definition.dump());
+  }
+  return current_scope()->values.back().type_id;
 }
 
 // void ScriptFunctionParser::ParseFunctionCall(const json& action_definiton, std::string_view path) {
@@ -127,43 +176,43 @@ void ScriptFunctionParser::ParseVariableDeclaration(const json& action_definiton
 //   }
 // }
 
-void ScriptFunctionParser::ParsePushValue(const json& value_definition, std::string_view path, TypeId type) {
-  if (value_definition.is_string()) {
-    if (type == virtual_machine->GetTypeId<std::string>()) {
-      errors.emplace_back("Parsing constant Core.String not implemented yet", path);
-    } else {
-      const auto requested_type = virtual_machine->GetType(type);
-      errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->GetReferenceString() : "Unknown", "Core.String"));
-    }
-  } else if (value_definition.is_number()) {
-    if (type == virtual_machine->GetTypeId<double>()) {
-      errors.emplace_back("Parsing constant Core.Number not implemented yet", path);
-    } else {
-      const auto requested_type = virtual_machine->GetType(type);
-      errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->GetReferenceString() : "Unknown", "Core.Number"));
-    }
-  } else if (value_definition.is_boolean()) {
-    if (type == virtual_machine->GetTypeId<bool>()) {
-      errors.emplace_back("Parsing constant Core.Number not implemented yet", path);
-    } else {
-      const auto requested_type = virtual_machine->GetType(type);
-      errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->GetReferenceString() : "Unknown", "Core.Boolean"));
-    }
-  } else if (value_definition.is_object()) {
-    const std::string& id = value_definition["id"];
-    if (id == "variable") {
-      ParsePushVariable(value_definition, path, type);
-    } else {
-      errors.emplace_back("Invalid value definition", path);
-    }
-  } else {
-    errors.emplace_back("Invalid value definition", path);
-  }
-}
+// void ScriptFunctionParser::ParsePushValue(const json& value_definition, std::string_view path, TypeId type) {
+//   if (value_definition.is_string()) {
+//     if (type == virtual_machine->GetTypeId<std::string>()) {
+//       errors.emplace_back(path, "Parsing constant Core.String not implemented yet");
+//     } else {
+//       const auto requested_type = virtual_machine->GetType(type);
+//       errors.emplace_back(path, fmt::format("Expected {}, got {}", requested_type ? requested_type->GetReferenceString() : "Unknown", "Core.String"));
+//     }
+//   } else if (value_definition.is_number()) {
+//     if (type == virtual_machine->GetTypeId<double>()) {
+//       errors.emplace_back("Parsing constant Core.Number not implemented yet");
+//     } else {
+//       const auto requested_type = virtual_machine->GetType(type);
+//       errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->GetReferenceString() : "Unknown", "Core.Number"));
+//     }
+//   } else if (value_definition.is_boolean()) {
+//     if (type == virtual_machine->GetTypeId<bool>()) {
+//       errors.emplace_back("Parsing constant Core.Number not implemented yet", path);
+//     } else {
+//       const auto requested_type = virtual_machine->GetType(type);
+//       errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->GetReferenceString() : "Unknown", "Core.Boolean"));
+//     }
+//   } else if (value_definition.is_object()) {
+//     const std::string& id = value_definition["id"];
+//     if (id == "variable") {
+//       ParsePushVariable(value_definition, path, type);
+//     } else {
+//       errors.emplace_back("Invalid value definition", path);
+//     }
+//   } else {
+//     errors.emplace_back("Invalid value definition", path);
+//   }
+// }
 
-void ScriptFunctionParser::ParsePushVariable(const json& value_definition, std::string_view path, TypeId type) {
-  assert(value_definition["id"] == "variable");
-}
+// void ScriptFunctionParser::ParsePushVariable(const json& value_definition, std::string_view path, TypeId type) {
+//   assert(value_definition["id"] == "variable");
+// }
 
 ScriptFunctionScope* ScriptFunctionParser::PushScope() {
   if (scopes.size() == 0) {
@@ -183,7 +232,7 @@ ScriptFunctionScope* ScriptFunctionParser::PushScope() {
 void ScriptFunctionParser::PopScope() {
   // Last scope cannot be popped!
   assert(current_scope()->parent);
-  InsertInstructions({ Instruction::CreatePop(current_scope()->values.size()) });
+  InsertInstructions("", { Instruction::CreatePop(current_scope()->values.size()) });
   scopes.pop_back();
 }
 
@@ -191,13 +240,163 @@ ScriptFunctionScope* ScriptFunctionParser::current_scope() {
   return &scopes.back();
 }
 
-template <typename T> std::uint32_t ScriptFunctionParser::InsertConstant(T&& value) {
+template <typename T>
+std::uint32_t ScriptFunctionParser::InsertConstant(T&& value) {
   const auto offset = definition.constants.size();
   definition.constants.push_back(Value::Create(virtual_machine, value));
   return offset;
 }
 
-void ScriptFunctionParser::InsertInstructions(std::initializer_list<Instruction> instructions) {
+template <typename T>
+void ScriptFunctionParser::InsertPushConstantInstructions(std::string_view path, T&& value) {
+  const Type* type = virtual_machine->GetType<T>();
+  if (!type->memory_layout().is_copyable) {
+    errors.emplace_back(path, "{} is not copyable", type->GetReferenceString());
+    return;
+  }
+  
+  const auto constant_index = InsertConstant(std::forward<T>(value));
+  const auto temporary = current_scope()->PushValue(type->id());
+
+  if (type->is_stored_inline() && type->trivially_copyable()) {
+    InsertInstructions(path, {
+      Instruction::CreatePushTrivialConstant(constant_index)
+    });
+  } else if (!type->is_stored_inline() && type->trivially_copyable()) {
+    InsertInstructions(path, {
+      Instruction::CreatePushAllocated(type->alignment_in_bytes(), type->size_in_bytes()),
+      Instruction::CreatePushStackValueAllocatedAddress(temporary->index),
+      Instruction::CreatePushConstantAllocatedAddress(constant_index),
+      Instruction::CreateMemoryCopy(type->size_in_bytes()),
+    });
+  } else {
+    InsertInstructions(path, {
+      type->is_stored_inline()
+        ? Instruction::CreatePush(1)
+        : Instruction::CreatePushAllocated(type->alignment_in_bytes(), type->alignment_in_bytes())
+    });
+    InsertPrepareFunctionCallInstructions(path, type->copy_function());
+    if (type->is_stored_inline()) {
+      InsertInstructions(path, {
+        Instruction::CreatePushStackValueDataAddress(temporary->index),
+        Instruction::CreatePushConstantDataAddress(constant_index),
+      });
+    } else {
+      InsertInstructions(path, {
+        Instruction::CreatePushStackValueAllocatedAddress(temporary->index),
+        Instruction::CreatePushConstantAllocatedAddress(constant_index),
+      });
+    }
+    InsertFunctionCallInstructions(path, type->copy_function());
+  }
+  assert(current_scope()->current_stack_offset() == temporary->index + 1);
+}
+
+ScriptFunctionScopeValue* ScriptFunctionParser::InsertConstructTypeInstruction(std::string_view path, NotNull<const Type*> type) {
+  if (!type->memory_layout().is_constructible) {
+    errors.emplace_back(path, "{} is not constructible", type->GetReferenceString());
+    return nullptr;
+  }
+  const auto construct_function = type->construct_function();
+  assert(construct_function);
+
+  auto value = current_scope()->PushValue(type->id());
+
+  InsertInstructions(path, {
+    type->is_stored_inline()
+      ? Instruction::CreatePush(1)
+      : Instruction::CreatePushAllocated(type->alignment_in_bytes(), type->alignment_in_bytes())
+  });
+  InsertPrepareFunctionCallInstructions(path, construct_function);
+  InsertInstructions(path, {
+    type->is_stored_inline()
+      ? Instruction::CreatePushStackValueDataAddress(value->index)
+      : Instruction::CreatePushStackValueAllocatedAddress(value->index),
+  });
+  InsertFunctionCallInstructions(path, construct_function);
+
+  return value;
+}
+
+void ScriptFunctionParser::InsertAssignInstructions(std::string_view path, NotNull<const Type*> type, uint32_t destination_index) {
+  assert(current_scope()->values.back().type_id == type->id());
+
+  if (!type->memory_layout().is_copyable) {
+    errors.emplace_back(path, "{} is not copyable", type->GetReferenceString());
+    return;
+  }
+  
+  if (type->is_stored_inline() && type->trivially_copyable()) {
+    InsertInstructions(path, {
+      Instruction::CreateAssignTrivial(destination_index),
+    });
+  } else if (!type->is_stored_inline() && type->trivially_copyable()) {
+    InsertInstructions(path, {
+      Instruction::CreatePushStackValueAllocatedAddress(destination_index),
+      Instruction::CreatePushStackValueAllocatedAddress(current_scope()->values.back().index),
+      Instruction::CreateMemoryCopy(type->size_in_bytes()),
+    });
+  } else {
+    InsertPrepareFunctionCallInstructions(path, type->copy_function());
+    if (type->is_stored_inline()) {
+      InsertInstructions(path, {
+      Instruction::CreatePushStackValueDataAddress(destination_index),
+      Instruction::CreatePushStackValueDataAddress(current_scope()->values.back().index),
+      });
+    } else {
+      InsertInstructions(path, {
+      Instruction::CreatePushStackValueAllocatedAddress(destination_index),
+      Instruction::CreatePushStackValueAllocatedAddress(current_scope()->values.back().index),
+      });
+    }
+    InsertFunctionCallInstructions(path, type->copy_function());
+  }
+  current_scope()->PopValue();
+}
+
+void ScriptFunctionParser::InsertPrepareFunctionCallInstructions(std::string_view path, NotNull<const Function*> function) {
+  if (function->is_script_function()) {
+    for (const auto& output : function->outputs()) {
+      InsertConstructTypeInstruction(path, virtual_machine->GetType(output.type));
+    }
+    InsertInstructions(path, {
+      Instruction::CreatePrepareScriptFunctionCall(function->outputs().size()),
+    });
+    current_scope()->PushValue(virtual_machine->GetTypeId<uint32_t>());
+    current_scope()->PushValue(virtual_machine->GetTypeId<uint32_t>());
+    current_scope()->PushValue(virtual_machine->GetTypeId<uint32_t>());
+  }
+}
+
+void ScriptFunctionParser::InsertFunctionCallInstructions(std::string_view path, NotNull<const Function*> function) {
+  if (function->is_script_function()) {
+    InsertPushConstantInstructions(path, function->handle());
+    InsertInstructions(path, {
+      Instruction::CreateScriptFunctionCall(function->outputs().size(), function->inputs().size()),
+    });
+    current_scope()->PopValue(); // function handle
+    for (const auto& input : function->inputs()) {
+      current_scope()->PopValue();
+    }
+    current_scope()->PopValue(); // return address
+    current_scope()->PopValue(); // stack offset
+    current_scope()->PopValue(); // constant offset
+  } else {
+    InsertPushConstantInstructions(path, function->handle());
+    InsertInstructions(path, {
+      Instruction::CreateScriptFunctionCall(function->outputs().size(), function->inputs().size()),
+    });
+    current_scope()->PopValue(); // function handle
+    for (const auto& input : function->inputs()) {
+      current_scope()->PopValue();
+    }
+    for (const auto& output : function->outputs()) {
+      current_scope()->PushValue(output.type);
+    }
+  }
+}
+
+void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initializer_list<Instruction> instructions) {
   definition.instructions.insert(definition.instructions.end(), instructions);
 }
 
