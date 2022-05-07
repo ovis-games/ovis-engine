@@ -57,6 +57,10 @@ public:
     return pointer_[index];
   }
 
+  operator T*() {
+    return pointer_;
+  }
+
  private:
   T* pointer_;
 };
