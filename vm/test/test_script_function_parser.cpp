@@ -20,7 +20,7 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
           "name": "outputNumber"
         }
       ],
-      "actions": [
+      "statements": [
         {
           "id": "return",
           "outputs": {

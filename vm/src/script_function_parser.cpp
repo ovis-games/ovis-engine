@@ -62,7 +62,7 @@ void ScriptFunctionParser::Parse(const json& json_definition) {
   if (json_definition.contains("inputs")) {
     ParseInputs(json_definition["inputs"], "/inputs");
   }
-  ParseActions(json_definition["actions"], "/actions");
+  ParseStatements(json_definition["statements"], "/statements");
 }
 
 void ScriptFunctionParser::ParseOutputs(const json& outputs, std::string_view path) {
@@ -91,23 +91,23 @@ void ScriptFunctionParser::ParseInputs(const json& inputs, std::string_view path
   }
 }
 
-void ScriptFunctionParser::ParseActions(const json& actions_definiton, std::string_view path) {
-  for (const auto& [index, action_definition] : actions_definiton.items()) {
+void ScriptFunctionParser::ParseStatements(const json& statements_definiton, std::string_view path) {
+  for (const auto& [index, statement_definition] : statements_definiton.items()) {
     assert(std::stoi(index) >= 0);
-    ParseAction(action_definition, fmt::format("{}/{}", path, index));
+    ParseStatement(statement_definition, fmt::format("{}/{}", path, index));
   }
 }
 
-void ScriptFunctionParser::ParseAction(const json& action_definiton, std::string_view path) {
-  const std::string& id = action_definiton["id"];
+void ScriptFunctionParser::ParseStatement(const json& statement_definiton, std::string_view path) {
+  const std::string& id = statement_definiton["id"];
   if (id == "return") {
-    ParseReturn(action_definiton, path);
+    ParseReturn(statement_definiton, path);
   } else if (id == "variable_declaration") {
-    ParseVariableDeclaration(action_definiton, path);
+    ParseVariableDeclaration(statement_definiton, path);
   } else if (id == "function_call") {
-    // ParseFunctionCall(action_definiton, path);
+    // ParseFunctionCall(statement_definiton, path);
   } else {
-    errors.emplace_back(fmt::format("Invalid action id: {}", id), path);
+    errors.emplace_back(fmt::format("Invalid statement id: {}", id), path);
   }
 }
 
@@ -164,11 +164,11 @@ TypeId ScriptFunctionParser::ParseExpression(const json& expression_definition, 
   return current_scope()->values.back().type_id;
 }
 
-// void ScriptFunctionParser::ParseFunctionCall(const json& action_definiton, std::string_view path) {
-//   assert(action_definiton["id"] == "function_call");
-//   const auto function = Function::Deserialize(action_definiton["function"]);
+// void ScriptFunctionParser::ParseFunctionCall(const json& statement_definiton, std::string_view path) {
+//   assert(statement_definiton["id"] == "function_call");
+//   const auto function = Function::Deserialize(statement_definiton["function"]);
 //   if (!function) {
-//     errors.emplace_back(fmt::format("Unknown function: {}", action_definiton["function"].dump(), path));
+//     errors.emplace_back(fmt::format("Unknown function: {}", statement_definiton["function"].dump(), path));
 //     return;
 //   }
   
@@ -440,28 +440,28 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //   }
 // }
 
-// void ScriptFunctionParser::ParseActions(const json& actions, std::string path) {
-//   if (!actions.is_array()) {
+// void ScriptFunctionParser::ParseStatements(const json& statements, std::string path) {
+//   if (!statements.is_array()) {
 //     errors.push_back({
-//         .message = "Actions must be an array.",
+//         .message = "Statements must be an array.",
 //         .path = path,
 //     });
 //   } else {
-//     for (std::size_t i = 0, size = actions.size(); i < size; ++i) {
-//       ParseAction(actions[i], fmt::format("{}/{}", path, i));
+//     for (std::size_t i = 0, size = statements.size(); i < size; ++i) {
+//       ParseStatement(statements[i], fmt::format("{}/{}", path, i));
 //     }
 //   }
 // }
 
-// void ScriptFunctionParser::ParseAction(const json& action, std::string path) {
-//   if (!action.is_object()) {
+// void ScriptFunctionParser::ParseStatement(const json& statement, std::string path) {
+//   if (!statement.is_object()) {
 //     errors.push_back({
-//         .message = "Action must be an object.",
+//         .message = "Statement must be an object.",
 //         .path = path,
 //     });
-//   } else if (const auto type_it = action.find("type"); type_it == action.end()) {
+//   } else if (const auto type_it = statement.find("type"); type_it == statement.end()) {
 //     errors.push_back({
-//         .message = "Action must contain key 'type'.",
+//         .message = "Statement must contain key 'type'.",
 //         .path = path,
 //     });
 //   } else if (!type_it->is_string()) {
@@ -470,24 +470,24 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //         .path = path,
 //     });
 //   } else if (*type_it == "function_call") {
-//     ParseFunctionCallAction(action, path);
+//     ParseFunctionCallStatement(statement, path);
 //   } else if (*type_it == "if") {
-//     ParseIf(action, path);
+//     ParseIf(statement, path);
 //   } else if (*type_it == "while") {
-//     ParseWhile(action, path);
+//     ParseWhile(statement, path);
 //   } else if (*type_it == "return") {
-//     ParseReturn(action, path);
+//     ParseReturn(statement, path);
 //   } else {
 //     errors.push_back({
-//         .message = fmt::format("Unknown value for action type: '{}'", *type_it),
+//         .message = fmt::format("Unknown value for statement type: '{}'", *type_it),
 //         .path = path,
 //     });
 //   }
 // }
 
-// void ScriptFunctionParser::ParseFunctionCallAction(const json& action, std::string path) {
-//   assert(action.is_object()); // Should have already been checked before
-//   if (const auto function = action.find("function"); function == action.end()) {
+// void ScriptFunctionParser::ParseFunctionCallStatement(const json& statement, std::string path) {
+//   assert(statement.is_object()); // Should have already been checked before
+//   if (const auto function = statement.find("function"); function == statement.end()) {
 //     errors.push_back({
 //         .message = fmt::format("Function call does not include key 'function'."),
 //         .path = path,
@@ -527,9 +527,9 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //         .message = fmt::format("Function {} not found in module {}.", *function_name, *function_module),
 //         .path = path,
 //     });
-//   } else if (const auto& outputs = action.find("outputs"); outputs == action.end()) {
+//   } else if (const auto& outputs = statement.find("outputs"); outputs == statement.end()) {
 //     errors.push_back({
-//         .message = fmt::format("Function call action must contain key 'outputs'."),
+//         .message = fmt::format("Function call statement must contain key 'outputs'."),
 //         .path = path,
 //     });
 //   } else if (!outputs->is_object()) {
@@ -537,9 +537,9 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //         .message = fmt::format("Function key 'outputs' must be an object."),
 //         .path = path,
 //     });
-//   } else if (const auto& inputs = action.find("inputs"); inputs == action.end()) {
+//   } else if (const auto& inputs = statement.find("inputs"); inputs == statement.end()) {
 //     errors.push_back({
-//         .message = fmt::format("Function call action must contain key 'inputs'."),
+//         .message = fmt::format("Function call statement must contain key 'inputs'."),
 //         .path = path,
 //     });
 //   } else if (!inputs->is_object()) {
@@ -577,7 +577,7 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //     instructions.push_back(instructions::PushStackFrame {});
 //     debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
-//       .action = path,
+//       .statement = path,
 //     });
 
 //     for (const auto& input_declaration : function_reflection->inputs()) {
@@ -596,7 +596,7 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //     });
 //     debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
-//       .action = path,
+//       .statement = path,
 //     });
 
 //     // TODO: Use ranges::reverse
@@ -609,7 +609,7 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //         });
 //         debug_info.instruction_info.push_back({
 //           .scope = current_scope_index,
-//           .action = path,
+//           .statement = path,
 //         });
 //       } else {
 //         instructions.push_back(instructions::Pop {
@@ -617,28 +617,28 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //         });
 //         debug_info.instruction_info.push_back({
 //           .scope = current_scope_index,
-//           .action = path,
+//           .statement = path,
 //         });
 //       }
 //     }
 //     instructions.push_back(instructions::PopStackFrame {});
 //     debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
-//       .action = path,
+//       .statement = path,
 //     });
 //   }
 // }
 
-// void ScriptFunctionParser::ParseIf(const json& action, std::string path) {
-//   assert(action.is_object()); // Should have already been checked before
-//   if (const auto condition = action.find("condition"); condition == action.end()) {
+// void ScriptFunctionParser::ParseIf(const json& statement, std::string path) {
+//   assert(statement.is_object()); // Should have already been checked before
+//   if (const auto condition = statement.find("condition"); condition == statement.end()) {
 //     errors.push_back({
 //         .message = fmt::format("If requires key 'condition'."),
 //         .path = path,
 //     });
-//   } else if (const auto actions = action.find("actions"); actions == action.end()) {
+//   } else if (const auto statements = statement.find("statements"); statements == statement.end()) {
 //     errors.push_back({
-//         .message = fmt::format("If requires key 'actions'."),
+//         .message = fmt::format("If requires key 'statements'."),
 //         .path = path,
 //     });
 //   } else {
@@ -648,9 +648,9 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //     instructions.push_back(instructions::JumpIfFalse{});
 //     debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
-//       .action = path,
+//       .statement = path,
 //     });
-//     ParseActions(*actions, fmt::format("{}/actions", path));
+//     ParseStatements(*statements, fmt::format("{}/statements", path));
 //     const std::size_t instruction_count_after = instructions.size();
 
 //     assert(instruction_count_after >= instruction_count_before);
@@ -659,16 +659,16 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //   }
 // }
 
-// void ScriptFunctionParser::ParseWhile(const json& action, std::string path) {
-//   assert(action.is_object()); // Should have already been checked before
-//   if (const auto condition = action.find("condition"); condition == action.end()) {
+// void ScriptFunctionParser::ParseWhile(const json& statement, std::string path) {
+//   assert(statement.is_object()); // Should have already been checked before
+//   if (const auto condition = statement.find("condition"); condition == statement.end()) {
 //     errors.push_back({
 //         .message = fmt::format("If requires key 'condition'."),
 //         .path = path,
 //     });
-//   } else if (const auto actions = action.find("actions"); actions == action.end()) {
+//   } else if (const auto statements = statement.find("statements"); statements == statement.end()) {
 //     errors.push_back({
-//         .message = fmt::format("If requires key 'actions'."),
+//         .message = fmt::format("If requires key 'statements'."),
 //         .path = path,
 //     });
 //   } else {
@@ -679,24 +679,24 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //     instructions.push_back(instructions::JumpIfFalse{});
 //     debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
-//       .action = path,
+//       .statement = path,
 //     });
-//     ParseActions(*actions, fmt::format("{}/actions", path));
+//     ParseStatements(*statements, fmt::format("{}/statements", path));
 //     instructions.push_back(instructions::Jump {
 //         .instruction_offset = instruction_count_before_push - static_cast<std::ptrdiff_t>(instructions.size()),
 //     });
 //     debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
-//       .action = path,
+//       .statement = path,
 //     });
 
 //     std::get<instructions::JumpIfFalse>(instructions[instruction_count_after_push]).instruction_offset =
 //         instructions.size() - instruction_count_after_push;
 //   }
 // }
-// void ScriptFunctionParser::ParseReturn(const json& action, std::string path) {
-//   assert(action.is_object()); // Should have already been checked before
-//   if (const auto returned_outputs = action.find("outputs"); returned_outputs == action.end()) {
+// void ScriptFunctionParser::ParseReturn(const json& statement, std::string path) {
+//   assert(statement.is_object()); // Should have already been checked before
+//   if (const auto returned_outputs = statement.find("outputs"); returned_outputs == statement.end()) {
 //     if (outputs.size() == 0) {
 //     } else {
 //       errors.push_back({
@@ -720,7 +720,7 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //     instructions.push_back(instructions::Return {});
 //     debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
-//       .action = path,
+//       .statement = path,
 //     });
 //   }
 // }
@@ -731,7 +731,7 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //   });
 //   debug_info.instruction_info.push_back({
 //       .scope = current_scope_index,
-//       .action = path,
+//       .statement = path,
 //   });
 // }
 
@@ -744,7 +744,7 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //       });
 //       debug_info.instruction_info.push_back({
 //           .scope = current_scope_index,
-//           .action = path,
+//           .statement = path,
 //       });
 //     } else {
 //       errors.push_back({
@@ -779,7 +779,7 @@ void ScriptFunctionParser::InsertInstructions(std::string_view path, std::initia
 //         });
 //         debug_info.instruction_info.push_back({
 //             .scope = current_scope_index,
-//             .action = path,
+//             .statement = path,
 //         });
 //       }
 //     } else if (input_type == "constant" && value_definition.contains("type") && value_definition.contains("value")) {

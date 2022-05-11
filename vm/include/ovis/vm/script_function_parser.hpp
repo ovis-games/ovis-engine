@@ -55,13 +55,13 @@ struct ScriptFunctionParser {
   void Parse(const json& function_definition);
   void ParseOutputs(const json& outputs, std::string_view path);
   void ParseInputs(const json& inputs, std::string_view path);
-  void ParseActions(const json& action_definiton, std::string_view path);
-  void ParseAction(const json& action_definiton, std::string_view path);
+  void ParseStatements(const json& statement_definiton, std::string_view path);
+  void ParseStatement(const json& statement_definiton, std::string_view path);
   void ParseReturn(const json& return_definition, std::string_view path);
-  void ParseVariableDeclaration(const json& action_definiton, std::string_view path);
+  void ParseVariableDeclaration(const json& statement_definiton, std::string_view path);
 
   TypeId ParseExpression(const json& expression_definition, std::string_view path);
-  void ParseFunctionCall(const json& action_definiton, std::string_view path);
+  void ParseFunctionCall(const json& statement_definiton, std::string_view path);
   void ParsePushValue(const json& value_definition, std::string_view path, TypeId type);
   void ParsePushVariable(const json& value_definition, std::string_view path, TypeId type);
   void ParsePushVariableReference(const json& value_definition, std::string_view path, TypeId type);
