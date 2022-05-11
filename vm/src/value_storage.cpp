@@ -38,8 +38,7 @@ void* ValueStorage::AllocateIfNecessary(std::size_t alignment, std::size_t size)
   if (IsTypeStoredInline(alignment, size)) {
     return data();
   } else {
-    Allocate(alignment, size);
-    return allocated_storage_pointer();
+    return Allocate(alignment, size);
   }
 }
 
