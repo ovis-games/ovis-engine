@@ -1,13 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "id": "VM.VariableExpression",
-  "title": "VariableDeclarationStatement",
-  "description": "A statement that declares a new variable",
+  "title": "VariableExpression",
+  "description": "An expression that produces the value of a variable.",
   "type": "object",
   "properties": {
-    "statementType": "varible_declaration",
-    "name": { "$ref": "VM.Variablename.schema.json" },
-    "type": { "$ref": "VM.Type.schema.json" },
-    "value": { "$ref": "VM.Expression.schema.json" }
+    "type": "variable_expression",
+    "name": { "$ref": "VM.Variablename.schema.json" }
   }
 }
