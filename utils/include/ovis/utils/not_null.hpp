@@ -57,7 +57,7 @@ public:
     return pointer_[index];
   }
 
-  operator T*() {
+  operator T*() const {
     return pointer_;
   }
 
