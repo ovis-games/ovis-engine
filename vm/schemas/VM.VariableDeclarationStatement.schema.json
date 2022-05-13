@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "VM.VariableDeclarationStatement",
+  "title": "VM.VariableDeclarationStatement",
+  "description": "A statement that declares a new variable",
+  "type": "object",
+  "properties": {
+    "expressionType": "variable",
+    "name": { "$ref": "VM.Variablename.schema.json" }
+  }
+}

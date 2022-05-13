@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "VM.Expression",
+  "title": "Expression",
+  "description": "An expression for the VM parser",
+  "anyOf": {
+    { "type": "number" },
+    { "type": "string" },
+    { "type": "boolean" },
+    { "$ref": "VM.VariableExpression.schema.json" }
+  }
+}

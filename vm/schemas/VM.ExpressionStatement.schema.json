@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "VM.ExpressionStatement",
+  "title": "ExpressionStatement",
+  "description": "A statement that evaluates an expression",
+  "type": "object",
+  "properties": {
+    "statementType": "expression",
+    "expression": { "$ref": "VM.Variablename.schema.json" }
+  }
+}

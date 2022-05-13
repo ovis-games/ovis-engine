@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "VM.ReturnStatement",
+  "title": "Return Statement",
+  "description": "A return statement",
+  "type": "object",
+  "properties": {
+    "statementType": "return",
+    "outputs": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "VM.Expression.schema.json"
+      }
+    }
+  },
+  "additionalProperties": false
+}
