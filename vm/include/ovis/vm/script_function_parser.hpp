@@ -31,6 +31,7 @@ struct ScriptFunctionScope {
   uint32_t base_index;
   std::vector<ScriptFunctionScopeValue> values;
 
+  ScriptFunctionScopeValue* GetValue(std::uint32_t index);
   const ScriptFunctionScopeValue* GetVariable(std::string_view name);
   Result<uint32_t, ParseScriptError> AddVariable(TypeId type, std::string_view name);
 
@@ -55,12 +56,17 @@ struct ScriptFunctionParser {
   void Parse(const json& function_definition);
   void ParseOutputs(const json& outputs, std::string_view path);
   void ParseInputs(const json& inputs, std::string_view path);
-  void ParseStatements(const json& statement_definiton, std::string_view path);
-  void ParseStatement(const json& statement_definiton, std::string_view path);
-  void ParseReturn(const json& return_definition, std::string_view path);
-  void ParseVariableDeclaration(const json& statement_definiton, std::string_view path);
 
-  TypeId ParseExpression(const json& expression_definition, std::string_view path);
+  // Statement parsing
+  void ParseStatements(const json& statements_definiton, std::string_view path);
+  void ParseStatement(const json& statement_definiton, std::string_view path);
+  void ParseReturnStatement(const json& statement_definition, std::string_view path);
+  void ParseVariableDeclarationStatement(const json& statement_definiton, std::string_view path);
+
+  // Expression parsing
+  ScriptFunctionScopeValue* ParseExpression(const json& expression_definition, std::string_view path);
+  ScriptFunctionScopeValue* ParseVariableExpression(const json& variable_expression_definition, std::string_view path);
+
   void ParseFunctionCall(const json& statement_definiton, std::string_view path);
   void ParsePushValue(const json& value_definition, std::string_view path, TypeId type);
   void ParsePushVariable(const json& value_definition, std::string_view path, TypeId type);
@@ -73,8 +79,9 @@ struct ScriptFunctionParser {
   ScriptFunctionScope* current_scope();
 
   template <typename T> std::uint32_t InsertConstant(T&& value);
-  template <typename T> void InsertPushConstantInstructions(std::string_view path, T&& value);
-  ScriptFunctionScopeValue* InsertConstructTypeInstruction(std::string_view path, NotNull<const Type*> type);
+  template <typename T> ScriptFunctionScopeValue* InsertPushConstantInstructions(std::string_view path, T&& value);
+  ScriptFunctionScopeValue* InsertConstructTypeInstructions(std::string_view path, NotNull<const Type*> type);
+  void InsertCopyInstructions(std::string_view path, NotNull<const Type*> type, uint32_t destination_index, uint32_t source_index);
   void InsertAssignInstructions(std::string_view path, NotNull<const Type*> type, uint32_t destination_index);
   void InsertPrepareFunctionCallInstructions(std::string_view path, NotNull<const Function*> function);
   void InsertFunctionCallInstructions(std::string_view path, NotNull<const Function*> function);

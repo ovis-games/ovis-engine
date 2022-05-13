@@ -22,9 +22,20 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
       ],
       "statements": [
         {
-          "id": "return",
+          "type": "variable_declaration",
+          "variable": {
+            "name": "Test",
+            "type": "Number",
+            "value": 43.0
+          }
+        },
+        {
+          "type": "return",
           "outputs": {
-            "outputNumber": 42.0
+            "outputNumber": {
+              "type": "variable",
+              "name": "Test"
+            }
           }
         }
       ]
@@ -37,6 +48,6 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
     const auto function = Function::Create(parse_result->function_description);
     const auto call_result = function->Call<double>();
     REQUIRE_RESULT(call_result);
-    REQUIRE(*call_result == 42.0);
+    REQUIRE(*call_result == 43.0);
   }
 }
