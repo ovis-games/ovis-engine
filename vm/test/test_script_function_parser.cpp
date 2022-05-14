@@ -14,6 +14,16 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
   SECTION("Variable declaration") {
     const auto parse_result = ParseScriptFunction(&vm, R"(
     {
+      "inputs": [
+        {
+          "type": "Number",
+          "name": "first"
+        },
+        {
+          "type": "Number",
+          "name": "second"
+        }
+      ],
       "outputs": [
         {
           "type": "Number",
@@ -24,9 +34,21 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
         {
           "type": "variable_declaration",
           "variable": {
-            "name": "Test",
+            "name": "test",
             "type": "Number",
-            "value": 43.0
+            "value": {
+              "type": "number_operation",
+              "operation": "add",
+              "firstOperand": {
+                "type": "variable",
+                "name": "first"
+              },
+              "secondOperand": {
+                "type": "variable",
+                "name": "second"
+              }
+
+            }
           }
         },
         {
@@ -34,7 +56,7 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
           "outputs": {
             "outputNumber": {
               "type": "variable",
-              "name": "Test"
+              "name": "test"
             }
           }
         }
@@ -43,11 +65,11 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
     )"_json);
     REQUIRE_RESULT(parse_result);
     const FunctionDescription& function_description = parse_result->function_description;
-    REQUIRE(function_description.inputs.size() == 0);
+    REQUIRE(function_description.inputs.size() == 2);
     REQUIRE(function_description.outputs.size() == 1);
     const auto function = Function::Create(parse_result->function_description);
-    const auto call_result = function->Call<double>();
+    const auto call_result = function->Call<double>(1.0, 2.0);
     REQUIRE_RESULT(call_result);
-    REQUIRE(*call_result == 43.0);
+    REQUIRE(*call_result == 3.0);
   }
 }

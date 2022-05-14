@@ -66,6 +66,7 @@ struct ScriptFunctionParser {
   // Expression parsing
   ScriptFunctionScopeValue* ParseExpression(const json& expression_definition, std::string_view path);
   ScriptFunctionScopeValue* ParseVariableExpression(const json& variable_expression_definition, std::string_view path);
+  ScriptFunctionScopeValue* ParseNumberOperationExpression(const json& expression_definition, std::string_view path);
 
   void ParseFunctionCall(const json& statement_definiton, std::string_view path);
   void ParsePushValue(const json& value_definition, std::string_view path, TypeId type);

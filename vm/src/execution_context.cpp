@@ -237,91 +237,71 @@ Result<> ExecutionContext::Execute(std::uintptr_t instruction_offset) {
       }
 
       case OpCode::ADD_NUMBERS: {
-        PushValue(
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) +
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
-        );
+        top(1).as<double>() += top(0).as<double>();
+        PopTrivialValue();
         ++program_counter;
         break;
       }
 
       case OpCode::SUBTRACT_NUMBERS: {
-        PushValue(
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) -
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
-        );
+        top(1).as<double>() -= top(0).as<double>();
+        PopTrivialValue();
         ++program_counter;
         break;
       }
 
       case OpCode::MULTIPLY_NUMBERS: {
-        PushValue(
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) *
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
-        );
+        top(1).as<double>() *= top(0).as<double>();
+        PopTrivialValue();
         ++program_counter;
         break;
       }
 
       case OpCode::DIVIDE_NUMBERS: {
-        PushValue(
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) /
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
-        );
+        top(1).as<double>() /= top(0).as<double>();
+        PopTrivialValue();
         ++program_counter;
         break;
       }
 
       case OpCode::IS_NUMBER_GREATER: {
-        PushValue(
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) >
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
-        );
+        top(1).as<bool>() = top(1).as<double>() > top(0).as<double>();
+        PopTrivialValue();
         ++program_counter;
         break;
       }
 
       case OpCode::IS_NUMBER_LESS: {
-        PushValue(
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) <
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
-        );
+        top(1).as<bool>() = top(1).as<double>() < top(0).as<double>();
+        PopTrivialValue();
         ++program_counter;
         break;
       }
 
       case OpCode::IS_NUMBER_GREATER_EQUAL: {
-        PushValue(
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) >=
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
-        );
+        top(1).as<bool>() = top(1).as<double>() >= top(0).as<double>();
+        PopTrivialValue();
         ++program_counter;
         break;
       }
 
       case OpCode::IS_NUMBER_LESS_EQUAL: {
-        PushValue(
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) <=
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
-        );
+        top(1).as<bool>() = top(1).as<double>() <= top(0).as<double>();
+        PopTrivialValue();
         ++program_counter;
         break;
       }
 
       case OpCode::IS_NUMBER_EQUAL: {
-        PushValue(
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) ==
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
-        );
+        top(1).as<bool>() = top(1).as<double>() == top(0).as<double>();
+        PopTrivialValue();
         ++program_counter;
         break;
       }
 
       case OpCode::IS_NUMBER_NOT_EQUAL: {
-        PushValue(
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address1) !=
-          GetStackValue<double>(stack_offset_ + instruction.stack_addresses_data.address2)
-        );
+        top(1).as<bool>() = top(1).as<double>() != top(0).as<double>();
+        PopTrivialValue();
         ++program_counter;
         break;
       }

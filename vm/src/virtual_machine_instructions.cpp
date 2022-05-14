@@ -245,103 +245,63 @@ Instruction Instruction::CreateOr(std::uint32_t lhs_index, std::uint32_t rhs_ind
   };
 }
 
-Instruction Instruction::CreateAddNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+Instruction Instruction::CreateAddNumbers() {
   return {
-    .stack_addresses_data = {
-      .opcode = OpCode::ADD_NUMBERS,
-      .address1 = lhs_index,
-      .address2 = rhs_index,
-    }
+    .opcode = OpCode::ADD_NUMBERS,
   };
 }
 
-Instruction Instruction::CreateSubtractNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+Instruction Instruction::CreateSubtractNumbers() {
   return {
-    .stack_addresses_data = {
-      .opcode = OpCode::SUBTRACT_NUMBERS,
-      .address1 = lhs_index,
-      .address2 = rhs_index,
-    }
+   .opcode= OpCode::SUBTRACT_NUMBERS,
   };
 }
 
-Instruction Instruction::CreateMultiplyNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+Instruction Instruction::CreateMultiplyNumbers() {
   return {
-    .stack_addresses_data = {
-      .opcode = OpCode::MULTIPLY_NUMBERS,
-      .address1 = lhs_index,
-      .address2 = rhs_index,
-    }
+    .opcode = OpCode::MULTIPLY_NUMBERS,
   };
 }
 
-Instruction Instruction::CreateDivideNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+Instruction Instruction::CreateDivideNumbers() {
   return {
-    .stack_addresses_data = {
-      .opcode = OpCode::DIVIDE_NUMBERS,
-      .address1 = lhs_index,
-      .address2 = rhs_index,
-    }
+    .opcode = OpCode::DIVIDE_NUMBERS,
   };
 }
 
-Instruction Instruction::CreateIsNumberGreater(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+Instruction Instruction::CreateIsNumberGreater() {
   return {
-    .stack_addresses_data = {
-      .opcode = OpCode::IS_NUMBER_GREATER,
-      .address1 = lhs_index,
-      .address2 = rhs_index,
-    }
+    .opcode = OpCode::IS_NUMBER_GREATER,
   };
 }
 
-Instruction Instruction::CreateIsNumberLess(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+Instruction Instruction::CreateIsNumberLess() {
   return {
-    .stack_addresses_data = {
-      .opcode = OpCode::IS_NUMBER_LESS,
-      .address1 = lhs_index,
-      .address2 = rhs_index,
-    }
+    .opcode = OpCode::IS_NUMBER_LESS,
   };
 }
 
-Instruction Instruction::CreateIsNumberGreaterEqual(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+Instruction Instruction::CreateIsNumberGreaterEqual() {
   return {
-    .stack_addresses_data = {
-      .opcode = OpCode::IS_NUMBER_GREATER_EQUAL,
-      .address1 = lhs_index,
-      .address2 = rhs_index,
-    }
+    .opcode = OpCode::IS_NUMBER_GREATER_EQUAL,
   };
 }
 
-Instruction Instruction::CreateIsNumberLessEqual(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+Instruction Instruction::CreateIsNumberLessEqual() {
   return {
-    .stack_addresses_data = {
-      .opcode = OpCode::IS_NUMBER_LESS_EQUAL,
-      .address1 = lhs_index,
-      .address2 = rhs_index,
-    }
+   .opcode= OpCode::IS_NUMBER_LESS_EQUAL,
   };
 }
 
-Instruction Instruction::CreateIsNumberEqual(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+Instruction Instruction::CreateIsNumberEqual() {
   return {
-    .stack_addresses_data = {
-      .opcode = OpCode::IS_NUMBER_EQUAL,
-      .address1 = lhs_index,
-      .address2 = rhs_index,
-    }
+   .opcode= OpCode::IS_NUMBER_EQUAL,
   };
 }
 
-Instruction Instruction::CreateIsNumberNotEqual(std::uint32_t lhs_index, std::uint32_t rhs_index) {
+Instruction Instruction::CreateIsNumberNotEqual() {
   return {
-    .stack_addresses_data = {
-      .opcode = OpCode::IS_NUMBER_NOT_EQUAL,
-      .address1 = lhs_index,
-      .address2 = rhs_index,
-    }
+    .opcode = OpCode::IS_NUMBER_NOT_EQUAL,
   };
 }
 

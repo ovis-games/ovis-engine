@@ -174,16 +174,16 @@ union Instruction {
   static Instruction CreateAnd(std::uint32_t lhs_index, std::uint32_t rhs_index);
   static Instruction CreateOr(std::uint32_t lhs_index, std::uint32_t rhs_index);
 
-  static Instruction CreateAddNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index);
-  static Instruction CreateSubtractNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index);
-  static Instruction CreateMultiplyNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index);
-  static Instruction CreateDivideNumbers(std::uint32_t lhs_index, std::uint32_t rhs_index);
-  static Instruction CreateIsNumberGreater(std::uint32_t lhs_index, std::uint32_t rhs_index);
-  static Instruction CreateIsNumberLess(std::uint32_t lhs_index, std::uint32_t rhs_index);
-  static Instruction CreateIsNumberGreaterEqual(std::uint32_t lhs_index, std::uint32_t rhs_index);
-  static Instruction CreateIsNumberLessEqual(std::uint32_t lhs_index, std::uint32_t rhs_index);
-  static Instruction CreateIsNumberEqual(std::uint32_t lhs_index, std::uint32_t rhs_index);
-  static Instruction CreateIsNumberNotEqual(std::uint32_t lhs_index, std::uint32_t rhs_index);
+  static Instruction CreateAddNumbers();
+  static Instruction CreateSubtractNumbers();
+  static Instruction CreateMultiplyNumbers();
+  static Instruction CreateDivideNumbers();
+  static Instruction CreateIsNumberGreater();
+  static Instruction CreateIsNumberLess();
+  static Instruction CreateIsNumberGreaterEqual();
+  static Instruction CreateIsNumberLessEqual();
+  static Instruction CreateIsNumberEqual();
+  static Instruction CreateIsNumberNotEqual();
 
   static Instruction CreateJump(std::int32_t offset);
   static Instruction CreateJumpIfTrue(std::int32_t offset);

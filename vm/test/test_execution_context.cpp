@@ -466,20 +466,24 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
         Instruction::CreatePushTrivialConstant(1),
-        Instruction::CreateAddNumbers(0, 1),
-        Instruction::CreateSubtractNumbers(1, 0),
-        Instruction::CreateMultiplyNumbers(0, 1),
-        Instruction::CreateDivideNumbers(1, 0),
+        Instruction::CreateAddNumbers(),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateSubtractNumbers(),
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateMultiplyNumbers(),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateDivideNumbers(),
         Instruction::CreateHalt(),
       }));
       REQUIRE(execute_result);
-      REQUIRE(execution_context->stack_size() == 6);
-      REQUIRE(execution_context->GetStackValue<double>(0) == 2.0);
-      REQUIRE(execution_context->GetStackValue<double>(1) == 21.0);
-      REQUIRE(execution_context->GetStackValue<double>(2) == 23.0);
-      REQUIRE(execution_context->GetStackValue<double>(3) == 19.0);
-      REQUIRE(execution_context->GetStackValue<double>(4) == 42.0);
-      REQUIRE(execution_context->GetStackValue<double>(5) == 10.5);
+      REQUIRE(execution_context->stack_size() == 4);
+      REQUIRE(execution_context->GetStackValue<double>(0) == 23.0);
+      REQUIRE(execution_context->GetStackValue<double>(1) == 19.0);
+      REQUIRE(execution_context->GetStackValue<double>(2) == 42.0);
+      REQUIRE(execution_context->GetStackValue<double>(3) == 10.5);
     }
 
     SECTION("IS_NUMBER_(GREATER/LESS/GREATER_EQUAL/LESS_EQUAL/EQUAL/NOT_EQUAL)") {
@@ -488,28 +492,49 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
         Value::Create(&vm, 21.0),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateIsNumberGreater(),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateIsNumberGreater(),
         Instruction::CreatePushTrivialConstant(0),
         Instruction::CreatePushTrivialConstant(1),
-        Instruction::CreateIsNumberGreater(1, 0),
-        Instruction::CreateIsNumberGreater(1, 1),
-        Instruction::CreateIsNumberLess(0, 1),
-        Instruction::CreateIsNumberLess(1, 0),
-        Instruction::CreateIsNumberGreaterEqual(1, 1),
-        Instruction::CreateIsNumberGreaterEqual(0, 1),
-        Instruction::CreateIsNumberLessEqual(1, 1),
-        Instruction::CreateIsNumberLessEqual(1, 0),
-        Instruction::CreateIsNumberEqual(1, 1),
-        Instruction::CreateIsNumberEqual(1, 0),
-        Instruction::CreateIsNumberNotEqual(1, 0),
-        Instruction::CreateIsNumberNotEqual(1, 1),
+        Instruction::CreateIsNumberLess(),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateIsNumberLess(),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateIsNumberGreaterEqual(),
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateIsNumberGreaterEqual(),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateIsNumberLessEqual(),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateIsNumberLessEqual(),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateIsNumberEqual(),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateIsNumberEqual(),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(0),
+        Instruction::CreateIsNumberNotEqual(),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreatePushTrivialConstant(1),
+        Instruction::CreateIsNumberNotEqual(),
         Instruction::CreateHalt(),
       }));
       REQUIRE(execute_result);
-      REQUIRE(execution_context->stack_size() == 14);
+      REQUIRE(execution_context->stack_size() == 12);
 
-      REQUIRE(execution_context->GetStackValue<double>(0) == 2.0);
-      REQUIRE(execution_context->GetStackValue<double>(1) == 21.0);
-
+      REQUIRE(execution_context->GetStackValue<bool>(0) == true);
+      REQUIRE(execution_context->GetStackValue<bool>(1) == false);
       REQUIRE(execution_context->GetStackValue<bool>(2) == true);
       REQUIRE(execution_context->GetStackValue<bool>(3) == false);
       REQUIRE(execution_context->GetStackValue<bool>(4) == true);
@@ -520,8 +545,6 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
       REQUIRE(execution_context->GetStackValue<bool>(9) == false);
       REQUIRE(execution_context->GetStackValue<bool>(10) == true);
       REQUIRE(execution_context->GetStackValue<bool>(11) == false);
-      REQUIRE(execution_context->GetStackValue<bool>(12) == true);
-      REQUIRE(execution_context->GetStackValue<bool>(13) == false);
     }
 
     SECTION("JUMP") {
@@ -627,10 +650,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
       .definition = ScriptFunctionDefinition {
         .instructions = {
           Instruction::CreatePushTrivialConstant(0),
-          Instruction::CreateMultiplyNumbers(
-            ExecutionContext::GetInputOffset(1, 0),
-            ExecutionContext::GetFunctionBaseOffset(1, 1)
-          ),
+          Instruction::CreatePushTrivialStackValue(ExecutionContext::GetInputOffset(1, 0)),
+          Instruction::CreateMultiplyNumbers(),
           Instruction::CreateAssignTrivial(ExecutionContext::GetOutputOffset(0)),
           Instruction::CreateReturn(1),
         },

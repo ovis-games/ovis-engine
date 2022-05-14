@@ -178,6 +178,8 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseExpression(const json& expr
     const std::string& type = expression_definition.at("type");
     if (type == "variable") {
       return ParseVariableExpression(expression_definition, path);
+    } else if (type == "number_operation") {
+      return ParseNumberOperationExpression(expression_definition, path);
     }
   }
 
@@ -189,10 +191,69 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseVariableExpression(const js
   assert(variable_expression_definition["type"] == "variable");
   assert(variable_expression_definition.contains("name"));
   const auto variable = current_scope()->GetVariable(static_cast<std::string>(variable_expression_definition.at("name")));
+  if (!variable) {
+    errors.emplace_back(path, "Unknown variable: {}", variable_expression_definition.at("name"));
+    return nullptr;
+  }
+
   const auto type = virtual_machine->GetType(variable->type_id);
   auto new_value = InsertConstructTypeInstructions(path, type);
   InsertCopyInstructions(path, type, new_value->index, variable->index);
   return new_value;
+}
+
+ScriptFunctionScopeValue* ScriptFunctionParser::ParseNumberOperationExpression(const json& expression_definition,
+                                                                               std::string_view path) {
+  assert(expression_definition["type"] == "number_operation");
+  assert(expression_definition.contains("operation"));
+  const std::string& operation = expression_definition.at("operation");
+  assert(expression_definition.contains("firstOperand"));
+  auto* first_operand = ParseExpression(expression_definition.at("firstOperand"), fmt::format("{}/firstOperand", path));
+  if (operation != "negate") {
+    assert(expression_definition.contains("secondOperand"));
+    auto* second_operand = ParseExpression(expression_definition.at("secondOperand"), fmt::format("{}/secondOperand", path));
+    if (operation == "add") {
+      InsertInstructions(path, { Instruction::CreateAddNumbers() });
+    } else if (operation == "subtract") {
+      InsertInstructions(path, { Instruction::CreateSubtractNumbers() });
+    } else if (operation == "multiply") {
+      InsertInstructions(path, { Instruction::CreateMultiplyNumbers() });
+    } else if (operation == "divide") {
+      InsertInstructions(path, { Instruction::CreateDivideNumbers() });
+    } else if (operation == "less") {
+      InsertInstructions(path, { Instruction::CreateIsNumberLess() });
+      first_operand->type_id = virtual_machine->GetTypeId<bool>();
+    } else if (operation == "less") {
+      InsertInstructions(path, { Instruction::CreateIsNumberLess() });
+      first_operand->type_id = virtual_machine->GetTypeId<bool>();
+    } else if (operation == "less") {
+      InsertInstructions(path, { Instruction::CreateIsNumberLess() });
+      first_operand->type_id = virtual_machine->GetTypeId<bool>();
+    } else if (operation == "less_equal") {
+      InsertInstructions(path, { Instruction::CreateIsNumberLessEqual() });
+      first_operand->type_id = virtual_machine->GetTypeId<bool>();
+    } else if (operation == "greater") {
+      InsertInstructions(path, { Instruction::CreateIsNumberGreater() });
+      first_operand->type_id = virtual_machine->GetTypeId<bool>();
+    } else if (operation == "greater_equal") {
+      InsertInstructions(path, { Instruction::CreateIsNumberGreaterEqual() });
+      first_operand->type_id = virtual_machine->GetTypeId<bool>();
+    } else if (operation == "equal") {
+      InsertInstructions(path, { Instruction::CreateIsNumberEqual() });
+      first_operand->type_id = virtual_machine->GetTypeId<bool>();
+    } else if (operation == "not_equal") {
+      InsertInstructions(path, { Instruction::CreateIsNumberNotEqual() });
+      first_operand->type_id = virtual_machine->GetTypeId<bool>();
+    } else {
+      errors.emplace_back(path, "Invalid number operation: {}", operation);
+    }
+    current_scope()->PopValue();
+  } else {
+    return nullptr;
+  }
+  assert(current_scope()->values.back().type_id == virtual_machine->GetTypeId<double>());
+  assert(!current_scope()->values.back().name.has_value());
+  return &current_scope()->values.back();
 }
 
 // void ScriptFunctionParser::ParseFunctionCall(const json& statement_definiton, std::string_view path) {
@@ -346,6 +407,7 @@ ScriptFunctionScopeValue* ScriptFunctionParser::InsertConstructTypeInstructions(
       ? Instruction::CreatePushStackValueDataAddress(value->index)
       : Instruction::CreatePushStackValueAllocatedAddress(value->index),
   });
+  current_scope()->PushValue(virtual_machine->GetTypeId<void*>());
   InsertFunctionCallInstructions(path, construct_function);
 
   return value;
