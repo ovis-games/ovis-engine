@@ -13,10 +13,11 @@
 #include <ovis/utils/result.hpp>
 #include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/serialize.hpp>
+#include <ovis/vm/value.hpp>
+#include <ovis/core/main_vm.hpp>
+#include <ovis/core/vm_bindings.hpp>
 #include <ovis/core/scene_object_animation.hpp>
 #include <ovis/core/scene_object_component.hpp>
-#include <ovis/core/value.hpp>
-#include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
 
@@ -106,6 +107,8 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   static Result<json> ResolveTemplateForObject(const json& object);
   // Maps (scene_object_template, animation_name) -> animation
   static std::map<std::pair<std::string, std::string>, SceneObjectAnimation, std::less<>> template_animations;
+
+  OVIS_VM_DECLARE_TYPE_BINDING();
 };
 
 template <typename T>
@@ -132,13 +135,13 @@ namespace ovis {
 
 template <typename ComponentType>
 inline ComponentType* SceneObject::AddComponent() {
-  auto component = AddComponent(vm.GetTypeId<ComponentType>());
+  auto component = AddComponent(main_vm->GetTypeId<ComponentType>());
   return component ? &component->template as<ComponentType>() : nullptr;
 }
 
 template <typename ComponentType>
 inline ComponentType* SceneObject::GetComponent() {
-  auto component = GetComponent(vm.GetTypeId<ComponentType>());
+  auto component = GetComponent(main_vm->GetTypeId<ComponentType>());
   return component ? &component->template as<ComponentType>() : nullptr;
 }
 

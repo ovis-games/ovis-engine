@@ -4,10 +4,9 @@
 
 #include <ovis/core/scene_object_animation.hpp>
 #include <ovis/core/scene_object_component.hpp>
+#include <ovis/core/vm_bindings.hpp>
 
 namespace ovis {
-
-class Module;
 
 class Animator : public SceneObjectComponent {
   OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
@@ -25,7 +24,7 @@ class Animator : public SceneObjectComponent {
   json Serialize() const override;
   bool Deserialize(const json& data) override;
 
-  static void RegisterType(Module* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 
  private:
   struct PlayInfo {

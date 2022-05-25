@@ -6,13 +6,15 @@
 #include <vector>
 
 #include <ovis/utils/not_null.hpp>
-#include <ovis/vm/function.hpp>
-#include <ovis/vm/type.hpp>
+#include <ovis/utils/json.hpp>
+#include <ovis/vm/type_id.hpp>
 
 namespace ovis {
 
 class VirtualMachine;
+struct TypeDescription;
 class Type;
+struct FunctionDescription;
 class Function;
 
 class Module : public std::enable_shared_from_this<Module> {
@@ -27,6 +29,9 @@ class Module : public std::enable_shared_from_this<Module> {
   NotNull<VirtualMachine*> virtual_machine() const { return virtual_machine_; }
 
   // Types
+  template <typename T, typename ParentType = void>
+  Type* RegisterType(std::string_view name);
+  Type* RegisterType(TypeDescription description);
   Type* GetType(std::string_view name);
 
   // Functions
@@ -47,5 +52,17 @@ class Module : public std::enable_shared_from_this<Module> {
   void RemoveType(TypeId type_id);
 };
 
+}  // namespace ovis
+
+#include <ovis/vm/function.hpp>
+#include <ovis/vm/type.hpp>
+#include <ovis/vm/virtual_machine.hpp>
+
+namespace ovis {
+
+template <typename T, typename ParentType>
+Type* Module::RegisterType(std::string_view name) {
+  return virtual_machine()->RegisterType(TypeDescription::CreateForNativeType<T, ParentType>(this, name));
+}
 
 }  // namespace ovis

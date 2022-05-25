@@ -81,6 +81,7 @@ struct TypeDescription {
   std::shared_ptr<Function> to_base;
   std::shared_ptr<Function> from_base;
   std::vector<TypePropertyDescription> properties;
+  std::vector<std::shared_ptr<Function>> methods;
   TypeMemoryLayout memory_layout;
   std::optional<TypeReferenceDescription> reference;
 
@@ -90,6 +91,33 @@ struct TypeDescription {
     (!std::is_same_v<T, ParentType> || std::is_same_v<T, void>)
   )
   static TypeDescription CreateForNativeType(VirtualMachine* virtual_machine, std::string_view name, Module* module = nullptr);
+
+  template <typename T, typename ParentType = void>
+  requires (
+    (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
+    (!std::is_same_v<T, ParentType> || std::is_same_v<T, void>)
+  )
+  static TypeDescription CreateForNativeType(Module* module, std::string_view name);
+
+  template <auto MEMBER_POINTER>
+  requires (
+    std::is_member_pointer_v<decltype(MEMBER_POINTER)> && !std::is_member_function_pointer_v<decltype(MEMBER_POINTER)>
+  )
+  void AddProperty(std::string_view name);
+
+  template <auto GETTER>
+  requires (
+    std::is_function_v<decltype(GETTER)> ||
+    (std::is_pointer_v<decltype(GETTER)> && std::is_function_v<std::remove_pointer_t<decltype(GETTER)>>) ||
+    std::is_member_function_pointer_v<decltype(GETTER)>
+  )
+  void AddProperty(std::string_view name);
+
+  template <auto GETTER, auto SETTER>
+  void AddProperty(std::string_view name);
+
+  template <auto METHOD>
+  void AddMethod(std::string_view name);
 };
 
 class Type : public std::enable_shared_from_this<Type> {
@@ -144,6 +172,9 @@ class Type : public std::enable_shared_from_this<Type> {
   const TypePropertyDescription* GetProperty(std::string_view name) const;
   std::span<const TypePropertyDescription> properties() const { return description().properties; }
 
+  template <auto METHOD>
+  void AddMethod(std::string_view name);
+
  private:
   TypeId id_;
   TypeDescription description_;
@@ -154,6 +185,7 @@ class Type : public std::enable_shared_from_this<Type> {
 // Inline implementation
 #include <ovis/utils/reflection.hpp>
 #include <ovis/vm/function.hpp>
+#include <ovis/vm/module.hpp>
 #include <ovis/vm/virtual_machine.hpp>
 
 namespace ovis {
@@ -317,6 +349,50 @@ inline TypeDescription TypeDescription::CreateForNativeType(VirtualMachine* virt
     .memory_layout = TypeMemoryLayout::CreateForNativeType<T>(virtual_machine),
     .reference = TypeReferenceDescription::CreateFromNativeType<T>(virtual_machine),
   };
+}
+
+template <typename T, typename ParentType>
+requires (
+  (std::is_same_v<ParentType, void> || std::is_base_of_v<ParentType, T>) &&
+  (!std::is_same_v<T, ParentType> || std::is_same_v<T, void>)
+)
+inline TypeDescription TypeDescription::CreateForNativeType(Module* module, std::string_view name) {
+  return CreateForNativeType<T, ParentType>(module->virtual_machine(), name, module);
+}
+
+template <auto MEMBER_POINTER>
+requires (
+  std::is_member_pointer_v<decltype(MEMBER_POINTER)> &&
+  !std::is_member_function_pointer_v<decltype(MEMBER_POINTER)>
+)
+void TypeDescription::AddProperty(std::string_view name) {
+  properties.push_back(TypePropertyDescription::Create<MEMBER_POINTER>(virtual_machine, name));
+}
+
+template <auto GETTER>
+requires (
+  std::is_function_v<decltype(GETTER)> ||
+  (std::is_pointer_v<decltype(GETTER)> && std::is_function_v<std::remove_pointer_t<decltype(GETTER)>>) ||
+  std::is_member_function_pointer_v<decltype(GETTER)>
+)
+void TypeDescription::AddProperty(std::string_view name) {
+  properties.push_back(TypePropertyDescription::Create(
+      virtual_machine, name,
+      std::make_shared<Function>(FunctionDescription::CreateForNativeFunction<GETTER>(virtual_machine))));
+}
+
+template <auto GETTER, auto SETTER>
+void TypeDescription::AddProperty(std::string_view name) {
+  properties.push_back(TypePropertyDescription::Create(
+      virtual_machine, name,
+      std::make_shared<Function>(FunctionDescription::CreateForNativeFunction<GETTER>(virtual_machine)),
+      std::make_shared<Function>(FunctionDescription::CreateForNativeFunction<SETTER>(virtual_machine))));
+}
+
+template <auto METHOD>
+void TypeDescription::AddMethod(std::string_view name) {
+  methods.push_back(
+      std::make_shared<Function>(FunctionDescription::CreateForNativeFunction<METHOD>(virtual_machine, std::string(name))));
 }
 
 template <typename T>

@@ -8,10 +8,9 @@
 
 #include <ovis/utils/json.hpp>
 #include <ovis/core/math_constants.hpp>
+#include <ovis/core/vm_bindings.hpp>
 
 namespace ovis {
-
-class Module;
 
 template <int ELEMENT_COUNT>
 struct VectorTypes;
@@ -52,7 +51,7 @@ union alignas(sizeof(float) * 2) Vector2 {
   };
 
   static void RegisterType(sol::table* module);
-  static void RegisterType(Module* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 };
 static_assert(sizeof(Vector2) == 8);
 static_assert(std::is_trivially_copyable<Vector2>());
@@ -112,7 +111,7 @@ union alignas(sizeof(float) * 4) Vector3 {
   };
 
   static void RegisterType(sol::table* module);
-  static void RegisterType(Module* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 };
 std::ostream& operator<<(std::ostream& stream, const Vector3& vector);
 static_assert(sizeof(Vector3) == 16);

@@ -5,6 +5,7 @@ add_library(
   include/ovis/utils/json.hpp src/json.cpp
   include/ovis/utils/array_view.hpp
   include/ovis/utils/class.hpp
+  include/ovis/utils/function.hpp
   include/ovis/utils/down_cast.hpp
   include/ovis/utils/file.hpp src/file.cpp
   include/ovis/utils/flags.hpp

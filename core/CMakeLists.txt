@@ -1,7 +1,8 @@
 add_library(
   ovis-core
   
-  include/ovis/core/core_module.hpp src/core_module.cpp
+  include/ovis/core/vm_bindings.hpp src/vm_bindings.cpp
+  include/ovis/core/main_vm.hpp src/main_vm.cpp
   include/ovis/core/event.hpp src/event.cpp
   include/ovis/core/json_schema.hpp src/json_schema.cpp
   include/ovis/core/scene.hpp src/scene.cpp

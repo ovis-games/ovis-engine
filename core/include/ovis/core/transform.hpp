@@ -7,6 +7,7 @@
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_object_component.hpp>
 #include <ovis/core/vector.hpp>
+#include <ovis/core/vm_bindings.hpp>
 
 namespace ovis {
 
@@ -114,7 +115,7 @@ class Transform : public SceneObjectComponent {
   const json* GetSchema() const override;
 
   static void RegisterType(sol::table* module);
-  static void RegisterType(Module* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 
  private:
   Vector3 position_ = Vector3::Zero();

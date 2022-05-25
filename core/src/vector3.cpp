@@ -1,6 +1,5 @@
 #include <fmt/ostream.h>
 
-#include <ovis/core/module.hpp>
 #include <ovis/core/vector.hpp>
 
 namespace ovis {
@@ -332,10 +331,10 @@ Vector3 LinearInterpolateVector3(Vector3 a, Vector3 b, float t) {
   return (1.0f - t) * a + t * b;
 }
 
-void Vector3::RegisterType(Module* module) {
-  // vector3_type["x"] = &Vector3::x;
-  // vector3_type["y"] = &Vector3::y;
-  // vector3_type["z"] = &Vector3::z;
+OVIS_VM_DEFINE_TYPE_BINDING(Core, Vector3) {
+  Vector3_type->AddProperty<&Vector3::x>("x");
+  Vector3_type->AddProperty<&Vector3::y>("y");
+  Vector3_type->AddProperty<&Vector3::z>("z");
   // vector3_type["ZERO"] = sol::property(Vector3::Zero);
   // vector3_type["ONE"] = sol::property(Vector3::One);
   // vector3_type["POSITIVE_X"] = sol::property(Vector3::PositiveX);
@@ -345,9 +344,6 @@ void Vector3::RegisterType(Module* module) {
   // vector3_type["POSITIVE_Z"] = sol::property(Vector3::PositiveZ);
   // vector3_type["NEGATIVE_Z"] = sol::property(Vector3::NegativeZ);
 
-  auto vector3_description = TypeDescription::CreateForNativeType<Vector3>(&vm, "Vector3");
-  // vector3_type->RegisterProperty<&Vector3::x>("x");
-  module->RegisterType(vector3_description);
   // vector3_type->SetDeserializeFunction(&DeserializeVector3);
   // module->RegisterConstructor<Vector3, float, float, float>("CreateVector3", {"x", "y", "z"}, "vector");
   // module->RegisterConstructor<Vector3, float, float, float>("create_vector3", {"x", "y", "z"}, "vector");

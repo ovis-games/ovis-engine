@@ -1,5 +1,4 @@
 #include <ovis/core/animator.hpp>
-#include <ovis/core/module.hpp>
 #include <ovis/core/scene_object.hpp>
 
 namespace ovis {
@@ -60,9 +59,7 @@ bool Animator::Deserialize(const json& data) {
   return true;
 }
 
-void Animator::RegisterType(Module* module) {
-  auto animator_description = TypeDescription::CreateForNativeType<Animator, SceneObjectComponent>(&vm, "Animator");
-  module->RegisterType(animator_description);
+OVIS_VM_DEFINE_TYPE_BINDING(Core, Animator) {
 }
 
-}
+}  // namespace ovis

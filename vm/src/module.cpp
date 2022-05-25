@@ -8,6 +8,11 @@ Module::~Module() {
   }
 }
 
+Type* Module::RegisterType(TypeDescription description) {
+  description.module = this;
+  return virtual_machine()->RegisterType(std::move(description));
+}
+
 Type* Module::GetType(std::string_view name) {
   for (const auto& type_id : types_) {
     if (const auto type = virtual_machine()->GetType(type_id); type && type->name() == name) {

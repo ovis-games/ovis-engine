@@ -5,7 +5,6 @@
 
 #include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/serialize.hpp>
-#include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
 

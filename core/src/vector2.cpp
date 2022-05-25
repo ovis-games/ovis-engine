@@ -1,4 +1,3 @@
-#include <ovis/core/module.hpp>
 #include <ovis/core/vector.hpp>
 
 namespace ovis {
@@ -287,10 +286,9 @@ std::string VectorToString(Vector2 v) {
   return fmt::format("{}", v);
 }
 
-void Vector2::RegisterType(Module* module) {
-  // vector2_type["x"] = &Vector2::x;
-  // vector2_type["y"] = &Vector2::y;
-  // vector2_type["z"] = &Vector2::z;
+OVIS_VM_DEFINE_TYPE_BINDING(Core, Vector2) {
+  Vector2_type->AddProperty<&Vector2::x>("x");
+  Vector2_type->AddProperty<&Vector2::y>("y");
   // vector2_type["ZERO"] = sol::property(Vector2::Zero);
   // vector2_type["ONE"] = sol::property(Vector2::One);
   // vector2_type["POSITIVE_X"] = sol::property(Vector2::PositiveX);
@@ -300,9 +298,6 @@ void Vector2::RegisterType(Module* module) {
   // vector2_type["POSITIVE_Z"] = sol::property(Vector2::PositiveZ);
   // vector2_type["NEGATIVE_Z"] = sol::property(Vector2::NegativeZ);
 
-  auto vector2_description = TypeDescription::CreateForNativeType<Vector2>(&vm, "Vector2");
-  // vector3_type->RegisterProperty<&Vector3::x>("x");
-  module->RegisterType(vector2_description);
   // module->RegisterConstructor<Vector2, float, float>("Create Vector2", {"x", "y"}, "Vector2");
   // vector2_type[sol::meta_function::equal_to] = static_cast<bool (*)(const Vector2&, const Vector2&)>(ovis::operator==);
   // module->RegisterFunction<static_cast<Vector2 (*)(const Vector2&, const Vector2&)>(ovis::operator+)>("vector2_add", {"first vector", "second vector"}, {"vector"});

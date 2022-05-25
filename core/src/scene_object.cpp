@@ -3,12 +3,12 @@
 #include <SDL2/SDL_assert.h>
 
 #include <ovis/utils/log.hpp>
+#include <ovis/utils/function.hpp>
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/lua.hpp>
 #include <ovis/core/scene.hpp>
 #include <ovis/core/scene_object.hpp>
 #include <ovis/core/scene_object_animation.hpp>
-#include <ovis/core/type.hpp>
 
 namespace ovis {
 
@@ -95,12 +95,12 @@ bool SceneObject::ContainsChildObject(std::string_view object_name) {
 }
 
 Result<Value> SceneObject::AddComponent(TypeId component_type) {
-  const auto& type = vm.GetType(component_type);
+  const auto& type = main_vm->GetType(component_type);
   if (!type) {
     return Error("Invalid component type");
   }
   if (!type->IsDerivedFrom<SceneObjectComponent>()) {
-    return Error("{} does not derived from SceneObjectComponent", type->full_reference());
+    return Error("{} does not derived from SceneObjectComponent", type->GetReferenceString());
   }
 
   if (HasComponent(component_type)) {
@@ -118,7 +118,7 @@ Result<Value> SceneObject::GetComponent(TypeId component_type) {
       return component->CreateReference();
     }
   }
-  const auto type = vm.GetType(component_type);
+  const auto type = main_vm->GetType(component_type);
   if (type) {
     return Error("Object {} does not have component", path(), type->name());
   } else {
@@ -173,7 +173,7 @@ json SceneObject::Serialize() const {
   for (const auto& component : components_) {
     const auto component_type = component->type();
     assert(component_type != nullptr);
-    components[std::string(component_type->full_reference())] = component->as<SceneObjectComponent>().Serialize();
+    components[std::string(component_type->GetReferenceString())] = component->as<SceneObjectComponent>().Serialize();
   }
   auto& children = serialized_object["children"] = json::object();
   for (const auto& child : children_) {
@@ -197,7 +197,7 @@ bool SceneObject::Deserialize(const json& serialized_object) {
     const json& components = object_json->at("components");
     assert(components.is_object());
     for (const auto& [component_id, component_json] : components.items()) {
-      const auto type_id = vm.GetTypeId(component_id);
+      const auto type_id = main_vm->GetTypeId(component_id);
       if (type_id == Type::NONE_ID) {
         LogE(
             "Scene object deserialization failed: cannot add component `{}` to object. This type has not been "
@@ -209,7 +209,7 @@ bool SceneObject::Deserialize(const json& serialized_object) {
       auto component = AddComponent(type_id);
       if (!component) {
         // TODO: OVIS_CHECK_RESULT
-        // LogE("Failed to add component: {}", type->name());
+        LogE("Failed to add component {}: {}", main_vm->GetType(type_id)->GetReferenceString(), component.error().message);
         return false;
       }
       if (!component->as<SceneObjectComponent>().Deserialize(component_json)) {
@@ -403,6 +403,16 @@ Result<const json*> SceneObject::LoadTemplate(std::string_view asset_id) {
   assert(templates[template_index].first == asset_id);
   templates[template_index].second = std::move(*resolved_template_json);
   return &templates[template_index].second;
+}
+
+OVIS_VM_DEFINE_TYPE_BINDING(Core, SceneObject) {
+  SceneObject_type->AddProperty<&SceneObject::name>("name");
+  SceneObject_type->AddProperty<&SceneObject::path>("path");
+  SceneObject_type->AddProperty<&SceneObject::parent>("parent");
+  SceneObject_type->AddProperty<&SceneObject::has_parent>("hasParent");
+
+  SceneObject_type->AddMethod<SelectOverload<SceneObject*(std::string_view)>(&SceneObject::CreateChildObject)>(
+      "createChildObject");
 }
 
 }  // namespace ovis

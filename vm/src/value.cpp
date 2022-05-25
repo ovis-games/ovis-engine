@@ -38,13 +38,13 @@ Result<> Value::CopyTo(NotNull<ExecutionContext*> execution_context, NotNull<Val
   // assign the new virtual machine (and please write a test for it!).
   assert(other->virtual_machine() == virtual_machine());
 
-  if (other->type_id() != type_id()) {
+  if (other->type_id() != type_id() || other->is_reference() != is_reference()) {
     other->Reset();
     OVIS_CHECK_RESULT(other->storage_.Construct(execution_context, *memory_layout()));
     other->type_id_ = type_id();
     other->is_reference_ = is_reference();
-  } 
-  OVIS_CHECK_RESULT(ValueStorage::Copy(execution_context, type()->memory_layout(), &other->storage_, &storage_));
+  }
+  OVIS_CHECK_RESULT(ValueStorage::Copy(execution_context, *memory_layout(), &other->storage_, &storage_));
   return Success;
 }
 

@@ -12,11 +12,11 @@
 #include <ovis/utils/serialize.hpp>
 #include <ovis/utils/static_factory.hpp>
 #include <ovis/core/vector.hpp>
+#include <ovis/core/vm_bindings.hpp>
 
 namespace ovis {
 
 class SceneObject;
-class Module;
 
 class SceneObjectComponent
     : public Serializable,
@@ -32,7 +32,7 @@ class SceneObjectComponent
   inline SceneObject* scene_object() const { return scene_object_; }
 
   static void RegisterType(sol::table* module);
-  static void RegisterType(Module* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 
  private:
   SceneObject* scene_object_ = nullptr;

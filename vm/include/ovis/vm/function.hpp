@@ -5,6 +5,7 @@
 #include <span>
 #include <variant>
 #include <vector>
+#include <type_traits>
 
 #include <ovis/utils/json.hpp>
 #include <ovis/utils/result.hpp>
