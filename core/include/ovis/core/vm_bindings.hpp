@@ -18,7 +18,7 @@ struct VirtualMachineBinding {
   RegisterFunction* register_function;
 
   static VirtualMachineBinding Create(std::string_view module_name, RegisterFunction* register_function);
-  static std::vector<VirtualMachineBinding> bindings;
+  static std::vector<VirtualMachineBinding>& bindings();
 };
 
 }  // namespace ovis
