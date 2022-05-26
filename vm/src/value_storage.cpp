@@ -97,6 +97,16 @@ void ValueStorage::CopyTrivially(ValueStorage* destination, const ValueStorage* 
 #endif
 }
 
+void ValueStorage::MoveTrivially(ValueStorage* destination, ValueStorage* source) {
+  std::memcpy(&destination->data_, &source->data_, SIZE);
+  destination->destruct_function_and_flags = source->destruct_function_and_flags;
+  source->destruct_function_and_flags = 0;
+#ifndef NDEBUG
+  destination->native_type_id_ = source->native_type_id_;
+  source->native_type_id_ = TypeOf<void>;
+#endif
+}
+
 Result<> ValueStorage::Copy(NotNull<ExecutionContext*> execution_context, const TypeMemoryLayout& layout,
                             NotNull<ValueStorage*> destination, NotNull<const ValueStorage*> source) {
   assert(destination->has_allocated_storage() == source->has_allocated_storage());

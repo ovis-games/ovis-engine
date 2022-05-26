@@ -4,6 +4,7 @@
 #include <memory>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 
 #include <ovis/utils/not_null.hpp>
 #include <ovis/vm/type.hpp>
@@ -13,6 +14,8 @@
 namespace ovis {
 
 class Value {
+  friend class ReferencableValue;
+
  public:
   Value(NotNull<VirtualMachine*> virtual_machine)
       : virtual_machine_(virtual_machine), type_id_(Type::NONE_ID), is_reference_(false) {}
@@ -72,7 +75,66 @@ class Value {
   bool is_reference_ : 1;
 };
 
-}
+class ReferencableValue {
+ public:
+  ~ReferencableValue();
+
+  ReferencableValue(ReferencableValue&& other) : virtual_machine_(other.virtual_machine()), type_id_(other.type_id()) {
+    ValueStorage::MoveTrivially(&storage_, &other.storage_);
+  }
+
+  ReferencableValue& operator=(ReferencableValue&& other) {
+    virtual_machine_ = other.virtual_machine();
+    type_id_ = other.type_id();
+    ValueStorage::MoveTrivially(&storage_, &other.storage_);
+    return *this;
+  }
+
+  NotNull<VirtualMachine*> virtual_machine() const { return virtual_machine_; }
+  TypeId type_id() const { return type_id_; }
+  Type* type() const { return virtual_machine()->GetType(type_id()); }
+
+  template <typename T> T& as() {
+    assert(storage_.has_allocated_storage());
+    return *reinterpret_cast<T*>(storage_.allocated_storage_pointer());
+  }
+  template <typename T> const T& as() const {
+    assert(storage_.has_allocated_storage());
+    return *reinterpret_cast<T*>(storage_.allocated_storage_pointer());
+  }
+
+  Result<Value> CreateReference();
+
+  template <typename ValueType>
+  static Result<ReferencableValue> Create(NotNull<VirtualMachine*> virtual_machine) {
+    return Create<ValueType>(virtual_machine->main_execution_context());
+  }
+
+  template <typename ValueType>
+  static Result<ReferencableValue> Create(NotNull<ExecutionContext*> execution_context) {
+    return Create(execution_context, execution_context->virtual_machine()->GetTypeId<ValueType>());
+  }
+
+  static Result<ReferencableValue> Create(NotNull<VirtualMachine*> virtual_machine, TypeId type_id) {
+    return Create(virtual_machine->main_execution_context(), type_id);
+  }
+
+  static Result<ReferencableValue> Create(NotNull<ExecutionContext*> execution_context, TypeId type_id) {
+    ReferencableValue value(execution_context->virtual_machine(), type_id);
+    OVIS_CHECK_RESULT(value.storage_.Construct(execution_context, value.type()->memory_layout()));
+    assert(value.storage_.allocated_storage_pointer());
+    return value;
+  }
+
+ private:
+  ReferencableValue(NotNull<VirtualMachine*> virtual_machine, TypeId type_id) : virtual_machine_(virtual_machine), type_id_(type_id) {}
+
+  ValueStorage storage_;
+  NotNull<VirtualMachine*> virtual_machine_;
+  TypeId type_id_;
+};
+
+}  // namespace ovis
 
 // Implementation
 // TODO:

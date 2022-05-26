@@ -108,6 +108,9 @@ class alignas(16) ValueStorage final {
   // Trivially copies the value from source to destination. Neither the source nor the destination should have allocated storage.
   static void CopyTrivially(ValueStorage* destination, const ValueStorage* source);
 
+  // Trivially moves the data from source to destination.
+  static void MoveTrivially(ValueStorage* destination, ValueStorage* source);
+
   // Copies the value stored inside source to destination. The destination has to be constructed to the same type before
   // (see Construct()).
   static Result<> Copy(NotNull<ExecutionContext*> execution_context, const TypeMemoryLayout& layout,

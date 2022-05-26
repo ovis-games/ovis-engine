@@ -100,4 +100,29 @@ Value::~Value() {
   storage_.Reset(virtual_machine()->main_execution_context());
 }
 
+ReferencableValue::~ReferencableValue() {
+  storage_.Reset(virtual_machine()->main_execution_context());
+}
+
+Result<Value> ReferencableValue::CreateReference() {
+  assert(type());
+
+  const void* value_pointer = storage_.allocated_storage_pointer();
+
+  const auto& reference_description = *type()->description().reference;
+  Value value(virtual_machine());
+  const auto construct_result = value.storage_.Construct(virtual_machine()->main_execution_context(), reference_description.memory_layout);
+  OVIS_CHECK_RESULT(construct_result);
+
+  auto reference_pointer = value.storage_.value_pointer();
+
+  const auto set_pointer_result = reference_description.set_pointer->Call<void>(reference_pointer, value_pointer);
+  OVIS_CHECK_RESULT(set_pointer_result);
+
+  value.type_id_ = type_id_;
+  value.is_reference_ = true;
+
+  return value;
+}
+
 }  // namespace ovis
