@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <type_traits>
 
 #include <sol/sol.hpp>
 
@@ -20,19 +21,30 @@ class RenderingViewport : public SceneViewport {
 
   inline GraphicsContext* context() const { return graphics_context_; }
 
-  RenderPass* AddRenderPass(std::unique_ptr<RenderPass> render_pass);
-  RenderPass* AddRenderPass(const std::string& render_pass_id);
-  void RemoveRenderPass(const std::string& render_pass_id);
-  template <typename RenderPassType = RenderPass>
-  inline RenderPassType* GetRenderPass(const std::string& render_pass_name) const {
-    static_assert(std::is_base_of<RenderPass, RenderPassType>::value, "");
-    return down_cast<RenderPassType*>(GetRenderPassInternal(render_pass_name));
+  template <typename RenderPassType> requires std::is_base_of_v<RenderPass, RenderPassType>
+  RenderPassType* AddRenderPass();
+  Result<Value> AddRenderPass(TypeId render_pass_type);
+  void RemoveRenderPass(TypeId render_pass_type);
+  template <typename RenderPassType = RenderPass> requires std::is_base_of_v<RenderPass, RenderPassType>
+  inline const RenderPassType* GetRenderPass(TypeId render_pass_type) const {
+    for (auto& render_pass : render_passes_) {
+      if (render_pass.type_id() == render_pass_type) {
+        return &render_pass.as<RenderPassType>();
+      }
+    }
+    return nullptr;
   }
-  inline void AddRenderPassDependency(std::string rendered_first, std::string rendered_second) {
+  template <typename RenderPassType = RenderPass> requires std::is_base_of_v<RenderPass, RenderPassType>
+  inline RenderPassType* GetRenderPass(TypeId render_pass_type) {
+    for (auto& render_pass : render_passes_) {
+      if (render_pass.type_id() == render_pass_type) {
+        return &render_pass.as<RenderPassType>();
+      }
+    }
+    return nullptr;
+  }
+  inline void AddRenderPassDependency(TypeId rendered_first, TypeId rendered_second) {
     render_pass_dependencies_.insert(std::make_pair(std::move(rendered_second), std::move(rendered_first)));
-  }
-  inline void AddRenderPassDependency(std::string_view rendered_first, std::string_view rendered_second) {
-    render_pass_dependencies_.insert(std::make_pair(std::string(rendered_second), std::string(rendered_first)));
   }
 
   RenderTargetTexture2D* CreateRenderTarget2D(const std::string& id,
@@ -50,12 +62,11 @@ class RenderingViewport : public SceneViewport {
 
  private:
   void SortRenderPasses();
-  RenderPass* GetRenderPassInternal(const std::string& render_pass_name) const;
 
   GraphicsContext* graphics_context_ = nullptr;
 
-  std::multimap<std::string, std::string> render_pass_dependencies_;
-  std::unordered_map<std::string, std::unique_ptr<RenderPass>> render_passes_;
+  std::multimap<TypeId, TypeId> render_pass_dependencies_;
+  std::vector<ReferencableValue> render_passes_;
   std::vector<RenderPass*> render_pass_order_;
   bool render_passes_sorted_;
   std::unordered_map<std::string, std::unique_ptr<RenderTarget>> render_targets_;

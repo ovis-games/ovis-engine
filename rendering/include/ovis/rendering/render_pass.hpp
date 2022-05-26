@@ -31,7 +31,7 @@ class RenderPass : public StaticFactory<RenderPass, std::unique_ptr<RenderPass>(
   friend class RenderingViewport;
 
  public:
-  RenderPass(std::string_view name);
+  RenderPass();
   virtual ~RenderPass() = default;
 
   inline RenderingViewport* viewport() const { return viewport_; }
@@ -43,15 +43,15 @@ class RenderPass : public StaticFactory<RenderPass, std::unique_ptr<RenderPass>(
   virtual void Render(const RenderContext& render_context) = 0;
 
  protected:
-  void RenderBefore(const std::string& renderer_name);
-  void RenderAfter(const std::string& renderer_name);
+  void RenderBefore(const std::string& renderer_reference);
+  void RenderAfter(const std::string& renderer_reference);
 
  private:
   RenderingViewport* viewport_ = nullptr;
   GraphicsContext* graphics_context_ = nullptr;
   std::string name_;
-  std::set<std::string> render_before_list_;
-  std::set<std::string> render_after_list_;
+  std::set<TypeId> render_before_list_;
+  std::set<TypeId> render_after_list_;
 
 #if OVIS_ENABLE_BUILT_IN_PROFILING
   CPUTimeProfiler cpu_render_profiler_;

@@ -7,8 +7,8 @@
 
 namespace ovis {
 
-  Renderer2D::Renderer2D() : RenderPass("Renderer2D") {
-  RenderAfter("ClearPass");
+Renderer2D::Renderer2D() {
+  RenderAfter("Rendering.ClearPass");
 }
 
 void Renderer2D::CreateResources() {
