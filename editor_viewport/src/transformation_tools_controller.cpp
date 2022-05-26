@@ -1,6 +1,5 @@
 #include <ovis/editor_viewport/transformation_tools_controller.hpp>
 
-#include <imgui.h>
 #include <emscripten.h>
 #include <emscripten/bind.h>
 

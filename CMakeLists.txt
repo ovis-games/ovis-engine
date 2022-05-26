@@ -37,7 +37,7 @@ add_subdirectory(networking)
 # add_subdirectory(audio)
 add_subdirectory(rendering2d)
 # add_subdirectory(physics2d)
-add_subdirectory(imgui)
+# add_subdirectory(imgui)
 add_subdirectory(application)
 
 if (OVIS_EMSCRIPTEN)

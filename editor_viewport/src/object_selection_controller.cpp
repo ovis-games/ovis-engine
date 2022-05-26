@@ -1,24 +1,23 @@
-#include <ovis/editor_viewport/object_selection_controller.hpp>
-
 #include <emscripten.h>
-#include <emscripten/val.h>
 #include <emscripten/bind.h>
+#include <emscripten/val.h>
+#include <ovis/editor_viewport/editor_viewport.hpp>
+#include <ovis/editor_viewport/object_selection_controller.hpp>
 
 #include <ovis/utils/log.hpp>
 #include <ovis/core/intersection.hpp>
+#include <ovis/core/main_vm.hpp>
 #include <ovis/rendering2d/shape2d.hpp>
 #include <ovis/input/mouse_events.hpp>
-
-#include <ovis/editor_viewport/editor_viewport.hpp>
 
 namespace ovis {
 namespace editor {
 
 namespace {
 
-AxisAlignedBoundingBox3D GetComponentAABB(vm::Type* type, const vm::Value& component) {
-  if (type == vm::Type::Get<Shape2D>()) {
-    Shape2D* shape = component.Get<Shape2D*>();
+AxisAlignedBoundingBox3D GetComponentAABB(const Value& component) {
+  if (component.type_id() == main_vm->GetTypeId<Shape2D>()) {
+    Shape2D* shape = component.as<Shape2D*>();
     switch (shape->type()) {
       case Shape2D::Type::RECTANGLE:
         return AxisAlignedBoundingBox3D::FromCenterAndExtend(Vector3::Zero(),
@@ -54,8 +53,12 @@ void ObjectSelectionController::Update(std::chrono::microseconds) {
   }
 
   selected_object_aabb_ = AxisAlignedBoundingBox3D::Empty();
-  for (const safe_ptr<vm::Type> component_type : object->component_types()) {
-    const auto aabb = GetComponentAABB(component_type.get() , object->GetComponent(component_type));
+  for (const auto component_type : object->component_type_ids()) {
+    auto component = object->GetComponent(component_type);
+    if (!component) {
+      continue;
+    }
+    const auto aabb = GetComponentAABB(*component);
     selected_object_aabb_ = AxisAlignedBoundingBox3D::FromMinMax(min(aabb.min(), selected_object_aabb_.min()),
                                                                  max(aabb.max(), selected_object_aabb_.max()));
   }
@@ -79,8 +82,12 @@ void ObjectSelectionController::ProcessEvent(Event* event) {
       const Ray3D view_ray_object_space{
           TransformPosition(world_to_object_space, view_ray_world_space.origin),
           Normalize(TransformDirection(world_to_object_space, view_ray_world_space.direction))};
-      for (const safe_ptr<vm::Type> component_type : object->component_types()) {
-        const auto aabb = GetComponentAABB(component_type.get() , object->GetComponent(component_type));
+      for (const auto component_type : object->component_type_ids()) {
+        auto component = object->GetComponent(component_type);
+        if (!component) {
+          continue;
+        }
+        const auto aabb = GetComponentAABB(*component);
         const auto intersection = ComputeRayAABBIntersection(view_ray_object_space, aabb, 0.0f, closest_distance);
         if (intersection) {
           closest_distance = intersection->t_ray_enter;

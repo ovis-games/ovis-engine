@@ -72,7 +72,7 @@ class GraphicsContext final {
     return m_default_render_target_configuration.get();
   }
   inline GraphicsResource* GetResource(GraphicsResource::Id resource_id) const {
-    const size_t index = resource_id.index();
+    const size_t index = resource_id.index;
     if (index >= resources_.size()) {
       return nullptr;
     }

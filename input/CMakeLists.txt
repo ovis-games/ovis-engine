@@ -1,7 +1,6 @@
 add_library(
   ovis-input
   
-  include/ovis/input/input_module.hpp src/input_module.cpp
   include/ovis/input/key.hpp src/key.cpp
   include/ovis/input/key_events.hpp src/key_press_event.cpp src/key_release_event.cpp
   include/ovis/input/text_input_event.hpp src/text_input_event.cpp

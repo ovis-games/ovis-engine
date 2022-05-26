@@ -1,7 +1,6 @@
 add_library(
   ovis-utils
   
-  include/ovis/utils/utils_module.hpp src/utils_module.cpp
   include/ovis/utils/json.hpp src/json.cpp
   include/ovis/utils/array_view.hpp
   include/ovis/utils/class.hpp

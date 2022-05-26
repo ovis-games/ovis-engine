@@ -1,7 +1,6 @@
 add_library(
   ovis-rendering2d
   
-  include/ovis/rendering2d/rendering2d_module.hpp src/rendering2d_module.cpp
   include/ovis/rendering2d/renderer2d.hpp src/renderer2d.cpp
   include/ovis/rendering2d/shape2d.hpp src/shape2d.cpp
 )

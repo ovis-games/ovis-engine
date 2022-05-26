@@ -72,6 +72,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   template <typename ComponentType> bool HasComponent() const;
 
   auto component_types() const { return TransformRange(components_, [](const auto& component) { return component->type(); }); }
+  auto component_type_ids() const { return TransformRange(components_, [](const auto& component) { return component->type_id(); }); }
 
   Result<> RemoveComponent(const std::shared_ptr<Type>& type);
   template <typename ComponentType> bool RemoveComponent();

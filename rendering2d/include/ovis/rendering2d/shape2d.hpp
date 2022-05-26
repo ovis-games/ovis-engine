@@ -5,7 +5,6 @@
 #include <ovis/core/color.hpp>
 #include <ovis/core/scene_object_component.hpp>
 #include <ovis/core/vector.hpp>
-#include <ovis/core/virtual_machine.hpp>
 #include <ovis/graphics/texture2d.hpp>
 
 namespace ovis {
@@ -32,7 +31,7 @@ class Shape2D : public SceneObjectComponent {
   };
   static_assert(sizeof(Vertex) == 12);
 
-  explicit inline Shape2D(SceneObject* object) : SceneObjectComponent(object) {Deserialize({});}
+  explicit inline Shape2D() : SceneObjectComponent() {Deserialize({});}
 
   Color color() const { return color_; }
   Color outline_color() const { return outline_color_; }
@@ -54,7 +53,6 @@ class Shape2D : public SceneObjectComponent {
   const json* GetSchema() const override { return &schema; }
 
   static void RegisterType(sol::table* module);
-  static void RegisterType(vm::Module* module);
 
  private:
   Color color_ = Color::White();

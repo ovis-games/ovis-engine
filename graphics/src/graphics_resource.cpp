@@ -6,7 +6,7 @@
 namespace ovis {
 
 GraphicsResource::~GraphicsResource() {
-  const size_t index = id().index();
+  const size_t index = id().index;
   SDL_assert(context_->resources_[index] == this);
   context_->resources_[index] = new GraphicsResource(context_, id());
 }

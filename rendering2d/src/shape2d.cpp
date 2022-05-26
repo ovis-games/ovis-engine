@@ -234,8 +234,4 @@ void Shape2D::UpdateEllipse() {
   SDL_assert(vertices_.size() == ellipse_vertices + outline_vertices);
 }
 
-void Shape2D::RegisterType(vm::Module* module) {
-  module->RegisterType<Shape2D, SceneObjectComponent>("Shape2D");
-}
-
 }  // namespace ovis

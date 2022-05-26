@@ -11,7 +11,7 @@ namespace ovis {
 namespace editor {
 
 CameraController::CameraController(EditorViewport* viewport)
-    : ViewportController(), camera_(nullptr) {
+    : ViewportController() {
   camera_.SetProjectionType(ProjectionType::ORTHOGRAPHIC);
   camera_.SetVerticalFieldOfView(100.0f);
   camera_.SetNearClipPlane(0.0f);

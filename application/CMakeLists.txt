@@ -28,7 +28,7 @@ target_link_libraries(
     # ovis::physics2d
     ovis::input
     ovis::networking
-    ovis::imgui
+    # ovis::imgui
 )
 
 # target_add_assets(
