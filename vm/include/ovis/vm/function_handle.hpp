@@ -36,14 +36,21 @@ union FunctionHandle {
   NativeFunction* native_function;
   struct {
     // Note: all types here have to be same type!
+#if !OVIS_EMSCRIPTEN
     std::uintptr_t zero : 1;
     std::uintptr_t is_script_function : 1;
+#endif
     std::uintptr_t instruction_offset : (sizeof(std::uintptr_t) * 8 - 2);
+#if OVIS_EMSCRIPTEN
+    std::uintptr_t is_script_function : 1;
+    std::uintptr_t zero : 1;
+#endif
   };
   std::uintptr_t integer;
 
   static constexpr FunctionHandle Null() { return FunctionHandle { 0 }; }
-  static constexpr FunctionHandle FromNativeFunction(NativeFunction* native_function) {
+  static FunctionHandle FromNativeFunction(NativeFunction* native_function) {
+    // assert((reinterpret_cast<uintptr_t>(native_function) & (0b11 << 30)) == 0);
     return {.native_function = native_function};
   }
   static constexpr FunctionHandle FromScriptFunction(std::uintptr_t instruction_offset) {

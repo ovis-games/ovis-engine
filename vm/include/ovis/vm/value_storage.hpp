@@ -119,8 +119,13 @@ class alignas(16) ValueStorage final {
     std::uintptr_t destruct_function_and_flags;
     // TODO: the following only works on little endian!
     struct {
+#if !OVIS_EMSCRIPTEN
       std::uintptr_t allocated_storage : 1;
+#endif
       std::uintptr_t : (sizeof(std::uintptr_t) * 8 - 1);
+#if OVIS_EMSCRIPTEN
+      std::uintptr_t allocated_storage : 1;
+#endif
     } flags_;
   };
 
@@ -179,12 +184,17 @@ inline void ValueStorage::Store(T&& value) {
   if constexpr (alignof(T) > ALIGNMENT || sizeof(T) > SIZE) {
     Allocate(alignof(T), sizeof(T));
     SetAllocatedStorageFlag(true);
+    assert(has_allocated_storage());
     new (allocated_storage_pointer()) StoredType(std::forward<T>(value));
   } else {
     new (data()) StoredType(std::forward<T>(value));
+    assert(!has_allocated_storage());
   }
   if constexpr (!std::is_trivially_destructible_v<StoredType>) {
     SetDestructFunction(FunctionHandle::FromNativeFunction(&NativeFunctionWrapper<&type_helper::Destruct<StoredType>>));
+    assert(destruct_function());
+  } else {
+    assert(!destruct_function());
   }
 #ifndef NDEBUG
   native_type_id_ = TypeOf<StoredType>;

@@ -55,12 +55,16 @@ void ValueStorage::Deallocate() {
 }
 
 void ValueStorage::SetDestructFunction(FunctionHandle destructor) {
-  assert((destructor.integer & 1) == 0);
-  destruct_function_and_flags = destructor.integer | flags_.allocated_storage;
+  assert(destructor.zero == 0);
+  const bool allocated_storage = has_allocated_storage();
+  destruct_function_and_flags = destructor.integer;
+  flags_.allocated_storage = allocated_storage;
 }
 
 FunctionHandle ValueStorage::destruct_function() const {
-  return { .integer = destruct_function_and_flags & ~1 };
+  FunctionHandle handle { .integer = destruct_function_and_flags };
+  handle.zero = 0;
+  return handle;
 }
 
 Result<> ValueStorage::Construct(NotNull<ExecutionContext*> execution_context, const TypeMemoryLayout& layout) {

@@ -33,7 +33,7 @@ TEST_CASE("Use value storage", "[ovis][vm][ValueStorage]") {
     }
 
     SECTION("alignment=16, size=4") {
-      void* memory = value_storage.AllocateIfNecessary(16, 4);
+      void* memory = value_storage.AllocateIfNecessary(16, 16);
       REQUIRE(memory != nullptr);
       REQUIRE(MemoryIsAlignedTo(memory, 16));
       REQUIRE(value_storage.has_allocated_storage());
@@ -92,7 +92,10 @@ TEST_CASE("Use value storage", "[ovis][vm][ValueStorage]") {
   }
 
   SECTION("Construct from layout") {
+    REQUIRE(!ValueStorage::IsTypeStoredInline(vm.GetType<std::string>()->description().memory_layout.alignment_in_bytes,
+                                              vm.GetType<std::string>()->description().memory_layout.size_in_bytes));
     value_storage.Construct(vm.main_execution_context(), vm.GetType<std::string>()->description().memory_layout);
+    REQUIRE(!ValueStorage::stored_inline<std::string>);
     REQUIRE(value_storage.has_allocated_storage());
     REQUIRE(value_storage.destruct_function());
 
