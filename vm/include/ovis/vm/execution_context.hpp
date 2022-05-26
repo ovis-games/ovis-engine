@@ -156,12 +156,12 @@ inline Result<ReturnType> ExecutionContext::Call(FunctionHandle handle, Argument
   const auto stack_size_before_call = stack_size();
 #endif
 
-  // Reserve space for return value if necessary
-  if constexpr (!std::is_same_v<ReturnType, void>) {
-    PushUninitializedValue();
-  }
-
   if (handle.is_script_function) {
+    // Reserve space for return value if necessary
+    if constexpr (!std::is_same_v<ReturnType, void>) {
+      PushUninitializedValue();
+    }
+
     PushValue(std::uint32_t(0)); // Return address (0 = exit)
     PushValue(constant_offset_); // Constant offset
     PushValue(stack_offset_); // Stack offset
