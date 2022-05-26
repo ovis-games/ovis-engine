@@ -126,14 +126,19 @@ Result<Value> SceneObject::GetComponent(TypeId component_type) {
   }
 }
 
-// Value SceneObject::GetComponent(const std::shared_ptr<Type>& type) const {
-//   for (const auto& component : components_) {
-//     if (component.type.lock() == type) {
-//       return Value::CreateView(component.pointer.get(), type);
-//     }
-//   }
-//   return Value::None();
-// }
+Result<Value> SceneObject::GetComponent(TypeId component_type) const {
+  for (const auto& component : components_) {
+    if (component->type_id() == component_type) {
+      return component->CreateReference();
+    }
+  }
+  const auto type = main_vm->GetType(component_type);
+  if (type) {
+    return Error("Object {} does not have component", path(), type->name());
+  } else {
+    return Error("Invalid component type");
+  }
+}
 
 bool SceneObject::HasComponent(TypeId component_type) const {
   for (const auto& component : components_) {

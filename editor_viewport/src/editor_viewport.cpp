@@ -1,5 +1,7 @@
 #include <ovis/editor_viewport/editor_viewport.hpp>
 #include <ovis/editor_viewport/render_passes/transformation_tools_renderer.hpp>
+#include <ovis/rendering/clear_pass.hpp>
+#include <ovis/rendering2d/renderer2d.hpp>
 
 #if OVIS_EMSCRIPTEN
 #include <emscripten.h>
@@ -67,11 +69,10 @@ EditorViewport::EditorViewport()
   SDL_assert(instance_ == nullptr);
   instance_ = this;
 
-  AddRenderPass("ClearPass");
-  AddRenderPass("Renderer2D");
-
-  AddRenderPass(std::make_unique<SelectedObjectBoundingBox>());
-  AddRenderPass(std::make_unique<TransformationToolsRenderer>());
+  LogOnError(AddRenderPass<ClearPass>());
+  LogOnError(AddRenderPass<Renderer2D>());
+  LogOnError(AddRenderPass<SelectedObjectBoundingBox>());
+  LogOnError(AddRenderPass<TransformationToolsRenderer>());
 
   SetCustomCameraMatrices(Matrix3x4::IdentityTransformation(),
                           Matrix4::FromOrthographicProjection(-10, 10, -10, 10, -10, 10));

@@ -40,7 +40,7 @@ void RenderingViewport::Render() {
   }
 }
 
-Result<Value> RenderingViewport::AddRenderPass(TypeId render_pass_type) {
+Result<RenderPass*> RenderingViewport::AddRenderPass(TypeId render_pass_type) {
   if (GetRenderPass(render_pass_type)) {
     return Error("Render pass {} already added", main_vm->GetType(render_pass_type)->GetReferenceString());
   }
@@ -48,6 +48,7 @@ Result<Value> RenderingViewport::AddRenderPass(TypeId render_pass_type) {
   auto render_pass = ReferencableValue::Create(main_vm, render_pass_type);
   OVIS_CHECK_RESULT(render_pass);
 
+  render_pass->as<RenderPass>().viewport_ = this;
   if (context()) {
     render_pass->as<RenderPass>().graphics_context_ = context();
     render_pass->as<RenderPass>().CreateResources();
@@ -55,7 +56,7 @@ Result<Value> RenderingViewport::AddRenderPass(TypeId render_pass_type) {
   render_passes_.push_back(std::move(*render_pass));
   render_passes_sorted_ = false;
 
-  return render_passes_.back().CreateReference();
+  return &render_passes_.back().as<RenderPass>();
 }
 
 void RenderingViewport::SetGraphicsContext(GraphicsContext* graphics_context) {

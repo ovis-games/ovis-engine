@@ -2,6 +2,7 @@
 
 #include <ovis/core/transform.hpp>
 #include <ovis/rendering/rendering_viewport.hpp>
+#include <ovis/rendering2d/renderer2d.hpp>
 
 #include <ovis/editor_viewport/object_selection_controller.hpp>
 #include <ovis/editor_viewport/editor_viewport.hpp>
@@ -9,9 +10,8 @@
 namespace ovis {
 namespace editor {
 
-SelectedObjectBoundingBox::SelectedObjectBoundingBox()
-    : PrimitiveRenderer(Name()) {
-  RenderAfter("Renderer2D");
+SelectedObjectBoundingBox::SelectedObjectBoundingBox() {
+  RenderAfter<Renderer2D>();
 }
 
 void SelectedObjectBoundingBox::Render(const RenderContext& render_context) {

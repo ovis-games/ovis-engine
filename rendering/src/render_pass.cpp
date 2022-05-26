@@ -9,12 +9,12 @@ RenderPass::RenderPass()
 {
 }
 
-void RenderPass::RenderBefore(const std::string& render_pass_name) {
-  render_before_list_.insert(main_vm->GetTypeId(render_pass_name));
+void RenderPass::RenderBefore(TypeId render_pass_type) {
+  render_before_list_.insert(render_pass_type);
 }
 
-void RenderPass::RenderAfter(const std::string& render_pass_name) {
-  render_after_list_.insert(main_vm->GetTypeId(render_pass_name));
+void RenderPass::RenderAfter(TypeId render_pass_type) {
+  render_after_list_.insert(render_pass_type);
 }
 
 }  // namespace ovis

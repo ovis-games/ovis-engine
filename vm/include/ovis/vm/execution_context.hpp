@@ -152,6 +152,10 @@ inline ValueStorage& ExecutionContext::GetStackValue(std::size_t offset) {
 
 template <typename ReturnType, typename... ArgumentTypes>
 inline Result<ReturnType> ExecutionContext::Call(FunctionHandle handle, ArgumentTypes&&... arguments) {
+#ifndef NDEBUG
+  const auto stack_size_before_call = stack_size();
+#endif
+
   // Reserve space for return value if necessary
   if constexpr (!std::is_same_v<ReturnType, void>) {
     PushUninitializedValue();
@@ -181,10 +185,12 @@ inline Result<ReturnType> ExecutionContext::Call(FunctionHandle handle, Argument
   // Function call was successful, extract return value if necessary
   if constexpr (std::is_same_v<ReturnType, void>) {
     // No return type, just succeed
+    assert(stack_size_before_call == stack_size());
     return Success;
   } else {
     ReturnType result(top().as<ReturnType>());
     PopValue();
+    assert(stack_size_before_call == stack_size());
     return result;
   }
 }

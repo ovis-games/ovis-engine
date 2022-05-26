@@ -9,6 +9,7 @@
 #include <ovis/graphics/render_target_configuration.hpp>
 #include <ovis/graphics/render_target_texture2d.hpp>
 #include <ovis/rendering/render_pass.hpp>
+#include <ovis/vm/virtual_machine.hpp>
 
 namespace ovis {
 
@@ -22,8 +23,8 @@ class RenderingViewport : public SceneViewport {
   inline GraphicsContext* context() const { return graphics_context_; }
 
   template <typename RenderPassType> requires std::is_base_of_v<RenderPass, RenderPassType>
-  RenderPassType* AddRenderPass();
-  Result<Value> AddRenderPass(TypeId render_pass_type);
+  Result<RenderPassType*> AddRenderPass();
+  Result<RenderPass*> AddRenderPass(TypeId render_pass_type);
   void RemoveRenderPass(TypeId render_pass_type);
   template <typename RenderPassType = RenderPass> requires std::is_base_of_v<RenderPass, RenderPassType>
   inline const RenderPassType* GetRenderPass(TypeId render_pass_type) const {
@@ -71,5 +72,13 @@ class RenderingViewport : public SceneViewport {
   bool render_passes_sorted_;
   std::unordered_map<std::string, std::unique_ptr<RenderTarget>> render_targets_;
 };
+
+template <typename RenderPassType> requires std::is_base_of_v<RenderPass, RenderPassType>
+Result<RenderPassType*> RenderingViewport::AddRenderPass() {
+  auto render_pass = AddRenderPass(main_vm->GetTypeId<RenderPassType>());
+  OVIS_CHECK_RESULT(render_pass);
+  return down_cast<RenderPassType*>(*render_pass);
+}
+
 
 }  // namespace ovis

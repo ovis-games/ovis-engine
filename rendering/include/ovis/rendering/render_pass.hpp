@@ -3,6 +3,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <type_traits> // is_base_of_v
 
 #if OVIS_ENABLE_BUILT_IN_PROFILING
 #include <ovis/utils/profiling.hpp>
@@ -43,8 +44,13 @@ class RenderPass : public StaticFactory<RenderPass, std::unique_ptr<RenderPass>(
   virtual void Render(const RenderContext& render_context) = 0;
 
  protected:
-  void RenderBefore(const std::string& renderer_reference);
-  void RenderAfter(const std::string& renderer_reference);
+  template <typename T> requires std::is_base_of_v<RenderPass, T>
+  void RenderBefore() { RenderBefore(main_vm->GetTypeId<T>()); }
+  void RenderBefore(TypeId render_pass_type);
+
+  template <typename T> requires std::is_base_of_v<RenderPass, T>
+  void RenderAfter() { RenderAfter(main_vm->GetTypeId<T>()); }
+  void RenderAfter(TypeId render_pass_type);
 
  private:
   RenderingViewport* viewport_ = nullptr;

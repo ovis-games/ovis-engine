@@ -74,7 +74,7 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   auto component_types() const { return TransformRange(components_, [](const auto& component) { return component->type(); }); }
   auto component_type_ids() const { return TransformRange(components_, [](const auto& component) { return component->type_id(); }); }
 
-  Result<> RemoveComponent(const std::shared_ptr<Type>& type);
+  Result<> RemoveComponent(TypeId component_type);
   template <typename ComponentType> bool RemoveComponent();
   void ClearComponents();
 
@@ -148,23 +148,18 @@ inline ComponentType* SceneObject::GetComponent() {
 
 template <typename ComponentType>
 inline const ComponentType* SceneObject::GetComponent() const {
-  // return GetComponent(vm::Type::Get<ComponentType>()).template Get<ComponentType*>();
-  assert(false && "Not implemented");
-  return nullptr;
+  auto component = GetComponent(main_vm->GetTypeId<ComponentType>());
+  return component ? &component->template as<ComponentType>() : nullptr;
 }
 
 template <typename ComponentType>
 inline bool SceneObject::HasComponent() const {
-  // return HasComponent(vm::Type::Get<ComponentType>());
-  assert(false && "Not implemented");
-  return false;
+  return HasComponent(main_vm->GetTypeId<ComponentType>());
 }
 
 template <typename ComponentType>
 inline bool SceneObject::RemoveComponent() { 
-  // return RemoveComponent(vm::Type::Get<ComponentType>());
-  assert(false && "Not implemented");
-  return false;
+  return RemoveComponent(main_vm->GetTypeId<ComponentType>());
 }
 
 }  // namespace ovis

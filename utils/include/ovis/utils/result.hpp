@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ovis/utils/log.hpp"
 #include <cassert>
 #include <string>
 #include <string_view>
@@ -135,10 +136,17 @@ private:
   }
 };
 
+template <typename T, typename E> requires std::is_base_of_v<Error, E>
+void LogOnError(const Result<T, E>& result, LogLevel log_level = LogLevel::ERROR) {
+  if (!result) {
+    Log::Write(log_level, "{}", result.error().message);
+  }
+}
+
 #define OVIS_CHECK_RESULT(expression)      \
   if (auto&& result = expression; !result) { \
     return result.error();                 \
   }
 
-}
+}  // namespace ovis
 

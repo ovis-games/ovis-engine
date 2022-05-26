@@ -26,6 +26,7 @@ void ExecutionContext::PushUninitializedValues(std::size_t count) {
   // for (auto i : IRange(count)) {
   //   assert(registers_[used_register_count_ + i].native_type_id_ == TypeOf<void>);
   // }
+  assert(stack_size() + count < stack_capacity());
   used_register_count_ += count;
   // return Success;
 }
