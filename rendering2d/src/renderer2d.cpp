@@ -52,22 +52,22 @@ void Renderer2D::Render(const RenderContext& render_context) {
                        viewport()->scene()->ObjectsWithComponent<Shape2D>().end());
 
   auto& objects_with_shape2d = object_cache_;
-  // std::sort(objects_with_shape2d.begin(), objects_with_shape2d.end(), [](SceneObject* lhs, SceneObject* rhs) {
-  //   Vector3 lhs_position;
-  //   Transform* lhs_transform = lhs->GetComponent<Transform>();
-  //   if (lhs_transform != nullptr) {
-  //     lhs_position = lhs_transform->world_position();
-  //   }
+  std::sort(objects_with_shape2d.begin(), objects_with_shape2d.end(), [](SceneObject* lhs, SceneObject* rhs) {
+    Vector3 lhs_position;
+    Transform* lhs_transform = lhs->GetComponent<Transform>();
+    if (lhs_transform != nullptr) {
+      lhs_position = lhs_transform->world_position();
+    }
 
-  //   Vector3 rhs_position;
-  //   Transform* rhs_transform = rhs->GetComponent<Transform>();
-  //   if (rhs_transform != nullptr) {
-  //     rhs_position = rhs_transform->world_position();
-  //   }
+    Vector3 rhs_position;
+    Transform* rhs_transform = rhs->GetComponent<Transform>();
+    if (rhs_transform != nullptr) {
+      rhs_position = rhs_transform->world_position();
+    }
 
-  //   // TODO: project into camera view axis instead of using the z coordinates
-  //   return lhs_position.z > rhs_position.z;
-  // });
+    // TODO: project into camera view axis instead of using the z coordinates
+    return lhs_position.z > rhs_position.z;
+  });
 
   for (SceneObject* object : objects_with_shape2d) {
     Shape2D* shape = object->GetComponent<Shape2D>();
