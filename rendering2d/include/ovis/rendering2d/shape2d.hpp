@@ -5,6 +5,7 @@
 #include <ovis/core/color.hpp>
 #include <ovis/core/scene_object_component.hpp>
 #include <ovis/core/vector.hpp>
+#include <ovis/core/vm_bindings.hpp>
 #include <ovis/graphics/texture2d.hpp>
 
 namespace ovis {
@@ -53,6 +54,7 @@ class Shape2D : public SceneObjectComponent {
   const json* GetSchema() const override { return &schema; }
 
   static void RegisterType(sol::table* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 
  private:
   Color color_ = Color::White();

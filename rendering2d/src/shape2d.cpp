@@ -234,4 +234,7 @@ void Shape2D::UpdateEllipse() {
   SDL_assert(vertices_.size() == ellipse_vertices + outline_vertices);
 }
 
+OVIS_VM_DEFINE_TYPE_BINDING(Rendering2D, Shape2D, SceneObjectComponent) {
+}
+
 }  // namespace ovis
