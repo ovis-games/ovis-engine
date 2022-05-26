@@ -8,7 +8,6 @@
 
 #include <ovis/utils/log.hpp>
 #include <ovis/core/asset_library.hpp>
-#include <ovis/rendering2d/rendering2d_module.hpp>
 #include <ovis/application/application.hpp>
 #include <ovis/application/window.hpp>
 
