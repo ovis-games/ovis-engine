@@ -3,6 +3,7 @@
 #include <cassert>
 #include <limits>
 #include <concepts>
+#include <functional> // For hash
 
 // A VersionedIndex is meant to be used as an id for resources that are stored in a vector-like structure. It consists
 // of an index that specifies the offset in the vector and a version that indicates whether the resources is the one
@@ -63,4 +64,20 @@ inline bool operator!=(VersionedIndex<T, VERSION_BITS, INDEX_BITS> lhs, Versione
   return lhs.index != rhs.index || lhs.version != rhs.version;
 }
 
+template <IndexType T, std::size_t VERSION_BITS, std::size_t INDEX_BITS>
+inline bool operator<(VersionedIndex<T, VERSION_BITS, INDEX_BITS> lhs, VersionedIndex<T, VERSION_BITS, INDEX_BITS> rhs) {
+  return lhs.index < rhs.index || lhs.version < rhs.version;
 }
+
+}  // namespace ovis
+
+namespace std {
+
+template <ovis::IndexType T, std::size_t VERSION_BITS, std::size_t INDEX_BITS>
+struct hash<ovis::VersionedIndex<T, VERSION_BITS, INDEX_BITS>> {
+  std::size_t operator()(const ovis::VersionedIndex<T, VERSION_BITS, INDEX_BITS> key) const {
+    return hash<T>()(key.index | (key.version << INDEX_BITS));
+  }
+};
+
+}  // namespace std
