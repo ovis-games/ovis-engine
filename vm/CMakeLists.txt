@@ -71,7 +71,7 @@ if (OVIS_BUILD_TESTS)
   else ()
     add_test(
       NAME ovis-vm-test
-      COMMAND ovis-vm-test --assets-directory ${CMAKE_CURRENT_BINARY_DIR}/assets/ovis-vm-test/
+      COMMAND ovis-vm-test
     )
   endif ()
 endif ()
