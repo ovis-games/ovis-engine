@@ -17,7 +17,7 @@ namespace {
 
 AxisAlignedBoundingBox3D GetComponentAABB(const Value& component) {
   if (component.type_id() == main_vm->GetTypeId<Shape2D>()) {
-    Shape2D* shape = component.as<Shape2D*>();
+    const Shape2D* shape = &component.as<Shape2D>();
     switch (shape->type()) {
       case Shape2D::Type::RECTANGLE:
         return AxisAlignedBoundingBox3D::FromCenterAndExtend(Vector3::Zero(),
