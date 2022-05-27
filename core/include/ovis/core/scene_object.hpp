@@ -142,8 +142,13 @@ inline ComponentType* SceneObject::AddComponent() {
 
 template <typename ComponentType>
 inline ComponentType* SceneObject::GetComponent() {
-  auto component = GetComponent(main_vm->GetTypeId<ComponentType>());
-  return component ? &component->template as<ComponentType>() : nullptr;
+  const auto type_id = main_vm->GetTypeId<ComponentType>();
+  for (auto& component : components_) {
+    if (component->type_id() == type_id) {
+      return &component->as<ComponentType>();
+    }
+  }
+  return nullptr;
 }
 
 template <typename ComponentType>
