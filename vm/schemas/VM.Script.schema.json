@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "VM.Script",
+  "title": "Script",
+  "description": "A script",
+  "type": "array",
+  "items": {
+    "type": {
+      "anyOf": [
+        { "#ref": "VM.Function.schema.json" },
+        { "#ref": "VM.Type.schema.json" }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

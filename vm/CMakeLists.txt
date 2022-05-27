@@ -12,6 +12,7 @@ add_library(
   include/ovis/vm/parse_script_error.hpp src/parse_script_error.cpp
   include/ovis/vm/script_function_parser.hpp src/script_function_parser.cpp
   include/ovis/vm/script_type_parser.hpp src/script_type_parser.cpp
+  include/ovis/vm/script_parser.hpp src/script_parser.cpp
 )
 add_library(ovis::vm ALIAS ovis-vm)
 
@@ -46,8 +47,7 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_execution_context.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_type_parsing.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_function_parser.cpp
-    # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
-    # ${CMAKE_CURRENT_SOURCE_DIR}/test/test_module.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_parser.cpp
   )
 
   target_link_libraries(

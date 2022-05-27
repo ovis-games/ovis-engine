@@ -1,9 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "Core.Type.schema.json",
+  "id": "VM.Type",
   "title": "Type",
-  "anyOf": [
-    { "#ref": "Core.TypeObject.schema.json" },
-    { "#ref": "Core.TypeString.schema.json" }
-  ]
+  "description": "The definition of a type",
+  "type": "object",
+  "properties": {
+    "name": "string",
+    "properties": ""
+  },
+  "additionalProperties": false
 }
