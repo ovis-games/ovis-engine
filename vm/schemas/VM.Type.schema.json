@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "VM.Type",
+  "title": "Type",
+  "description": "Describes a new type for the virtual machine",
+  "type": "object",
+  "properties": {
+    "name": { "$ref": "VM.VariableName.schema.json" },
+    "definitionType": "type",
+    "properties": {
+      "type": "array",
+      "items": { "$ref": "VM.VariableDeclaration.schema.json" }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["name", "definitionType", "properties"]
+}

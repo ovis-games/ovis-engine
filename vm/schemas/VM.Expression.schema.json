@@ -3,10 +3,10 @@
   "id": "VM.Expression",
   "title": "Expression",
   "description": "An expression produces always exactly one value.",
-  "anyOf": {
+  "anyOf": [
     { "type": "number" },
     { "type": "string" },
     { "type": "boolean" },
     { "$ref": "VM.VariableExpression.schema.json" }
-  }
+  ]
 }

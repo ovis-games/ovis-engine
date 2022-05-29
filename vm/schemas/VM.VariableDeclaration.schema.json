@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "VM.VariableDeclaration",
+  "title": "VariableDeclaration",
+  "description": "",
+  "type": "object",
+  "properties": {
+    "type": { "$ref": "VM.TypeReference.schema.json" },
+    "name": { "$ref": "VM.Variablename.schema.json" }
+  },
+  "additionalProperties": false
+}

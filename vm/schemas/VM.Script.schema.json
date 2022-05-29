@@ -7,8 +7,7 @@
   "items": {
     "type": {
       "anyOf": [
-        { "#ref": "VM.Function.schema.json" },
-        { "#ref": "VM.Type.schema.json" }
+        { "$ref": "VM.Type.schema.json" }
       ]
     }
   },
