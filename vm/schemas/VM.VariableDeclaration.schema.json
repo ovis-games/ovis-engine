@@ -5,8 +5,9 @@
   "description": "",
   "type": "object",
   "properties": {
-    "type": { "$ref": "VM.TypeReference.schema.json" },
-    "name": { "$ref": "VM.Variablename.schema.json" }
+    "variableType": { "$ref": "VM.TypeReference.schema.json" },
+    "variableName": { "$ref": "VM.Variablename.schema.json" }
   },
+  "required": ["variableName", "variableType"],
   "additionalProperties": false
 }

@@ -14,8 +14,12 @@
     "outputs": {
       "type": "array",
       "items": { "$ref": "VM.VariableDeclaration.schema.json" }
+    },
+    "statements": {
+      "type": "array",
+      "items": { "$ref": "VM.Statement.schema.json" }
     }
   },
   "additionalProperties": false,
-  "required": ["name", "definitionType", "inputs", "outputs"]
+  "required": ["name", "definitionType", "inputs", "outputs", "statements"]
 }
