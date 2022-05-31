@@ -5,7 +5,9 @@
   "description": "An expression that produces the value of a variable.",
   "type": "object",
   "properties": {
-    "type": "variable_expression",
-    "name": { "$ref": "VM.Variablename.schema.json" }
-  }
+    "expressionType": "variable_expression",
+    "variableName": { "$ref": "VM.Variablename.schema.json" }
+  },
+  "additionalProperties": false,
+  "required": ["expressionType", "variableName"]
 }

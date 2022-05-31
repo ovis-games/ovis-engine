@@ -5,7 +5,7 @@
   "description": "An expression that produces the result of a number operation.",
   "type": "object",
   "properties": {
-    "type": "number_operation",
+    "expressionType": "number_operation",
     "operation": {
       "anyOf": [
         "add",
@@ -20,7 +20,9 @@
         "less_equal"
       ]
     },
-    "first_operand": { "$ref": "VM.Expression.schema.json" },
-    "second_operand": { "$ref": "VM.Expression.schema.json" }
-  }
+    "firstOperand": { "$ref": "VM.Expression.schema.json" },
+    "secondOperand": { "$ref": "VM.Expression.schema.json" }
+  },
+  "additionalProperties": false,
+  "required": ["expressionType", "operation"]
 }
