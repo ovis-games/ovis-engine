@@ -6,6 +6,7 @@
   "type": "object",
   "anyOf": [
     { "$ref": "VM.VariableDeclarationStatement.schema.json" },
+    { "$ref": "VM.WhileStatement.schema.json" },
     {
       "type": "object",
       "properties": {
