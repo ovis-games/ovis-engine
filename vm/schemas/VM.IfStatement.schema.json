@@ -5,6 +5,7 @@
   "description": "A branching statement",
   "type": "object",
   "properties": {
+    "statementType": "if",
     "condition": { "$ref": "VM.Expression.schema.json" },
     "ifStatements": {
       "type": "array",
@@ -13,8 +14,8 @@
     "elseIfs": {
       "type": "array",
       "items": {
-        "type": "array",
-        "items": {
+        "type": "object",
+        "properties": {
           "condition": { "$ref": "VM.Expression.schema.json" },
           "statements": {
             "type": "array",
@@ -29,5 +30,5 @@
     }
   },
   "additionalProperties": false,
-  "required": [ "statementType", "variableName", "variableType" ]
+  "required": [ "statementType", "condition", "ifStatements" ]
 }
