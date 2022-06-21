@@ -70,7 +70,16 @@ std::shared_ptr<Module> VirtualMachine::RegisterModule(std::string_view name) {
   return registered_modules_.back();
 }
 
-void DeregisterModule(std::string_view name);
+Result<> VirtualMachine::DeregisterModule(std::string_view name) {
+  const auto module_it = std::find_if(registered_modules_.begin(), registered_modules_.end(),
+                                      [name](const auto& module) { return module->name() == name; });
+  if (module_it == registered_modules_.end()) {
+    return Error("Module {} is not registered", name);
+  }
+
+  registered_modules_.erase(module_it);
+  return Success;
+}
 
 std::shared_ptr<Module> VirtualMachine::GetModule(std::string_view name) {
   for (const auto& module : registered_modules_) {

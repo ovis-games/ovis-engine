@@ -45,7 +45,7 @@ class VirtualMachine final {
   const ValueStorage* GetConstantPointer(std::size_t offset) const;
 
   std::shared_ptr<Module> RegisterModule(std::string_view name);
-  void DeregisterModule(std::string_view name);
+  Result<> DeregisterModule(std::string_view name);
   std::shared_ptr<Module> GetModule(std::string_view name);
   auto registered_modules() {
     return TransformRange(registered_modules_, [](const auto& module) { return module.get(); });
