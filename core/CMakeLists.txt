@@ -68,6 +68,7 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_math.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_intersection.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scene_object.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
   )
 
   target_add_ldoc_test(
@@ -103,6 +104,7 @@ if (OVIS_BUILD_TESTS)
     test/assets/indirect_recursion2.scene_object.json
     test/assets/animation_test.scene_object.json
     test/assets/test_script_type.script_type.json
+    test/assets/test_script.script.json
   )
   target_embed_assets(ovis-core-test)
 
