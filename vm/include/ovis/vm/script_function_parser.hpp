@@ -18,7 +18,10 @@ struct ParseScriptFunctionResult {
   // ScriptFunction::DebugInfo debug_info;
 };
 
-Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(VirtualMachine* virtual_machine, const json& function_definition);
+Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(VirtualMachine* virtual_machine,
+                                                                         const json& function_definition,
+                                                                         std::string_view script_name = "",
+                                                                         std::string_view base_path = "/");
 
 struct ScriptFunctionScopeValue {
   TypeId type_id;
@@ -42,16 +45,25 @@ struct ScriptFunctionScope {
 
 struct ScriptFunctionParser {
   VirtualMachine* virtual_machine;
+  std::string script_name;
+  std::string base_path;
   std::deque<ScriptFunctionScope> scopes;
   ParseScriptFunctionResult result;
   ScriptFunctionDefinition& definition;
   ParseScriptErrors errors;
 
-  ScriptFunctionParser(VirtualMachine* virtual_machine)
+  ScriptFunctionParser(VirtualMachine* virtual_machine, std::string_view script_name, std::string_view base_path)
       : virtual_machine(virtual_machine),
+        script_name(script_name),
+        base_path(base_path),
         result(
             {.function_description = {.virtual_machine = virtual_machine, .definition = ScriptFunctionDefinition{}}}),
         definition(std::get<1>(result.function_description.definition)) {}
+
+  template <typename... FormatArguments>
+  void AddError(std::string_view path, std::string_view error_message, FormatArguments&&... format_arguments) {
+    errors.emplace_back(ScriptErrorLocation(script_name, path), error_message, std::forward<FormatArguments>(format_arguments)...);
+  }
 
   void Parse(const json& function_definition);
   void ParseOutputs(const json& outputs, std::string_view path);

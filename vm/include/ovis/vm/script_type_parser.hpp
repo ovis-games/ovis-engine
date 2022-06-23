@@ -20,6 +20,8 @@ struct ParseScriptTypeResult {
   // FunctionDescription destruct_function;
 };
 
-Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine* virtual_machine, const json& type_definition);
-
+Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine* virtual_machine,
+                                                                 const json& type_definition,
+                                                                 std::string_view script_name = "",
+                                                                 std::string_view base_path = "/");
 }

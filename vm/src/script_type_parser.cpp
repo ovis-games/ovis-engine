@@ -4,7 +4,9 @@
 namespace ovis {
 
 Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine* virtual_machine,
-                                                                 const json& type_definition) {
+                                                                 const json& type_definition,
+                                                                 std::string_view script_name,
+                                                                 std::string_view base_path) {
   TypeDescription description = {
     .virtual_machine = virtual_machine,
     .memory_layout = {
@@ -18,7 +20,7 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
   if (const auto& name = type_definition["name"]; name.is_string()) {
     description.name = name;
   } else {
-    errors.emplace_back(fmt::format("Invalid name"), "/name");
+    errors.emplace_back(ScriptErrorLocation(script_name, "{}/name", base_path), "Invalid name");
   }
 
   FunctionDescription construct_function = {
@@ -51,9 +53,8 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
   for (const auto& [property_name, property_definition] : type_definition["properties"].items()) {
     const auto& property_type = virtual_machine->GetType(property_definition.at("type"));
     if (!property_type) {
-      errors.emplace_back(
-          fmt::format("Invalid type for property {}: {}", property_name, property_definition.at("type")),
-          fmt::format("/properties/{}", property_name));
+      errors.emplace_back(ScriptErrorLocation(script_name, "{}/properties/{}", base_path, property_name),
+                          "Invalid type for property {}: {}", property_name, property_definition.at("type"));
       continue;
     }
     if (property_type->alignment_in_bytes() > description.memory_layout.alignment_in_bytes) {

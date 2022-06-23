@@ -4,8 +4,11 @@
 
 namespace ovis {
 
-Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(VirtualMachine* virtual_machine, const json& function_definition) {
-  ScriptFunctionParser parser(virtual_machine);
+Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(VirtualMachine* virtual_machine,
+                                                                         const json& function_definition,
+                                                                         std::string_view script_name,
+                                                                         std::string_view base_path) {
+  ScriptFunctionParser parser(virtual_machine, script_name, base_path);
   parser.Parse(function_definition);
   if (parser.errors.size() > 0) {
     return parser.errors;
@@ -25,7 +28,7 @@ const ScriptFunctionScopeValue* ScriptFunctionScope::GetVariable(std::string_vie
 
 Result<uint32_t, ParseScriptError> ScriptFunctionScope::AddVariable(TypeId type, std::string_view name) {
   if (name.length() > 0 && GetVariable(name)) {
-    return ParseScriptError("Duplicate variable name: {}", name);
+    return ParseScriptError(std::nullopt, "Duplicate variable name: {}", name);
   }
   values.push_back(ScriptFunctionScopeValue{
     .type_id = type,
@@ -74,7 +77,7 @@ void ScriptFunctionParser::ParseOutputs(const json& outputs, std::string_view pa
     const auto& type = output.at("type");
     const std::string& name = output.at("name");
     const auto type_id = virtual_machine->GetTypeId(type);
-    current_scope()->AddVariable(type_id, name);
+    // current_scope()->AddVariable(type_id, name);
     result.function_description.outputs.push_back({ .name = name, .type = type_id });
   }
 }
@@ -86,8 +89,12 @@ void ScriptFunctionParser::ParseInputs(const json& inputs, std::string_view path
     const auto& type = input.at("type");
     const std::string& name = input.at("name");
     const auto type_id = virtual_machine->GetTypeId(type);
-    current_scope()->AddVariable(type_id, name);
-    result.function_description.inputs.push_back({ .name = name, .type = type_id });
+    auto add_variable_result = current_scope()->AddVariable(type_id, name);
+    if (add_variable_result) {
+      result.function_description.inputs.push_back({ .name = name, .type = type_id });
+    } else {
+      AddError(path, add_variable_result.error().message);
+    }
   }
 }
 
@@ -107,7 +114,7 @@ void ScriptFunctionParser::ParseStatement(const json& statement_definiton, std::
   } else if (type == "variable_declaration") {
     ParseVariableDeclarationStatement(statement_definiton, path);
   } else {
-    errors.emplace_back(fmt::format("Invalid statement type: {}", type), path);
+    AddError(path, "Invalid statement type: {}", type);
   }
 }
 
@@ -118,15 +125,15 @@ void ScriptFunctionParser::ParseReturnStatement(const json& return_definition, s
 
   for (const auto& output : IndexRange(result.function_description.outputs)) {
     if (!outputs.contains(output->name)) {
-      errors.emplace_back(path, "Missing return value: {}", output->name);
+      AddError(path, "Missing return value: {}", output->name);
       continue;
     }
 
     const auto value = ParseExpression(outputs[output->name], fmt::format("{}/outputs/{}", path, output->name));
     if (!value || value->type_id != output->type) {
-      errors.emplace_back(path, "Incorrect return type for output {}. Expected {}, got {}", output->name,
-                          virtual_machine->GetType(output->type)->name(),
-                          virtual_machine->GetType(value ? value->type_id : Type::NONE_ID)->name());
+      AddError(path, "Incorrect return type for output {}. Expected {}, got {}", output->name,
+               virtual_machine->GetType(output->type)->name(),
+               virtual_machine->GetType(value ? value->type_id : Type::NONE_ID)->name());
       continue;
     }
     assert(current_scope()->values.back().type_id == value->type_id);
@@ -147,7 +154,7 @@ void ScriptFunctionParser::ParseVariableDeclarationStatement(const json& variabl
 
   const auto type = virtual_machine->GetType(variable.at("type"));
   if (!type) {
-    errors.emplace_back(fmt::format("Unknown variable type {}", variable_declaration["type"].dump()), path);
+    AddError(path, "Unknown variable type {}", variable_declaration["type"].dump());
     return;
   }
 
@@ -159,8 +166,8 @@ void ScriptFunctionParser::ParseVariableDeclarationStatement(const json& variabl
   }
   if (value) {
     if (value->type_id != type->id()) {
-      errors.emplace_back(path, "Invalid expression type. Expected {}, got {}.", type->name(),
-                          virtual_machine->GetType(value->type_id)->name());
+      AddError(path, "Invalid expression type. Expected {}, got {}.", type->name(),
+               virtual_machine->GetType(value->type_id)->name());
     }
     value->name = variable.at("name");
   }
@@ -183,7 +190,7 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseExpression(const json& expr
     }
   }
 
-  errors.emplace_back(path, "Unknown expression: {}", expression_definition.dump());
+  AddError(path, "Unknown expression: {}", expression_definition.dump());
   return nullptr;
 }
 
@@ -192,7 +199,7 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseVariableExpression(const js
   assert(variable_expression_definition.contains("name"));
   const auto variable = current_scope()->GetVariable(static_cast<std::string>(variable_expression_definition.at("name")));
   if (!variable) {
-    errors.emplace_back(path, "Unknown variable: {}", variable_expression_definition.at("name"));
+    AddError(path, "Unknown variable: {}", variable_expression_definition.at("name"));
     return nullptr;
   }
 
@@ -245,7 +252,7 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseNumberOperationExpression(c
       InsertInstructions(path, { Instruction::CreateIsNumberNotEqual() });
       first_operand->type_id = virtual_machine->GetTypeId<bool>();
     } else {
-      errors.emplace_back(path, "Invalid number operation: {}", operation);
+      AddError(path, "Invalid number operation: {}", operation);
     }
     current_scope()->PopValue();
   } else {
@@ -343,7 +350,7 @@ template <typename T>
 ScriptFunctionScopeValue* ScriptFunctionParser::InsertPushConstantInstructions(std::string_view path, T&& value) {
   const Type* type = virtual_machine->GetType<T>();
   if (!type->memory_layout().is_copyable) {
-    errors.emplace_back(path, "{} is not copyable", type->GetReferenceString());
+    AddError(path, "{} is not copyable", type->GetReferenceString());
     return nullptr;
   }
   
@@ -388,7 +395,7 @@ ScriptFunctionScopeValue* ScriptFunctionParser::InsertPushConstantInstructions(s
 
 ScriptFunctionScopeValue* ScriptFunctionParser::InsertConstructTypeInstructions(std::string_view path, NotNull<const Type*> type) {
   if (!type->memory_layout().is_constructible) {
-    errors.emplace_back(path, "{} is not constructible", type->GetReferenceString());
+    AddError(path, "{} is not constructible", type->GetReferenceString());
     return nullptr;
   }
   const auto construct_function = type->construct_function();
@@ -418,7 +425,7 @@ void ScriptFunctionParser::InsertCopyInstructions(std::string_view path, NotNull
   // assert(current_scope()->GetValue(source_index)->type_id == type->id());
 
   if (!type->memory_layout().is_copyable) {
-    errors.emplace_back(path, "{} is not copyable", type->GetReferenceString());
+    AddError(path, "{} is not copyable", type->GetReferenceString());
     return;
   }
   
