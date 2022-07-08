@@ -22,7 +22,18 @@ Type* Module::GetType(std::string_view name) {
   return nullptr;
 }
 
+std::shared_ptr<Function> Module::RegisterFunction(FunctionDescription description) {
+  functions_.push_back(std::make_shared<Function>(description));
+  return functions_.back();
+}
+
 std::shared_ptr<Function> Module::GetFunction(std::string_view name) {
+  for (const auto& function : functions_) {
+    if (function->name() == name) {
+      return function;
+    }
+  }
+
   return nullptr;
 }
 

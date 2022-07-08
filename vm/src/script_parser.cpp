@@ -58,12 +58,14 @@ void ScriptParser::AddScript(json script_definition, std::string_view name) {
       function_definitions_.insert(std::make_pair(name, FunctionDefinition{
             .definition = std::move(definition),
             .script_name = std::string(name),
+            .path = fmt::format("/{}", definition.key()),
             .function = nullptr
       }));
     } else if (definition_type == "type") {
       type_definitions_.insert(std::make_pair(name, TypeDefinition{
             .definition = std::move(definition),
             .script_name = std::string(name),
+            .path = fmt::format("/{}", definition.key()),
             .type_id = Type::NONE_ID,
       }));
     } else {
@@ -71,6 +73,36 @@ void ScriptParser::AddScript(json script_definition, std::string_view name) {
                            definition_type);
     }
   }
+}
+
+bool ScriptParser::Parse() {
+  errors_.clear();
+  
+  for (auto& type_definition : Values(type_definitions_)) {
+    if (type_definition.type_id == Type::NONE_ID) {
+      auto parse_type_result = ParseScriptType(virtual_machine_, type_definition.definition,
+                                               type_definition.script_name, type_definition.path);
+      if (parse_type_result) {
+        module_->RegisterType(parse_type_result->type_description);
+      } else {
+        errors_.insert(errors_.end(), parse_type_result.error().begin(), parse_type_result.error().end());
+      }
+    }
+  }
+
+  for (auto& function_definition : Values(function_definitions_)) {
+    if (function_definition.function == nullptr) {
+      auto parse_function_result = ParseScriptFunction(virtual_machine_, function_definition.definition,
+                                               function_definition.script_name, function_definition.path);
+      if (parse_function_result) {
+        module_->RegisterFunction(parse_function_result->function_description);
+      } else {
+        errors_.insert(errors_.end(), parse_function_result.error().begin(), parse_function_result.error().end());
+      }
+    }
+  }
+
+  return errors_.size() == 0;
 }
 
 }  // namespace ovis

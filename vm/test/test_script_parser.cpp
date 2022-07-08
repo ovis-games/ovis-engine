@@ -89,4 +89,5 @@ TEST_CASE("Test script parser", "[ovis][vm]") {
   ScriptParser parser(&vm, "TestModule");
 
   parser.AddScript(TEST_SCRIPT, "test");
+  REQUIRE(parser.Parse());
 }

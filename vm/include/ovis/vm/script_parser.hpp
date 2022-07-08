@@ -20,6 +20,7 @@ class ScriptParser {
   ScriptParser(NotNull<VirtualMachine*> virtual_machine, std::string_view module_name);
 
   void AddScript(json script_definition, std::string_view name);
+  bool Parse();
 
   const ParseScriptErrors& errors() const { return errors_; }
 
@@ -31,6 +32,7 @@ class ScriptParser {
   struct TypeDefinition {
     json definition;
     std::string script_name;
+    std::string path;
     TypeId type_id;
   };
   std::unordered_map<std::string, TypeDefinition> type_definitions_;
@@ -38,6 +40,7 @@ class ScriptParser {
   struct FunctionDefinition {
     json definition;
     std::string script_name;
+    std::string path;
     std::shared_ptr<Function> function;
   };
   std::unordered_map<std::string, FunctionDefinition> function_definitions_;
