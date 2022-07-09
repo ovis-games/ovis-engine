@@ -150,3 +150,17 @@ void LogOnError(const Result<T, E>& result, LogLevel log_level = LogLevel::ERROR
 
 }  // namespace ovis
 
+
+template<>
+struct fmt::formatter<ovis::Error> {
+  template<typename ParseContext>
+  constexpr auto parse(ParseContext& ctx) {
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(const ovis::Error& error, FormatContext& ctx) {
+    return fmt::format_to(ctx.out(), "{}", error.message);
+  }
+};
+

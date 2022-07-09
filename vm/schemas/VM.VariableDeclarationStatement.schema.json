@@ -6,7 +6,7 @@
   "type": "object",
   "properties": {
     "statementType": "variable_declaration",
-    "variableName": { "$ref": "VM.Variablename.schema.json" },
+    "variableName": { "$ref": "VM.VariableName.schema.json" },
     "variableType": { "$ref": "VM.TypeReference.schema.json" },
     "value": { "$ref": "VM.Expression.schema.json" }
   },

@@ -6,16 +6,31 @@
 #include <emscripten/bind.h>
 #endif
 
-#include <ovis/utils/log.hpp>
-#include <ovis/core/asset_library.hpp>
-#include <ovis/application/application.hpp>
-#include <ovis/application/window.hpp>
+#include "ovis/application/application.hpp"
+#include "ovis/application/window.hpp"
+#include "ovis/core/asset_library.hpp"
+#include "ovis/core/main_vm.hpp"
 
+#include "ovis/utils/log.hpp"
 
 using namespace ovis;
 // using namespace ovis::editor;
 using namespace emscripten;
 
+extern "C" {
+
+void EMSCRIPTEN_KEEPALIVE loadGameModule() {
+  const auto result = ovis::LoadScriptModule("Game", GetApplicationAssetLibrary());
+  if (!result) {
+    for (const auto& [asset, errors] : result.error().script_errors) {
+      for (const auto& error : errors) {
+        LogE("{}", error.message);
+      }
+    }
+  }
+}
+
+}
 
 // emscripten::val log_callback = emscripten::val::undefined();
 // void SetLogCallback(emscripten::val callback) {

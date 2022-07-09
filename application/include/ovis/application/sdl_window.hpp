@@ -8,10 +8,10 @@
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_video.h>
 
-#include <ovis/utils/class.hpp>
-#include <ovis/core/scene.hpp>
-#include <ovis/graphics/graphics_context.hpp>
-#include <ovis/rendering/rendering_viewport.hpp>
+#include "ovis/utils/class.hpp"
+#include "ovis/core/scene.hpp"
+#include "ovis/graphics/graphics_context.hpp"
+#include "ovis/rendering/rendering_viewport.hpp"
 
 namespace ovis {
 

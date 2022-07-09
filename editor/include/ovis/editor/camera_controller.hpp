@@ -1,11 +1,10 @@
 #pragma once
 
-#include <ovis/core/camera.hpp>
-#include <ovis/core/scene_controller.hpp>
-#include <ovis/core/transform.hpp>
-#include <ovis/rendering/rendering_viewport.hpp>
-
-#include <ovis/editor_viewport/viewport_controller.hpp>
+#include "ovis/core/camera.hpp"
+#include "ovis/core/scene_controller.hpp"
+#include "ovis/core/transform.hpp"
+#include "ovis/rendering/rendering_viewport.hpp"
+#include "ovis/editor/viewport_controller.hpp"
 
 namespace ovis {
 namespace editor {

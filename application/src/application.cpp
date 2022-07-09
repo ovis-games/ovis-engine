@@ -3,9 +3,9 @@
 #include <emscripten.h>
 #endif
 
-#include <ovis/utils/profiling.hpp>
-#include <ovis/core/lua.hpp>
-#include <ovis/application/window.hpp>
+#include "ovis/utils/profiling.hpp"
+#include "ovis/core/lua.hpp"
+#include "ovis/application/sdl_window.hpp"
 
 namespace ovis {
 

@@ -1,16 +1,17 @@
-#include <ovis/editor_viewport/transformation_tools_controller.hpp>
+
+#include "ovis/editor/transformation_tools_controller.hpp"
 
 #include <emscripten.h>
 #include <emscripten/bind.h>
 
-#include <ovis/utils/log.hpp>
-#include <ovis/core/intersection.hpp>
-#include <ovis/core/scene_viewport.hpp>
-#include <ovis/core/transform.hpp>
-#include <ovis/input/key_events.hpp>
-#include <ovis/input/mouse_button.hpp>
-#include <ovis/editor_viewport/object_selection_controller.hpp>
-#include <ovis/editor_viewport/editor_viewport.hpp>
+#include "ovis/utils/log.hpp"
+#include "ovis/core/intersection.hpp"
+#include "ovis/core/scene_viewport.hpp"
+#include "ovis/core/transform.hpp"
+#include "ovis/input/key_events.hpp"
+#include "ovis/input/mouse_button.hpp"
+#include "ovis/editor/editor_viewport.hpp"
+#include "ovis/editor/object_selection_controller.hpp"
 
 namespace ovis {
 namespace editor {

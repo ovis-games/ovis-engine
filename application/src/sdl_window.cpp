@@ -1,19 +1,15 @@
+#include "ovis/application/sdl_window.hpp"
+
 #include <algorithm>
 #include <cassert>
 
-#if OVIS_EMSCRIPTEN
-#include <emscripten/html5.h>
-#endif
-
-#include <ovis/utils/log.hpp>
-#include <ovis/utils/profiling.hpp>
-#include <ovis/core/lua.hpp>
-#include <ovis/core/scene.hpp>
-#include <ovis/input/emscripten_callbacks.hpp>
-#include <ovis/input/key_events.hpp>
-#include <ovis/input/mouse_events.hpp>
-#include <ovis/input/text_input_event.hpp>
-#include <ovis/application/window.hpp>
+#include "ovis/utils/log.hpp"
+#include "ovis/utils/profiling.hpp"
+#include "ovis/core/lua.hpp"
+#include "ovis/core/scene.hpp"
+#include "ovis/input/key_events.hpp"
+#include "ovis/input/mouse_events.hpp"
+#include "ovis/input/text_input_event.hpp"
 
 namespace ovis {
 
@@ -27,33 +23,6 @@ Window::Window(const WindowDescription& desc)
       scene_() {
   assert(sdl_window_ != nullptr);
   all_windows_.push_back(this);
-
-#if OVIS_EMSCRIPTEN
-  emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, 0, nullptr);
-  emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, 0, nullptr);
-  emscripten_set_keypress_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, 0, nullptr);
-
-  emscripten_set_mousemove_callback("#canvas", nullptr, 0, nullptr);
-  emscripten_set_mousedown_callback("#canvas", nullptr, 0, nullptr);
-  emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, nullptr, 0, nullptr);
-  emscripten_set_mouseenter_callback("#canvas", nullptr, 0, nullptr);
-  emscripten_set_mouseleave_callback("#canvas", nullptr, 0, nullptr);
-  emscripten_set_wheel_callback("#canvas", nullptr, 0, nullptr);
-
-  emscripten_set_keydown_callback("#canvas", static_cast<SceneViewport*>(this), 0, &HandleKeyDownEvent);
-  emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, static_cast<SceneViewport*>(this), 0,
-                                &HandleKeyUpEvent);
-  emscripten_set_keypress_callback("#canvas", static_cast<SceneViewport*>(this), 0, &HandleKeyPressEvent);
-
-  emscripten_set_mousemove_callback("#canvas", static_cast<SceneViewport*>(this), 0, &HandleMouseMoveEvent);
-  emscripten_set_mousedown_callback("#canvas", static_cast<SceneViewport*>(this), 0, &HandleMouseDownEvent);
-  emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, static_cast<SceneViewport*>(this), 0,
-                                  &HandleMouseUpEvent);
-  // emscripten_set_mouseenter_callback("canvas", nullptr, 0, HandleMouseEvent);
-  // emscripten_set_mouseleave_callback("canvas", nullptr, 0, HandleMouseEvent);
-  emscripten_set_wheel_callback("#canvas", static_cast<SceneViewport*>(this), 0, &HandleWheelEvent);
-  emscripten_set_blur_callback("#canvas", static_cast<SceneViewport*>(this), 0, &HandleBlurEvent);
-#endif
 
   SetGraphicsContext(&graphics_context_);
   SetScene(&scene_);

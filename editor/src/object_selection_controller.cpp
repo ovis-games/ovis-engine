@@ -1,14 +1,15 @@
+#include "ovis/editor/object_selection_controller.hpp"
+
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
-#include <ovis/editor_viewport/editor_viewport.hpp>
-#include <ovis/editor_viewport/object_selection_controller.hpp>
 
-#include <ovis/utils/log.hpp>
-#include <ovis/core/intersection.hpp>
-#include <ovis/core/main_vm.hpp>
-#include <ovis/rendering2d/shape2d.hpp>
-#include <ovis/input/mouse_events.hpp>
+#include "ovis/utils/log.hpp"
+#include "ovis/core/intersection.hpp"
+#include "ovis/core/main_vm.hpp"
+#include "ovis/rendering2d/shape2d.hpp"
+#include "ovis/input/mouse_events.hpp"
+#include "ovis/editor/editor_viewport.hpp"
 
 namespace ovis {
 namespace editor {

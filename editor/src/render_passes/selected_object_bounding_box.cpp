@@ -1,11 +1,10 @@
-#include <ovis/editor_viewport/render_passes/selected_object_bounding_box.hpp>
+#include "ovis/editor/render_passes/selected_object_bounding_box.hpp"
 
-#include <ovis/core/transform.hpp>
-#include <ovis/rendering/rendering_viewport.hpp>
-#include <ovis/rendering2d/renderer2d.hpp>
-
-#include <ovis/editor_viewport/object_selection_controller.hpp>
-#include <ovis/editor_viewport/editor_viewport.hpp>
+#include "ovis/core/transform.hpp"
+#include "ovis/rendering/rendering_viewport.hpp"
+#include "ovis/rendering2d/renderer2d.hpp"
+#include "ovis/editor/editor_viewport.hpp"
+#include "ovis/editor/object_selection_controller.hpp"
 
 namespace ovis {
 namespace editor {

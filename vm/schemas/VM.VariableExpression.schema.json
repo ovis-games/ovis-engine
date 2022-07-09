@@ -6,7 +6,7 @@
   "type": "object",
   "properties": {
     "expressionType": "variable_expression",
-    "variableName": { "$ref": "VM.Variablename.schema.json" }
+    "variableName": { "$ref": "VM.VariableName.schema.json" }
   },
   "additionalProperties": false,
   "required": ["expressionType", "variableName"]

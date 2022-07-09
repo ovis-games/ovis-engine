@@ -1,14 +1,13 @@
-#include <ovis/editor_viewport/editor_viewport.hpp>
-#include <ovis/editor_viewport/render_passes/transformation_tools_renderer.hpp>
-#include <ovis/rendering/clear_pass.hpp>
-#include <ovis/rendering2d/renderer2d.hpp>
+#include "ovis/editor/editor_viewport.hpp"
 
-#if OVIS_EMSCRIPTEN
 #include <emscripten.h>
-#include <emscripten/html5.h>
 #include <emscripten/bind.h>
-#endif
+#include <emscripten/html5.h>
 
+#include "ovis/utils/json.hpp"
+#include "ovis/rendering/clear_pass.hpp"
+#include "ovis/rendering2d/renderer2d.hpp"
+#include "ovis/editor/render_passes/transformation_tools_renderer.hpp"
 
 namespace {
 emscripten::val document = emscripten::val::undefined();

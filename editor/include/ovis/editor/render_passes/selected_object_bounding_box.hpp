@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include <ovis/rendering/primitive_renderer.hpp>
+#include "ovis/rendering/primitive_renderer.hpp"
 
 namespace ovis {
 namespace editor {

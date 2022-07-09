@@ -2,11 +2,11 @@
 
 #include <string_view>
 
-#include <ovis/utils/safe_pointer.hpp>
-#include <ovis/core/intersection.hpp>
-#include <ovis/core/scene.hpp>
-#include <ovis/core/scene_controller.hpp>
-#include <ovis/editor_viewport/viewport_controller.hpp>
+#include "ovis/utils/safe_pointer.hpp"
+#include "ovis/core/intersection.hpp"
+#include "ovis/core/scene.hpp"
+#include "ovis/core/scene_controller.hpp"
+#include "ovis/editor/viewport_controller.hpp"
 
 namespace ovis {
 namespace editor {

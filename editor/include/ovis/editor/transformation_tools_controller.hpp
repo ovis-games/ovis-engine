@@ -1,8 +1,8 @@
 #pragma once
 
-#include <ovis/core/scene.hpp>
-#include <ovis/input/mouse_events.hpp>
-#include <ovis/editor_viewport/viewport_controller.hpp>
+#include "ovis/core/scene.hpp"
+#include "ovis/input/mouse_events.hpp"
+#include "ovis/editor/viewport_controller.hpp"
 
 namespace ovis {
 namespace editor {

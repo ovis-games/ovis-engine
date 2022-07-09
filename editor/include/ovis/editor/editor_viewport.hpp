@@ -2,12 +2,13 @@
 
 #include <emscripten/val.h>
 
-#include <ovis/utils/utf8.hpp> // For GetComponentPath()
-#include <ovis/application/window.hpp>
-#include <ovis/editor_viewport/camera_controller.hpp>
-#include <ovis/editor_viewport/object_selection_controller.hpp>
-#include <ovis/editor_viewport/transformation_tools_controller.hpp>
-#include <ovis/editor_viewport/render_passes/selected_object_bounding_box.hpp>
+#include "ovis/utils/utf8.hpp"  // For GetComponentPath()
+#include "ovis/application/sdl_window.hpp"
+#include "ovis/editor/camera_controller.hpp"
+#include "ovis/editor/object_selection_controller.hpp"
+#include "ovis/editor/render_passes/selected_object_bounding_box.hpp"
+#include "ovis/editor/transformation_tools_controller.hpp"
+#include "ovis/editor/viewport_controller.hpp"
 
 namespace ovis {
 namespace editor {
