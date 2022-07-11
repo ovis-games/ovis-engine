@@ -3,6 +3,16 @@
 
 namespace ovis {
 
+Result<json> AssetLibrary::LoadAssetJsonFile(std::string_view asset_id, std::string_view filename) const {
+  const auto text_file = LoadAssetTextFile(asset_id, filename);
+  OVIS_CHECK_RESULT(text_file);
+  json value = json::parse(*text_file, nullptr, false);
+  if (value.is_discarded()) {
+    return Error("Invalid json");
+  }
+  return std::move(value);
+}
+
 DirectoryAssetLibrary::DirectoryAssetLibrary(std::string_view directory)
     : directory_(std::filesystem::absolute(directory)) {
   Rescan();

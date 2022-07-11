@@ -75,8 +75,13 @@ Result<Blob> AssetProvider::LoadAssetBinaryFile(std::string_view asset_id, std::
 }
 
 std::vector<std::string> AssetProvider::GetAssetsWithType(std::string_view type) const {
-  LogD("GetAssetsWithType {}", type);
-  return {};
+  std::vector<std::string> asset_ids;
+  for (const auto& asset_id : GetAssets()) {
+    if (GetAssetType(asset_id) == type) {
+        asset_ids.push_back(std::move(asset_id));
+    }
+  }
+  return asset_ids;
 }
 
 }  // namespace ovis
