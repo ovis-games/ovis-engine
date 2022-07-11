@@ -20,30 +20,24 @@ void InitializeMainVM() {
   }
 }
 
-Result<void, LoadModuleError> LoadScriptModule(std::string_view name, AssetLibrary* asset_library) {
+Result<void, ParseScriptErrors> LoadScriptModule(std::string_view name, AssetLibrary* asset_library) {
   assert(main_vm);
 
   if (main_vm->GetModule(name)) {
     main_vm->DeregisterModule(name);
   }
 
-  const auto script_module = main_vm->RegisterModule(name);
-  LoadModuleError error;
+  ScriptParser parser(main_vm, name);
   for (const auto& asset_id : asset_library->GetAssetsWithType("script")) {
-    const auto script_asset_content = asset_library->LoadAssetTextFile(asset_id, "json");
+    const auto script_asset_content = asset_library->LoadAssetJsonFile(asset_id, "json");
     assert(script_asset_content);
-
-    const auto parse_result = ParseScript(main_vm, json::parse(*script_asset_content));
-    if (!parse_result) {
-      error.script_errors[asset_id] = parse_result.error();
-    }
+    parser.AddScript(*script_asset_content, asset_id);
   }
 
-  
-  if (error.script_errors.size() > 0) {
-    return error;
-  } else {
+  if (parser.Parse()) {
     return Success;
+  } else {
+    return parser.errors();
   }
 }
 
