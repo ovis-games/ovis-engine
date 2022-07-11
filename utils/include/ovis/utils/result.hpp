@@ -136,6 +136,16 @@ private:
   }
 };
 
+template <typename T, typename ResultType, typename E>
+bool operator==(const Result<ResultType, E>& lhs, const T& rhs) {
+  return lhs.has_value() && *lhs == rhs;
+}
+
+template <typename T, typename E>
+bool operator==(const T& lhs, const Result<T, E>& rhs) {
+  return rhs.has_value() && lhs == *rhs;
+}
+
 template <typename T, typename E> requires std::is_base_of_v<Error, E>
 void LogOnError(const Result<T, E>& result, LogLevel log_level = LogLevel::ERROR) {
   if (!result) {
