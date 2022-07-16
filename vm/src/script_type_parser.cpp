@@ -17,8 +17,8 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
   };
   ParseScriptErrors errors;
   std::vector<TypePropertyDescription> properties;
-  if (const auto& name = type_definition["name"]; name.is_string()) {
-    description.name = name;
+  if (const auto& name = type_definition.find("name"); name != type_definition.end() && name->is_string()) {
+    description.name = *name;
   } else {
     errors.emplace_back(ScriptErrorLocation(script_name, "{}/name", base_path), "Invalid name");
   }
@@ -50,11 +50,20 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
   };
   ScriptFunctionDefinition& destruct_function_definition = std::get<1>(destruct_function.definition);
 
-  for (const auto& [property_name, property_definition] : type_definition["properties"].items()) {
-    const auto& property_type = virtual_machine->GetType(property_definition.at("type"));
+  for (const auto& [property_index, property_definition] : type_definition["properties"].items()) {
+    const std::string& property_name = property_definition["variableName"];
+    for (const auto& existing_property : description.properties) {
+      if (existing_property.name == property_name) {
+        errors.emplace_back(ScriptErrorLocation(script_name, "{}/properties/{}", base_path, property_index),
+                            "Duplicate property name {}", property_name);
+        break;
+      }
+    }
+
+    const auto& property_type = virtual_machine->GetType(property_definition.at("variableType"));
     if (!property_type) {
-      errors.emplace_back(ScriptErrorLocation(script_name, "{}/properties/{}", base_path, property_name),
-                          "Invalid type for property {}: {}", property_name, property_definition.at("type"));
+      errors.emplace_back(ScriptErrorLocation(script_name, "{}/properties/{}", base_path, property_index),
+                          "Invalid type for property {}: {}", property_name, property_definition.at("variableType"));
       continue;
     }
     if (property_type->alignment_in_bytes() > description.memory_layout.alignment_in_bytes) {

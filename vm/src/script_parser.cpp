@@ -46,7 +46,7 @@ ScriptParser::ScriptParser(NotNull<VirtualMachine*> virtual_machine, std::string
   }
 }
 
-void ScriptParser::AddScript(json script_definition, std::string_view name) {
+void ScriptParser::AddScript(json script_definition, std::string_view script_name) {
   assert(script_definition.is_array());
 
   for (auto& definition : script_definition.items()) {
@@ -56,15 +56,15 @@ void ScriptParser::AddScript(json script_definition, std::string_view name) {
     const std::string& name = definition.value().at("name");
     if (definition_type == "function") {
       function_definitions_.insert(std::make_pair(name, FunctionDefinition{
-            .definition = std::move(definition),
-            .script_name = std::string(name),
+            .definition = std::move(definition.value()),
+            .script_name = std::string(script_name),
             .path = fmt::format("/{}", definition.key()),
             .function = nullptr
       }));
     } else if (definition_type == "type") {
       type_definitions_.insert(std::make_pair(name, TypeDefinition{
-            .definition = std::move(definition),
-            .script_name = std::string(name),
+            .definition = std::move(definition.value()),
+            .script_name = std::string(script_name),
             .path = fmt::format("/{}", definition.key()),
             .type_id = Type::NONE_ID,
       }));
@@ -92,13 +92,13 @@ bool ScriptParser::Parse() {
 
   for (auto& function_definition : Values(function_definitions_)) {
     if (function_definition.function == nullptr) {
-      auto parse_function_result = ParseScriptFunction(virtual_machine_, function_definition.definition,
-                                               function_definition.script_name, function_definition.path);
-      if (parse_function_result) {
-        module_->RegisterFunction(parse_function_result->function_description);
-      } else {
-        errors_.insert(errors_.end(), parse_function_result.error().begin(), parse_function_result.error().end());
-      }
+      // auto parse_function_result = ParseScriptFunction(virtual_machine_, function_definition.definition,
+      //                                          function_definition.script_name, function_definition.path);
+      // if (parse_function_result) {
+      //   module_->RegisterFunction(parse_function_result->function_description);
+      // } else {
+      //   errors_.insert(errors_.end(), parse_function_result.error().begin(), parse_function_result.error().end());
+      // }
     }
   }
 
