@@ -33,6 +33,7 @@ class Module : public std::enable_shared_from_this<Module> {
   Type* RegisterType(std::string_view name);
   Type* RegisterType(TypeDescription description);
   Type* GetType(std::string_view name);
+  const auto& registered_type_ids() const { return types_; }
 
   // Functions
   std::shared_ptr<Function> RegisterFunction(FunctionDescription description);
