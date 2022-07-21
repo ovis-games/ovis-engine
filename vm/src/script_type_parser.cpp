@@ -54,7 +54,7 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
     const std::string& property_name = property_definition["variableName"];
     for (const auto& existing_property : description.properties) {
       if (existing_property.name == property_name) {
-        errors.emplace_back(ScriptErrorLocation(script_name, "{}/properties/{}", base_path, property_index),
+        errors.emplace_back(ScriptErrorLocation(script_name, "{}/properties/{}/variableName", base_path, property_index),
                             "Duplicate property name {}", property_name);
         break;
       }
