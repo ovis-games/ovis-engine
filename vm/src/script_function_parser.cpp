@@ -54,6 +54,7 @@ uint32_t ScriptFunctionScope::PopValue() {
 }
 
 void ScriptFunctionParser::Parse(const json& json_definition) {
+  LogD("{}", json_definition.dump(2));
   // TODO: check format
   PushScope();
   if (json_definition.contains("outputs")) {
@@ -84,10 +85,10 @@ void ScriptFunctionParser::ParseOutputs(const json& outputs, std::string_view pa
 
 void ScriptFunctionParser::ParseInputs(const json& inputs, std::string_view path) {
   for (const auto& input : inputs) {
-    assert(input.contains("name"));
-    assert(input.contains("type"));
-    const auto& type = input.at("type");
-    const std::string& name = input.at("name");
+    assert(input.contains("variableName"));
+    assert(input.contains("variableType"));
+    const auto& type = input.at("variableType");
+    const std::string& name = input.at("variableName");
     const auto type_id = virtual_machine->GetTypeId(type);
     auto add_variable_result = current_scope()->AddVariable(type_id, name);
     if (add_variable_result) {
@@ -106,9 +107,9 @@ void ScriptFunctionParser::ParseStatements(const json& statements_definiton, std
 }
 
 void ScriptFunctionParser::ParseStatement(const json& statement_definiton, std::string_view path) {
-  assert(statement_definiton.contains("type"));
+  assert(statement_definiton.contains("statementType"));
 
-  const std::string& type = statement_definiton["type"];
+  const std::string& type = statement_definiton["statementType"];
   if (type == "return") {
     ParseReturnStatement(statement_definiton, path);
   } else if (type == "variable_declaration") {
@@ -119,7 +120,8 @@ void ScriptFunctionParser::ParseStatement(const json& statement_definiton, std::
 }
 
 void ScriptFunctionParser::ParseReturnStatement(const json& return_definition, std::string_view path) {
-  assert(return_definition["type"] == "return");
+  assert(return_definition.contains("statementType"));
+  assert(return_definition["statementType"] == "return");
 
   const auto& outputs = return_definition["outputs"];
 
@@ -145,7 +147,8 @@ void ScriptFunctionParser::ParseReturnStatement(const json& return_definition, s
 }
 
 void ScriptFunctionParser::ParseVariableDeclarationStatement(const json& variable_declaration, std::string_view path) {
-  assert(variable_declaration["type"] == "variable_declaration");
+  assert(variable_declaration.contains("statementType"));
+  assert(variable_declaration["statementType"] == "variable_declaration");
 
   assert(variable_declaration.contains("variable"));
   const auto& variable = variable_declaration.at("variable");
@@ -211,7 +214,9 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseVariableExpression(const js
 
 ScriptFunctionScopeValue* ScriptFunctionParser::ParseNumberOperationExpression(const json& expression_definition,
                                                                                std::string_view path) {
-  assert(expression_definition["type"] == "number_operation");
+  assert(expression_definition.contains("statementType"));
+  assert(expression_definition["statementType"] == "number_operation");
+
   assert(expression_definition.contains("operation"));
   const std::string& operation = expression_definition.at("operation");
   assert(expression_definition.contains("firstOperand"));
