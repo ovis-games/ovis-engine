@@ -150,20 +150,18 @@ void ScriptFunctionParser::ParseVariableDeclarationStatement(const json& variabl
   assert(variable_declaration.contains("statementType"));
   assert(variable_declaration["statementType"] == "variable_declaration");
 
-  assert(variable_declaration.contains("variable"));
-  const auto& variable = variable_declaration.at("variable");
-  assert(variable.contains("name"));
-  assert(variable.contains("type"));
+  assert(variable_declaration.contains("variableName"));
+  assert(variable_declaration.contains("variableType"));
 
-  const auto type = virtual_machine->GetType(variable.at("type"));
+  const auto type = virtual_machine->GetType(variable_declaration.at("variableType"));
   if (!type) {
-    AddError(path, "Unknown variable type {}", variable_declaration["type"].dump());
+    AddError(path, "Unknown variable type {}", variable_declaration["variableType"].dump());
     return;
   }
 
   ScriptFunctionScopeValue* value;
-  if (variable.contains("value")) {
-    value = ParseExpression(variable.at("value"), fmt::format("{}/variable/value", path));
+  if (variable_declaration.contains("value")) {
+    value = ParseExpression(variable_declaration.at("value"), fmt::format("{}/variable/value", path));
   } else {
     value = InsertConstructTypeInstructions(path, type);
   }
@@ -172,7 +170,7 @@ void ScriptFunctionParser::ParseVariableDeclarationStatement(const json& variabl
       AddError(path, "Invalid expression type. Expected {}, got {}.", type->name(),
                virtual_machine->GetType(value->type_id)->name());
     }
-    value->name = variable.at("name");
+    value->name = variable_declaration.at("variableName");
   }
 }
 
@@ -184,8 +182,8 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseExpression(const json& expr
   } else if (expression_definition.is_boolean()) {
     return InsertPushConstantInstructions(path, static_cast<bool>(expression_definition));
   } else if (expression_definition.is_object()) {
-    assert(expression_definition.contains("type"));
-    const std::string& type = expression_definition.at("type");
+    assert(expression_definition.contains("expressionType"));
+    const std::string& type = expression_definition.at("expressionType");
     if (type == "variable") {
       return ParseVariableExpression(expression_definition, path);
     } else if (type == "number_operation") {
