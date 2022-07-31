@@ -5,3 +5,6 @@
 	path = extern/Catch2
 	url = https://github.com/catchorg/Catch2.git
 	branch = v2.13.9
+[submodule "extern/jsonschema2cppview"]
+	path = extern/jsonschema2cppview
+	url = git@github.com:ovis-games/jsonschema2cppview.git
