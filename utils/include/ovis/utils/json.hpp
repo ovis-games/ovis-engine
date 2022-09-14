@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include <nlohmann/json.hh>
+#include <nlohmann/json.hpp>
 
 namespace ovis {
 
