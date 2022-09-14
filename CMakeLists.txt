@@ -42,7 +42,4 @@ add_subdirectory(application)
 
 if (OVIS_EMSCRIPTEN)
   add_subdirectory(editor)
-#   add_subdirectory(player)
-#   add_subdirectory(editor_viewport)
-#   add_subdirectory(script_compiler)
 endif ()

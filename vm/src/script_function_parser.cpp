@@ -4,17 +4,11 @@
 
 namespace ovis {
 
-Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(VirtualMachine* virtual_machine,
-                                                                         const json& function_definition,
-                                                                         std::string_view script_name,
-                                                                         std::string_view base_path) {
+ParseScriptFunctionResult ParseScriptFunction(VirtualMachine* virtual_machine, const json& function_definition,
+                                              std::string_view script_name, std::string_view base_path) {
   ScriptFunctionParser parser(virtual_machine, script_name, base_path);
   parser.Parse(function_definition);
-  if (parser.errors.size() > 0) {
-    return parser.errors;
-  } else {
-    return parser.result;
-  }
+  return parser.result;
 }
 
 const ScriptFunctionScopeValue* ScriptFunctionScope::GetVariable(std::string_view name) {
@@ -56,6 +50,7 @@ uint32_t ScriptFunctionScope::PopValue() {
 void ScriptFunctionParser::Parse(const json& json_definition) {
   LogD("{}", json_definition.dump(2));
   // TODO: check format
+  result.function_description.name = json_definition.contains("name") ? json_definition.at("name") : "";
   PushScope();
   if (json_definition.contains("outputs")) {
     ParseOutputs(json_definition["outputs"], "/outputs");
@@ -107,9 +102,7 @@ void ScriptFunctionParser::ParseStatements(const json& statements_definiton, std
 }
 
 void ScriptFunctionParser::ParseStatement(const json& statement_definiton, std::string_view path) {
-  assert(statement_definiton.contains("statementType"));
-
-  const std::string& type = statement_definiton["statementType"];
+  const std::string& type = statement_definiton.contains("statementType") ? statement_definiton["statementType"] : "";
   if (type == "return") {
     ParseReturnStatement(statement_definiton, path);
   } else if (type == "variable_declaration") {
@@ -212,16 +205,31 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseVariableExpression(const js
 
 ScriptFunctionScopeValue* ScriptFunctionParser::ParseNumberOperationExpression(const json& expression_definition,
                                                                                std::string_view path) {
-  assert(expression_definition.contains("statementType"));
-  assert(expression_definition["statementType"] == "number_operation");
+  assert(expression_definition.contains("expressionType"));
+  assert(expression_definition["expressionType"] == "number_operation");
+
+  if (!expression_definition.contains("firstOperand")) {
+    return nullptr;
+  }
+
+  auto* first_operand = ParseExpression(expression_definition["firstOperand"], fmt::format("{}/firstOperand", path));
+  if (!first_operand) {
+    return nullptr;
+  }
 
   assert(expression_definition.contains("operation"));
-  const std::string& operation = expression_definition.at("operation");
-  assert(expression_definition.contains("firstOperand"));
-  auto* first_operand = ParseExpression(expression_definition.at("firstOperand"), fmt::format("{}/firstOperand", path));
+  const std::string& operation = expression_definition["operation"];
+
   if (operation != "negate") {
-    assert(expression_definition.contains("secondOperand"));
+    if (!expression_definition.contains("secondOperand")) {
+      return nullptr;
+    }
+
     auto* second_operand = ParseExpression(expression_definition.at("secondOperand"), fmt::format("{}/secondOperand", path));
+    if (!second_operand) {
+      return nullptr;
+    }
+
     if (operation == "add") {
       InsertInstructions(path, { Instruction::CreateAddNumbers() });
     } else if (operation == "subtract") {

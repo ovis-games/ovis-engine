@@ -16,12 +16,11 @@ namespace ovis {
 struct ParseScriptFunctionResult {
   FunctionDescription function_description;
   // ScriptFunction::DebugInfo debug_info;
+  ParseScriptErrors errors;
 };
 
-Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(VirtualMachine* virtual_machine,
-                                                                         const json& function_definition,
-                                                                         std::string_view script_name = "",
-                                                                         std::string_view base_path = "/");
+ParseScriptFunctionResult ParseScriptFunction(VirtualMachine* virtual_machine, const json& function_definition,
+                                              std::string_view script_name = "", std::string_view base_path = "/");
 
 struct ScriptFunctionScopeValue {
   TypeId type_id;
@@ -50,7 +49,6 @@ struct ScriptFunctionParser {
   std::deque<ScriptFunctionScope> scopes;
   ParseScriptFunctionResult result;
   ScriptFunctionDefinition& definition;
-  ParseScriptErrors errors;
 
   ScriptFunctionParser(VirtualMachine* virtual_machine, std::string_view script_name, std::string_view base_path)
       : virtual_machine(virtual_machine),
@@ -62,7 +60,7 @@ struct ScriptFunctionParser {
 
   template <typename... FormatArguments>
   void AddError(std::string_view path, std::string_view error_message, FormatArguments&&... format_arguments) {
-    errors.emplace_back(ScriptErrorLocation(script_name, path), error_message, std::forward<FormatArguments>(format_arguments)...);
+    result.errors.emplace_back(ScriptErrorLocation(script_name, path), error_message, std::forward<FormatArguments>(format_arguments)...);
   }
 
   void Parse(const json& function_definition);

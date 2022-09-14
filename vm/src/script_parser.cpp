@@ -13,11 +13,8 @@ Result<ParseScriptResult, ParseScriptErrors> ParseScript(VirtualMachine* virtual
     const std::string& definition_type = definition.value().at("definitionType");
     if (definition_type == "function") {
       auto function = ParseScriptFunction(virtual_machine, definition.value());
-      if (!function) {
-        errors.insert(errors.end(), function.error().begin(), function.error().end());
-      } else {
-        result.functions.push_back(std::move(*function));
-      }
+      errors.insert(errors.end(), function.errors.begin(), function.errors.end());
+      result.functions.push_back(std::move(function.function_description));
     } else if (definition_type == "type") {
       auto type = ParseScriptType(virtual_machine, definition.value());
       if (!type) {

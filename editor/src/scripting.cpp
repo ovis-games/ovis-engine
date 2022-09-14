@@ -58,6 +58,24 @@ emscripten::val CreateTypeReflection(TypeId type_id) {
   return type_reflection;
 }
 
+emscripten::val CreateFunctionReflection(const Function* function) {
+  if (!function) {
+    return emscripten::val::undefined();
+  }
+
+  auto function_reflection = emscripten::val::object();
+
+  auto inputs = emscripten::val::object();
+
+  for (const auto& input : function->inputs()) {
+    inputs.set(input.name, function->virtual_machine()->GetType(input.type)->GetReferenceString());
+  }
+
+  function_reflection.set("inputs", inputs);
+
+  return function_reflection;
+}
+
 emscripten::val CreateBuiltInTypesReflection() {
   auto built_in_types = emscripten::val::object();
 
@@ -79,10 +97,21 @@ emscripten::val CreateModuleTypesReflection(Module* module) {
   return types;
 }
 
+emscripten::val CreateModuleFunctionsReflection(Module* module) {
+  auto functions = emscripten::val::object();
+
+  for (const auto& function : module->functions()) {
+    functions.set(std::string(function->name()), CreateFunctionReflection(function.get()));
+  }
+
+  return functions;
+}
+
 emscripten::val CreateModuleReflection(Module* module) {
   auto module_reflection = emscripten::val::object();
 
   module_reflection.set("types", CreateModuleTypesReflection(module));
+  module_reflection.set("functions", CreateModuleFunctionsReflection(module));
 
   return module_reflection;
 }
