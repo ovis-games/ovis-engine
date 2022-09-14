@@ -6,7 +6,6 @@
 #include <utility>
 #include <vector>
 
-#include <SDL2/SDL_assert.h>
 #include <fmt/format.h>
 
 namespace ovis {

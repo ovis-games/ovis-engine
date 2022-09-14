@@ -91,10 +91,10 @@ bool ScriptParser::Parse() {
     if (function_definition.function == nullptr) {
       auto parse_function_result = ParseScriptFunction(virtual_machine_, function_definition.definition,
                                                        function_definition.script_name, function_definition.path);
-      if (parse_function_result) {
-        module_->RegisterFunction(parse_function_result->function_description);
+      if (parse_function_result.errors.empty()) {
+        module_->RegisterFunction(parse_function_result.function_description);
       } else {
-        errors_.insert(errors_.end(), parse_function_result.error().begin(), parse_function_result.error().end());
+        errors_.insert(errors_.end(), parse_function_result.errors.begin(), parse_function_result.errors.end());
       }
     }
   }
