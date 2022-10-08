@@ -15,7 +15,7 @@ class ObjectSelectionController : public ViewportController {
  public:
   static constexpr std::string_view Name() { return "ObjectSelectionController"; }
 
-  ObjectSelectionController();
+  ObjectSelectionController(EditorViewport* editor_viewport);
 
   void Update(std::chrono::microseconds) override;
   void ProcessEvent(Event* event) override;

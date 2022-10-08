@@ -30,10 +30,10 @@ float DistanceToLineSegment(Vector2 point, const LineSegment2D& line_segment) {
   return Length(point - projected_point_on_line_segment);
 }
 
-TransformationToolsController::TransformationToolsController() {}
+TransformationToolsController::TransformationToolsController(EditorViewport* editor_viewport) : ViewportController(editor_viewport) {}
 
 void TransformationToolsController::Update(std::chrono::microseconds) {
-  auto* object_selection_controller = viewport()->object_selection_controller();
+  auto* object_selection_controller = editor_viewport()->object_selection_controller();
   SDL_assert(object_selection_controller != nullptr);
 
   SceneObject* scene_object = object_selection_controller->selected_object();
@@ -50,14 +50,14 @@ void TransformationToolsController::Update(std::chrono::microseconds) {
   object_selected_ = true;
 
   object_position_world_space_ = transform->world_position();
-  object_position_screen_space_ = viewport()->WorldSpacePositionToScreenSpace(object_position_world_space_);
+  object_position_screen_space_ = editor_viewport()->WorldSpacePositionToScreenSpace(object_position_world_space_);
 
   Vector2 position2d = object_position_screen_space_;
 
   const Quaternion rotation = transform->world_rotation();
 
   const Vector3 unit_offset =
-      viewport()->WorldSpacePositionToScreenSpace(transform->world_position() + Vector3::PositiveX());
+      editor_viewport()->WorldSpacePositionToScreenSpace(transform->world_position() + Vector3::PositiveX());
   world_to_screen_space_factor_ = Distance(unit_offset, object_position_screen_space_);
 
   // Scaling in world space is not possible
@@ -83,11 +83,11 @@ void TransformationToolsController::Update(std::chrono::microseconds) {
   }
 
   x_axis_endpoint_screen_space_ =
-      viewport()->WorldSpacePositionToScreenSpace(object_position_world_space_ + x_axis_world_space_);
+      editor_viewport()->WorldSpacePositionToScreenSpace(object_position_world_space_ + x_axis_world_space_);
   y_axis_endpoint_screen_space_ =
-      viewport()->WorldSpacePositionToScreenSpace(object_position_world_space_ + y_axis_world_space_);
+      editor_viewport()->WorldSpacePositionToScreenSpace(object_position_world_space_ + y_axis_world_space_);
   z_axis_endpoint_screen_space_ =
-      viewport()->WorldSpacePositionToScreenSpace(object_position_world_space_ + z_axis_world_space_);
+      editor_viewport()->WorldSpacePositionToScreenSpace(object_position_world_space_ + z_axis_world_space_);
 }
 
 void TransformationToolsController::ProcessEvent(Event* event) {
@@ -120,7 +120,7 @@ void TransformationToolsController::ProcessEvent(Event* event) {
     if (is_dragging_) {
       is_dragging_ = false;
       // TODO: submit changes
-      auto* object_selection_controller = viewport()->object_selection_controller();
+      auto* object_selection_controller = editor_viewport()->object_selection_controller();
       SDL_assert(object_selection_controller != nullptr);
 
       SceneObject* scene_object = object_selection_controller->selected_object();
@@ -178,7 +178,7 @@ void TransformationToolsController::ProcessEvent(Event* event) {
       patch_event.set("patch", patch);
       patch_event.set("undoPatch", undo_patch);
 
-      viewport()->SendEvent(patch_event);
+      editor_viewport()->SendEvent(patch_event);
       event->StopPropagation();
     }
     // We may hover another gizmo now, so recheck it
@@ -212,7 +212,7 @@ bool TransformationToolsController::CheckMousePosition(Vector2 position) {
       }
 
     case TransformationType::ROTATE:
-      const Ray3D view_ray = viewport()->CalculateViewRay(position);
+      const Ray3D view_ray = editor_viewport()->CalculateViewRay(position);
       auto hitting_rotate_gizmo = [this, view_ray](Vector3 rotation_axis) -> bool {
         const Plane3D plane = Plane3D::FromPointAndNormal(object_position_world_space_, rotation_axis);
         auto intersection = ComputeRayPlaneIntersection(view_ray, plane);
@@ -244,7 +244,7 @@ bool TransformationToolsController::CheckMousePosition(Vector2 position) {
 }
 
 void TransformationToolsController::HandleDragging(MouseMoveEvent* mouse_move_event) {
-  auto* object_selection_controller = viewport()->object_selection_controller();
+  auto* object_selection_controller = editor_viewport()->object_selection_controller();
   SDL_assert(object_selection_controller != nullptr);
 
   SceneObject* scene_object = object_selection_controller->selected_object();

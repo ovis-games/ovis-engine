@@ -8,6 +8,7 @@
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_video.h>
 
+#include "ovis/application/tick_receiver.hpp"
 #include "ovis/utils/class.hpp"
 #include "ovis/core/scene.hpp"
 #include "ovis/graphics/graphics_context.hpp"
@@ -24,7 +25,7 @@ struct WindowDescription {
   int height = 720;
 };
 
-class Window : public RenderingViewport {
+class Window : public RenderingViewport, public TickReceiver {
   MAKE_NON_COPY_OR_MOVABLE(Window);
 
  public:
@@ -50,7 +51,7 @@ class Window : public RenderingViewport {
   void Resize(int width, int height);
 
   virtual bool SendEvent(const SDL_Event& event);
-  virtual void Update(std::chrono::microseconds delta_time);
+  void Update(std::chrono::microseconds delta_time) override;
   void Render() override;
 
  private:
@@ -59,6 +60,7 @@ class Window : public RenderingViewport {
   Uint32 id_;
   bool is_open_ = true;
 
+  SDL_GLContext opengl_context_;
   GraphicsContext graphics_context_;
   Scene scene_;
 };

@@ -13,14 +13,38 @@
 
 namespace ovis {
 
+namespace {
+
+SDL_GLContext CreateOpenGLContext(SDL_Window* window) {
+  SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+  SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+  SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+  SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+
+#if !defined(__IPHONEOS__) && !defined(__EMSCRIPTEN__)
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+  SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+#endif
+
+  auto context = SDL_GL_CreateContext(window);
+  SDL_assert(context != nullptr);
+  SDL_GL_MakeCurrent(window, context);
+  LogI("OpenGL version: {}", glGetString(GL_VERSION));
+
+  return context;
+}
+
+}  // namespace
+
 std::vector<Window*> Window::all_windows_;
 
 Window::Window(const WindowDescription& desc)
     : sdl_window_(SDL_CreateWindow(desc.title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, desc.width,
                                    desc.height, SDL_WINDOW_OPENGL)),
       id_(SDL_GetWindowID(sdl_window_)),
-      graphics_context_(sdl_window_),
-      scene_() {
+      opengl_context_(CreateOpenGLContext(sdl_window_)),
+      graphics_context_(GetDimensions()) {
   assert(sdl_window_ != nullptr);
   all_windows_.push_back(this);
 
@@ -36,6 +60,7 @@ Window::~Window() {
   all_windows_.pop_back();
 
   ClearResources();
+  SDL_GL_DeleteContext(opengl_context_);
   SDL_DestroyWindow(sdl_window_);
 }
 
@@ -144,6 +169,7 @@ void Window::Update(std::chrono::microseconds delta_time) {
 }
 
 void Window::Render() {
+  SDL_GL_MakeCurrent(sdl_window_, opengl_context_);
   RenderingViewport::Render();
   SDL_GL_SwapWindow(sdl_window_);
 }

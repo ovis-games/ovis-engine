@@ -29,7 +29,7 @@ class TransformationToolsController : public ViewportController {
   };
   enum class CoordinateSystem { OBJECT, WORLD };
 
-  TransformationToolsController();
+  TransformationToolsController(EditorViewport* editor_viewport);
 
   void Update(std::chrono::microseconds delta_time) override;
   void ProcessEvent(Event* event) override;

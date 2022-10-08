@@ -41,7 +41,7 @@ const char* EMSCRIPTEN_KEEPALIVE OvisEditorViewport_GetRegisteredSceneObjectComp
 }
 
 void SetEventCallback(emscripten::val callback) {
-  EditorViewport::instance()->SetEventCallback(callback);
+  // EditorViewport::instance()->SetEventCallback(callback);
 }
 
 EMSCRIPTEN_BINDINGS(my_module) {

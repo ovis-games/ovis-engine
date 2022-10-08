@@ -1,5 +1,7 @@
 #include <SDL2/SDL.h>
+#include "ovis/application/tick_receiver.hpp"
 #if OVIS_EMSCRIPTEN
+#include "ovis/application/canvas_viewport.hpp"
 #include <emscripten.h>
 #endif
 
@@ -50,12 +52,18 @@ bool Update() {
     return false;
   }
 
-  for (auto window : Window::all_windows()) {
-    window->Update(delta_time);
+  for (auto tick_receiver : TickReceiver::all()) {
+    tick_receiver->Update(delta_time);
   }
   for (auto window : Window::all_windows()) {
     window->Render();
   }
+
+#if OVIS_EMSCRIPTEN
+  for (auto canvas_viewport : CanvasViewport::all()) {
+    canvas_viewport->Render();
+  }
+#endif
 
 #if OVIS_ENABLE_BUILT_IN_PROFILING
   ProfilingLog::default_log()->AdvanceFrame();

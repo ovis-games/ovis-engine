@@ -33,18 +33,18 @@ AxisAlignedBoundingBox3D GetComponentAABB(const Value& component) {
   }
 };
 
-void SelectObject(std::string path) {
-  EditorViewport::instance()->object_selection_controller()->SelectObject(path);
-}
+// void SelectObject(std::string path) {
+//   E->object_selection_controller()->SelectObject(path);
+// }
 
-EMSCRIPTEN_BINDINGS(editor_viewport_module) {
-  using namespace emscripten;
-  function("viewportSelectObject", &SelectObject);
-}
+// EMSCRIPTEN_BINDINGS(editor_viewport_module) {
+//   using namespace emscripten;
+//   function("viewportSelectObject", &SelectObject);
+// }
 
 }  // namespace
 
-ObjectSelectionController::ObjectSelectionController() {
+ObjectSelectionController::ObjectSelectionController(EditorViewport* editor_viewport) : ViewportController(editor_viewport) {
 }
 
 void ObjectSelectionController::Update(std::chrono::microseconds) {
@@ -74,7 +74,7 @@ void ObjectSelectionController::ProcessEvent(Event* event) {
     float closest_distance = Infinity<float>();
     SceneObject* closest_object = nullptr;
 
-    for (SceneObject* object : viewport()->scene()->objects()) {
+    for (SceneObject* object : editor_viewport()->scene()->objects()) {
       const Transform* transform = object->GetComponent<Transform>();
       const Matrix3x4 world_to_object_space =
           transform ? transform->world_to_local_matrix() : Matrix3x4::IdentityTransformation();
@@ -113,19 +113,19 @@ void ObjectSelectionController::SelectObject(SceneObject* object) {
   } else {
     selected_object_path_.reset();
   }
-  viewport()->SendEvent(selection_event);
+  editor_viewport()->SendEvent(selection_event);
 }
 
 void ObjectSelectionController::SelectObject(std::string_view object_path) {
-  SelectObject(viewport()->scene()->GetObject(object_path));
+  SelectObject(editor_viewport()->scene()->GetObject(object_path));
 }
 
 bool ObjectSelectionController::has_selected_object() const {
-  return selected_object_path_.has_value() && viewport()->scene()->ContainsObject(*selected_object_path_);
+  return selected_object_path_.has_value() && editor_viewport()->scene()->ContainsObject(*selected_object_path_);
 }
 
 SceneObject* ObjectSelectionController::selected_object() const {
-  return selected_object_path_.has_value() ? viewport()->scene()->GetObject(*selected_object_path_) : nullptr;
+  return selected_object_path_.has_value() ? editor_viewport()->scene()->GetObject(*selected_object_path_) : nullptr;
 }
 
 }  // namespace editor

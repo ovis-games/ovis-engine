@@ -3,7 +3,9 @@
 #include <emscripten/val.h>
 
 #include "ovis/utils/utf8.hpp"  // For GetComponentPath()
+#include "ovis/application/canvas_viewport.hpp"
 #include "ovis/application/sdl_window.hpp"
+#include "ovis/application/tick_receiver.hpp"
 #include "ovis/editor/camera_controller.hpp"
 #include "ovis/editor/object_selection_controller.hpp"
 #include "ovis/editor/render_passes/selected_object_bounding_box.hpp"
@@ -13,10 +15,9 @@
 namespace ovis {
 namespace editor {
 
-class EditorViewport : public Window {
+class EditorViewport : public CanvasViewport, public TickReceiver {
  public:
-  EditorViewport();
-  ~EditorViewport();
+  EditorViewport(std::string target);
 
   void SetEventCallback(emscripten::val event_callback);
   void SendEvent(emscripten::val event);
@@ -30,10 +31,8 @@ class EditorViewport : public Window {
   void Update(std::chrono::microseconds delta_time) override;
   void ProcessEvent(Event* event) override;
 
-  static EditorViewport* instance() { return instance_; }
-
  private:
-  static EditorViewport* instance_;
+  Scene scene_;
 
   std::vector<ViewportController*> controllers_;
   CameraController camera_controller_;
