@@ -14,38 +14,13 @@
 using namespace ovis;
 using namespace ovis::editor;
 
-extern "C" {
-
 emscripten::val log_callback = emscripten::val::undefined();
-void setLogCallback(emscripten::val callback) {
+void SetLogCallback(emscripten::val callback) {
   log_callback = callback;
 }
 
-void EMSCRIPTEN_KEEPALIVE OvisEditorViewport_Quit() {
-  SDL_Event sdl_event;
-  sdl_event.type = SDL_QUIT;
-  SDL_PushEvent(&sdl_event);
-}
-
-int EMSCRIPTEN_KEEPALIVE OvisEditorViewport_GetRegisteredSceneObjectComponentCount() {
-  return ovis::SceneObjectComponent::GetRegisteredFactoriesCount();
-}
-
-const char* EMSCRIPTEN_KEEPALIVE OvisEditorViewport_GetRegisteredSceneObjectComponentId(int index) {
-  if (index >= OvisEditorViewport_GetRegisteredSceneObjectComponentCount()) {
-    return nullptr;
-  } else {
-    return std::next(ovis::SceneObjectComponent::registered_ids().begin(), index)->c_str();
-  }
-}
-}
-
-void SetEventCallback(emscripten::val callback) {
-  // EditorViewport::instance()->SetEventCallback(callback);
-}
-
 EMSCRIPTEN_BINDINGS(my_module) {
-    function("setLogCallback", setLogCallback);
+  function("setLogCallback", SetLogCallback);
 }
 
 // Usage: ovis-player backend_url project_id
@@ -63,8 +38,6 @@ int main(int argc, char* argv[]) {
   Init();
 
   SetEngineAssetsDirectory("/ovis_assets");
-
-  // EditorViewport viewport;
 
   Run();
 
