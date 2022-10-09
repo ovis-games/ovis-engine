@@ -51,14 +51,14 @@ CanvasViewport::CanvasViewport(std::string target)
 
 CanvasViewport::~CanvasViewport() {
   emscripten_set_keydown_callback(target_.c_str(), nullptr, 0, nullptr);
-  emscripten_set_keyup_callback(target_.c_str(), nullptr, 0, nullptr);
+  emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, nullptr, 0, nullptr);
   emscripten_set_keypress_callback(target_.c_str(), nullptr, 0, nullptr);
 
   emscripten_set_mousemove_callback(target_.c_str(), nullptr, 0, nullptr);
   emscripten_set_mousedown_callback(target_.c_str(), nullptr, 0, nullptr);
   emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_DOCUMENT, nullptr, 0, nullptr);
-  emscripten_set_mouseenter_callback(target_.c_str(), nullptr, 0, nullptr);
-  emscripten_set_mouseleave_callback(target_.c_str(), nullptr, 0, nullptr);
+  // emscripten_set_mouseenter_callback(target_.c_str(), nullptr, 0, nullptr);
+  // emscripten_set_mouseleave_callback(target_.c_str(), nullptr, 0, nullptr);
   emscripten_set_wheel_callback(target_.c_str(), nullptr, 0, nullptr);
   emscripten_set_blur_callback(target_.c_str(), nullptr, 0, nullptr);
 
