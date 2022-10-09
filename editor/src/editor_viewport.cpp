@@ -52,9 +52,23 @@ void DestroyEditorViewport(std::uintptr_t editor_viewport) {
 
 void SetViewportScene(std::uintptr_t editor_viewport, const emscripten::val& scene) {
   LogV("Update scene: {}", SerializeValue(scene));
+  ovis::SceneObject::ClearObjectTemplateChache(); // TODO: do this for specific object templates when they change
   reinterpret_cast<EditorViewport*>(editor_viewport)->scene()->Deserialize(json::parse(SerializeValue(scene)));
 }
 
+void SelectViewportObject(std::uintptr_t editor_viewport, const emscripten::val& object_path) {
+  if (object_path.isNull()) {
+    reinterpret_cast<EditorViewport*>(editor_viewport)->object_selection_controller()->SelectObject(nullptr);
+  } else {
+    reinterpret_cast<EditorViewport*>(editor_viewport)->object_selection_controller()->SelectObject(object_path.as<std::string>());
+  }
+}
+
+void SetObjectSelectionChangedHandler(std::uintptr_t editor_viewport, const emscripten::val& event_handler) {
+  reinterpret_cast<EditorViewport*>(editor_viewport)
+      ->object_selection_controller()
+      ->SetObjectSelectionChangedHandler(event_handler);
+}
 
 // void SelectTransformType(int transform_type) {
 //   EditorViewport::instance()->transformation_tools_controller()->SelectTransformationType(
@@ -72,6 +86,9 @@ EMSCRIPTEN_BINDINGS(editor_viewport_module) {
   emscripten::function("createEditorViewport", &CreateEditorViewport);
   emscripten::function("destroyEditorViewport", &DestroyEditorViewport);
   emscripten::function("setViewportScene", &SetViewportScene);
+  emscripten::function("selectViewportObject", &SelectViewportObject);
+  emscripten::function("setObjectSelectionChangedHandler", &SetObjectSelectionChangedHandler);
+
   // emscripten::function("viewportPlay", &Play);
   // emscripten::function("viewportStop", &Stop);
   // emscripten::function("viewportSetScene", &SetScene);
@@ -84,8 +101,7 @@ EditorViewport::EditorViewport(std::string target)
     : CanvasViewport(std::move(target)),
       camera_controller_(this),
       transformation_tools_controller_(this),
-      object_selection_controller_(this),
-      event_callback_(emscripten::val::null()) {
+      object_selection_controller_(this) {
   LogOnError(AddRenderPass<ClearPass>());
   LogOnError(AddRenderPass<Renderer2D>());
   LogOnError(AddRenderPass<SelectedObjectBoundingBox>());
@@ -100,20 +116,6 @@ EditorViewport::EditorViewport(std::string target)
 
   SetScene(&scene_);
   scene()->SetMainViewport(this);
-}
-
-void EditorViewport::SetEventCallback(emscripten::val event_callback) {
-  LogD("Set event callback: {}", event_callback.typeOf().as<std::string>());
-  if (event_callback.typeOf().as<std::string>() == "function") {
-    event_callback_ = event_callback;
-  }
-}
-
-void EditorViewport::SendEvent(emscripten::val event) {
-  LogD("Send event: {}", SerializeValue(event));
-  if (event_callback_.typeOf() == emscripten::val("function")) {
-    event_callback_(event);
-  }
 }
 
 void EditorViewport::Update(std::chrono::microseconds delta_time) {

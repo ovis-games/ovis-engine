@@ -1,5 +1,6 @@
 #pragma once
 
+#include "emscripten/val.h"
 #include <string_view>
 
 #include "ovis/utils/safe_pointer.hpp"
@@ -28,9 +29,12 @@ class ObjectSelectionController : public ViewportController {
   SceneObject* selected_object() const;
   AxisAlignedBoundingBox3D selected_object_aabb() const { return selected_object_aabb_; }
 
+  void SetObjectSelectionChangedHandler(const emscripten::val& event_handler) { on_object_selection_changed_ = event_handler; }
+
  private:
   std::optional<std::string> selected_object_path_;
   AxisAlignedBoundingBox3D selected_object_aabb_;
+  emscripten::val on_object_selection_changed_;
 };
 
 }  // namespace editor

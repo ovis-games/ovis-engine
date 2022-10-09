@@ -178,7 +178,7 @@ void TransformationToolsController::ProcessEvent(Event* event) {
       patch_event.set("patch", patch);
       patch_event.set("undoPatch", undo_patch);
 
-      editor_viewport()->SendEvent(patch_event);
+      // editor_viewport()->SendEvent(patch_event);
       event->StopPropagation();
     }
     // We may hover another gizmo now, so recheck it

@@ -44,8 +44,8 @@ AxisAlignedBoundingBox3D GetComponentAABB(const Value& component) {
 
 }  // namespace
 
-ObjectSelectionController::ObjectSelectionController(EditorViewport* editor_viewport) : ViewportController(editor_viewport) {
-}
+ObjectSelectionController::ObjectSelectionController(EditorViewport* editor_viewport)
+    : ViewportController(editor_viewport), on_object_selection_changed_(emscripten::val::null()) {}
 
 void ObjectSelectionController::Update(std::chrono::microseconds) {
   SceneObject* object = selected_object();
@@ -105,15 +105,21 @@ void ObjectSelectionController::ProcessEvent(Event* event) {
 }
 
 void ObjectSelectionController::SelectObject(SceneObject* object) {
-  auto selection_event = emscripten::val::object();
-  selection_event.set("type", "object_selection");
   if (object != nullptr) {
-    selected_object_path_ = object->path();
-    selection_event.set("path", *selected_object_path_);
+    if (selected_object_path_ != object->path()) {
+      selected_object_path_ = object->path();
+      if (on_object_selection_changed_.typeOf().as<std::string>() == "function") {
+        on_object_selection_changed_(std::string(object->path()));
+      }
+    }
   } else {
-    selected_object_path_.reset();
+    if (selected_object_path_.has_value()) {
+      selected_object_path_.reset();
+      if (on_object_selection_changed_.typeOf().as<std::string>() == "function") {
+        on_object_selection_changed_(emscripten::val::null());
+      }
+    }
   }
-  editor_viewport()->SendEvent(selection_event);
 }
 
 void ObjectSelectionController::SelectObject(std::string_view object_path) {

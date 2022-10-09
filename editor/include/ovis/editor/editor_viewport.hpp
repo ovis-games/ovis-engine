@@ -19,9 +19,6 @@ class EditorViewport : public CanvasViewport, public TickReceiver {
  public:
   EditorViewport(std::string target);
 
-  void SetEventCallback(emscripten::val event_callback);
-  void SendEvent(emscripten::val event);
-
   CameraController* camera_controller() { return &camera_controller_; }
   ObjectSelectionController* object_selection_controller() { return &object_selection_controller_; }
   TransformationToolsController* transformation_tools_controller() { return &transformation_tools_controller_; }
@@ -40,8 +37,6 @@ class EditorViewport : public CanvasViewport, public TickReceiver {
   TransformationToolsController transformation_tools_controller_;
 
   // SelectedObjectBoundingBox selected_object_bounding_box_;
-
-  emscripten::val event_callback_;
 
   void AddController(ViewportController* controller);
 };
