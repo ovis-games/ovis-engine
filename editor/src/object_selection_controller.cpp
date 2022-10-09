@@ -33,15 +33,6 @@ AxisAlignedBoundingBox3D GetComponentAABB(const Value& component) {
   }
 };
 
-// void SelectObject(std::string path) {
-//   E->object_selection_controller()->SelectObject(path);
-// }
-
-// EMSCRIPTEN_BINDINGS(editor_viewport_module) {
-//   using namespace emscripten;
-//   function("viewportSelectObject", &SelectObject);
-// }
-
 }  // namespace
 
 ObjectSelectionController::ObjectSelectionController(EditorViewport* editor_viewport)
