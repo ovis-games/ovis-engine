@@ -20,14 +20,17 @@ TEST_CASE("Parse parse variable declaration", "[ovis][core][ScriptTypeParser]") 
   {
     "name": "SomeType",
     "properties" : {
-      "SomeBoolean": {
-        "type": "Boolean"
+      {
+        "variableName": "SomeBoolean",
+        "variableType": "Boolean"
       },
-      "SomeNumber": {
-        "type": "Number"
+      {
+        "variableName": "SomeNumber",
+        "variableType": "Number"
       },
-      "SomeTest": {
-        "type": "Test.Test"
+      {
+        "variableName": "SomeTest",
+        "variableType": "Test.Test"
       }
     }
   }
