@@ -20,6 +20,7 @@ class AssetLibrary {
   virtual Result<std::string> GetAssetType(std::string_view asset_id) const = 0;
   virtual std::vector<std::string> GetAssetFileTypes(std::string_view asset_id) const = 0;
   virtual Result<std::string> LoadAssetTextFile(std::string_view asset_id, std::string_view filename) const = 0;
+  virtual Result<json> LoadAssetJsonFile(std::string_view asset_id, std::string_view filename) const;
   virtual Result<Blob> LoadAssetBinaryFile(std::string_view asset_id, std::string_view filename) const = 0;
   virtual std::vector<std::string> GetAssetsWithType(std::string_view type) const = 0;
 

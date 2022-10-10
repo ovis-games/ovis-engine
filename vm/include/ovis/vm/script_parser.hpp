@@ -9,7 +9,7 @@
 namespace ovis {
 
 struct ParseScriptResult {
-  std::vector<ParseScriptFunctionResult> functions;
+  std::vector<FunctionDescription> functions;
   std::vector<ParseScriptTypeResult> types;
 };
 

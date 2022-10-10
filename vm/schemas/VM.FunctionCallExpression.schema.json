@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "VM.FunctionCallExpression",
+  "title": "FunctionCallExpression",
+  "description": "An expression that calls a function.",
+  "type": "object",
+  "properties": {
+    "expressionType": "function_call",
+    "function": {
+      "$ref": "VM.FunctionReference.schema.json"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "VM.Expression.schema.json"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["expressionType"]
+}

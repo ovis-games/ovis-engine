@@ -8,6 +8,7 @@
     { "$ref": "VM.VariableDeclarationStatement.schema.json" },
     { "$ref": "VM.IfStatement.schema.json" },
     { "$ref": "VM.WhileStatement.schema.json" },
+    { "$ref": "VM.FunctionCallStatement.schema.json" },
     {
       "type": "object",
       "properties": {

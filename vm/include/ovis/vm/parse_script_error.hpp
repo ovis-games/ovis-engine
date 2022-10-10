@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include <fmt/format.h>
+
 #include "ovis/utils/result.hpp"
 
 namespace ovis {
@@ -26,3 +28,24 @@ struct ParseScriptError : Error {
 using ParseScriptErrors = std::vector<ParseScriptError>;
 
 }  // namespace ovis
+
+template<>
+struct fmt::formatter<ovis::ParseScriptErrors> {
+  template<typename ParseContext>
+  constexpr auto parse(ParseContext& ctx) {
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(const ovis::ParseScriptErrors& errors, FormatContext& ctx) {
+    for (const auto& error : errors) {
+      if (error.location.has_value()) {
+        fmt::format_to(ctx.out(), "{}:{} {}\n", error.location->script_name, error.location->json_path, error.message);
+      } else {
+        fmt::format_to(ctx.out(), "{}", error.message);
+      }
+    }
+    return fmt::format_to(ctx.out(), "");
+  }
+};
+

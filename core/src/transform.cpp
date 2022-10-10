@@ -182,6 +182,8 @@ void Transform::RegisterType(sol::table* module) {
 }
 
 OVIS_VM_DEFINE_TYPE_BINDING(Core, Transform, SceneObjectComponent) {
+  Transform_type->attributes.insert("SceneObjectComponent");
+
   Transform_type->AddProperty<&Transform::local_position, &Transform::SetLocalPosition>("localPosition");
   Transform_type->AddProperty<&Transform::world_position, &Transform::SetWorldPosition>("worldPosition");
   Transform_type->AddProperty<&Transform::local_scale, SelectOverload<void(Vector3)>(&Transform::SetLocalScale)>("localScale");

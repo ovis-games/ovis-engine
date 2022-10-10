@@ -4,17 +4,11 @@
 
 namespace ovis {
 
-Result<ParseScriptFunctionResult, ParseScriptErrors> ParseScriptFunction(VirtualMachine* virtual_machine,
-                                                                         const json& function_definition,
-                                                                         std::string_view script_name,
-                                                                         std::string_view base_path) {
+ParseScriptFunctionResult ParseScriptFunction(VirtualMachine* virtual_machine, const json& function_definition,
+                                              std::string_view script_name, std::string_view base_path) {
   ScriptFunctionParser parser(virtual_machine, script_name, base_path);
   parser.Parse(function_definition);
-  if (parser.errors.size() > 0) {
-    return parser.errors;
-  } else {
-    return parser.result;
-  }
+  return parser.result;
 }
 
 const ScriptFunctionScopeValue* ScriptFunctionScope::GetVariable(std::string_view name) {
@@ -54,7 +48,9 @@ uint32_t ScriptFunctionScope::PopValue() {
 }
 
 void ScriptFunctionParser::Parse(const json& json_definition) {
+  LogD("{}", json_definition.dump(2));
   // TODO: check format
+  result.function_description.name = json_definition.contains("name") ? json_definition.at("name") : "";
   PushScope();
   if (json_definition.contains("outputs")) {
     ParseOutputs(json_definition["outputs"], "/outputs");
@@ -84,10 +80,10 @@ void ScriptFunctionParser::ParseOutputs(const json& outputs, std::string_view pa
 
 void ScriptFunctionParser::ParseInputs(const json& inputs, std::string_view path) {
   for (const auto& input : inputs) {
-    assert(input.contains("name"));
-    assert(input.contains("type"));
-    const auto& type = input.at("type");
-    const std::string& name = input.at("name");
+    assert(input.contains("variableName"));
+    assert(input.contains("variableType"));
+    const auto& type = input.at("variableType");
+    const std::string& name = input.at("variableName");
     const auto type_id = virtual_machine->GetTypeId(type);
     auto add_variable_result = current_scope()->AddVariable(type_id, name);
     if (add_variable_result) {
@@ -106,9 +102,7 @@ void ScriptFunctionParser::ParseStatements(const json& statements_definiton, std
 }
 
 void ScriptFunctionParser::ParseStatement(const json& statement_definiton, std::string_view path) {
-  assert(statement_definiton.contains("type"));
-
-  const std::string& type = statement_definiton["type"];
+  const std::string& type = statement_definiton.contains("statementType") ? statement_definiton["statementType"] : "";
   if (type == "return") {
     ParseReturnStatement(statement_definiton, path);
   } else if (type == "variable_declaration") {
@@ -119,7 +113,8 @@ void ScriptFunctionParser::ParseStatement(const json& statement_definiton, std::
 }
 
 void ScriptFunctionParser::ParseReturnStatement(const json& return_definition, std::string_view path) {
-  assert(return_definition["type"] == "return");
+  assert(return_definition.contains("statementType"));
+  assert(return_definition["statementType"] == "return");
 
   const auto& outputs = return_definition["outputs"];
 
@@ -145,22 +140,21 @@ void ScriptFunctionParser::ParseReturnStatement(const json& return_definition, s
 }
 
 void ScriptFunctionParser::ParseVariableDeclarationStatement(const json& variable_declaration, std::string_view path) {
-  assert(variable_declaration["type"] == "variable_declaration");
+  assert(variable_declaration.contains("statementType"));
+  assert(variable_declaration["statementType"] == "variable_declaration");
 
-  assert(variable_declaration.contains("variable"));
-  const auto& variable = variable_declaration.at("variable");
-  assert(variable.contains("name"));
-  assert(variable.contains("type"));
+  assert(variable_declaration.contains("variableName"));
+  assert(variable_declaration.contains("variableType"));
 
-  const auto type = virtual_machine->GetType(variable.at("type"));
+  const auto type = virtual_machine->GetType(variable_declaration.at("variableType"));
   if (!type) {
-    AddError(path, "Unknown variable type {}", variable_declaration["type"].dump());
+    AddError(path, "Unknown variable type {}", variable_declaration["variableType"].dump());
     return;
   }
 
   ScriptFunctionScopeValue* value;
-  if (variable.contains("value")) {
-    value = ParseExpression(variable.at("value"), fmt::format("{}/variable/value", path));
+  if (variable_declaration.contains("value")) {
+    value = ParseExpression(variable_declaration.at("value"), fmt::format("{}/variable/value", path));
   } else {
     value = InsertConstructTypeInstructions(path, type);
   }
@@ -169,7 +163,7 @@ void ScriptFunctionParser::ParseVariableDeclarationStatement(const json& variabl
       AddError(path, "Invalid expression type. Expected {}, got {}.", type->name(),
                virtual_machine->GetType(value->type_id)->name());
     }
-    value->name = variable.at("name");
+    value->name = variable_declaration.at("variableName");
   }
 }
 
@@ -181,8 +175,8 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseExpression(const json& expr
   } else if (expression_definition.is_boolean()) {
     return InsertPushConstantInstructions(path, static_cast<bool>(expression_definition));
   } else if (expression_definition.is_object()) {
-    assert(expression_definition.contains("type"));
-    const std::string& type = expression_definition.at("type");
+    assert(expression_definition.contains("expressionType"));
+    const std::string& type = expression_definition.at("expressionType");
     if (type == "variable") {
       return ParseVariableExpression(expression_definition, path);
     } else if (type == "number_operation") {
@@ -211,14 +205,31 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseVariableExpression(const js
 
 ScriptFunctionScopeValue* ScriptFunctionParser::ParseNumberOperationExpression(const json& expression_definition,
                                                                                std::string_view path) {
-  assert(expression_definition["type"] == "number_operation");
+  assert(expression_definition.contains("expressionType"));
+  assert(expression_definition["expressionType"] == "number_operation");
+
+  if (!expression_definition.contains("firstOperand")) {
+    return nullptr;
+  }
+
+  auto* first_operand = ParseExpression(expression_definition["firstOperand"], fmt::format("{}/firstOperand", path));
+  if (!first_operand) {
+    return nullptr;
+  }
+
   assert(expression_definition.contains("operation"));
-  const std::string& operation = expression_definition.at("operation");
-  assert(expression_definition.contains("firstOperand"));
-  auto* first_operand = ParseExpression(expression_definition.at("firstOperand"), fmt::format("{}/firstOperand", path));
+  const std::string& operation = expression_definition["operation"];
+
   if (operation != "negate") {
-    assert(expression_definition.contains("secondOperand"));
+    if (!expression_definition.contains("secondOperand")) {
+      return nullptr;
+    }
+
     auto* second_operand = ParseExpression(expression_definition.at("secondOperand"), fmt::format("{}/secondOperand", path));
+    if (!second_operand) {
+      return nullptr;
+    }
+
     if (operation == "add") {
       InsertInstructions(path, { Instruction::CreateAddNumbers() });
     } else if (operation == "subtract") {

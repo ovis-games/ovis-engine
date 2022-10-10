@@ -34,7 +34,7 @@ target_include_directories(
 target_link_libraries(
   ovis-utils
   PUBLIC
-    nlohmann_json
+    nlohmann_json::nlohmann_json
     fmt::fmt
     Lua
     sol2_single

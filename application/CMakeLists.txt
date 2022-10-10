@@ -3,7 +3,8 @@ add_library(
 
   include/ovis/application/application.hpp src/application.cpp
   include/ovis/application/game_settings.hpp src/game_settings.cpp
-  include/ovis/application/window.hpp src/window.cpp
+  include/ovis/application/sdl_window.hpp src/sdl_window.cpp
+  include/ovis/application/canvas_viewport.hpp src/canvas_viewport.cpp
 )
 add_library(ovis::application ALIAS ovis-application)
 
