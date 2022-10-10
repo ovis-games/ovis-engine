@@ -55,6 +55,12 @@ emscripten::val CreateTypeReflection(TypeId type_id) {
 
   auto type_reflection = emscripten::val::object();
 
+  auto attributes = emscripten::val::object();
+  for (const auto& attribute : type->attributes()) {
+    attributes.set(attribute, true);
+  }
+  type_reflection.set("attributes", attributes);
+
   return type_reflection;
 }
 

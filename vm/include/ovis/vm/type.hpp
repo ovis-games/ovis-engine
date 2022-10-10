@@ -4,14 +4,15 @@
 #include <variant>
 #include <vector>
 
-#include <ovis/utils/json.hpp>
-#include <ovis/utils/native_type_id.hpp>
-#include <ovis/utils/result.hpp>
-#include <ovis/utils/versioned_index.hpp>
-#include <ovis/utils/safe_pointer.hpp>
-#include <ovis/vm/type_helper.hpp>
-#include <ovis/vm/type_id.hpp>
-#include <ovis/vm/value_storage.hpp>
+#include "ovis/utils/json.hpp"
+#include "ovis/utils/native_type_id.hpp"
+#include "ovis/utils/result.hpp"
+#include "ovis/utils/versioned_index.hpp"
+#include "ovis/utils/safe_pointer.hpp"
+#include "ovis/vm/attributes.hpp"
+#include "ovis/vm/type_helper.hpp"
+#include "ovis/vm/type_id.hpp"
+#include "ovis/vm/value_storage.hpp"
 
 namespace ovis {
 
@@ -84,6 +85,7 @@ struct TypeDescription {
   std::vector<std::shared_ptr<Function>> methods;
   TypeMemoryLayout memory_layout;
   std::optional<TypeReferenceDescription> reference;
+  Attributes attributes;
 
   template <typename T, typename ParentType = void>
   requires (
@@ -169,6 +171,8 @@ class Type : public std::enable_shared_from_this<Type> {
   template <typename Base>
   Base* CastToBase(void* pointer) const;
 
+  const Attributes& attributes() const { return description().attributes; }
+
   const TypePropertyDescription* GetProperty(std::string_view name) const;
   std::span<const TypePropertyDescription> properties() const { return description().properties; }
 
@@ -183,25 +187,12 @@ class Type : public std::enable_shared_from_this<Type> {
 }  // namespace ovis
 
 // Inline implementation
-#include <ovis/utils/reflection.hpp>
-#include <ovis/vm/function.hpp>
-#include <ovis/vm/module.hpp>
-#include <ovis/vm/virtual_machine.hpp>
+#include "ovis/utils/reflection.hpp"
+#include "ovis/vm/function.hpp"
+#include "ovis/vm/module.hpp"
+#include "ovis/vm/virtual_machine.hpp"
 
 namespace ovis {
-
-// inline Type::Type(std::shared_ptr<Module> module, std::string_view name, std::shared_ptr<Type> base,
-//                   ConversionFunction to_base, ConversionFunction from_base)
-//     : Type(module, name) {
-//   base_ = base;
-//   from_base_ = from_base;
-//   to_base_ = to_base;
-// }
-
-namespace detail {
-
-
-}  // namespace detail
 
 template <auto PROPERTY> requires std::is_member_pointer_v<decltype(PROPERTY)>
 inline TypePropertyDescription TypePropertyDescription::Create(VirtualMachine* virtual_machine, std::string_view name) {
