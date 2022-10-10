@@ -1,18 +1,13 @@
 #include <SDL2/SDL.h>
+#include "ovis/application/tick_receiver.hpp"
 #if OVIS_EMSCRIPTEN
+#include "ovis/application/canvas_viewport.hpp"
 #include <emscripten.h>
 #endif
 
-#include <ovis/utils/profiling.hpp>
-#include <ovis/core/core_module.hpp>
-#include <ovis/core/lua.hpp>
-#include <ovis/rendering/rendering_module.hpp>
-#include <ovis/rendering2d/rendering2d_module.hpp>
-// #include <ovis/physics2d/physics2d_module.hpp>
-#include <ovis/input/input_module.hpp>
-#include <ovis/networking/networking_module.hpp>
-#include <ovis/imgui/imgui_module.hpp>
-#include <ovis/application/window.hpp>
+#include "ovis/utils/profiling.hpp"
+#include "ovis/core/lua.hpp"
+#include "ovis/application/sdl_window.hpp"
 
 namespace ovis {
 
@@ -57,12 +52,18 @@ bool Update() {
     return false;
   }
 
-  for (auto window : Window::all_windows()) {
-    window->Update(delta_time);
+  for (auto tick_receiver : TickReceiver::all()) {
+    tick_receiver->Update(delta_time);
   }
   for (auto window : Window::all_windows()) {
     window->Render();
   }
+
+#if OVIS_EMSCRIPTEN
+  for (auto canvas_viewport : CanvasViewport::all()) {
+    canvas_viewport->Render();
+  }
+#endif
 
 #if OVIS_ENABLE_BUILT_IN_PROFILING
   ProfilingLog::default_log()->AdvanceFrame();
@@ -111,13 +112,8 @@ void LuaError(sol::optional<std::string_view> message) {
 }  // namespace
 
 void Init() {
-  LoadCoreModule();
-  LoadInputModule();
-  LoadNetworkingModule();
-  LoadRenderingModule();
-  LoadRendering2DModule();
-  // LoadPhysics2DModule();
-  LoadImGuiModule();
+  InitializeMainVM();
+
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
     LogE("Failed to initialize SDL: {}", SDL_GetError());
   }

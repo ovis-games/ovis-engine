@@ -2,6 +2,7 @@
 #include <cstring>
 #include <ctime>
 #include <iomanip>
+#include <memory>
 #include <sstream>
 
 #include <ovis/utils/profiling.hpp>

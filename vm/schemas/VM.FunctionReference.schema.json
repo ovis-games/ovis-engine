@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "VM.FunctionReference",
+  "title": "FunctionReference",
+  "description": "A reference to a VM function",
+  "type": "string"
+}

@@ -1,5 +1,3 @@
-#include <SDL_assert.h>
-
 #include <ovis/rendering2d/shape2d.hpp>
 #include <ovis/core/scene_object.hpp>
 
@@ -114,7 +112,7 @@ void Shape2D::Update() {
 }
 
 void Shape2D::UpdateRectangle() {
-  SDL_assert(type_ == Type::RECTANGLE);
+  assert(type_ == Type::RECTANGLE);
 
   const Vector2 inner_half_size = 0.5f * rectangle_.size + std::min(outline_width_, 0.0f) * Vector2::One();
   const Vector2 outer_half_size = inner_half_size + std::abs(outline_width_) * Vector2::One();
@@ -231,11 +229,11 @@ void Shape2D::UpdateEllipse() {
     }
   }
 
-  SDL_assert(vertices_.size() == ellipse_vertices + outline_vertices);
+  assert(vertices_.size() == ellipse_vertices + outline_vertices);
 }
 
-void Shape2D::RegisterType(vm::Module* module) {
-  module->RegisterType<Shape2D, SceneObjectComponent>("Shape2D");
+OVIS_VM_DEFINE_TYPE_BINDING(Rendering2D, Shape2D, SceneObjectComponent) {
+  Shape2D_type->attributes.insert("SceneObjectComponent");
 }
 
 }  // namespace ovis

@@ -2,11 +2,11 @@
 
 #include <span>
 
-#include <ovis/core/color.hpp>
-#include <ovis/core/scene_object_component.hpp>
-#include <ovis/core/vector.hpp>
-#include <ovis/core/virtual_machine.hpp>
-#include <ovis/graphics/texture2d.hpp>
+#include "ovis/core/color.hpp"
+#include "ovis/core/scene_object_component.hpp"
+#include "ovis/core/vector.hpp"
+#include "ovis/core/vm_bindings.hpp"
+#include "ovis/graphics/texture2d.hpp"
 
 namespace ovis {
 
@@ -34,14 +34,14 @@ class Shape2D : public SceneObjectComponent {
   };
   static_assert(sizeof(Vertex) == 20);
 
-  explicit inline Shape2D(SceneObject* object) : SceneObjectComponent(object) {Deserialize({});}
+  explicit inline Shape2D() : SceneObjectComponent() {Deserialize({});}
 
   Color color() const { return color_; }
   Color outline_color() const { return outline_color_; }
   float outline_width() const { return outline_width_; }
   Type type() const { return type_; }
-  Rectangle rectangle() const { SDL_assert(type_ == Type::RECTANGLE); return rectangle_; }
-  Ellipse ellipse() const { SDL_assert(type_ == Type::ELLIPSE); return ellipse_; }
+  Rectangle rectangle() const { assert(type_ == Type::RECTANGLE); return rectangle_; }
+  Ellipse ellipse() const { assert(type_ == Type::ELLIPSE); return ellipse_; }
   std::string texture_asset() const { return texture_asset_; }
 
   std::span<const Vertex> vertices() const { return vertices_; }
@@ -56,7 +56,7 @@ class Shape2D : public SceneObjectComponent {
   const json* GetSchema() const override { return &schema; }
 
   static void RegisterType(sol::table* module);
-  static void RegisterType(vm::Module* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 
  private:
   Color color_ = Color::White();

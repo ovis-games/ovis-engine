@@ -1,7 +1,6 @@
 add_library(
   ovis-rendering2d
   
-  include/ovis/rendering2d/rendering2d_module.hpp src/rendering2d_module.cpp
   include/ovis/rendering2d/renderer2d.hpp src/renderer2d.cpp
   include/ovis/rendering2d/shape2d.hpp src/shape2d.cpp
   include/ovis/rendering2d/text.hpp src/text.cpp
@@ -41,7 +40,7 @@ if (OVIS_BUILD_TESTS)
   target_link_libraries(
     ovis-rendering2d-test
     PRIVATE
-      catch2
+      Catch2
       ovis::rendering2d
   )
   # target_add_assets(

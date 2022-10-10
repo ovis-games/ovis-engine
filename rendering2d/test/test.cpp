@@ -1,14 +1,13 @@
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
+
 #include <ovis/utils/log.hpp>
-#include <ovis/core/core_module.hpp>
-#include <ovis/rendering2d/rendering2d_module.hpp>
 #include <ovis/core/asset_library.hpp>
+#include <ovis/core/main_vm.hpp>
 
 int main(int argc, char* argv[]) {
   ovis::Log::AddListener(ovis::ConsoleLogger);
-  ovis::LoadCoreModule();
-  ovis::LoadRendering2DModule();
+  ovis::InitializeMainVM();
 
   Catch::Session session;
 

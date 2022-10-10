@@ -5,8 +5,8 @@
 
 #include <stb_truetype.h>
 
-#include <ovis/graphics/texture2d.hpp>
-#include <ovis/rendering2d/shape2d.hpp>
+#include "ovis/graphics/texture2d.hpp"
+#include "ovis/rendering2d/shape2d.hpp"
 
 namespace ovis {
 

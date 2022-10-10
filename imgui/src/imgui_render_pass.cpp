@@ -89,7 +89,9 @@ void ImGuiRenderPass::Render(const RenderContext& render_context) {
     for (int command_index = 0; command_index < command_list->CmdBuffer.Size; ++command_index) {
       const auto& command = command_list->CmdBuffer[command_index];
 
-      GraphicsResource* texture = context()->GetResource(command.TextureId);
+      GraphicsResource::Id texture_id;
+      texture_id.value = command.TextureId;
+      GraphicsResource* texture = context()->GetResource(texture_id);
       if (texture && texture->type() == GraphicsResource::Type::TEXTURE_2D) {
         shader_program_->SetTexture("Texture", down_cast<Texture2D*>(texture));
       } else {
@@ -127,7 +129,7 @@ void ImGuiRenderPass::ReloadFontAtlas(ImGuiStartFrameController* start_frame_con
   font_texture_desc.mip_map_count = 1;
   font_texture_ = std::make_unique<Texture2D>(context(), font_texture_desc, start_frame_controller->font_atlas_pixels_);
 
-  ImGui::GetIO().Fonts->TexID = font_texture_->id();
+  ImGui::GetIO().Fonts->TexID = font_texture_->id().value;
   start_frame_controller->reload_font_atlas_ = false;
 }
 

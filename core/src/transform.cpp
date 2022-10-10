@@ -3,7 +3,6 @@
 
 #include <ovis/utils/log.hpp>
 #include <ovis/core/transform.hpp>
-#include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
 
@@ -182,12 +181,26 @@ void Transform::RegisterType(sol::table* module) {
   transform_type["world_position_to_local"] = &Transform::WorldPositionToLocal;
 }
 
-void Transform::RegisterType(vm::Module* module) {
-  auto transform_type = module->RegisterType<Transform, SceneObjectComponent>("Transform");
-  transform_type->RegisterProperty<&Transform::local_position, &Transform::SetLocalPosition>("Local Position");
-  
-  // auto transform_constructor = module->RegisterFunction<vm::Constructor<Transform, SceneObject*>>("Create Transform", { "object" }, { "transform" });
+OVIS_VM_DEFINE_TYPE_BINDING(Core, Transform, SceneObjectComponent) {
+  Transform_type->attributes.insert("SceneObjectComponent");
+
+  Transform_type->AddProperty<&Transform::local_position, &Transform::SetLocalPosition>("localPosition");
+  Transform_type->AddProperty<&Transform::world_position, &Transform::SetWorldPosition>("worldPosition");
+  Transform_type->AddProperty<&Transform::local_scale, SelectOverload<void(Vector3)>(&Transform::SetLocalScale)>("localScale");
+
+  Transform_type->AddMethod<&Transform::MoveLocally>("moveLocally");
+  Transform_type->AddMethod<&Transform::Move>("move");
+  Transform_type->AddMethod<SelectOverload<void(Vector3)>(&Transform::ScaleLocally)>("ScaleLocally");
+  Transform_type->AddMethod<SelectOverload<void(float)>(&Transform::ScaleLocally)>("ScaleLocally");
 }
+
+// void Transform::RegisterType(Module* module) {
+//   auto transform_description = TypeDescription::CreateForNativeType<Transform, SceneObjectComponent>(&vm, "Transform");
+//   module->RegisterType(transform_description);
+//   // transform_type->RegisterProperty<&Transform::local_position, &Transform::SetLocalPosition>("Local Position");
+  
+//   // auto transform_constructor = module->RegisterFunction<Constructor<Transform, SceneObject*>>("Create Transform", { "object" }, { "transform" });
+// }
 
 void Transform::CalculateMatrices() const {
   const Matrix3x4 local_to_parent = Matrix3x4::FromTransformation(position_, scale_, rotation_);

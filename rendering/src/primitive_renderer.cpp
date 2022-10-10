@@ -5,7 +5,7 @@
 namespace ovis {
 std::map<GraphicsContext*, std::weak_ptr<PrimitiveRenderer::Resources>> PrimitiveRenderer::resources;
 
-PrimitiveRenderer::PrimitiveRenderer(std::string_view name) : RenderPass(name) {}
+PrimitiveRenderer::PrimitiveRenderer() : RenderPass() {}
 
 void PrimitiveRenderer::CreateResources() {
   SDL_assert(!is_drawing_);

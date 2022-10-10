@@ -10,44 +10,52 @@ ColumnLimit: 120
 IncludeBlocks: Regroup
 IncludeCategories:
 
-  - Regex:           '^<ovis\/utils'
+  - Regex:           '^(<|")ovis\/utils'
     Priority:        3
 
-  - Regex:           '^<ovis\/core'
+  - Regex:           '^(<|")ovis\/vm'
     Priority:        3
     SortPriority:    4
 
-  - Regex:           '^<ovis\/graphics'
+  - Regex:           '^(<|")ovis\/core'
     Priority:        3
     SortPriority:    5
 
-  - Regex:           '^<ovis\/rendering'
+  - Regex:           '^(<|")ovis\/graphics'
     Priority:        3
     SortPriority:    6
 
-  - Regex:           '^<ovis\/physics2d'
+  - Regex:           '^(<|")ovis\/rendering'
     Priority:        3
     SortPriority:    7
 
-  - Regex:           '^<ovis\/input'
+  - Regex:           '^(<|")ovis\/physics2d'
     Priority:        3
     SortPriority:    8
 
-  - Regex:           '^<ovis\/networking'
+  - Regex:           '^(<|")ovis\/input'
     Priority:        3
     SortPriority:    9
 
-  - Regex:           '^<ovis\/audio'
+  - Regex:           '^(<|")ovis\/networking'
     Priority:        3
     SortPriority:    10
 
-  - Regex:           '^<ovis\/imgui'
-    Priority:        3
-    SortPriority:    10
-
-  - Regex:           '^<ovis\/application'
+  - Regex:           '^(<|")ovis\/audio'
     Priority:        3
     SortPriority:    11
+
+  - Regex:           '^(<|")ovis\/imgui'
+    Priority:        3
+    SortPriority:    12
+
+  - Regex:           '^(<|")ovis\/application'
+    Priority:        3
+    SortPriority:    13
+
+  - Regex:           '^(<|")ovis\/editor'
+    Priority:        3
+    SortPriority:    14
 
   - Regex:           '\.(hpp|hh|h)>$'
     Priority:        2

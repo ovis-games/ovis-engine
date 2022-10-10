@@ -22,7 +22,7 @@ class PrimitiveRenderer : public RenderPass {
  public:
   enum class DrawSpace { WORLD, SCREEN };
 
-  PrimitiveRenderer(std::string_view name);
+  PrimitiveRenderer();
 
   void CreateResources() override;
   void ReleaseResources() override;

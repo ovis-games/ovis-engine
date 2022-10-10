@@ -40,58 +40,38 @@ void RenderingViewport::Render() {
   }
 }
 
-RenderPass* RenderingViewport::AddRenderPass(std::unique_ptr<RenderPass> render_pass) {
-  if (!render_pass) {
-    LogE("Scene controller is null!");
-    return nullptr;
+Result<RenderPass*> RenderingViewport::AddRenderPass(TypeId render_pass_type) {
+  if (GetRenderPass(render_pass_type)) {
+    return Error("Render pass {} already added", main_vm->GetType(render_pass_type)->GetReferenceString());
   }
 
-  const std::string render_pass_id = render_pass->name();
-  if (render_passes_.count(render_pass_id) != 0) {
-    LogE("Render pass '{}' already added", render_pass_id);
-    return nullptr;
-  }
+  auto render_pass = ReferencableValue::Create(main_vm, render_pass_type);
+  OVIS_CHECK_RESULT(render_pass);
 
-  auto insert_return_value = render_passes_.insert(std::make_pair(render_pass_id, std::move(render_pass)));
-  SDL_assert(insert_return_value.second);
-  insert_return_value.first->second->viewport_ = this;
-  if (graphics_context_ != nullptr) {
-    insert_return_value.first->second->graphics_context_ = graphics_context_;
-    insert_return_value.first->second->CreateResources();
+  render_pass->as<RenderPass>().viewport_ = this;
+  if (context()) {
+    render_pass->as<RenderPass>().graphics_context_ = context();
+    render_pass->as<RenderPass>().CreateResources();
   }
+  render_passes_.push_back(std::move(*render_pass));
   render_passes_sorted_ = false;
 
-  return insert_return_value.first->second.get();
-}
-
-RenderPass* RenderingViewport::AddRenderPass(const std::string& render_pass_id) {
-  if (render_passes_.count(render_pass_id) != 0) {
-    LogE("Render pass '{}' already added", render_pass_id);
-    return nullptr;
-  }
-
-  std::optional<std::unique_ptr<RenderPass>> render_pass = RenderPass::Create(render_pass_id);
-  if (!render_pass.has_value()) {
-    LogE("Render pass '{}' not registered or failed to create", render_pass_id);
-    return nullptr;
-  }
-
-  return AddRenderPass(std::move(*render_pass));
+  return &render_passes_.back().as<RenderPass>();
 }
 
 void RenderingViewport::SetGraphicsContext(GraphicsContext* graphics_context) {
   if (graphics_context != graphics_context_) {
     if (graphics_context_ != nullptr) {
-      for (const auto& render_pass : render_passes_) {
-        render_pass.second->ReleaseResourcesWrapper();
-        render_pass.second->graphics_context_ = nullptr;
+      for (auto& render_pass : render_passes_) {
+        render_pass.as<RenderPass>().ReleaseResourcesWrapper();
+        render_pass.as<RenderPass>().graphics_context_ = nullptr;
       }
     }
 
     if (graphics_context != nullptr) {
-      for (const auto& render_pass : render_passes_) {
-        render_pass.second->graphics_context_ = graphics_context;
-        render_pass.second->CreateResourcesWrapper();
+      for (auto& render_pass : render_passes_) {
+        render_pass.as<RenderPass>().graphics_context_ = graphics_context;
+        render_pass.as<RenderPass>().CreateResourcesWrapper();
       }
     }
 
@@ -144,25 +124,27 @@ std::unique_ptr<RenderTargetConfiguration> RenderingViewport::CreateRenderTarget
 
 void RenderingViewport::SortRenderPasses() {
   // First depends on second beeing already rendered
-  std::multimap<std::string, std::string> dependencies = render_pass_dependencies_;
-  std::set<std::string> render_passes_left_;
+  std::multimap<TypeId, TypeId> dependencies = render_pass_dependencies_;
+  std::set<TypeId> render_passes_left_;
 
-  for (const auto& name_renderer_pair : render_passes_) {
-    render_passes_left_.insert(name_renderer_pair.first);
+  for (const auto& render_pass : render_passes_) {
+    render_passes_left_.insert(render_pass.type_id());
 
-    for (auto render_before : name_renderer_pair.second->render_before_list_) {
-      if (render_passes_.count(render_before) == 0) {
-        LogW("Cannot render {0} before {1}, {1} not found!", name_renderer_pair.first, render_before);
+    for (auto render_before : render_pass.as<const RenderPass>().render_before_list_) {
+      if (!GetRenderPass(render_before)) {
+        LogW("Cannot render {0} before {1}, {1} not found!", render_pass.type()->GetReferenceString(),
+             main_vm->GetType(render_before)->GetReferenceString());
       } else {
-        dependencies.insert(std::make_pair(render_before, name_renderer_pair.first));
+        dependencies.insert(std::make_pair(render_before, render_pass.type_id()));
       }
     }
 
-    for (auto render_after : name_renderer_pair.second->render_after_list_) {
-      if (render_passes_.count(render_after) == 0) {
-        LogW("Cannot render {0} after {1}, {1} not found!", name_renderer_pair.first, render_after);
+    for (auto render_after : render_pass.as<const RenderPass>().render_after_list_) {
+      if (!GetRenderPass(render_after)) {
+        LogW("Cannot render {0} after {1}, {1} not found!", render_pass.type()->GetReferenceString(),
+             main_vm->GetType(render_after)->GetReferenceString());
       } else {
-        dependencies.insert(std::make_pair(name_renderer_pair.first, render_after));
+        dependencies.insert(std::make_pair(render_pass.type_id(), render_after));
       }
     }
   }
@@ -172,13 +154,13 @@ void RenderingViewport::SortRenderPasses() {
   render_pass_order_.reserve(render_passes_.size());
   while (render_passes_left_.size() > 0) {
     auto next = std::find_if(render_passes_left_.begin(), render_passes_left_.end(),
-                             [&dependencies](const std::string& value) { return dependencies.count(value) == 0; });
+                             [&dependencies](TypeId type) { return dependencies.count(type) == 0; });
 
     SDL_assert(next != render_passes_left_.end());
-    LogV(" {}", *next);
+    LogV(" {}", main_vm->GetType(*next)->GetReferenceString());
 
-    SDL_assert(render_passes_.find(*next) != render_passes_.end());
-    render_pass_order_.push_back(render_passes_[*next].get());
+    assert(GetRenderPass(*next));
+    render_pass_order_.push_back(GetRenderPass(*next));
     for (auto i = dependencies.begin(), e = dependencies.end(); i != e;) {
       if (i->second == *next) {
         i = dependencies.erase(i);
@@ -191,15 +173,6 @@ void RenderingViewport::SortRenderPasses() {
 
   LogV("Render passes sorted!");
   render_passes_sorted_ = true;
-}
-
-RenderPass* RenderingViewport::GetRenderPassInternal(const std::string& render_pass_name) const {
-  auto render_pass = render_passes_.find(render_pass_name);
-  if (render_pass == render_passes_.end()) {
-    return nullptr;
-  } else {
-    return render_pass->second.get();
-  }
 }
 
 }  // namespace ovis

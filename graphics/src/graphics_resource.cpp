@@ -6,7 +6,7 @@
 namespace ovis {
 
 GraphicsResource::~GraphicsResource() {
-  const size_t index = ExtractIndex(id());
+  const size_t index = id().index;
   SDL_assert(context_->resources_[index] == this);
   context_->resources_[index] = new GraphicsResource(context_, id());
 }
@@ -20,14 +20,14 @@ GraphicsResource::GraphicsResource(GraphicsContext* context, Type type) : contex
     SDL_assert(resource != nullptr);
 
     if (resource->type() == Type::NONE) {
-      id_ = CreateId(index, ExtractVersion(resource->id()));
+      id_ = resource->id().next();
       delete resource;
       context->resources_[index] = this;
       return;
     }
   }
 
-  id_ = CreateId(context->resources_.size());
+  id_ = Id(context->resources_.size());
   context->resources_.push_back(this);
 }
 

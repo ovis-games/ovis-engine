@@ -3,6 +3,7 @@
 #include <SDL2/SDL_assert.h>
 
 #include <ovis/utils/log.hpp>
+#include <ovis/utils/function.hpp>
 #include <ovis/core/asset_library.hpp>
 #include <ovis/core/lua.hpp>
 #include <ovis/core/scene.hpp>
@@ -11,6 +12,7 @@
 
 namespace ovis {
 
+std::vector<std::pair<std::string, json>> SceneObject::templates;
 std::map<std::pair<std::string, std::string>, SceneObjectAnimation, std::less<>> SceneObject::template_animations;
 
 SceneObject::SceneObject(Scene* scene, std::string_view name, SceneObject* parent)
@@ -62,10 +64,6 @@ std::pair<std::string_view, std::optional<unsigned int>> SceneObject::ParseName(
   return {name, number};
 }
 
-bool SceneObject::SetupTemplate(std::string_view template_asset_id) {
-  return Deserialize({{"template", std::string(template_asset_id)}});
-}
-
 SceneObject* SceneObject::CreateChildObject(std::string_view object_name) {
   return scene_->CreateObject(object_name, this);
 }
@@ -96,68 +94,68 @@ bool SceneObject::ContainsChildObject(std::string_view object_name) {
   return FindChild(object_name) != children_.end();
 }
 
-vm::Value SceneObject::AddComponent(safe_ptr<vm::Type> type) {
+Result<Value> SceneObject::AddComponent(TypeId component_type) {
+  const auto& type = main_vm->GetType(component_type);
   if (!type) {
-    LogE("Invalid object component");
-    return vm::Value::None();
+    return Error("Invalid component type");
   }
   if (!type->IsDerivedFrom<SceneObjectComponent>()) {
-    LogE("{} does not derived from SceneObjectComponent", type->full_reference());
-    return vm::Value::None();
+    return Error("{} does not derived from SceneObjectComponent", type->GetReferenceString());
   }
 
-  if (HasComponent(type)) {
-    LogE("Object '{}' already has the component '{}'.", path(), type->name());
-    return vm::Value::None();
+  if (HasComponent(component_type)) {
+    return Error("Object '{}' already has the component '{}'.", path(), type->name());
+  }
+
+  components_.emplace_back(std::make_unique<Value>(type));
+  components_.back()->as<SceneObjectComponent>().scene_object_ = this;
+  return components_.back()->CreateReference();
+}
+
+Result<Value> SceneObject::GetComponent(TypeId component_type) {
+  for (const auto& component : components_) {
+    if (component->type_id() == component_type) {
+      return component->CreateReference();
+    }
+  }
+  const auto type = main_vm->GetType(component_type);
+  if (type) {
+    return Error("Object {} does not have component", path(), type->name());
   } else {
-    auto component = SceneObjectComponent::Create(std::string(type->full_reference()), this);
-    if (component.has_value()) {
-      components_.push_back({
-        .type = type,
-        .pointer = std::move(*component),
-      });
-      return vm::Value::CreateView(components_.back().pointer.get(), type);
-    } else {
-      LogE("Failed to construct component");
-      return vm::Value::None();
-    }
+    return Error("Invalid component type");
   }
 }
 
-vm::Value SceneObject::GetComponent(safe_ptr<vm::Type> type) {
+Result<Value> SceneObject::GetComponent(TypeId component_type) const {
   for (const auto& component : components_) {
-    if (component.type == type) {
-      return vm::Value::CreateView(component.pointer.get(), type);
+    if (component->type_id() == component_type) {
+      return component->CreateReference();
     }
   }
-  return vm::Value::None();
-}
-
-vm::Value SceneObject::GetComponent(safe_ptr<vm::Type> type) const {
-  for (const auto& component : components_) {
-    if (component.type == type) {
-      return vm::Value::CreateView(component.pointer.get(), type);
-    }
+  const auto type = main_vm->GetType(component_type);
+  if (type) {
+    return Error("Object {} does not have component", path(), type->name());
+  } else {
+    return Error("Invalid component type");
   }
-  return vm::Value::None();
 }
 
-bool SceneObject::HasComponent(safe_ptr<vm::Type> type) const {
+bool SceneObject::HasComponent(TypeId component_type) const {
   for (const auto& component : components_) {
-    if (component.type == type) {
+    if (component->type_id() == component_type) {
       return true;
     }
   }
   return false;
 }
 
-bool SceneObject::RemoveComponent(safe_ptr<vm::Type> type) {
-  const auto erased_count = std::erase_if(components_, [type](const auto& component) {
-      return component.type == type;
-  });
-  assert(erased_count <= 1);
-  return erased_count > 0;
-}
+// bool SceneObject::RemoveComponent(const std::shared_ptr<Type>& type) {
+//   const auto erased_count = std::erase_if(components_, [type](const auto& component) {
+//       return component.type.lock() == type;
+//   });
+//   assert(erased_count <= 1);
+//   return erased_count > 0;
+// }
 
 void SceneObject::ClearComponents() {
   components_.clear();
@@ -174,34 +172,13 @@ SceneObjectAnimation* SceneObject::GetAnimation(std::string_view name) const {
 
 json SceneObject::Serialize() const {
   json serialized_object = json::object();
-  json object_template = json::object();
 
-  if (template_.length() > 0) {
-    serialized_object["template"] = template_;
-    object_template = *ConstructObjectFromTemplate(template_);
-  }
 
   auto& components = serialized_object["components"] = json::object();
   for (const auto& component : components_) {
-    assert(component.type != nullptr);
-    const auto serialized_component = component.pointer->Serialize();
-
-    json::json_pointer component_pointer(fmt::format("/components/{}", component.type->name()));
-    if (object_template.contains(component_pointer)) {
-      const auto& component_template = object_template[component_pointer];
-      json changed_attributes = json::object();
-
-      // TODO: iterate over merged set of template and real object
-      for (const auto& attribute : serialized_component.items()) {
-        if (attribute.value() != component_template[attribute.key()]) {
-          changed_attributes[attribute.key()] = attribute.value();
-        }
-      }
-
-      // components[component.first] = changed_attributes;
-    } else {
-      // components[component.first] = component.second->Serialize();
-    }
+    const auto component_type = component->type();
+    assert(component_type != nullptr);
+    components[std::string(component_type->GetReferenceString())] = component->as<SceneObjectComponent>().Serialize();
   }
   auto& children = serialized_object["children"] = json::object();
   for (const auto& child : children_) {
@@ -214,89 +191,52 @@ bool SceneObject::Deserialize(const json& serialized_object) {
   ClearComponents();
   ClearChildObjects();
 
-  if (serialized_object.contains("template")) {
-    template_ = serialized_object.at("template");
-    auto object_template = ConstructObjectFromTemplate(template_);
-    if (!object_template.has_value()) {
-      return false;
-    }
-    object_template->merge_patch(serialized_object);
-    animations_.clear();
-    if (object_template->contains("animations")) {
-
-      animations_.reserve(object_template->at("animations").size());
-      for (const auto& [animation_name, _] : object_template->at("animations").items()) {
-        auto animation = template_animations.find(std::make_pair(template_, animation_name));
-        if (animation != template_animations.end()) {
-          animations_.push_back(safe_ptr(&animation->second));
-        } else {
-          LogE("Could not find template animation: {}", template_);
-        }
-      }
-    }
-    return Update(*object_template);
-  } else {
-    template_ = "";
-    return Update(serialized_object);
-  }
-}
-
-bool SceneObject::Update(const json& serialized_object) {
-  if (!serialized_object.is_object()) {
+  const Result<json> object_json = ResolveTemplateForObject(serialized_object);
+  if (!object_json) {
+    // Can happen if the template is invalid. E.g., it does not exist or contains circular references
+    LogE("Failed to deserialize scene object");
     return false;
   }
 
-  if (serialized_object.contains("components")) {
-    if (!serialized_object["components"].is_object()) {
-      LogE("Invalid scene object: components must be an object");
-      return false;
-    }
-    for (const auto& component : serialized_object["components"].items()) {
-      if (!SceneObjectComponent::IsRegistered(component.key())) {
+  if (object_json->contains("components")) {
+    const json& components = object_json->at("components");
+    assert(components.is_object());
+    for (const auto& [component_id, component_json] : components.items()) {
+      const auto type_id = main_vm->GetTypeId(component_id);
+      if (type_id == Type::NONE_ID) {
         LogE(
             "Scene object deserialization failed: cannot add component `{}` to object. This type has not been "
             "registered.",
-            component.key());
+            component_id);
+        ClearComponents();
         return false;
       }
-      const auto type = vm::Type::Deserialize(component.key());
-      if (auto object_component = GetComponent(type); !object_component.is_none()) {
-        if (!object_component.Get<SceneObjectComponent*>()->Update(component.value())) {
-          LogE("Failed to deserialize scene object, could not update component `{}`", component.key());
-          return false;
-        }
-      } else {
-        if (auto object_component = AddComponent(type);
-            object_component.is_none() || !object_component.Get<SceneObjectComponent*>()->Deserialize(component.value())) {
-          LogE("Failed to deserialize scene object, could not add component `{}`", component.key());
-          return false;
-        }
+      auto component = AddComponent(type_id);
+      if (!component) {
+        // TODO: OVIS_CHECK_RESULT
+        LogE("Failed to add component {}: {}", main_vm->GetType(type_id)->GetReferenceString(), component.error().message);
+        return false;
+      }
+      if (!component->as<SceneObjectComponent>().Deserialize(component_json)) {
+        LogE("Failed to deserialize scene object, could not deserialize `{}`", component_id);
+        ClearComponents();
+        return false;
       }
     }
-  } else {
-    LogV("SceneObject deserialization: no 'components' property available!");
   }
 
-  if (serialized_object.contains("children")) {
-    if (!serialized_object["children"].is_object()) {
-      LogE("Invalid scene object: children must be an object");
-      return false;
-    }
-    for (const auto& child : serialized_object["children"].items()) {
-      if (auto child_object = GetChildObject(child.key()); child_object != nullptr) {
-        if (!child_object->Update(child.value())) {
-          LogE("Failed to deserialize scene object, could not update child object `{}`", child.key());
-          return false;
-        }
-      } else {
-        if (CreateChildObject(child.key(), child.value()) == nullptr) {
-          LogE("Failed to deserialize scene object, could not add child object `{}`", child.key());
-          return false;
-        }
+  if (object_json->contains("children")) {
+    const auto& children = object_json->at("children");
+    assert(children.is_object());
+    for (const auto& [child_name, child_json] : children.items()) {
+      assert(!ContainsChildObject(child_name));
+      if (CreateChildObject(child_name, child_json) == nullptr) {
+        LogE("Failed to deserialize scene object, could not add child object `{}`", child_name);
+        ClearComponents();
+        ClearChildObjects();
+        return false;
       }
     }
-  } else {
-    LogV("SceneObject deserialization: no 'children' property available!");
   }
 
   return true;
@@ -311,36 +251,41 @@ SceneObjectAnimation* SceneObject::GetAnimation(std::string_view template_asset_
   }
 }
 
-std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view template_asset) const {
+Result<json> SceneObject::ConstructObjectFromTemplate(std::string_view template_asset, std::span<std::string_view> parents) const {
   auto asset_library = GetAssetLibraryForAsset(template_asset);
 
   if (!asset_library) {
-    LogE("Invalid scene object template `{}`: asset does not exist", template_asset);
-    return {};
+    return Error("Invalid scene object template `{}`: asset does not exist", template_asset);
   }
-  if (auto asset_type = asset_library->GetAssetType(template_asset); asset_type != "scene_object") {
-    LogE("Invalid scene object template `{}`: asset has invalid type `{}`", template_asset, asset_type);
-    return {};
+  if (auto asset_type = asset_library->GetAssetType(template_asset); !asset_type || *asset_type != "scene_object") {
+    OVIS_CHECK_RESULT(asset_type);
+    return Error("Invalid scene object template `{}`: asset has invalid type `{}`", template_asset, asset_type);
   }
 
   const auto object_template_data = asset_library->LoadAssetTextFile(template_asset, "json");
-  if (!object_template_data.has_value()) {
-    LogE("Invalid scene object template `{}`: asset does not contain json file", template_asset);
-    return {};
-  }
+  OVIS_CHECK_RESULT(object_template_data);
 
   auto object_template = json::parse(*object_template_data);
 
   if (object_template.contains("template")) {
     const std::string parent_template_asset = object_template.at("template");
 
-    // TODO: detect circular references?
-    auto parent_template = ConstructObjectFromTemplate(parent_template_asset);
-    if (!parent_template.has_value()) {
-      return {};
+    for (const auto& parent : parents) {
+      if (parent == parent_template_asset) {
+        // Circular reference
+        return Error("Object template {} contains a circular reference", template_asset);
+      }
     }
 
-    json animations = parent_template->at("animations");
+    std::vector<std::string_view> parents_for_children;
+    parents_for_children.reserve(parents.size() + 1);
+    parents_for_children.insert(parents_for_children.end(), parents.begin(), parents.end());
+    parents_for_children.push_back(template_asset);
+
+    auto parent_template = ConstructObjectFromTemplate(parent_template_asset, parents_for_children);
+    OVIS_CHECK_RESULT(parent_template);
+
+    json animations = parent_template->contains("animations") ? parent_template->at("animations") : json::object();
     assert(animations.is_object());
     if (object_template.contains("animations")) {
       for (const auto& [name, animation] : object_template["animations"].items()) {
@@ -360,14 +305,16 @@ std::optional<json> SceneObject::ConstructObjectFromTemplate(std::string_view te
     object_template = *parent_template;
   }
 
-  for (auto& [name, animation_value] : object_template["animations"].items()) {
-    std::pair<std::string, std::string> animation_identifier = std::make_pair(std::string(template_asset), name);
-    if (!template_animations.contains(animation_identifier)) {
-      SceneObjectAnimation animation(name);
-      if (!animation.Deserialize(animation_value)) {
-        LogE("Failed to deserialize animation");
-      } else {
-        template_animations.insert(std::make_pair(std::move(animation_identifier), std::move(animation)));
+  if (object_template.contains("animation")) {
+    for (auto& [name, animation_value] : object_template["animations"].items()) {
+      std::pair<std::string, std::string> animation_identifier = std::make_pair(std::string(template_asset), name);
+      if (!template_animations.contains(animation_identifier)) {
+        SceneObjectAnimation animation(name);
+        if (!animation.Deserialize(animation_value)) {
+          LogE("Failed to deserialize animation");
+        } else {
+          template_animations.insert(std::make_pair(std::move(animation_identifier), std::move(animation)));
+        }
       }
     }
   }
@@ -385,7 +332,92 @@ std::vector<safe_ptr<SceneObject>>::iterator SceneObject::FindChild(std::string_
                       [name](const safe_ptr<SceneObject>& object) { return object->name() == name; });
 }
 
+void SceneObject::ClearObjectTemplateChache() {
+  templates.clear();
+}
+
 void SceneObject::RegisterType(sol::table* module) {
+}
+
+const json* SceneObject::FindTemplate(std::string_view asset_id) {
+  for (const auto& object_template : templates) {
+    if (object_template.first == asset_id) {
+      return &object_template.second;
+    }
+  }
+  return nullptr;
+}
+
+Result<json> SceneObject::ResolveTemplateForObject(const json& object) {
+  json result_object;
+  if (object.contains("template")) {
+    const auto template_object = LoadTemplate(static_cast<const std::string&>(object.at("template")));
+    OVIS_CHECK_RESULT(template_object);
+    result_object = std::move(**template_object);
+
+    result_object.merge_patch(object);
+    result_object.erase("template");
+  } else {
+    result_object = object;
+  }
+
+  if (result_object.contains("children")) {
+    json& children = result_object.at("children");
+    assert(children.is_object());
+    for (auto& [name, child_object] : children.items()) {
+      const auto resolved_child = ResolveTemplateForObject(child_object);
+      OVIS_CHECK_RESULT(resolved_child);
+      child_object = *resolved_child;
+      if (child_object.is_null()) {
+        return Error("Failed to resolve child object {} of template.", name);
+      }
+    }
+  }
+
+  return result_object;
+}
+
+Result<const json*> SceneObject::LoadTemplate(std::string_view asset_id) {
+  if (const json* object_template = FindTemplate(asset_id); object_template != nullptr) {
+    if (object_template->is_null()) {
+      return Error("Invalid template detected: {} (this can be caused by circular references)", asset_id);
+    } else {
+      return object_template;
+    }
+  }
+
+  const AssetLibrary* asset_library = GetAssetLibraryForAsset(asset_id);
+  if (!asset_library) {
+    return Error("Cannot find scene object template: {}", asset_id);
+  }
+
+  if (const auto asset_type = asset_library->GetAssetType(asset_id); !asset_type || *asset_type != "scene_object") {
+    return Error("Referenced scene object template `{}` has wrong type: {}", asset_id, asset_library->GetAssetType("asset_id"));
+  }
+
+  const Result<std::string> text_file = asset_library->LoadAssetTextFile(asset_id, "json");
+  OVIS_CHECK_RESULT(text_file);
+
+  json template_json = json::parse(*text_file);
+  const std::size_t template_index = templates.size();
+  templates.push_back(std::make_pair(std::string(asset_id), json()));
+
+  const auto resolved_template_json = ResolveTemplateForObject(template_json);
+  OVIS_CHECK_RESULT(resolved_template_json);
+  assert(!resolved_template_json->is_null());
+  assert(templates[template_index].first == asset_id);
+  templates[template_index].second = std::move(*resolved_template_json);
+  return &templates[template_index].second;
+}
+
+OVIS_VM_DEFINE_TYPE_BINDING(Core, SceneObject) {
+  SceneObject_type->AddProperty<&SceneObject::name>("name");
+  SceneObject_type->AddProperty<&SceneObject::path>("path");
+  SceneObject_type->AddProperty<&SceneObject::parent>("parent");
+  SceneObject_type->AddProperty<&SceneObject::has_parent>("hasParent");
+
+  SceneObject_type->AddMethod<SelectOverload<SceneObject*(std::string_view)>(&SceneObject::CreateChildObject)>(
+      "createChildObject");
 }
 
 }  // namespace ovis

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "VM.IfStatement",
+  "title": "IfStatement",
+  "description": "A branching statement",
+  "type": "object",
+  "properties": {
+    "statementType": "if",
+    "condition": { "$ref": "VM.Expression.schema.json" },
+    "ifStatements": {
+      "type": "array",
+      "items": { "$ref": "VM.Statement.schema.json" }
+    },
+    "elseIfs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "condition": { "$ref": "VM.Expression.schema.json" },
+          "statements": {
+            "type": "array",
+            "items": { "$ref": "VM.Statement.schema.json" }
+          }
+        }
+      }
+    },
+    "elseStatements": {
+      "type": "array",
+      "items": { "$ref": "VM.Statement.schema.json" }
+    }
+  },
+  "additionalProperties": false,
+  "required": [ "statementType", "condition", "ifStatements" ]
+}

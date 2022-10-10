@@ -32,11 +32,11 @@ std::optional<GameSettings> LoadGameSettings(const std::string& asset_id) {
     LogE("Asset library does not exist!");
     return {};
   }
-  if (asset_library->GetAssetType(asset_id) != "settings") {
+  if (const auto asset_type = asset_library->GetAssetType(asset_id); !asset_type || *asset_type != "settings") {
     LogE("Asset has invalid type: '{}' (should be 'settings')!", asset_library->GetAssetType(asset_id));
     return {};
   }
-  std::optional<std::string> settings = asset_library->LoadAssetTextFile(asset_id, "json");
+  Result<std::string> settings = asset_library->LoadAssetTextFile(asset_id, "json");
   if (!settings) {
     LogE("Could not load settings file");
     return {};

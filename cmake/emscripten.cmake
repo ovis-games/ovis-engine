@@ -6,6 +6,12 @@ endif()
 
 if (OVIS_EMSCRIPTEN)
   add_definitions("-DOVIS_EMSCRIPTEN=1")
+  # add_compile_options(
+  #   -fno-exceptions
+  # )
+  # add_link_options(
+  #   -fno-exceptions
+  # )
 
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR NOT DEFINED CMAKE_BUILD_TYPE)
     message(STATUS "Ovis: Building in debug mode, disable optimziations.")

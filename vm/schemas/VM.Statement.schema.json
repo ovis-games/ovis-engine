@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "VM.Statement",
+  "title": "Statement",
+  "description": "A single statement for the vm parser.",
+  "type": "object",
+  "anyOf": [
+    { "$ref": "VM.VariableDeclarationStatement.schema.json" },
+    { "$ref": "VM.IfStatement.schema.json" },
+    { "$ref": "VM.WhileStatement.schema.json" },
+    { "$ref": "VM.FunctionCallStatement.schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "statementType": ""
+      },
+      "required": ["statementType"],
+      "additionalProperties": false
+    }
+  ],
+  "additionalProperties": false
+}

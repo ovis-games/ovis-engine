@@ -8,11 +8,11 @@
     "object": {
       "type": "string"
     },
-    "component": { "$ref": "Core.TypeReference.schema.json" },
+    "component": { "$ref": "VM.TypeReference.schema.json" },
     "property": {
       "type": "string"
     },
-    "interpolationFunction": {  "$ref": "Core.FunctionReference.schema.json" },
+    "interpolationFunction": {  "$ref": "VM.FunctionReference.schema.json" },
     "keyframes": {
       "type": "array",
       "items": { "$ref": "Core.SceneObjectAnimationKeyframe.schema.json" }

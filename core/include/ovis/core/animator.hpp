@@ -4,20 +4,15 @@
 
 #include <ovis/core/scene_object_animation.hpp>
 #include <ovis/core/scene_object_component.hpp>
+#include <ovis/core/vm_bindings.hpp>
 
 namespace ovis {
-
-namespace vm {
-class Module;
-}
 
 class Animator : public SceneObjectComponent {
   OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
   friend class AnimatorController;
 
  public:
-  Animator(SceneObject* object) : SceneObjectComponent(object) {}
-
   // Play animation immediately, active animations will be cancelled.
   void PlayAnimation(std::string_view animation, bool loop = false);
 
@@ -29,7 +24,7 @@ class Animator : public SceneObjectComponent {
   json Serialize() const override;
   bool Deserialize(const json& data) override;
 
-  static void RegisterType(vm::Module* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 
  private:
   struct PlayInfo {

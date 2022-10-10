@@ -9,6 +9,7 @@
 #include <SDL2/SDL_assert.h>
 #include <sol/sol.hpp>
 
+#include "ovis/utils/all.hpp"
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/json.hpp>
 #include <ovis/utils/range.hpp>

@@ -1,0 +1,24 @@
+[
+  {
+    "definitionType": "function",
+    "name": "consumeType",
+    "inputs": [
+      {
+        "name": "someString",
+        "type": "SomeString"
+      }
+    ],
+    "statements": [
+    ]
+  },
+  {
+    "definitionType": "type",
+    "name": "SomeType",
+    "properties": [
+      {
+        "name": "SomeString",
+        "type": "String"
+      }
+    ]
+  }
+]

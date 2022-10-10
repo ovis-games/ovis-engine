@@ -1,11 +1,10 @@
-#include <ovis/rendering2d/text.hpp>
-#include <ovis/core/virtual_machine.hpp>
+#include "ovis/rendering2d/text.hpp"
 
 namespace ovis {
 
 const json Text::schema = json::object();
 
-Text::Text(SceneObject* object) : SceneObjectComponent(object) {}
+Text::Text() : SceneObjectComponent() {}
 
 json Text::Serialize() const {
   json text = json::object();
@@ -19,8 +18,18 @@ json Text::Serialize() const {
 
 bool Text::Deserialize(const json& data) {
   // TODO: check format
-  color_ = data.at("color");
-  text_ = data.at("text");
+  if (data.contains("color")) {
+    color_ = data.at("color");
+  } else {
+    color_ = Color::White();
+  }
+
+  if (data.contains("text")) {
+    text_ = data.at("text");
+  } else {
+    text_ = "";
+  }
+
   if (data.contains("font")) {
     font_ = data.at("font");
   } else {
@@ -29,8 +38,8 @@ bool Text::Deserialize(const json& data) {
   return true;
 }
 
-void Text::RegisterType(vm::Module* module) {
-  module->RegisterType<Text, SceneObjectComponent>("Text");
+OVIS_VM_DEFINE_TYPE_BINDING(Rendering2D, Text, SceneObjectComponent) {
+  Text_type->attributes.insert("SceneObjectComponent");
 }
 
-}
+}  // namespace ovis

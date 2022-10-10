@@ -5,7 +5,6 @@
 
 #include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/serialize.hpp>
-#include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
 
@@ -13,14 +12,14 @@ class SceneObject;
 
 struct SceneObjectAnimationKeyframe {
   std::uint32_t frame;
-  vm::Value value;
+  // vm::Value value;
 };
 
 struct SceneObjectAnimationChannel {
   std::string object_path;
-  safe_ptr<vm::Type> component_type;
+  // std::weak_ptr<Type> component_type;
   std::string property;
-  safe_ptr<vm::Function> interpolation_function;
+  // std::weak_ptr<Function> interpolation_function;
   std::vector<SceneObjectAnimationKeyframe> keyframes;
 };
 

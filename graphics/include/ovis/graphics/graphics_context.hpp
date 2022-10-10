@@ -63,16 +63,17 @@ class GraphicsContext final {
   MAKE_NON_COPY_OR_MOVABLE(GraphicsContext);
 
  public:
-  GraphicsContext(SDL_Window* window);
+  GraphicsContext(Vector2 framebuffer_dimensions);
   ~GraphicsContext();
 
   void Draw(const DrawItem& draw_item);
 
+  void SetFramebufferSize(int width, int height);
   inline RenderTargetConfiguration* default_render_target_configuration() const {
     return m_default_render_target_configuration.get();
   }
   inline GraphicsResource* GetResource(GraphicsResource::Id resource_id) const {
-    const size_t index = GraphicsResource::ExtractIndex(resource_id);
+    const size_t index = resource_id.index;
     if (index >= resources_.size()) {
       return nullptr;
     }
@@ -81,8 +82,6 @@ class GraphicsContext final {
   }
 
  private:
-  SDL_Window* window_;
-  SDL_GLContext m_context;
   std::vector<GraphicsResource*> resources_;
   std::unique_ptr<RenderTargetConfiguration> m_default_render_target_configuration;
 

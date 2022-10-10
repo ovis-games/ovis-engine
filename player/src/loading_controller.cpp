@@ -2,7 +2,7 @@
 
 #include <filesystem>
 
-#include <imgui.h>
+// #include <imgui.h>
 #include <ovis/player/loading_controller.hpp>
 
 #include <ovis/utils/file.hpp>
@@ -101,12 +101,12 @@ void LoadingController::Update(std::chrono::microseconds ms) {
         state_ = State::ERROR;
         return;
       }
-      if (asset_library->GetAssetType(settings->startup_scene) != "scene") {
+      if (const auto asset_type = asset_library->GetAssetType(settings->startup_scene); !asset_type || *asset_type != "scene") {
         LogE("Asset has invalid type: '{}' (should be 'scene')!", asset_library->GetAssetType(settings->startup_scene));
         state_ = State::ERROR;
         return;
       }
-      std::optional<std::string> serialized_scene = asset_library->LoadAssetTextFile(settings->startup_scene, "json");
+      Result<std::string> serialized_scene = asset_library->LoadAssetTextFile(settings->startup_scene, "json");
       if (!serialized_scene) {
         LogE("Could not load settings file");
         state_ = State::ERROR;

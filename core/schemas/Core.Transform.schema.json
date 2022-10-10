@@ -9,7 +9,7 @@
       "$ref": "Core.Vector3.schema.json"
     },
     "rotation": {
-      "$ref": "Core.Quaternion.schema.json"
+      "$ref": "Core.Vector3.schema.json"
     },
     "scale": {
       "$ref": "Core.Vector3.schema.json"

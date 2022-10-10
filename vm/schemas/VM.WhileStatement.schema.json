@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "VM.WhileStatement",
+  "title": "WhileStatement",
+  "description": "A while loop statement",
+  "type": "object",
+  "properties": {
+    "statementType": "while",
+    "condition": { "$ref": "VM.Expression.schema.json" },
+    "statements": {
+      "type": "array",
+      "items": { "$ref": "VM.Statement.schema.json" }
+    }
+  },
+  "additionalProperties": false,
+  "required": [ "statementType", "condition", "statements" ]
+}

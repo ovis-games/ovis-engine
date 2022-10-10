@@ -3,13 +3,14 @@
 #include <ovis/graphics/graphics_context.hpp>
 #include <ovis/graphics/render_target_configuration.hpp>
 #include <ovis/rendering/rendering_viewport.hpp>
+#include <ovis/rendering/clear_pass.hpp>
 #include <ovis/rendering2d/renderer2d.hpp>
 #include <ovis/rendering2d/text.hpp>
 
 namespace ovis {
 
-  Renderer2D::Renderer2D() : RenderPass("Renderer2D") {
-  RenderAfter("ClearPass");
+Renderer2D::Renderer2D() {
+  RenderAfter<ClearPass>();
 }
 
 void Renderer2D::CreateResources() {

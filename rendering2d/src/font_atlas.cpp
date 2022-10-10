@@ -31,13 +31,18 @@ FontAtlas::FontAtlas(GraphicsContext* context, std::string_view asset, float hei
                            texture_description.width, texture_description.height, 32, 96, baked_characters.data());
   assert(result > 0);
 
+  // TODO: this texture format stores 1 byte worth of data in 4 bytes. Use a 1 byte/pixel texture.
   std::vector<unsigned char> wasteful_pixels;
   wasteful_pixels.reserve(texture_description.width * texture_description.height * 4);
+  int min = 255;
   for (auto p : pixels) {
     wasteful_pixels.push_back(255);
     wasteful_pixels.push_back(255);
     wasteful_pixels.push_back(255);
     wasteful_pixels.push_back(p);
+    if (p < min) {
+      min = p;
+    }
   }
   texture_ = std::make_unique<Texture2D>(context, texture_description, wasteful_pixels.data());
 }
@@ -60,4 +65,4 @@ std::array<Shape2D::Vertex, 6> FontAtlas::GetCharacterVertices(char character, V
   }};
 }
 
-}
+}  // namespace ovis

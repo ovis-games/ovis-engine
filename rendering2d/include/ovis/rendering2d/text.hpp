@@ -1,7 +1,8 @@
 #pragma once
 
-#include <ovis/core/color.hpp>
-#include <ovis/core/scene_object_component.hpp>
+#include "ovis/core/color.hpp"
+#include "ovis/core/scene_object_component.hpp"
+#include "ovis/core/vm_bindings.hpp"
 
 namespace ovis {
 
@@ -9,7 +10,7 @@ class Text : public SceneObjectComponent {
   OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
 
  public:
-  explicit Text(SceneObject* object);
+  Text();
 
   Color color() const { return color_; }
   std::string_view text() const { return text_; }
@@ -19,7 +20,7 @@ class Text : public SceneObjectComponent {
   bool Deserialize(const json& data) override;
   const json* GetSchema() const override { return &schema; }
 
-  static void RegisterType(vm::Module* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 
  private:
   Color color_;

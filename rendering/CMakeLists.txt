@@ -1,7 +1,6 @@
 add_library(
   ovis-rendering
 
-  include/ovis/rendering/rendering_module.hpp src/rendering_module.cpp
   include/ovis/rendering/rendering_viewport.hpp src/rendering_viewport.cpp
   include/ovis/rendering/render_target_viewport.hpp src/render_target_viewport.cpp
   include/ovis/rendering/render_pass.hpp src/render_pass.cpp
@@ -45,7 +44,7 @@ if (OVIS_BUILD_TESTS)
   target_link_libraries(
     ovis-rendering-test
     PRIVATE
-      catch2
+      Catch2
       ovis::rendering
   )
 

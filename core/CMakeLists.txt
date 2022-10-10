@@ -1,7 +1,8 @@
 add_library(
   ovis-core
   
-  include/ovis/core/core_module.hpp src/core_module.cpp
+  include/ovis/core/vm_bindings.hpp src/vm_bindings.cpp
+  include/ovis/core/main_vm.hpp src/main_vm.cpp
   include/ovis/core/event.hpp src/event.cpp
   include/ovis/core/json_schema.hpp src/json_schema.cpp
   include/ovis/core/scene.hpp src/scene.cpp
@@ -25,9 +26,6 @@ add_library(
   include/ovis/core/math_operations.hpp src/math_operations.cpp
   include/ovis/core/intersection.hpp src/intersection.cpp
   include/ovis/core/math.hpp src/math.cpp
-  include/ovis/core/script_function.hpp src/script_function.cpp
-  include/ovis/core/script_parser.hpp src/script_parser.cpp
-  include/ovis/core/virtual_machine.hpp src/virtual_machine.cpp
 )
 add_library(ovis::core ALIAS ovis-core)
 
@@ -41,6 +39,7 @@ target_link_libraries(
   ovis-core
   PUBLIC
     ovis::utils
+    ovis::vm
     middleclass
 )
 
@@ -70,8 +69,6 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_intersection.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scene_object.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/virtual_machine.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_animations.cpp
   )
 
   target_add_ldoc_test(
@@ -94,14 +91,20 @@ if (OVIS_BUILD_TESTS)
   target_link_libraries(
     ovis-core-test
     PRIVATE
-      catch2
+      Catch2
       ovis::core
   )
   target_add_assets(
     ovis-core-test
 
     test/assets/template.scene_object.json
+    test/assets/recursive_template.scene_object.json
+    test/assets/child_recursion_template.scene_object.json
+    test/assets/indirect_recursion1.scene_object.json
+    test/assets/indirect_recursion2.scene_object.json
     test/assets/animation_test.scene_object.json
+    test/assets/test_script_type.script_type.json
+    test/assets/test_script.script.json
   )
   target_embed_assets(ovis-core-test)
 

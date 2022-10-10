@@ -146,7 +146,7 @@ std::unique_ptr<ShaderProgram> LoadShaderProgram(AssetLibrary* asset_library, co
     return {};
   }
 
-  std::optional<std::string> vertex_shader_source = asset_library->LoadAssetTextFile(asset_id, "vert");
+  const Result<std::string> vertex_shader_source = asset_library->LoadAssetTextFile(asset_id, "vert");
   if (!vertex_shader_source) {
     LogE("Shader program '{}' does not have a corresponding vertex shader", asset_id);
     return {};
@@ -154,7 +154,7 @@ std::unique_ptr<ShaderProgram> LoadShaderProgram(AssetLibrary* asset_library, co
     description.vertex_shader_source = *vertex_shader_source;
   }
 
-  std::optional<std::string> fragment_shader_source = asset_library->LoadAssetTextFile(asset_id, "frag");
+  Result<std::string> fragment_shader_source = asset_library->LoadAssetTextFile(asset_id, "frag");
   if (!fragment_shader_source) {
     LogE("Shader program '{}' does not have a corresponding fragment shader", asset_id);
     return {};

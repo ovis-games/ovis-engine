@@ -1,0 +1,8 @@
+{
+  "components": {},
+  "children": {
+    "child": {
+      "template": "child_recursion_template"
+    }
+  }
+}

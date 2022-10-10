@@ -10,11 +10,14 @@
 #include <ovis/utils/down_cast.hpp>
 #include <ovis/utils/json.hpp>
 #include <ovis/utils/range.hpp>
+#include <ovis/utils/result.hpp>
 #include <ovis/utils/safe_pointer.hpp>
 #include <ovis/utils/serialize.hpp>
+#include <ovis/vm/value.hpp>
+#include <ovis/core/main_vm.hpp>
+#include <ovis/core/vm_bindings.hpp>
 #include <ovis/core/scene_object_animation.hpp>
 #include <ovis/core/scene_object_component.hpp>
-#include <ovis/core/virtual_machine.hpp>
 
 namespace ovis {
 
@@ -42,10 +45,6 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   inline SceneObject* parent() const { return parent_.get(); }
   inline bool has_parent() const { return parent_ != nullptr; }
 
-  // Setup the scene object with a specific template. This will completely reset the object and all
-  // previously added components and child objects will be removed.
-  bool SetupTemplate(std::string_view template_asset_id);
-
   SceneObject* CreateChildObject(std::string_view object_name);
   SceneObject* CreateChildObject(std::string_view object_name, const json& serialized_object);
   void DeleteChildObject(std::string_view object_name);
@@ -58,23 +57,24 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   template <typename T>
   void ForEachChild(bool recursive, T&& functor);
 
-  vm::Value AddComponent(safe_ptr<vm::Type> type);
+  Result<Value> AddComponent(TypeId component_type);
   template <typename ComponentType> ComponentType* AddComponent();
 
-  vm::Value GetComponent(safe_ptr<vm::Type> type);
-  vm::Value GetComponent(safe_ptr<vm::Type> type) const;
+  Result<Value> GetComponent(TypeId component_type);
+  Result<Value> GetComponent(TypeId component_type) const;
   template <typename ComponentType> ComponentType* GetComponent();
   template <typename ComponentType> const ComponentType* GetComponent() const;
 
   // std::span<vm::Value> components() { return components_; }
   // std::span<const vm::Value> components() const { return components_; }
 
-  bool HasComponent(safe_ptr<vm::Type> type) const;
+  bool HasComponent(TypeId component_type) const;
   template <typename ComponentType> bool HasComponent() const;
 
-  auto component_types() const { return TransformRange(components_, [](const auto& component) { return component.type; }); }
+  auto component_types() const { return TransformRange(components_, [](const auto& component) { return component->type(); }); }
+  auto component_type_ids() const { return TransformRange(components_, [](const auto& component) { return component->type_id(); }); }
 
-  bool RemoveComponent(safe_ptr<vm::Type> type);
+  Result<> RemoveComponent(TypeId component_type);
   template <typename ComponentType> bool RemoveComponent();
   void ClearComponents();
 
@@ -83,8 +83,8 @@ class SceneObject : public Serializable, public SafelyReferenceable {
 
   json Serialize() const override;
   bool Deserialize(const json& serialized_object) override;
-  bool Update(const json& serialized_object) override;
 
+  static void ClearObjectTemplateChache();
   static SceneObjectAnimation* GetAnimation(std::string_view template_asset_id, std::string_view animation_name);
 
   static void RegisterType(sol::table* module);
@@ -94,21 +94,22 @@ class SceneObject : public Serializable, public SafelyReferenceable {
   safe_ptr<SceneObject> parent_;
   std::string path_;
   std::string name_;
-  std::string template_;
   std::vector<safe_ptr<SceneObject>> children_;
-  struct TypedComponent {
-    safe_ptr<vm::Type> type;
-    std::unique_ptr<SceneObjectComponent> pointer;
-  };
-  std::vector<TypedComponent> components_;
+  std::vector<std::unique_ptr<Value>> components_;
   std::vector<safe_ptr<SceneObjectAnimation>> animations_;
 
-  std::optional<json> ConstructObjectFromTemplate(std::string_view template_asset) const;
+  Result<json> ConstructObjectFromTemplate(std::string_view template_asset, std::span<std::string_view> parents = {}) const;
   std::vector<safe_ptr<SceneObject>>::const_iterator FindChild(std::string_view name) const;
   std::vector<safe_ptr<SceneObject>>::iterator FindChild(std::string_view name);
 
+  static std::vector<std::pair<std::string, json>> templates;
+  static const json* FindTemplate(std::string_view asset_id);
+  static Result<const json*> LoadTemplate(std::string_view asset_id);
+  static Result<json> ResolveTemplateForObject(const json& object);
   // Maps (scene_object_template, animation_name) -> animation
   static std::map<std::pair<std::string, std::string>, SceneObjectAnimation, std::less<>> template_animations;
+
+  OVIS_VM_DECLARE_TYPE_BINDING();
 };
 
 template <typename T>
@@ -131,4 +132,39 @@ struct hash<ovis::SceneObject> {
 };
 }  // namespace std
 
-#include <ovis/core/scene_object.inl>
+namespace ovis {
+
+template <typename ComponentType>
+inline ComponentType* SceneObject::AddComponent() {
+  auto component = AddComponent(main_vm->GetTypeId<ComponentType>());
+  return component ? &component->template as<ComponentType>() : nullptr;
+}
+
+template <typename ComponentType>
+inline ComponentType* SceneObject::GetComponent() {
+  const auto type_id = main_vm->GetTypeId<ComponentType>();
+  for (auto& component : components_) {
+    if (component->type_id() == type_id) {
+      return &component->as<ComponentType>();
+    }
+  }
+  return nullptr;
+}
+
+template <typename ComponentType>
+inline const ComponentType* SceneObject::GetComponent() const {
+  auto component = GetComponent(main_vm->GetTypeId<ComponentType>());
+  return component ? &component->template as<ComponentType>() : nullptr;
+}
+
+template <typename ComponentType>
+inline bool SceneObject::HasComponent() const {
+  return HasComponent(main_vm->GetTypeId<ComponentType>());
+}
+
+template <typename ComponentType>
+inline bool SceneObject::RemoveComponent() { 
+  return RemoveComponent(main_vm->GetTypeId<ComponentType>());
+}
+
+}  // namespace ovis

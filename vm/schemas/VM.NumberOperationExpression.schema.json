@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "VM.NumberOperationExpression",
+  "title": "NumberOperationExpression",
+  "description": "An expression that produces the result of a number operation.",
+  "type": "object",
+  "properties": {
+    "expressionType": "number_operation",
+    "operation": {
+      "anyOf": [
+        "add",
+        "subtract",
+        "multiply",
+        "divide",
+        "equal",
+        "not_equal",
+        "greater",
+        "less",
+        "greater_equal",
+        "less_equal"
+      ]
+    },
+    "firstOperand": { "$ref": "VM.Expression.schema.json" },
+    "secondOperand": { "$ref": "VM.Expression.schema.json" }
+  },
+  "additionalProperties": false,
+  "required": ["expressionType", "operation"]
+}
