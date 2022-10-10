@@ -6,6 +6,7 @@
 #include <ovis/graphics/vertex_input.hpp>
 #include <ovis/rendering/render_pass.hpp>
 #include <ovis/rendering2d/shape2d.hpp>
+#include <ovis/rendering2d/font_atlas.hpp>
 
 namespace ovis {
 
@@ -27,6 +28,8 @@ class Renderer2D : public RenderPass {
   std::unique_ptr<ShaderProgram> shape_shader_;
   std::unique_ptr<Texture2D> empty_texture_;
   std::unordered_map<std::string, std::unique_ptr<Texture2D>> textures_;
+
+  std::vector<FontAtlas> font_atlases_;
 
   std::vector<SceneObject*> object_cache_;
 

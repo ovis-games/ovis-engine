@@ -1,5 +1,3 @@
-#include <SDL_assert.h>
-
 #include <ovis/rendering2d/shape2d.hpp>
 #include <ovis/core/scene_object.hpp>
 
@@ -114,7 +112,7 @@ void Shape2D::Update() {
 }
 
 void Shape2D::UpdateRectangle() {
-  SDL_assert(type_ == Type::RECTANGLE);
+  assert(type_ == Type::RECTANGLE);
 
   const Vector2 inner_half_size = 0.5f * rectangle_.size + std::min(outline_width_, 0.0f) * Vector2::One();
   const Vector2 outer_half_size = inner_half_size + std::abs(outline_width_) * Vector2::One();
@@ -122,57 +120,57 @@ void Shape2D::UpdateRectangle() {
   const uint32_t outline_color = ConvertToRGBA8(outline_color_);
   if (outline_width_ == 0.0f) {
     vertices_ = {
-      { -inner_half_size.x, -inner_half_size.y, inner_color },
-      {  inner_half_size.x, -inner_half_size.y, inner_color },
-      {  inner_half_size.x,  inner_half_size.y, inner_color },
-      { -inner_half_size.x, -inner_half_size.y, inner_color },
-      {  inner_half_size.x,  inner_half_size.y, inner_color },
-      { -inner_half_size.x,  inner_half_size.y, inner_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, inner_color },
+      {  inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, inner_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, inner_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, inner_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, inner_color },
+      { -inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, inner_color },
     };
   } else {
     vertices_ = {
-      { -inner_half_size.x, -inner_half_size.y, inner_color },
-      {  inner_half_size.x, -inner_half_size.y, inner_color },
-      {  inner_half_size.x,  inner_half_size.y, inner_color },
-      { -inner_half_size.x, -inner_half_size.y, inner_color },
-      {  inner_half_size.x,  inner_half_size.y, inner_color },
-      { -inner_half_size.x,  inner_half_size.y, inner_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, inner_color },
+      {  inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, inner_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, inner_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, inner_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, inner_color },
+      { -inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, inner_color },
 
       // Top outline
-      { -inner_half_size.x,  inner_half_size.y, outline_color },
-      {  inner_half_size.x,  inner_half_size.y, outline_color },
-      {  outer_half_size.x,  outer_half_size.y, outline_color },
+      { -inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, outline_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, outline_color },
+      {  outer_half_size.x,  outer_half_size.y, 0.0f, 0.0f, outline_color },
 
-      { -inner_half_size.x,  inner_half_size.y, outline_color },
-      {  outer_half_size.x,  outer_half_size.y, outline_color },
-      { -outer_half_size.x,  outer_half_size.y, outline_color },
+      { -inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, outline_color },
+      {  outer_half_size.x,  outer_half_size.y, 0.0f, 0.0f, outline_color },
+      { -outer_half_size.x,  outer_half_size.y, 0.0f, 0.0f, outline_color },
 
       // Bottom outline
-      { -outer_half_size.x, -outer_half_size.y, outline_color },
-      {  outer_half_size.x, -outer_half_size.y, outline_color },
-      {  inner_half_size.x, -inner_half_size.y, outline_color },
+      { -outer_half_size.x, -outer_half_size.y, 0.0f, 0.0f, outline_color },
+      {  outer_half_size.x, -outer_half_size.y, 0.0f, 0.0f, outline_color },
+      {  inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, outline_color },
 
-      { -outer_half_size.x, -outer_half_size.y, outline_color },
-      {  inner_half_size.x, -inner_half_size.y, outline_color },
-      { -inner_half_size.x, -inner_half_size.y, outline_color },
+      { -outer_half_size.x, -outer_half_size.y, 0.0f, 0.0f, outline_color },
+      {  inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, outline_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, outline_color },
 
       // Right outline
-      {  inner_half_size.x,  inner_half_size.y, outline_color },
-      {  inner_half_size.x, -inner_half_size.y, outline_color },
-      {  outer_half_size.x, -outer_half_size.y, outline_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, outline_color },
+      {  inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, outline_color },
+      {  outer_half_size.x, -outer_half_size.y, 0.0f, 0.0f, outline_color },
 
-      {  inner_half_size.x,  inner_half_size.y, outline_color },
-      {  outer_half_size.x, -outer_half_size.y, outline_color },
-      {  outer_half_size.x,  outer_half_size.y, outline_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, outline_color },
+      {  outer_half_size.x, -outer_half_size.y, 0.0f, 0.0f, outline_color },
+      {  outer_half_size.x,  outer_half_size.y, 0.0f, 0.0f, outline_color },
 
       // Left outline
-      { -inner_half_size.x, -inner_half_size.y, outline_color },
-      { -inner_half_size.x,  inner_half_size.y, outline_color },
-      { -outer_half_size.x,  outer_half_size.y, outline_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, outline_color },
+      { -inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, outline_color },
+      { -outer_half_size.x,  outer_half_size.y, 0.0f, 0.0f, outline_color },
 
-      { -inner_half_size.x, -inner_half_size.y, outline_color },
-      { -outer_half_size.x,  outer_half_size.y, outline_color },
-      { -outer_half_size.x, -outer_half_size.y, outline_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, outline_color },
+      { -outer_half_size.x,  outer_half_size.y, 0.0f, 0.0f, outline_color },
+      { -outer_half_size.x, -outer_half_size.y, 0.0f, 0.0f, outline_color },
     };
   }
 }
@@ -194,14 +192,14 @@ void Shape2D::UpdateEllipse() {
       const float angle = i * 2.0f * Pi<float>() / ellipse_.num_segments;
 
       const Vector2 new_position = inner_half_size * Vector2{std::sin(angle), std::cos(angle)};
-      vertices_.push_back({previous_position.x, previous_position.y, ellipse_color});
-      vertices_.push_back({new_position.x, new_position.y, ellipse_color});
-      vertices_.push_back({0.0f, 0.0f, ellipse_color});
+      vertices_.push_back({previous_position.x, previous_position.y, 0.0f, 0.0f, ellipse_color});
+      vertices_.push_back({new_position.x, new_position.y, 0.0f, 0.0f, ellipse_color});
+      vertices_.push_back({0.0f, 0.0f, 0.0f, 0.0f, ellipse_color});
       previous_position = new_position;
     }
-    vertices_.push_back({previous_position.x, previous_position.y, ellipse_color});
-    vertices_.push_back({0.0f, inner_half_size.y, ellipse_color});
-    vertices_.push_back({0.0f, 0.0f, ellipse_color});
+    vertices_.push_back({previous_position.x, previous_position.y, 0.0f, 0.0f, ellipse_color});
+    vertices_.push_back({0.0f, inner_half_size.y, 0.0f, 0.0f, ellipse_color});
+    vertices_.push_back({0.0f, 0.0f, 0.0f, 0.0f, ellipse_color});
   }
 
   // Add outline vertices
@@ -218,20 +216,20 @@ void Shape2D::UpdateEllipse() {
       const Vector2 new_inner_position = inner_half_size * direction;
       const Vector2 new_outer_position = outer_half_size * direction;
 
-      vertices_.push_back({previous_inner_position.x, previous_inner_position.y, outline_color});
-      vertices_.push_back({new_inner_position.x, new_inner_position.y, outline_color});
-      vertices_.push_back({new_outer_position.x, new_outer_position.y, outline_color});
+      vertices_.push_back({previous_inner_position.x, previous_inner_position.y, 0.0f, 0.0f, outline_color});
+      vertices_.push_back({new_inner_position.x, new_inner_position.y, 0.0f, 0.0f, outline_color});
+      vertices_.push_back({new_outer_position.x, new_outer_position.y, 0.0f, 0.0f, outline_color});
 
-      vertices_.push_back({previous_inner_position.x, previous_inner_position.y, outline_color});
-      vertices_.push_back({new_outer_position.x, new_outer_position.y, outline_color});
-      vertices_.push_back({previous_outer_position.x, previous_outer_position.y, outline_color});
+      vertices_.push_back({previous_inner_position.x, previous_inner_position.y, 0.0f, 0.0f, outline_color});
+      vertices_.push_back({new_outer_position.x, new_outer_position.y, 0.0f, 0.0f, outline_color});
+      vertices_.push_back({previous_outer_position.x, previous_outer_position.y, 0.0f, 0.0f, outline_color});
 
       previous_inner_position = new_inner_position;
       previous_outer_position = new_outer_position;
     }
   }
 
-  SDL_assert(vertices_.size() == ellipse_vertices + outline_vertices);
+  assert(vertices_.size() == ellipse_vertices + outline_vertices);
 }
 
 OVIS_VM_DEFINE_TYPE_BINDING(Rendering2D, Shape2D, SceneObjectComponent) {
