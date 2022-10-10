@@ -22,6 +22,7 @@ add_library(
   include/ovis/utils/native_type_id.hpp src/native_type_id.cpp
   include/ovis/utils/parameter_pack.hpp src/parameter_pack.cpp
   include/ovis/utils/reflection.hpp src/reflection.cpp
+  include/ovis/utils/memory.hpp src/memory.cpp
 )
 add_library(ovis::utils ALIAS ovis-utils)
 

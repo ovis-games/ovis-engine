@@ -1,7 +1,47 @@
-#include <ovis/vm/module.hpp>
-#include <ovis/vm/type.hpp>
+#include "ovis/vm/type.hpp"
+
+#include "ovis/utils/memory.hpp"
+#include "ovis/vm/module.hpp"
 
 namespace ovis {
+
+
+Result<> TypeMemoryLayout::ConstructN(void* memory, std::size_t count) {
+  for (std::size_t i = 0; i < count; ++i) {
+    const auto result = construct->Call(OffsetAddress(memory, i * size_in_bytes));
+    // Construction failed. Destruct all previously constructed objects.
+    if (!result) {
+      DestructN(memory, i);
+      return result;
+    }
+  }
+  return Success;
+}
+
+void TypeMemoryLayout::DestructN(void* objects, std::size_t count) {
+  if (destruct) {
+    for (std::size_t i = 0; i < count; ++i) {
+      const auto result = destruct->Call(OffsetAddress(objects, i * size_in_bytes));
+      assert(result);  // Destruction should never fail
+    }
+  }
+}
+
+Result<> TypeMemoryLayout::CopyN(void* destination, const void* source, std::size_t count) {
+  assert(reinterpret_cast<std::uintptr_t>(destination) % alignment_in_bytes == 0);
+  assert(reinterpret_cast<std::uintptr_t>(source) % alignment_in_bytes == 0);
+
+  if (copy) {
+    for (std::size_t i = 0; i < count; ++i) {
+      const std::uintptr_t offset = i * size_in_bytes;
+      OVIS_CHECK_RESULT(copy->Call(OffsetAddress(destination, offset), OffsetAddress(source, offset)));
+    }
+  } else {
+    std::memcpy(destination, source, size_in_bytes * count);
+  }
+
+  return Success;
+}
 
 bool operator==(const TypeMemoryLayout& lhs, const TypeMemoryLayout& rhs) {
   return
