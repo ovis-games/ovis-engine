@@ -9,7 +9,6 @@ add_library(
   include/ovis/core/scene_viewport.hpp src/scene_viewport.cpp
   include/ovis/core/scene_controller.hpp src/scene_controller.cpp
   include/ovis/core/scene_object.hpp src/scene_object.cpp
-  include/ovis/core/scene_object_component.hpp src/scene_object_component.cpp
   include/ovis/core/scene_object_animation.hpp src/scene_object_animation.cpp
   include/ovis/core/animator.hpp src/animator.cpp
   include/ovis/core/animator_controller.hpp src/animator_controller.cpp

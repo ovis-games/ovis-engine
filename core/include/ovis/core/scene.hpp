@@ -6,18 +6,15 @@
 #include <unordered_map>
 #include <vector>
 
-#include <SDL2/SDL_assert.h>
-#include <sol/sol.hpp>
-
 #include "ovis/utils/all.hpp"
-#include <ovis/utils/down_cast.hpp>
-#include <ovis/utils/json.hpp>
-#include <ovis/utils/range.hpp>
-#include <ovis/utils/safe_pointer.hpp>
-#include <ovis/utils/serialize.hpp>
-#include <ovis/core/event.hpp>
-#include <ovis/core/scene_object.hpp>
-#include <ovis/core/vector.hpp>
+#include "ovis/utils/down_cast.hpp"
+#include "ovis/utils/json.hpp"
+#include "ovis/utils/range.hpp"
+#include "ovis/utils/safe_pointer.hpp"
+#include "ovis/utils/serialize.hpp"
+#include "ovis/core/event.hpp"
+#include "ovis/core/scene_object.hpp"
+#include "ovis/core/vector.hpp"
 
 namespace ovis {
 
@@ -27,12 +24,12 @@ class GraphicsContext;
 class Window;
 class SceneViewport;
 
-class Scene : public Serializable, public SafelyReferenceable {
+class Scene : public Serializable {
   friend class SceneController;
   friend class SceneObject;
 
  public:
-  Scene();
+  Scene(std::size_t initial_object_storage = 1000);
   virtual ~Scene();
 
   inline bool is_playing() const { return is_playing_; }
@@ -69,32 +66,36 @@ class Scene : public Serializable, public SafelyReferenceable {
     return down_cast<ControllerType*>(GetControllerInternal(ControllerType::Name()));
   }
 
-  SceneObject* CreateObject(std::string_view object_name, SceneObject* parent = nullptr);
-  SceneObject* CreateObject(std::string_view object_name, const json& serialized_object, SceneObject* parent = nullptr);
-  void DeleteObject(std::string_view object_path);
-  void DeleteObject(SceneObject* object);
-  void ClearObjects();
-  SceneObject* GetObject(std::string_view object_reference);
-  bool ContainsObject(std::string_view object_reference);
-  inline auto objects() const {
-    return TransformRange(objects_, [](const auto& name_object) { return name_object.second.get(); });
-  }
-  inline auto root_objects() const {
-    return FilterRange(objects(), [](const SceneObject* object) { return !object->has_parent(); });
-  }
+  SceneObject* CreateObject(std::string_view object_name, std::optional<SceneObject::Id> parent = std::nullopt);
+  SceneObject* CreateObject(std::string_view object_name, const json& serialized_object, std::optional<SceneObject::Id> parent = std::nullopt);
 
-  template <typename ComponentType>
-  auto ObjectComponentsOfType() {
-    return FilterRange(
-        TransformRange(objects_, [](auto& object) { return object.second->template GetComponent<ComponentType>(); }),
-        [](ComponentType* component) { return component != nullptr; });
-  }
-  template <typename ComponentType>
-  auto ObjectsWithComponent() {
-    return FilterRange(
-        TransformRange(objects_, [](auto& object) { return object.second.get(); }),
-        [](SceneObject* object) { return object != nullptr; });
-  }
+  bool IsObjectIdValid(SceneObject::Id id) { return id.index < objects_.size() && objects_[id.index].id() == id; }
+  SceneObject* GetObject(SceneObject::Id id);
+
+  // void DeleteObject(std::string_view object_path);
+  // void DeleteObject(SceneObject* object);
+  // void ClearObjects();
+  // SceneObject* GetObject(std::string_view object_reference);
+  // bool ContainsObject(std::string_view object_reference);
+  // inline auto objects() const {
+  //   return TransformRange(objects_, [](const auto& name_object) { return name_object.second.get(); });
+  // }
+  // inline auto root_objects() const {
+  //   return FilterRange(objects(), [](const SceneObject* object) { return !object->has_parent(); });
+  // }
+
+  // template <typename ComponentType>
+  // auto ObjectComponentsOfType() {
+  //   return FilterRange(
+  //       TransformRange(objects_, [](auto& object) { return object.second->template GetComponent<ComponentType>(); }),
+  //       [](ComponentType* component) { return component != nullptr; });
+  // }
+  // template <typename ComponentType>
+  // auto ObjectsWithComponent() {
+  //   return FilterRange(
+  //       TransformRange(objects_, [](auto& object) { return object.second.get(); }),
+  //       [](SceneObject* object) { return object != nullptr; });
+  // }
 
   void Play();
   void Stop();
@@ -109,8 +110,6 @@ class Scene : public Serializable, public SafelyReferenceable {
   bool Deserialize(const json& serialized_object) override;
   const json* GetSchema() const override { return &schema_; }
 
-  static void RegisterType(sol::table* module);
-
  private:
   void InvalidateControllerOrder();
   void DeleteRemovedControllers();
@@ -122,7 +121,8 @@ class Scene : public Serializable, public SafelyReferenceable {
   std::vector<std::unique_ptr<SceneController>> removed_controllers_;
   bool controllers_sorted_ = false;
 
-  std::unordered_map<std::string, std::unique_ptr<SceneObject>> objects_;
+  std::vector<SceneObject> objects_;
+
   bool is_playing_ = false;
   std::size_t event_handler_index_;
 

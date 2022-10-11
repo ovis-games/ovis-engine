@@ -37,82 +37,82 @@ TEST_CASE("Parse object name", "[ovis][core][SceneObject]") {
   }
 }
 
-TEST_CASE("Create Scene Object", "[ovis][core][SceneObject]") {
-  Scene test_scene;
-  SceneObject* object = test_scene.CreateObject("TestObject", R"({
-    "components": {
-      "Core.Transform": {
-        "scale": [2, 1, 2]
-      }
-    }
-  })"_json);
+// TEST_CASE("Create Scene Object", "[ovis][core][SceneObject]") {
+//   Scene test_scene;
+//   SceneObject* object = test_scene.CreateObject("TestObject", R"({
+//     "components": {
+//       "Core.Transform": {
+//         "scale": [2, 1, 2]
+//       }
+//     }
+//   })"_json);
 
-  REQUIRE(object != nullptr);
-  Transform* transform = object->GetComponent<Transform>();
-  REQUIRE(transform != nullptr);
-  REQUIRE(transform->local_position() == Vector3::Zero());
-  REQUIRE(transform->local_scale() == Vector3(2.0, 1.0, 2.0));
-}
+//   REQUIRE(object != nullptr);
+//   Transform* transform = object->GetComponent<Transform>();
+//   REQUIRE(transform != nullptr);
+//   REQUIRE(transform->local_position() == Vector3::Zero());
+//   REQUIRE(transform->local_scale() == Vector3(2.0, 1.0, 2.0));
+// }
 
-TEST_CASE("Add component via template", "[ovis][core][SceneObject]") {
-  Scene test_scene;
-  SceneObject* object = test_scene.CreateObject("TestObject");
+// TEST_CASE("Add component via template", "[ovis][core][SceneObject]") {
+//   Scene test_scene;
+//   SceneObject* object = test_scene.CreateObject("TestObject");
 
-  REQUIRE(object != nullptr);
-  Transform* transform = object->GetComponent<Transform>();
-  REQUIRE(transform == nullptr);
+//   REQUIRE(object != nullptr);
+//   Transform* transform = object->GetComponent<Transform>();
+//   REQUIRE(transform == nullptr);
 
-  transform = object->AddComponent<Transform>();
-  REQUIRE(transform != nullptr);
+//   transform = object->AddComponent<Transform>();
+//   REQUIRE(transform != nullptr);
 
-  REQUIRE(transform == object->GetComponent<Transform>());
-}
+//   REQUIRE(transform == object->GetComponent<Transform>());
+// }
 
-TEST_CASE("Create Scene Object with Template", "[ovis][core][SceneObject]") {
-  Scene test_scene;
-  SceneObject* object = test_scene.CreateObject("TestObject", R"({
-    "template": "template",
-    "components": {
-      "Core.Transform": {
-        "scale": [2, 1, 2]
-      }
-    }
-  })"_json);
+// TEST_CASE("Create Scene Object with Template", "[ovis][core][SceneObject]") {
+//   Scene test_scene;
+//   SceneObject* object = test_scene.CreateObject("TestObject", R"({
+//     "template": "template",
+//     "components": {
+//       "Core.Transform": {
+//         "scale": [2, 1, 2]
+//       }
+//     }
+//   })"_json);
 
-  REQUIRE(object != nullptr);
-  Transform* transform = object->GetComponent<Transform>();
-  REQUIRE(transform != nullptr);
-  REQUIRE(transform->local_position() == Vector3(1.0, 2.0, 3.0));
-  REQUIRE(transform->local_scale() == Vector3(2.0, 1.0, 2.0));
-}
+//   REQUIRE(object != nullptr);
+//   Transform* transform = object->GetComponent<Transform>();
+//   REQUIRE(transform != nullptr);
+//   REQUIRE(transform->local_position() == Vector3(1.0, 2.0, 3.0));
+//   REQUIRE(transform->local_scale() == Vector3(2.0, 1.0, 2.0));
+// }
 
-TEST_CASE("Try to create scene object with recursive template", "[ovis][core][SceneObject]") {
-  Scene test_scene;
+// TEST_CASE("Try to create scene object with recursive template", "[ovis][core][SceneObject]") {
+//   Scene test_scene;
 
-  SECTION("Recursion") {
-    SceneObject* object = test_scene.CreateObject("TestObject", R"({
-      "template": "recursive_template",
-      "components": {}
-    })"_json);
-    REQUIRE(object == nullptr);
-  }
+//   SECTION("Recursion") {
+//     SceneObject* object = test_scene.CreateObject("TestObject", R"({
+//       "template": "recursive_template",
+//       "components": {}
+//     })"_json);
+//     REQUIRE(object == nullptr);
+//   }
 
-  SECTION("Indirect recursion") {
-    SceneObject* object = test_scene.CreateObject("TestObject", R"({
-      "template": "indirect_recursion1",
-      "components": {}
-    })"_json);
-    REQUIRE(object == nullptr);
-  }
+//   SECTION("Indirect recursion") {
+//     SceneObject* object = test_scene.CreateObject("TestObject", R"({
+//       "template": "indirect_recursion1",
+//       "components": {}
+//     })"_json);
+//     REQUIRE(object == nullptr);
+//   }
 
-  SECTION("Child recursion") {
-    SceneObject* object = test_scene.CreateObject("TestObject", R"({
-      "template": "child_recursion_template",
-      "components": {}
-    })"_json);
-    REQUIRE(object == nullptr);
-  }
-}
+//   SECTION("Child recursion") {
+//     SceneObject* object = test_scene.CreateObject("TestObject", R"({
+//       "template": "child_recursion_template",
+//       "components": {}
+//     })"_json);
+//     REQUIRE(object == nullptr);
+//   }
+// }
 
 std::string FullPrecision(double d) {
     auto s = std::ostringstream{};
