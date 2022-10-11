@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "ovis/utils/not_null.hpp"
+#include "ovis/utils/result.hpp"
 #include "ovis/vm/type.hpp"
 #include "ovis/vm/type_id.hpp"
 #include "ovis/vm/value.hpp"
@@ -33,8 +34,15 @@ class List {
 
   void Reserve(SizeType new_capacity);
   void Resize(SizeType new_size);
-  void Add(const Value& value);
-  void Remove(SizeType index);
+
+  template <typename T>
+  Result<> Add(T&& value) {
+    // TODO: assert right type
+    return AddInternal(&value);
+  }
+
+  Result<> Add(const Value& value);
+  Result<> Remove(SizeType index);
 
   template <typename T>
   T Get(SizeType index) const {
@@ -57,6 +65,7 @@ class List {
 
   void* GetElementAddress(SizeType index);
   const void* GetElementAddress(SizeType index) const;
+  Result<> AddInternal(const void* source);
 };
 
 }  // namespace ovis

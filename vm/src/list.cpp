@@ -90,6 +90,22 @@ void List::Resize(SizeType new_size) {
   size_ = new_size;
 }
 
+Result<> List::Add(const Value& value) {
+  return AddInternal(value.GetValuePointer());
+}
+
+Result<> List::Remove(SizeType index) {
+  if (index >= size()) {
+    return Error("Index out of bounds");
+  }
+  for (SizeType i = index; i < size() - 1; ++i) {
+    OVIS_CHECK_RESULT(memory_layout_.Copy(GetElementAddress(i), GetElementAddress(i + 1)));
+  }
+  memory_layout_.Destruct(GetElementAddress(size() - 1));
+  --size_;
+  return Success;
+}
+
 void* List::GetElementAddress(SizeType index) {
   assert(index < capacity());
   return OffsetAddress(data_, index * memory_layout_.size_in_bytes);
@@ -98,6 +114,22 @@ void* List::GetElementAddress(SizeType index) {
 const void* List::GetElementAddress(SizeType index) const {
   assert(index < capacity());
   return OffsetAddress(data_, index * memory_layout_.size_in_bytes);
+}
+
+Result<> List::AddInternal(const void* source) {
+  if (size() == capacity()) {
+    const auto new_capacity = size() + size() / 2 + 1; // +1 to handle 0 and 1 case.
+    Reserve(new_capacity);
+  }
+
+  auto new_element_address = GetElementAddress(size());
+  OVIS_CHECK_RESULT(memory_layout_.Construct(new_element_address));
+  if (auto result = memory_layout_.Copy(new_element_address, source); !result) {
+    memory_layout_.Destruct(new_element_address);
+    return std::move(result);
+  }
+  ++size_;
+  return Success;
 }
 
 }  // namespace ovis

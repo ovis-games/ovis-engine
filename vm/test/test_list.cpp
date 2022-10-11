@@ -72,3 +72,45 @@ TEST_CASE("List of strings", "[ovis][vm][List]") {
     REQUIRE(string_list.Get<std::string>(i) == std::to_string(100 + i));
   }
 }
+
+TEST_CASE("Test add/remove", "[ovis][vm][List]") {
+  VirtualMachine vm;
+  List number_list(vm.GetType<double>());
+
+  REQUIRE(number_list.size() == 0);
+  REQUIRE(number_list.capacity() == 0);
+
+  number_list.Add(1.0);
+
+  REQUIRE(number_list.size() == 1);
+  REQUIRE(number_list.capacity() > 0);
+  REQUIRE(number_list.Get<double>(0) == 1.0);
+
+  for (int i = 1; i < 50; ++i) {
+    number_list.Add(static_cast<double>(i + 1));
+  }
+
+  REQUIRE(number_list.size() == 50);
+  REQUIRE(number_list.capacity() >= 50);
+
+  for (int i = 0; i < 50; ++i) {
+    REQUIRE(number_list.Get<double>(i) == i + 1);
+  }
+
+  number_list.Remove(0);
+
+  REQUIRE(number_list.size() == 49);
+
+  for (int i = 0; i < 49; ++i) {
+    REQUIRE(number_list.Get<double>(i) == i + 2);
+  }
+
+  for (int i = 0; i < 49; ++i) {
+    number_list.Remove(number_list.size() / 2);
+  }
+
+  REQUIRE(number_list.size() == 0);
+
+  REQUIRE(!number_list.Remove(0));
+  REQUIRE(number_list.size() == 0);
+}

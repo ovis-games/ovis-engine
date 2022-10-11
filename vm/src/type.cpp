@@ -1,4 +1,5 @@
 #include "ovis/vm/type.hpp"
+#include <cstring>
 
 #include "ovis/utils/memory.hpp"
 #include "ovis/vm/module.hpp"
@@ -20,6 +21,12 @@ Result<> TypeMemoryLayout::ConstructN(void* memory, std::size_t count) const {
   return Success;
 }
 
+Result<> TypeMemoryLayout::Construct(void* memory) const {
+  assert(memory != nullptr);
+  assert(reinterpret_cast<std::uintptr_t>(memory) % alignment_in_bytes == 0);
+  return construct->Call(memory);
+}
+
 void TypeMemoryLayout::DestructN(void* objects, std::size_t count) const {
   assert(reinterpret_cast<std::uintptr_t>(objects) % alignment_in_bytes == 0);
 
@@ -28,6 +35,15 @@ void TypeMemoryLayout::DestructN(void* objects, std::size_t count) const {
       const auto result = destruct->Call(OffsetAddress(objects, i * size_in_bytes));
       assert(result);  // Destruction should never fail
     }
+  }
+}
+
+void TypeMemoryLayout::Destruct(void* object) const {
+  assert(object != nullptr);
+  assert(reinterpret_cast<std::uintptr_t>(object) % alignment_in_bytes == 0);
+  if (destruct) {
+    const auto result = destruct->Call(object);
+    assert(result);
   }
 }
 
@@ -49,6 +65,21 @@ Result<> TypeMemoryLayout::CopyN(void* destination, const void* source, std::siz
 
   return Success;
 }
+
+Result<> TypeMemoryLayout::Copy(void* destination, const void* source) const {
+  assert(destination != nullptr);
+  assert(source != nullptr);
+  assert(reinterpret_cast<std::uintptr_t>(destination) % alignment_in_bytes == 0);
+  assert(reinterpret_cast<std::uintptr_t>(source) % alignment_in_bytes == 0);
+
+  if (copy) {
+    return copy->Call(destination, source);
+  } else {
+    std::memcpy(destination, source, size_in_bytes);
+    return Success;
+  }
+}
+
 
 bool operator==(const TypeMemoryLayout& lhs, const TypeMemoryLayout& rhs) {
   return
