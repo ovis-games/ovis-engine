@@ -62,13 +62,14 @@ struct TypeMemoryLayout {
 
   // Constructs count objects of the type for a given memory.
   // If an error occurs during construction, all constructed objects will be destructed.
-  Result<> ConstructN(void* memory, std::size_t count);
+  Result<> ConstructN(void* memory, std::size_t count) const;
 
   // Destructs count objects. If an error occurs it will terminate the program.
-  void DestructN(void* objects, std::size_t count);
+  void DestructN(void* objects, std::size_t count) const;
 
   // Copies count objects from source to destination. If an error occurs during copying the objects may be be partially copied.
-  Result<> CopyN(void* destination, const void* source, std::size_t count);
+  // Source and destination may not overlap (because of memcpy).
+  Result<> CopyN(void* destination, const void* source, std::size_t count) const;
 
   template <typename T>
   static TypeMemoryLayout CreateForNativeType(VirtualMachine* virtual_machine);

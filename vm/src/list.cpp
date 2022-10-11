@@ -43,8 +43,8 @@ List& List::operator=(const List& other) {
   assert(other.element_type() == element_type());
   assert(other.memory_layout_ == memory_layout_);
 
-  Resize(0);  // First resize to zero, so that if the second resize call will reallocate the memory, no elements have to
-              // be copied.
+  Resize(0);  // First resize to zero, so that if the second resize call will reallocate the memory,
+              // no elements have to be copied.
   Resize(other.size());
   memory_layout_.CopyN(data_, other.data_, size());
 

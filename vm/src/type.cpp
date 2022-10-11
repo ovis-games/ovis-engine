@@ -5,8 +5,9 @@
 
 namespace ovis {
 
+Result<> TypeMemoryLayout::ConstructN(void* memory, std::size_t count) const {
+  assert(reinterpret_cast<std::uintptr_t>(memory) % alignment_in_bytes == 0);
 
-Result<> TypeMemoryLayout::ConstructN(void* memory, std::size_t count) {
   for (std::size_t i = 0; i < count; ++i) {
     const auto result = construct->Call(OffsetAddress(memory, i * size_in_bytes));
     // Construction failed. Destruct all previously constructed objects.
@@ -15,10 +16,13 @@ Result<> TypeMemoryLayout::ConstructN(void* memory, std::size_t count) {
       return result;
     }
   }
+
   return Success;
 }
 
-void TypeMemoryLayout::DestructN(void* objects, std::size_t count) {
+void TypeMemoryLayout::DestructN(void* objects, std::size_t count) const {
+  assert(reinterpret_cast<std::uintptr_t>(objects) % alignment_in_bytes == 0);
+
   if (destruct) {
     for (std::size_t i = 0; i < count; ++i) {
       const auto result = destruct->Call(OffsetAddress(objects, i * size_in_bytes));
@@ -27,7 +31,7 @@ void TypeMemoryLayout::DestructN(void* objects, std::size_t count) {
   }
 }
 
-Result<> TypeMemoryLayout::CopyN(void* destination, const void* source, std::size_t count) {
+Result<> TypeMemoryLayout::CopyN(void* destination, const void* source, std::size_t count) const {
   assert(reinterpret_cast<std::uintptr_t>(destination) % alignment_in_bytes == 0);
   assert(reinterpret_cast<std::uintptr_t>(source) % alignment_in_bytes == 0);
 
@@ -36,7 +40,10 @@ Result<> TypeMemoryLayout::CopyN(void* destination, const void* source, std::siz
       const std::uintptr_t offset = i * size_in_bytes;
       OVIS_CHECK_RESULT(copy->Call(OffsetAddress(destination, offset), OffsetAddress(source, offset)));
     }
-  } else {
+  } else if (count > 0) {
+    // memcpy is undefined if source or destination is null, so only copy if there is actually something to copy
+    assert(destination != nullptr);
+    assert(source != nullptr);
     std::memcpy(destination, source, size_in_bytes * count);
   }
 
