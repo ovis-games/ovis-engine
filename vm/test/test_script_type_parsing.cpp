@@ -19,17 +19,20 @@ TEST_CASE("Parse parse variable declaration", "[ovis][core][ScriptTypeParser]") 
   const auto parse_result = ParseScriptType(&vm, R"(
   {
     "name": "SomeType",
-    "properties" : {
-      "SomeBoolean": {
-        "type": "Boolean"
+    "properties": [
+      {
+        "variableName": "SomeBoolean",
+        "variableType": "Boolean"
       },
-      "SomeNumber": {
-        "type": "Number"
+      {
+        "variableName": "SomeNumber",
+        "variableType": "Number"
       },
-      "SomeTest": {
-        "type": "Test.Test"
+      {
+        "variableName": "SomeTest",
+        "variableType": "Test.Test"
       }
-    }
+    ]
   }
   )"_json);
   REQUIRE_RESULT(parse_result);

@@ -60,6 +60,26 @@ struct TypeMemoryLayout {
   // destructible.
   std::shared_ptr<Function> destruct;
 
+  // Constructs a single object
+  Result<> Construct(void* memory) const;
+
+  // Constructs count objects of the type for a given memory.
+  // If an error occurs during construction, all constructed objects will be destructed.
+  Result<> ConstructN(void* memory, std::size_t count) const;
+
+  // Destructs an object. If an error occurs the program will be terminated.
+  void Destruct(void* object) const;
+
+  // Destructs count objects. If an error occurs it will terminate the program.
+  void DestructN(void* objects, std::size_t count) const;
+
+  // Copies a single object from source to destination
+  Result<> Copy(void* destination, const void* source) const;
+
+  // Copies count objects from source to destination. If an error occurs during copying the objects may be be partially copied.
+  // Source and destination may not overlap (because of memcpy).
+  Result<> CopyN(void* destination, const void* source, std::size_t count) const;
+
   template <typename T>
   static TypeMemoryLayout CreateForNativeType(VirtualMachine* virtual_machine);
 };

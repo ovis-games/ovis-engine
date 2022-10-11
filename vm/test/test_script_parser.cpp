@@ -10,17 +10,20 @@ const auto TEST_SCRIPT = R"(
   {
     "definitionType": "type",
     "name": "SomeType",
-    "properties" : {
-      "SomeBoolean": {
-        "type": "Boolean"
+    "properties": [
+      {
+        "variableName": "SomeBoolean",
+        "variableType": "Boolean"
       },
-      "SomeNumber": {
-        "type": "Number"
+      {
+        "variableName": "SomeNumber",
+        "variableType": "Number"
       },
-      "SomeTest": {
-        "type": "String"
+      {
+        "variableName": "SomeTest",
+        "variableType": "Test.Test"
       }
-    }
+    ]
   },
   {
     "definitionType": "function",
@@ -43,7 +46,7 @@ const auto TEST_SCRIPT = R"(
     ],
     "statements": [
       {
-        "type": "variable_declaration",
+        "statementType": "variable_declaration",
         "variable": {
           "name": "test",
           "type": "Number",

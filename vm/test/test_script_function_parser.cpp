@@ -16,12 +16,12 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
     {
       "inputs": [
         {
-          "type": "Number",
-          "name": "first"
+          "variableType": "Number",
+          "variableName": "first"
         },
         {
-          "type": "Number",
-          "name": "second"
+          "variableType": "Number",
+          "variableName": "second"
         }
       ],
       "outputs": [
@@ -32,30 +32,27 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
       ],
       "statements": [
         {
-          "type": "variable_declaration",
-          "variable": {
-            "name": "test",
-            "type": "Number",
-            "value": {
-              "type": "number_operation",
-              "operation": "add",
-              "firstOperand": {
-                "type": "variable",
-                "name": "first"
-              },
-              "secondOperand": {
-                "type": "variable",
-                "name": "second"
-              }
-
+          "statementType": "variable_declaration",
+          "variableName": "test",
+          "variableType": "Number",
+          "value": {
+            "expressionType": "number_operation",
+            "operation": "add",
+            "firstOperand": {
+              "expressionType": "variable",
+              "name": "first"
+            },
+            "secondOperand": {
+              "expressionType": "variable",
+              "name": "second"
             }
           }
         },
         {
-          "type": "return",
+          "statementType": "return",
           "outputs": {
             "outputNumber": {
-              "type": "variable",
+              "expressionType": "variable",
               "name": "test"
             }
           }

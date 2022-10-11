@@ -7,6 +7,7 @@ add_library(
   include/ovis/vm/module.hpp src/module.cpp
   include/ovis/vm/type.hpp src/type.cpp
   include/ovis/vm/function.hpp src/function.cpp
+  include/ovis/vm/list.hpp src/list.cpp
   include/ovis/vm/value_storage.hpp src/value_storage.cpp
   include/ovis/vm/value.hpp src/value.cpp
   include/ovis/vm/parse_script_error.hpp src/parse_script_error.cpp
@@ -48,6 +49,7 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_type_parsing.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_function_parser.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_parser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_list.cpp
   )
 
   target_link_libraries(

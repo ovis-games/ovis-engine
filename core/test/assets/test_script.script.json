@@ -4,8 +4,8 @@
     "name": "consumeType",
     "inputs": [
       {
-        "name": "someString",
-        "type": "SomeString"
+        "variableName": "someString",
+        "variableType": "SomeString"
       }
     ],
     "statements": [
@@ -16,8 +16,8 @@
     "name": "SomeType",
     "properties": [
       {
-        "name": "SomeString",
-        "type": "String"
+        "variableName": "SomeString",
+        "variableType": "String"
       }
     ]
   }
