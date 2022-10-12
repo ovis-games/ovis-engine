@@ -140,6 +140,28 @@ SceneObject* Scene::GetObject(SceneObject::Id id) {
   return IsObjectIdValid(id) ? &objects_[id.index] : nullptr;
 }
 
+std::set<TypeId> Scene::GetUsedObjectComponentTypes() const {
+  std::set<TypeId> types;
+  for (const auto& [_, controller] : controllers_) {
+    for (const auto type : controller->read_access_components()) {
+      types.insert(type);
+    }
+    for (const auto type : controller->write_access_components()) {
+      types.insert(type);
+    }
+  }
+  return types;
+}
+
+ComponentStorage* Scene::GetComponentStorage(TypeId component_type) {
+  for (auto& storage : component_storages_) {
+    if (storage.component_type() == component_type) {
+      return &storage;
+    }
+  }
+  return nullptr;
+}
+
 // SceneObject* Scene::CreateObject(std::string_view base_name, SceneObject* parent) {
 //   if (!SceneObject::IsValidName(base_name)) {
 //     LogE("Invalid object name: {}", base_name);
@@ -208,6 +230,18 @@ SceneObject* Scene::GetObject(SceneObject::Id id) {
 // bool Scene::ContainsObject(std::string_view object_reference) {
 //   return objects_.count(std::string(object_reference));
 // }
+//
+
+void Scene::Prepare() {
+  component_storages_.clear();
+  {
+    const auto object_component_types = GetUsedObjectComponentTypes();
+    component_storages_.reserve(object_component_types.size());
+    for (const auto component_type : object_component_types) {
+      component_storages_.emplace_back(this, component_type, objects_.size());
+    }
+  }
+}
 
 void Scene::Play() {
   assert(!is_playing());

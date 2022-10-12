@@ -13,6 +13,9 @@ class Scene;
 class ComponentStorage {
 public:
   ComponentStorage(Scene* scene, TypeId component_type);
+  ComponentStorage(Scene* scene, TypeId component_type, ContiguousStorage::SizeType initial_capacity);
+
+  ComponentStorage(ComponentStorage&& other);
 
   Scene* scene() const { return scene_; }
   TypeId component_type() const { return component_type_; }

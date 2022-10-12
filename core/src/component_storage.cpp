@@ -11,6 +11,20 @@ ComponentStorage::ComponentStorage(Scene* scene, TypeId component_type)
       storage_(main_vm->GetType(component_type)->memory_layout()) {
 }
 
+ComponentStorage::ComponentStorage(Scene* scene, TypeId component_type, ContiguousStorage::SizeType initial_capacity)
+    : scene_(scene),
+      component_type_(component_type),
+      storage_(main_vm->GetType(component_type)->memory_layout(), initial_capacity),
+      flags_(initial_capacity, false) {
+}
+
+ComponentStorage::ComponentStorage(ComponentStorage&& other)
+    : scene_(other.scene()), component_type_(other.component_type()), storage_(other.storage_.memory_layout()) {
+  using std::swap;
+  swap(storage_, other.storage_);
+  swap(flags_, other.flags_);
+}
+
 Result<> ComponentStorage::Resize(ContiguousStorage::SizeType size) {
   ContiguousStorage new_storage(main_vm->GetType(component_type())->memory_layout(), size);
 
@@ -46,7 +60,9 @@ Result<> ComponentStorage::AddComponent(SceneObject::Id object_id) {
     return Error("Object already has component");
   }
 
-  return storage_.Construct(object_id.index);
+  OVIS_CHECK_RESULT(storage_.Construct(object_id.index));
+  flags_[object_id.index] = true;
+  return Success;
 }
 
 Result<> ComponentStorage::RemoveComponent(SceneObject::Id object_id) {
@@ -59,6 +75,7 @@ Result<> ComponentStorage::RemoveComponent(SceneObject::Id object_id) {
   }
 
   storage_.Destruct(object_id.index);
+  flags_[object_id.index] = false;
   return Success;
 }
 

@@ -72,6 +72,18 @@ class Scene : public Serializable {
 
   bool IsObjectIdValid(SceneObject::Id id) { return id.index < objects_.size() && objects_[id.index].id() == id; }
   SceneObject* GetObject(SceneObject::Id id);
+  auto GetObjectIds() const {
+    return TransformRange(FilterRange(objects_, [](const auto& obj) { return obj.is_alive(); }),
+                          [](const auto& obj) { return obj.id(); });
+  }
+
+  std::set<TypeId> GetUsedObjectComponentTypes() const;
+
+  template <typename ComponentType>
+  ComponentStorage* GetComponentStorage() {
+    return GetComponentStorage(main_vm->GetTypeId<ComponentType>());
+  }
+  ComponentStorage* GetComponentStorage(TypeId component_type);
 
   // void DeleteObject(std::string_view object_path);
   // void DeleteObject(SceneObject* object);
@@ -97,6 +109,8 @@ class Scene : public Serializable {
   //       TransformRange(objects_, [](auto& object) { return object.second.get(); }),
   //       [](SceneObject* object) { return object != nullptr; });
   // }
+
+  void Prepare();
 
   void Play();
   void Stop();
