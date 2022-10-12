@@ -2,6 +2,7 @@
 
 #include "ovis/core/matrix.hpp"
 #include "ovis/core/quaternion.hpp"
+#include "ovis/core/simple_scene_controller.hpp"
 #include "ovis/core/vector.hpp"
 #include "ovis/core/vm_bindings.hpp"
 
@@ -27,6 +28,12 @@ struct LocalTransformMatrices {
 
 void to_json(json& data, const Transform& transform);
 void from_json(const json& data, Transform& transform);
+
+void ComputeLocalTransformMatrices(const Transform&, LocalTransformMatrices* local_transform_matrices);
+class LocalTransformMatricesController : public SimpleSceneController<&ComputeLocalTransformMatrices> {
+ public:
+  LocalTransformMatricesController() : SimpleSceneController("ComputeLocalTransformMatrices") {}
+};
 
 struct GlobalTransformMatrices {
   Matrix3x4 local_to_world = Matrix3x4::IdentityTransformation();

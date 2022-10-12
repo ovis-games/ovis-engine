@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ovis/core/component_storage.hpp"
 #include "ovis/utils/all.hpp"
 #include "ovis/utils/down_cast.hpp"
 #include "ovis/utils/json.hpp"
@@ -29,7 +30,7 @@ class Scene : public Serializable {
   friend class SceneObject;
 
  public:
-  Scene(std::size_t initial_object_storage = 1000);
+  Scene(std::size_t initial_object_capacity = 1000);
   virtual ~Scene();
 
   inline bool is_playing() const { return is_playing_; }
@@ -122,6 +123,7 @@ class Scene : public Serializable {
   bool controllers_sorted_ = false;
 
   std::vector<SceneObject> objects_;
+  std::vector<ComponentStorage> component_storages_;
 
   bool is_playing_ = false;
   std::size_t event_handler_index_;

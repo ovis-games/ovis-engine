@@ -16,12 +16,12 @@ namespace ovis {
 
 const json Scene::schema_ = {{"$ref", "engine#/$defs/scene"}};
 
-Scene::Scene(std::size_t initial_object_storage) {
+Scene::Scene(std::size_t initial_object_capacity) {
   // TODO: what is this? do we need this?
   event_handler_index_ = RegisterGlobalEventHandler([this](Event* event) { ProcessEvent(event); });
 
-  objects_.reserve(initial_object_storage);
-  for (std::size_t i = 0; i < initial_object_storage; ++i) {
+  objects_.reserve(initial_object_capacity);
+  for (std::size_t i = 0; i < initial_object_capacity; ++i) {
     objects_.emplace_back(this, SceneObject::Id(i));
   }
 }

@@ -51,7 +51,7 @@ List& List::operator=(List&& other) {
   assert(other.element_type() == element_type());
   assert(other.storage_.memory_layout() == storage_.memory_layout());
 
-  // Just swapping because its fast. Should we do something else here?
+  // Just swapping because its fast. Should we do something else here? - No
   using std::swap;
   swap(storage_, other.storage_);
   std::swap(other.size_, size_);

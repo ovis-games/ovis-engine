@@ -6,6 +6,7 @@ add_library(
   include/ovis/core/event.hpp src/event.cpp
   include/ovis/core/json_schema.hpp src/json_schema.cpp
   include/ovis/core/scene.hpp src/scene.cpp
+  include/ovis/core/component_storage.hpp src/component_storage.cpp
   include/ovis/core/scene_viewport.hpp src/scene_viewport.cpp
   include/ovis/core/scene_controller.hpp src/scene_controller.cpp
   include/ovis/core/scene_object.hpp src/scene_object.cpp
@@ -66,8 +67,16 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_math.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_intersection.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scene.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scene_object.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_simple_scene_controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
+  )
+
+  target_compile_definitions(
+    ovis-core-test
+    PRIVATE
+      -DCATCH_CONFIG_ENABLE_BENCHMARKING=1
   )
 
   target_add_ldoc_test(

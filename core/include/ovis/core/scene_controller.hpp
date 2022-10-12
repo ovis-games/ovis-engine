@@ -8,6 +8,7 @@
 
 #include <sol/sol.hpp>
 
+#include "ovis/vm/type_id.hpp"
 #include <ovis/utils/class.hpp>
 #include <ovis/utils/serialize.hpp>
 #include <ovis/utils/static_factory.hpp>
@@ -33,6 +34,8 @@ class SceneController : public Serializable,
 
   inline Scene* scene() const { return scene_; }
   inline std::string name() const { return name_; }
+  const std::set<TypeId>& read_access_components() const { return read_access_components_; }
+  const std::set<TypeId>& write_access_components() const { return write_access_components_; }
 
   void Remove();
 
@@ -68,6 +71,9 @@ class SceneController : public Serializable,
     UpdateAfter(T::Name());
   }
 
+  void RequireReadAccess(TypeId resource_type);
+  void RequireWriteAccess(TypeId resource_type);
+
   void DoOnceAfterUpdate(const std::function<void()>& function) { after_update_callbacks_.push_back(function); }
 
  private:
@@ -76,6 +82,8 @@ class SceneController : public Serializable,
   std::set<std::string> update_before_list_;
   std::set<std::string> update_after_list_;
   std::set<std::string> subscribed_events_;
+  std::set<TypeId> read_access_components_;
+  std::set<TypeId> write_access_components_;
   std::vector<std::function<void()>> after_update_callbacks_;
 
   static const json DEFAULT_SCHEMA;

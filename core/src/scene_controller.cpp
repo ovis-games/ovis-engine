@@ -75,4 +75,18 @@ void SceneController::UpdateAfter(std::string_view controller_name) {
   update_after_list_.emplace(controller_name);
 }
 
+void SceneController::RequireReadAccess(TypeId resource_type) {
+  auto type = main_vm->GetType(resource_type);
+  if (type->attributes().contains("SceneObjectComponent")) {
+    read_access_components_.insert(resource_type);
+  }
+}
+
+void SceneController::RequireWriteAccess(TypeId resource_type) {
+  auto type = main_vm->GetType(resource_type);
+  if (type->attributes().contains("SceneObjectComponent")) {
+    write_access_components_.insert(resource_type);
+  }
+}
+
 }  // namespace ovis
