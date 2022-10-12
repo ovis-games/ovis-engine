@@ -7,6 +7,7 @@ add_library(
   include/ovis/vm/module.hpp src/module.cpp
   include/ovis/vm/type.hpp src/type.cpp
   include/ovis/vm/function.hpp src/function.cpp
+  include/ovis/vm/contiguous_storage.hpp src/contiguous_storage.cpp
   include/ovis/vm/list.hpp src/list.cpp
   include/ovis/vm/value_storage.hpp src/value_storage.cpp
   include/ovis/vm/value.hpp src/value.cpp
