@@ -73,4 +73,10 @@ class SimpleSceneController : public SceneController {
   }
 };
 
+#define OVIS_MAKE_SIMPLE_SCENE_CONTROLLER(function)                      \
+  class function##Controller : public SimpleSceneController<&function> { \
+   public:                                                               \
+    function##Controller() : SimpleSceneController(#function) {}         \
+  };
+
 }  // namespace ovis

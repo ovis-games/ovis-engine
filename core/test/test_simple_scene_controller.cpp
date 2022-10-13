@@ -37,10 +37,7 @@ void Move(const Speed& speed, Position* position) {
   position->y += speed.y;
 }
 
-class MoveController : public SimpleSceneController<&Move> {
- public:
-  MoveController() : SimpleSceneController("Move") {}
-};
+OVIS_MAKE_SIMPLE_SCENE_CONTROLLER(Move);
 
 TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
   REQUIRE(main_vm->GetType<Position>()->attributes().contains("SceneObjectComponent"));
