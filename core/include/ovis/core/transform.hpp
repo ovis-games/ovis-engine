@@ -29,12 +29,6 @@ struct LocalTransformMatrices {
 void to_json(json& data, const Transform& transform);
 void from_json(const json& data, Transform& transform);
 
-void ComputeLocalTransformMatrices(const Transform&, LocalTransformMatrices* local_transform_matrices);
-class LocalTransformMatricesController : public SimpleSceneController<&ComputeLocalTransformMatrices> {
- public:
-  LocalTransformMatricesController() : SimpleSceneController("ComputeLocalTransformMatrices") {}
-};
-
 struct GlobalTransformMatrices {
   Matrix3x4 local_to_world = Matrix3x4::IdentityTransformation();
   Matrix3x4 world_to_local = Matrix3x4::IdentityTransformation();
@@ -57,5 +51,8 @@ struct GlobalTransformMatrices {
 
   OVIS_VM_DECLARE_TYPE_BINDING();
 };
+
+void ComputeLocalTransformMatrices(const Transform&, LocalTransformMatrices* local_transform_matrices);
+OVIS_MAKE_SIMPLE_SCENE_CONTROLLER(ComputeLocalTransformMatrices);
 
 }  // namespace ovis
