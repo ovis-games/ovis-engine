@@ -70,8 +70,16 @@ class Scene : public Serializable {
   SceneObject* CreateObject(std::string_view object_name, std::optional<SceneObject::Id> parent = std::nullopt);
   SceneObject* CreateObject(std::string_view object_name, const json& serialized_object, std::optional<SceneObject::Id> parent = std::nullopt);
 
-  bool IsObjectIdValid(SceneObject::Id id) { return id.index < objects_.size() && objects_[id.index].id() == id; }
   SceneObject* GetObject(SceneObject::Id id);
+  SceneObject* GetObject(std::string_view object_path) const;
+  SceneObject::Id GetObjectId(std::string_view object_path) const { return GetObject(object_path)->id(); }
+
+  void DeleteObject(std::string_view object_path) { return DeleteObject(GetObjectId(object_path)); }
+  void DeleteObject(SceneObject* object) { return DeleteObject(object->id()); }
+  void DeleteObject(SceneObject::Id id);
+  void ClearObjects();
+
+  bool IsObjectIdValid(SceneObject::Id id) { return id.index < objects_.size() && objects_[id.index].id() == id; }
   auto GetObjectIds() const {
     return TransformRange(FilterRange(objects_, [](const auto& obj) { return obj.is_alive(); }),
                           [](const auto& obj) { return obj.id(); });
@@ -85,10 +93,6 @@ class Scene : public Serializable {
   }
   ComponentStorage* GetComponentStorage(TypeId component_type);
 
-  // void DeleteObject(std::string_view object_path);
-  // void DeleteObject(SceneObject* object);
-  // void ClearObjects();
-  // SceneObject* GetObject(std::string_view object_reference);
   // bool ContainsObject(std::string_view object_reference);
   // inline auto objects() const {
   //   return TransformRange(objects_, [](const auto& name_object) { return name_object.second.get(); });

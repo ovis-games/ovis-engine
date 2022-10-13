@@ -140,6 +140,20 @@ SceneObject* Scene::GetObject(SceneObject::Id id) {
   return IsObjectIdValid(id) ? &objects_[id.index] : nullptr;
 }
 
+void Scene::DeleteObject(SceneObject::Id id) {
+  assert(IsObjectIdValid(id));
+  assert(objects_[id.index].is_alive());
+  objects_[id.index].Kill();
+}
+
+void Scene::ClearObjects() {
+  for (auto& object : objects_) {
+    if (object.is_alive()) {
+      object.Kill();
+    }
+  }
+}
+
 std::set<TypeId> Scene::GetUsedObjectComponentTypes() const {
   std::set<TypeId> types;
   for (const auto& [_, controller] : controllers_) {
@@ -161,55 +175,6 @@ ComponentStorage* Scene::GetComponentStorage(TypeId component_type) {
   }
   return nullptr;
 }
-
-// SceneObject* Scene::CreateObject(std::string_view base_name, SceneObject* parent) {
-//   if (!SceneObject::IsValidName(base_name)) {
-//     LogE("Invalid object name: {}", base_name);
-//     return nullptr;
-//   }
-
-//   std::string object_name(base_name);
-//   std::string object_path = SceneObject::BuildPath(object_name, parent);
-//   if (ContainsObject(object_path)) {
-//     // If the name already exists append a number to the end. If there is already a number
-//     // at the end, increment it.
-//     auto parse_result = SceneObject::ParseName(base_name);
-//     unsigned int number = parse_result.second.has_value() ? *parse_result.second : 1;
-//     do {
-//       ++number;
-//       object_name = fmt::format("{}{}", parse_result.first, number);
-//       object_path = SceneObject::BuildPath(object_name, parent);
-//     } while (ContainsObject(object_path));
-//   }
-
-//   auto insert_result =
-//       objects_.insert(std::make_pair(object_path, std::make_unique<SceneObject>(this, object_name, parent)));
-//   SDL_assert(insert_result.second);
-//   SDL_assert(object_path == insert_result.first->second->path());
-//   return insert_result.first->second.get();
-// }
-
-// SceneObject* Scene::CreateObject(std::string_view object_name, const json& serialized_object, SceneObject* parent) {
-//   auto object = CreateObject(object_name, parent);
-//   if (object->Deserialize(serialized_object)) {
-//     return object;
-//   } else {
-//     DeleteObject(object);
-//     return nullptr;
-//   }
-// }
-
-// void Scene::DeleteObject(std::string_view object_path) {
-//   SDL_assert(objects_.count(std::string(object_path)) == 1);
-//   objects_.erase(std::string(object_path));
-// }
-
-// void Scene::DeleteObject(SceneObject* object) {
-//   if (object != nullptr) {
-//     SDL_assert(object->scene() == this);
-//     DeleteObject(object->path());
-//   }
-// }
 
 // void Scene::ClearObjects() {
 //   while (objects_.size() > 0) {
