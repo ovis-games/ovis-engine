@@ -109,7 +109,6 @@ class VirtualMachine final {
   requires (std::is_pointer_v<T> && !std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
   Value CreateValue(T&& native_value);
 
-
  private:
   ExecutionContext main_execution_context_;
 
@@ -132,9 +131,8 @@ class VirtualMachine final {
   TypeId FindFreeTypeId();
 
   std::vector<std::shared_ptr<Function>> registered_functions_;
-
-  template <typename T>
-  TypeDescription CreateTypeDescription(std::string_view name);
+  std::unordered_map<std::string, TypeId> registered_function_attributes;
+  std::unordered_map<std::string, TypeId> registered_type_attributes;
 };
 
 template <typename ResultType, typename... ArgumentTypes>

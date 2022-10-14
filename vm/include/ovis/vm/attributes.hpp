@@ -3,8 +3,10 @@
 #include <set>
 #include <string>
 
+#include "ovis/vm/value.hpp"
+
 namespace ovis {
 
-using Attributes = std::set<std::string>;
+using Attributes = std::map<std::string, Value>;
 
 }  // namespace ovis
