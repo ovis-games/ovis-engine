@@ -9,10 +9,8 @@
 
 namespace ovis {
 
-class Module;
-
 struct VirtualMachineBinding {
-  using RegisterFunction = void(Module*);
+  using RegisterFunction = void();
 
   std::string_view module_name;
   RegisterFunction* register_function;

@@ -1,8 +1,10 @@
+#include "test_utils.hpp"
+
 #include <catch2/catch.hpp>
 
-#include "test_utils.hpp"
-#include <ovis/vm/function.hpp>
-#include <ovis/vm/virtual_machine.hpp>
+#include "ovis/vm/function.hpp"
+#include "ovis/vm/value.hpp"
+#include "ovis/vm/virtual_machine.hpp"
 
 using namespace ovis;
 
@@ -611,7 +613,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
     };
     const auto function = Function::Create(function_description);
     REQUIRE(function);
-    REQUIRE_RESULT(function->Call());
+    REQUIRE_RESULT(execution_context->Call(function->handle()));
   }
 
   SECTION("Call function with simple return") {
@@ -636,7 +638,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
     };
     const auto function = Function::Create(function_description);
     REQUIRE(function);
-    const auto function_result = function->Call<double>();
+    const auto function_result = execution_context->Call<double>(function->handle());
     REQUIRE_RESULT(function_result);
     REQUIRE(*function_result == 42.0);
   }
@@ -662,7 +664,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
     };
     const auto function = Function::Create(function_description);
     REQUIRE(function);
-    const auto function_result = function->Call<double>(21.0);
+    const auto function_result = execution_context->Call<double>(function->handle(), 21.0);
     REQUIRE_RESULT(function_result);
     REQUIRE(*function_result == 42.0);
   }

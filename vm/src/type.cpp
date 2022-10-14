@@ -1,123 +1,20 @@
 #include "ovis/vm/type.hpp"
+
 #include <cstring>
 
 #include "ovis/utils/memory.hpp"
-#include "ovis/vm/module.hpp"
+#include "ovis/vm/value_storage.hpp"
 
 namespace ovis {
 
-Result<> TypeMemoryLayout::ConstructN(void* memory, std::size_t count) const {
-  assert(reinterpret_cast<std::uintptr_t>(memory) % alignment_in_bytes == 0);
-
-  for (std::size_t i = 0; i < count; ++i) {
-    const auto result = construct->Call(OffsetAddress(memory, i * size_in_bytes));
-    // Construction failed. Destruct all previously constructed objects.
-    if (!result) {
-      DestructN(memory, i);
-      return result;
-    }
-  }
-
-  return Success;
-}
-
-Result<> TypeMemoryLayout::Construct(void* memory) const {
-  assert(memory != nullptr);
-  assert(reinterpret_cast<std::uintptr_t>(memory) % alignment_in_bytes == 0);
-  return construct->Call(memory);
-}
-
-void TypeMemoryLayout::DestructN(void* objects, std::size_t count) const {
-  assert(reinterpret_cast<std::uintptr_t>(objects) % alignment_in_bytes == 0);
-
-  if (destruct) {
-    for (std::size_t i = 0; i < count; ++i) {
-      const auto result = destruct->Call(OffsetAddress(objects, i * size_in_bytes));
-      assert(result);  // Destruction should never fail
-    }
-  }
-}
-
-void TypeMemoryLayout::Destruct(void* object) const {
-  assert(object != nullptr);
-  assert(reinterpret_cast<std::uintptr_t>(object) % alignment_in_bytes == 0);
-  if (destruct) {
-    const auto result = destruct->Call(object);
-    assert(result);
-  }
-}
-
-Result<> TypeMemoryLayout::CopyN(void* destination, const void* source, std::size_t count) const {
-  assert(reinterpret_cast<std::uintptr_t>(destination) % alignment_in_bytes == 0);
-  assert(reinterpret_cast<std::uintptr_t>(source) % alignment_in_bytes == 0);
-
-  if (copy) {
-    for (std::size_t i = 0; i < count; ++i) {
-      const std::uintptr_t offset = i * size_in_bytes;
-      OVIS_CHECK_RESULT(copy->Call(OffsetAddress(destination, offset), OffsetAddress(source, offset)));
-    }
-  } else if (count > 0) {
-    // memcpy is undefined if source or destination is null, so only copy if there is actually something to copy
-    assert(destination != nullptr);
-    assert(source != nullptr);
-    std::memcpy(destination, source, size_in_bytes * count);
-  }
-
-  return Success;
-}
-
-Result<> TypeMemoryLayout::Copy(void* destination, const void* source) const {
-  assert(destination != nullptr);
-  assert(source != nullptr);
-  assert(reinterpret_cast<std::uintptr_t>(destination) % alignment_in_bytes == 0);
-  assert(reinterpret_cast<std::uintptr_t>(source) % alignment_in_bytes == 0);
-
-  if (copy) {
-    return copy->Call(destination, source);
-  } else {
-    std::memcpy(destination, source, size_in_bytes);
-    return Success;
-  }
-}
-
-
-bool operator==(const TypeMemoryLayout& lhs, const TypeMemoryLayout& rhs) {
-  return
-    lhs.native_type_id == rhs.native_type_id && 
-    lhs.is_constructible == rhs.is_constructible && 
-    lhs.is_copyable == rhs.is_copyable && 
-    lhs.alignment_in_bytes == rhs.alignment_in_bytes && 
-    lhs.size_in_bytes == rhs.size_in_bytes && 
-    lhs.construct->handle() == rhs.construct->handle() && 
-    ((!lhs.copy && !rhs.copy) || (lhs.copy && rhs.copy && lhs.copy->handle() == rhs.copy->handle())) && 
-    ((!lhs.destruct && !rhs.destruct) || (lhs.destruct && rhs.destruct && lhs.destruct->handle() == rhs.destruct->handle()));
-}
-
-bool operator!=(const TypeMemoryLayout& lhs, const TypeMemoryLayout& rhs) {
-  return !(lhs == rhs);
-}
-
-Type::Type(TypeId id, TypeDescription description) : id_(id), description_(std::move(description)) {
-  if (module()) {
-    module()->AddType(id);
-  }
-}
-
-Type::~Type() {
-  if (module()) {
-    module()->RemoveType(id());
-  }
-}
+Type::Type(TypeId id, TypeDescription description) : id_(id), description_(std::move(description)) {}
 
 void Type::UpdateDescription(const TypeDescription& description) {
   // The memory layout is not allowed to change
   assert(description_.memory_layout == description.memory_layout);
 
   // A module may only be added but not changed!
-  assert(!description_.module || description_.module == description.module);
-  if (!description_.module && description.module) {
-    description.module->AddType(id());
-  }
+  assert(description_.module == "" || description_.module == description.module);
 
   description_ = description;
 }
@@ -125,42 +22,24 @@ void Type::UpdateDescription(const TypeDescription& description) {
 std::string Type::GetReferenceString() const {
   if (name().length() == 0) {
     return "Unknown";
-  } else if (module() == nullptr) {
+  } else if (module() == "") {
     return std::string(name());
   } else {
-    return fmt::format("{}.{}", module()->name(), name());
+    return fmt::format("{}.{}", module(), name());
   }
 }
 
-bool Type::IsDerivedFrom(TypeId base_type_id) const {
-  const Type* type = this;
-  do {
-    if (type->id() == base_type_id) {
-      return true;
-    }
-    type = virtual_machine()->GetType(type->base_id());
-  } while (type != nullptr && type->id() != Type::NONE_ID);
-  return false;
+bool Type::is_stored_inline() const {
+  return ValueStorage::IsTypeStoredInline(alignment_in_bytes(), size_in_bytes());
 }
 
-void* Type::CastToBase(TypeId base_type_id, void* pointer) const {
-  assert(base_type_id != id());
-  const Type* type = this;
-  do {
-    auto to_base_function = type->to_base_function();
-    if (to_base_function == nullptr) {
-      return nullptr;
+const TypePropertyDescription* Type::GetProperty(std::string_view name) const {
+  for (const auto& property : properties()) {
+    if (property.name == name) {
+      return &property;
     }
-
-    auto result = to_base_function->Call<void*>(pointer);
-    if (!result) {
-      return nullptr;
-    }
-    pointer = *result;
-    type = virtual_machine()->GetType(type->base_id());
-  } while (type->id() != base_type_id);
-
-  return pointer;
+  }
+  return nullptr;
 }
 
 }  // namespace ovis

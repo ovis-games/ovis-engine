@@ -11,19 +11,17 @@ void InitializeMainVM() {
   main_vm = new VirtualMachine();
 
   for (const auto& binding : VirtualMachineBinding::bindings()) {
-    auto module = main_vm->GetModule(binding.module_name);
-    if (!module) {
-      module = main_vm->RegisterModule(binding.module_name);
+    if (!main_vm->IsModuleRegistered(binding.module_name)) {
+      main_vm->RegisterModule(binding.module_name);
     }
-    assert(module);
-    binding.register_function(module.get());
+    binding.register_function();
   }
 }
 
 Result<void, ParseScriptErrors> LoadScriptModule(std::string_view name, AssetLibrary* asset_library) {
   assert(main_vm);
 
-  if (main_vm->GetModule(name)) {
+  if (main_vm->IsModuleRegistered(name)) {
     main_vm->DeregisterModule(name);
   }
 

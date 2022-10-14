@@ -6,16 +6,14 @@
 #include <type_traits>
 #include <utility>
 
-#include <ovis/utils/not_null.hpp>
-#include <ovis/vm/type.hpp>
-#include <ovis/vm/value_storage.hpp>
-#include <ovis/vm/virtual_machine.hpp>
+#include "ovis/utils/not_null.hpp"
+#include "ovis/vm/type.hpp"
+#include "ovis/vm/value_storage.hpp"
+#include "ovis/vm/virtual_machine.hpp"
 
 namespace ovis {
 
 class Value {
-  friend class ReferencableValue;
-
  public:
   Value(NotNull<VirtualMachine*> virtual_machine)
       : virtual_machine_(virtual_machine), type_id_(Type::NONE_ID), is_reference_(false) {}
@@ -42,10 +40,7 @@ class Value {
 
   TypeId type_id() const { return type_id_; }
   Type* type() const { return virtual_machine()->GetType(type_id()); }
-  const TypeMemoryLayout* memory_layout() const {
-    return has_value() ? (is_reference() ? &type()->description().reference->memory_layout : &type()->memory_layout())
-                       : nullptr;
-  }
+  const TypeMemoryLayout* memory_layout() const { return has_value() ? &type()->memory_layout() : nullptr; }
   bool is_reference() const { return is_reference_; }
   bool has_value() const { return type_id() != Type::NONE_ID; }
 
@@ -59,7 +54,9 @@ class Value {
   Result<> CopyTo(NotNull<ExecutionContext*> execution_context, NotNull<ValueStorage*> storage) const;
 
   template <typename T> Result<> SetProperty(std::string_view name, T&& value);
+  template <typename T> Result<> SetProperty(ExecutionContext* execution_context, std::string_view name, T&& value);
   template <typename T> Result<T> GetProperty(std::string_view name);
+  template <typename T> Result<T> GetProperty(ExecutionContext* execution_context, std::string_view name);
 
   template <typename T>
   requires (!std::is_pointer_v<T> || std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
@@ -75,65 +72,6 @@ class Value {
   bool is_reference_ : 1;
 };
 
-class ReferencableValue {
- public:
-  ~ReferencableValue();
-
-  ReferencableValue(ReferencableValue&& other) : virtual_machine_(other.virtual_machine()), type_id_(other.type_id()) {
-    ValueStorage::MoveTrivially(&storage_, &other.storage_);
-  }
-
-  ReferencableValue& operator=(ReferencableValue&& other) {
-    virtual_machine_ = other.virtual_machine();
-    type_id_ = other.type_id();
-    ValueStorage::MoveTrivially(&storage_, &other.storage_);
-    return *this;
-  }
-
-  NotNull<VirtualMachine*> virtual_machine() const { return virtual_machine_; }
-  TypeId type_id() const { return type_id_; }
-  Type* type() const { return virtual_machine()->GetType(type_id()); }
-
-  template <typename T> T& as() {
-    assert(storage_.has_allocated_storage());
-    return *reinterpret_cast<T*>(storage_.allocated_storage_pointer());
-  }
-  template <typename T> const T& as() const {
-    assert(storage_.has_allocated_storage());
-    return *reinterpret_cast<T*>(storage_.allocated_storage_pointer());
-  }
-
-  Result<Value> CreateReference();
-
-  template <typename ValueType>
-  static Result<ReferencableValue> Create(NotNull<VirtualMachine*> virtual_machine) {
-    return Create<ValueType>(virtual_machine->main_execution_context());
-  }
-
-  template <typename ValueType>
-  static Result<ReferencableValue> Create(NotNull<ExecutionContext*> execution_context) {
-    return Create(execution_context, execution_context->virtual_machine()->GetTypeId<ValueType>());
-  }
-
-  static Result<ReferencableValue> Create(NotNull<VirtualMachine*> virtual_machine, TypeId type_id) {
-    return Create(virtual_machine->main_execution_context(), type_id);
-  }
-
-  static Result<ReferencableValue> Create(NotNull<ExecutionContext*> execution_context, TypeId type_id) {
-    ReferencableValue value(execution_context->virtual_machine(), type_id);
-    OVIS_CHECK_RESULT(value.storage_.Construct(execution_context, value.type()->memory_layout()));
-    assert(value.storage_.allocated_storage_pointer());
-    return value;
-  }
-
- private:
-  ReferencableValue(NotNull<VirtualMachine*> virtual_machine, TypeId type_id) : virtual_machine_(virtual_machine), type_id_(type_id) {}
-
-  ValueStorage storage_;
-  NotNull<VirtualMachine*> virtual_machine_;
-  TypeId type_id_;
-};
-
 }  // namespace ovis
 
 // Implementation
@@ -146,6 +84,11 @@ namespace ovis {
 
 template <typename T>
 Result<> Value::SetProperty(std::string_view name, T&& value) {
+  return SetProperty<T>(virtual_machine()->main_execution_context(), name, std::forward<T>(value));
+}
+
+template <typename T>
+Result<> Value::SetProperty(ExecutionContext* execution_context, std::string_view name, T&& value) {
   using Type = std::remove_cvref_t<T>;
 
   const auto property = type()->GetProperty(name);
@@ -166,12 +109,11 @@ Result<> Value::SetProperty(std::string_view name, T&& value) {
     if (property_type->trivially_copyable()) {
       std::memcpy(property_pointer, &value, sizeof(Type));
     } else {
-      OVIS_CHECK_RESULT(property_type->copy_function()->Call<void>(property_pointer, &value));
+      OVIS_CHECK_RESULT(property_type->memory_layout().Copy(property_pointer, &value));
     }
   } else {
     const auto function_access = std::get<TypePropertyDescription::FunctionAccess>(property->access);
-    auto set_result = function_access.setter->Call<void>(storage_.value_pointer(), std::forward<T>(value));
-    OVIS_CHECK_RESULT(set_result);
+    OVIS_CHECK_RESULT(execution_context->Call(function_access.setter->handle(), storage_.value_pointer(), std::forward<T>(value)));
   }
 
   return Success;
@@ -179,6 +121,11 @@ Result<> Value::SetProperty(std::string_view name, T&& value) {
 
 template <typename T>
 Result<T> Value::GetProperty(std::string_view name) {
+  return GetProperty<T>(virtual_machine()->main_execution_context(), name);
+}
+
+template <typename T>
+Result<T> Value::GetProperty(ExecutionContext* execution_context, std::string_view name) {
   using Type = std::remove_cvref_t<T>;
 
   const auto property = type()->GetProperty(name);
@@ -198,16 +145,11 @@ Result<T> Value::GetProperty(std::string_view name) {
     const auto& property_type = virtual_machine()->GetType(property_type_id);
 
     Type result;
-    if (property_type->trivially_copyable()) {
-      std::memcpy(&result, property_pointer, sizeof(Type));
-    } else {
-      void* result_pointer = &result;
-      OVIS_CHECK_RESULT(property_type->copy_function()->Call<void>(result_pointer, property_pointer));
-    }
+    OVIS_CHECK_RESULT(property_type->memory_layout().Copy(&result, property_pointer));
     return result;
   } else {
     const auto function_access = std::get<TypePropertyDescription::FunctionAccess>(property->access);
-    return function_access.setter->Call<Type>(storage_.value_pointer());
+    return execution_context->Call<Type>(function_access.setter->handle(), storage_.value_pointer());
   }
 }
 
@@ -229,21 +171,8 @@ inline Value Value::Create(VirtualMachine* virtual_machine, T&& native_value) {
 
   Value value(virtual_machine);
   value.type_id_ = virtual_machine->GetTypeId<std::remove_cvref_t<std::remove_pointer_t<T>>>();
-  if (value.type()->is_reference_type()) {
-    const TypeReferenceDescription& reference_desc = *value.type()->description().reference;
-    value.storage_.AllocateIfNecessary(reference_desc.memory_layout.alignment_in_bytes,
-                                       reference_desc.memory_layout.size_in_bytes);
-    const auto construct_result = reference_desc.memory_layout.construct->Call<void>(value.storage_.value_pointer());
-    assert(construct_result);
-
-    const auto set_pointer_result = reference_desc.set_pointer->Call<void>(value.storage_.value_pointer(), native_value);
-    assert(set_pointer_result);
-
-    value.is_reference_ = true;
-  } else {
-    value.storage_.Store(std::forward<T>(native_value));
-    value.is_reference_ = false;
-  }
+  value.storage_.Store(std::forward<T>(native_value));
+  value.is_reference_ = false;
 
   return value;
 }

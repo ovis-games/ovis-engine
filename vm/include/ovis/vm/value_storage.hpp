@@ -4,9 +4,9 @@
 #include <cstdint>
 #include <type_traits>
 
-#include <ovis/utils/native_type_id.hpp>
-#include <ovis/utils/not_null.hpp>
-#include <ovis/vm/function_handle.hpp>
+#include "ovis/utils/native_type_id.hpp"
+#include "ovis/utils/not_null.hpp"
+#include "ovis/vm/function_handle.hpp"
 
 namespace ovis {
 
@@ -148,8 +148,8 @@ static_assert(sizeof(ValueStorage) == 16);
 
 }  // namespace ovis
 
-#include <ovis/vm/execution_context.hpp>
-#include <ovis/vm/type_helper.hpp>
+#include "ovis/vm/execution_context.hpp"
+#include "ovis/vm/type_helper.hpp"
 
 namespace ovis {
 

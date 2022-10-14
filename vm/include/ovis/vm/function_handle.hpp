@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <bit>
 
-#include <ovis/utils/result.hpp>
+#include "ovis/utils/result.hpp"
 
 namespace ovis {
 
@@ -15,6 +15,9 @@ template <typename T> struct IsNativeFunction : std::false_type {};
 template <> struct IsNativeFunction<NativeFunction> : std::true_type {};
 }
 template <typename T> constexpr bool IsNativeFunction = detail::IsNativeFunction<T>::value;
+
+template <typename T>
+concept NativeFunctionType = IsNativeFunction<T>;
 
 // The handle serves as a "pointer" to a function. You can call functions using the handle, but you need to know the
 // amount of types of the parameters. You cannot use the handle to receive the function back (multiple functions may

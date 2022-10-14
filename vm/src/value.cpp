@@ -54,10 +54,9 @@ Result<> Value::CopyTo(NotNull<ValueStorage*> storage) const {
 
 Result<> Value::CopyTo(NotNull<ExecutionContext*> execution_context, NotNull<ValueStorage*> storage) const {
   assert(has_value());
-  const TypeMemoryLayout& memory_layout =
-      is_reference() ? type()->description().reference->memory_layout : type()->memory_layout();
-  OVIS_CHECK_RESULT(storage->Construct(execution_context, memory_layout));
-  OVIS_CHECK_RESULT(ValueStorage::Copy(execution_context, memory_layout, storage, &storage_));
+  assert(!is_reference() && "Not implemented yet");
+  OVIS_CHECK_RESULT(storage->Construct(execution_context, type()->memory_layout()));
+  OVIS_CHECK_RESULT(ValueStorage::Copy(execution_context, type()->memory_layout(), storage, &storage_));
   return Success;
 }
 
@@ -68,61 +67,13 @@ void* Value::GetValuePointer() {
 const void* Value::GetValuePointer() const {
   if (!is_reference()) {
     return storage_.value_pointer();
+  } else {
+    return storage_.as<void*>();
   }
-
-  auto value_pointer = type()->description().reference->get_pointer->Call<void*>(storage_.value_pointer());
-  assert(value_pointer);
-  return *value_pointer;
-}
-
-Value Value::CreateReference() const {
-  assert(type());
-  assert(type()->is_reference_type());
-
-  const void* value_pointer = GetValuePointer();
-
-  const auto& reference_description = *type()->description().reference;
-  Value value(virtual_machine());
-  const auto construct_result = value.storage_.Construct(virtual_machine()->main_execution_context(), reference_description.memory_layout);
-  assert(construct_result);
-
-  auto reference_pointer = value.storage_.value_pointer();
-
-  const auto set_pointer_result = reference_description.set_pointer->Call<void>(reference_pointer, value_pointer);
-  assert(set_pointer_result);
-  value.type_id_ = type_id_;
-  value.is_reference_ = true;
-
-  return value;
 }
 
 Value::~Value() {
   storage_.Reset(virtual_machine()->main_execution_context());
-}
-
-ReferencableValue::~ReferencableValue() {
-  storage_.Reset(virtual_machine()->main_execution_context());
-}
-
-Result<Value> ReferencableValue::CreateReference() {
-  assert(type());
-
-  const void* value_pointer = storage_.allocated_storage_pointer();
-
-  const auto& reference_description = *type()->description().reference;
-  Value value(virtual_machine());
-  const auto construct_result = value.storage_.Construct(virtual_machine()->main_execution_context(), reference_description.memory_layout);
-  OVIS_CHECK_RESULT(construct_result);
-
-  auto reference_pointer = value.storage_.value_pointer();
-
-  const auto set_pointer_result = reference_description.set_pointer->Call<void>(reference_pointer, value_pointer);
-  OVIS_CHECK_RESULT(set_pointer_result);
-
-  value.type_id_ = type_id_;
-  value.is_reference_ = true;
-
-  return value;
 }
 
 }  // namespace ovis
