@@ -102,7 +102,7 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
     construct_function_definition.instructions.insert(construct_function_definition.instructions.end(), {
       Instruction::CreatePop(1)
     });
-    construct_function_definition.constants.push_back(Value::Create(virtual_machine, property_type->construct_function()->handle()));
+    construct_function_definition.constants.push_back(virtual_machine->CreateValue(property_type->construct_function()->handle()));
 
     // Copy function instructions
     if (!property_type->description().memory_layout.is_copyable) {
@@ -140,7 +140,7 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
         copy_function_definition.instructions.insert(copy_function_definition.instructions.end(), {
           Instruction::CreatePop(2)
         });
-        copy_function_definition.constants.push_back(Value::Create(virtual_machine, property_type->copy_function()->handle()));
+        copy_function_definition.constants.push_back(virtual_machine->CreateValue(property_type->copy_function()->handle()));
       }
     }
 
@@ -167,7 +167,7 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
       destruct_function_definition.instructions.insert(destruct_function_definition.instructions.end(), {
         Instruction::CreatePop(1)
       });
-      destruct_function_definition.constants.push_back(Value::Create(virtual_machine, property_type->destruct_function()->handle()));
+      destruct_function_definition.constants.push_back(virtual_machine->CreateValue(property_type->destruct_function()->handle()));
     }
 
     description.memory_layout.size_in_bytes += property_type->size_in_bytes();

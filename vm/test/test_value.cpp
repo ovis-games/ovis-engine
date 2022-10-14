@@ -1,14 +1,16 @@
+#include "test_utils.hpp"
+
 #include <catch2/catch.hpp>
 
-#include "test_utils.hpp"
-#include <ovis/vm/value.hpp>
+#include "ovis/vm/value.hpp"
+#include "ovis/vm/virtual_machine.hpp"
 
 using namespace ovis;
 
 TEST_CASE("Value", "[ovis][vm][Value]") {
   VirtualMachine vm;
   SECTION("Construct trivial value") {
-    ovis::Value value = Value::Create(&vm, 8.0);
+    ovis::Value value = vm.CreateValue(8.0);
     REQUIRE(value.type() == vm.GetType<double>());
     REQUIRE(value.as<double>() == 8.0);
   }
@@ -19,7 +21,7 @@ TEST_CASE("Value", "[ovis][vm][Value]") {
     auto shared_double = std::make_shared<double>(8.0);
     REQUIRE(shared_double.use_count() == 1);
     {
-      Value value = Value::Create(&vm, shared_double);
+      Value value = vm.CreateValue(shared_double);
       REQUIRE(value.type() == vm.GetType<SharedDouble>());
       REQUIRE(*value.as<SharedDouble>().get() == 8.0);
       REQUIRE(shared_double.use_count() == 2);
@@ -31,7 +33,7 @@ TEST_CASE("Value", "[ovis][vm][Value]") {
     auto shared_double = std::make_shared<double>(8.0);
     REQUIRE(shared_double.use_count() == 1);
     {
-      ovis::Value value = Value::Create(&vm, shared_double);
+      ovis::Value value = vm.CreateValue(shared_double);
       REQUIRE(value.type() == vm.GetType<SharedDouble>());
       REQUIRE(*value.as<SharedDouble>().get() == 8.0);
       REQUIRE(shared_double.use_count() == 2);
@@ -51,12 +53,12 @@ TEST_CASE("Value", "[ovis][vm][Value]") {
     auto other_shared_double = std::make_shared<double>(16.0);
     REQUIRE(shared_double.use_count() == 1);
     {
-      ovis::Value value = Value::Create(&vm, shared_double);
+      ovis::Value value = vm.CreateValue(shared_double);
       REQUIRE(value.type() == vm.GetType<SharedDouble>());
       REQUIRE(*value.as<SharedDouble>().get() == 8.0);
       REQUIRE(shared_double.use_count() == 2);
 
-      ovis::Value other_value = Value::Create(&vm, other_shared_double);
+      ovis::Value other_value = vm.CreateValue(other_shared_double);
       REQUIRE(other_value.type() == vm.GetType<SharedDouble>());
       REQUIRE(*other_value.as<SharedDouble>().get() == 16.0);
       REQUIRE(other_shared_double.use_count() == 2);
@@ -80,7 +82,7 @@ TEST_CASE("Value", "[ovis][vm][Value]") {
     auto shared_double = std::make_shared<double>(8.0);
     REQUIRE(shared_double.use_count() == 1);
 
-    Value value = Value::Create(&vm, shared_double);
+    Value value = vm.CreateValue(shared_double);
     REQUIRE(shared_double.use_count() == 2);
 
     ValueStorage storage;

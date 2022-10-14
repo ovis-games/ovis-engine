@@ -51,7 +51,7 @@ TEST_CASE("Function", "[ovis][vm][Function]") {
           Instruction::CreateReturn(0),
         },
         .constants = {
-          Value::Create(&vm, 2.0),
+          vm.CreateValue(2.0),
         },
       },
     };

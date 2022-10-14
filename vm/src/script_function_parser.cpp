@@ -1,6 +1,8 @@
+#include "ovis/vm/script_function_parser.hpp"
+
 #include <deque>
 
-#include <ovis/vm/script_function_parser.hpp>
+#include "ovis/vm/virtual_machine.hpp"
 
 namespace ovis {
 
@@ -353,7 +355,7 @@ ScriptFunctionScope* ScriptFunctionParser::current_scope() {
 template <typename T>
 std::uint32_t ScriptFunctionParser::InsertConstant(T&& value) {
   const auto offset = definition.constants.size();
-  definition.constants.push_back(Value::Create(virtual_machine, value));
+  definition.constants.push_back(virtual_machine->CreateValue(value));
   return offset;
 }
 

@@ -89,7 +89,7 @@ TEST_CASE("Test type registration", "[ovis][vm][Type]") {
     const auto trivial_type = vm.RegisterType(trivial_type_description);
     REQUIRE(trivial_type);
 
-    auto value = Value::Create(&vm, Trivial { .number = 8.0 });
+    auto value = vm.CreateValue(Trivial { .number = 8.0 });
     REQUIRE(value.as<Trivial>().number == 8.0);
     value.SetProperty("number", 9.0);
     REQUIRE(value.as<Trivial>().number == 9.0);
@@ -104,7 +104,7 @@ TEST_CASE("Test type registration", "[ovis][vm][Type]") {
     const auto non_trivial_type = vm.RegisterType(non_trivial_type_description);
     REQUIRE(non_trivial_type);
 
-    auto value = Value::Create(&vm, NonTrivial { .number = std::make_shared<double>(8.0) });
+    auto value = vm.CreateValue(NonTrivial { .number = std::make_shared<double>(8.0) });
     REQUIRE(*value.as<NonTrivial>().number == 8.0);
     value.SetProperty("number", std::make_shared<double>(9.0));
     REQUIRE(*value.as<NonTrivial>().number == 9.0);

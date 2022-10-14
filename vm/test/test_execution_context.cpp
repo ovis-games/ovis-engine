@@ -43,7 +43,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("PUSH_TRIVIAL_CONSTANT") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, 42.0)
+        vm.CreateValue(42.0)
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
@@ -59,7 +59,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("PUSH_TRIVIAL_STACK_VALUE") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, 42.0)
+        vm.CreateValue(42.0)
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
@@ -90,7 +90,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("PUSH_STACK_VALUE_DATA_ADDRESS") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, 42.0)
+        vm.CreateValue(42.0)
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
@@ -128,7 +128,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("PUSH_CONSTANT_DATA_ADDRESS") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, 42.0)
+        vm.CreateValue(42.0)
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushConstantDataAddress(0),
@@ -144,7 +144,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("PUSH_CONSTANT_ALLOCATED_ADDRESS") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, BigType{ .d1 = 42.0, .d2 = 420.0 })
+        vm.CreateValue(BigType{ .d1 = 42.0, .d2 = 420.0 })
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushConstantAllocatedAddress(0),
@@ -183,8 +183,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("ASSIGN_TRIVIAL") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, 42.0),
-        Value::Create(&vm, 420.0),
+        vm.CreateValue(42.0),
+        vm.CreateValue(420.0),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
@@ -202,8 +202,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("COPY_TRIVIAL") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, 42.0),
-        Value::Create(&vm, 420.0),
+        vm.CreateValue(42.0),
+        vm.CreateValue(420.0),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
@@ -225,7 +225,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("MEMORY_COPY") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, BigType{ .d1 = 42.0, .d2 = 420.0 })
+        vm.CreateValue(BigType{ .d1 = 42.0, .d2 = 420.0 })
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushAllocated(alignof(BigType), sizeof(BigType)),
@@ -249,7 +249,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
         std::int32_t i2;
       };
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, TwoInts{ .i1 = 42, .i2 = 420 })
+        vm.CreateValue(TwoInts{ .i1 = 42, .i2 = 420 })
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
@@ -276,9 +276,9 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
       };
 
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, &NativeFunctionWrapper<&Foo::Add>),
-        Value::Create(&vm, 20.0),
-        Value::Create(&vm, 22.0),
+        vm.CreateValue(&NativeFunctionWrapper<&Foo::Add>),
+        vm.CreateValue(20.0),
+        vm.CreateValue(22.0),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(1),
@@ -318,8 +318,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("CALL_SCRIPT_FUNCTION") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create<std::uint32_t>(&vm, 0),
-        Value::Create<std::uint32_t>(&vm, 10),
+        vm.CreateValue<std::uint32_t>(0),
+        vm.CreateValue<std::uint32_t>(10),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePush(2), // Just some values to test the stack offset value
@@ -342,9 +342,9 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("SET_CONSTANT_BASE_OFFSET") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, 0.0),
-        Value::Create(&vm, 1.0),
-        Value::Create(&vm, BigType{ .d1 = 12.0, .d2 = 134.0 }),
+        vm.CreateValue(0.0),
+        vm.CreateValue(1.0),
+        vm.CreateValue(BigType{ .d1 = 12.0, .d2 = 134.0 }),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreateSetConstantBaseOffset(1),
@@ -365,12 +365,12 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("RETURN") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, 11), // Return adress
-        Value::Create(&vm, 42.0), // Interesting value
-        Value::Create(&vm, 34.0), // output value
-        Value::Create<std::uint32_t>(&vm, 5), // constant offset
-        Value::Create<std::uint32_t>(&vm, 0), // stack offset
-        Value::Create(&vm, 1337.0),
+        vm.CreateValue(11), // Return adress
+        vm.CreateValue(42.0), // Interesting value
+        vm.CreateValue(34.0), // output value
+        vm.CreateValue<std::uint32_t>(5), // constant offset
+        vm.CreateValue<std::uint32_t>(0), // stack offset
+        vm.CreateValue(1337.0),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(2),  // Output
@@ -397,7 +397,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("NOT") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, true),
+        vm.CreateValue(true),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
@@ -414,8 +414,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("AND") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, true),
-        Value::Create(&vm, false),
+        vm.CreateValue(true),
+        vm.CreateValue(false),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
@@ -438,8 +438,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("OR") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, true),
-        Value::Create(&vm, false),
+        vm.CreateValue(true),
+        vm.CreateValue(false),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
@@ -462,8 +462,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("(ADD/SUBTRACT/MULTIPLY/DIVIDE)_NUMBERS") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, 2.0),
-        Value::Create(&vm, 21.0),
+        vm.CreateValue(2.0),
+        vm.CreateValue(21.0),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
@@ -490,8 +490,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("IS_NUMBER_(GREATER/LESS/GREATER_EQUAL/LESS_EQUAL/EQUAL/NOT_EQUAL)") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, 2.0),
-        Value::Create(&vm, 21.0),
+        vm.CreateValue(2.0),
+        vm.CreateValue(21.0),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(1),
@@ -563,8 +563,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("JUMP_IF_TRUE") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, true),
-        Value::Create(&vm, false),
+        vm.CreateValue(true),
+        vm.CreateValue(false),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
@@ -581,8 +581,8 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
 
     SECTION("JUMP_IF_FALSE") {
       const auto constant_offset = vm.InsertConstants(std::array{
-        Value::Create(&vm, true),
-        Value::Create(&vm, false),
+        vm.CreateValue(true),
+        vm.CreateValue(false),
       });
       const auto execute_result = execution_context->Execute(vm.InsertInstructions(std::array{
         Instruction::CreatePushTrivialConstant(0),
@@ -632,7 +632,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
           Instruction::CreateReturn(1),
         },
         .constants = {
-          Value::Create(&vm, 42.0),
+          vm.CreateValue(42.0),
         },
       },
     };
@@ -658,7 +658,7 @@ TEST_CASE("ExecutionContext", "[ovis][vm][ExecutionContext]") {
           Instruction::CreateReturn(1),
         },
         .constants = {
-          Value::Create(&vm, 2.0),
+          vm.CreateValue(2.0),
         },
       },
     };

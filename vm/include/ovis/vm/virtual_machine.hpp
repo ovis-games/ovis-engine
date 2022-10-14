@@ -14,6 +14,7 @@
 #include "ovis/vm/function.hpp"
 #include "ovis/vm/type.hpp"
 #include "ovis/vm/type_id.hpp"
+#include "ovis/vm/value.hpp"
 #include "ovis/vm/value_storage.hpp"
 
 namespace ovis {
@@ -100,6 +101,14 @@ class VirtualMachine final {
       std::string_view name, std::string_view module, std::vector<std::string> input_names = {},
       std::vector<std::string> output_names = {});
   Function* RegisterFunction(FunctionDescription description);
+
+  template <typename T>
+  requires (!std::is_pointer_v<T> || std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
+  Value CreateValue(T&& native_value);
+  template <typename T>
+  requires (std::is_pointer_v<T> && !std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
+  Value CreateValue(T&& native_value);
+
 
  private:
   ExecutionContext main_execution_context_;
@@ -286,6 +295,27 @@ FunctionWrapper<std::remove_pointer_t<decltype(FUNCTION)>> VirtualMachine::Regis
   return RegisterFunction(
       CreateFunctionDescription<FUNCTION>(name, module, std::move(input_names), std::move(output_names)));
 }
+
+template <typename T>
+requires (!std::is_pointer_v<T> || std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
+Value VirtualMachine::CreateValue(T&& native_value) {
+  Value value(this);
+  value.type_id_ = GetTypeId<std::remove_cvref_t<T>>();
+  value.storage_.Store(std::forward<T>(native_value));
+  value.is_reference_ = false;
+  return value;
+}
+
+template <typename T>
+requires (std::is_pointer_v<T> && !std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
+Value VirtualMachine::CreateValue(T&& native_value) {
+  Value value(this);
+  value.type_id_ = GetTypeId<std::remove_cvref_t<std::remove_pointer_t<T>>>();
+  value.storage_.Store(std::forward<T>(native_value));
+  value.is_reference_ = true;
+  return value;
+}
+
 
 }  // namespace ovis
 

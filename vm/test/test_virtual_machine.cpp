@@ -23,8 +23,8 @@ TEST_CASE("Test virtual machine", "[ovis][vm][VirtualMachine]") {
 
   SECTION("Insert constants") {
     std::array constants = {
-      Value::Create(&vm, 16.0),
-      Value::Create(&vm, std::make_shared<double>(32.0)),
+      vm.CreateValue(16.0),
+      vm.CreateValue(std::make_shared<double>(32.0)),
     };
     const auto offset = vm.InsertConstants(constants);
     const auto constant_pointer = vm.GetConstantPointer(offset);
