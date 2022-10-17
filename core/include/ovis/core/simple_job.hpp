@@ -6,30 +6,36 @@
 #include "ovis/utils/log.hpp"
 #include "ovis/utils/parameter_pack.hpp"
 #include "ovis/utils/reflection.hpp"
+#include "ovis/utils/result.hpp"
 #include "ovis/utils/type_list.hpp"
 #include "ovis/vm/virtual_machine.hpp"
 #include "ovis/core/component_storage.hpp"
 #include "ovis/core/entity.hpp"
+#include "ovis/core/job.hpp"
 #include "ovis/core/main_vm.hpp"
 #include "ovis/core/scene.hpp"
-#include "ovis/core/scene_controller.hpp"
 
 namespace ovis {
 
 template <auto FUNCTION>
-class SimpleSceneController : public SceneController {
+class SimpleJob : public Job<Scene*, SceneUpdate> {
   using ArgumentTypes = typename reflection::Invocable<FUNCTION>::ArgumentTypes;
 
  public:
-  SimpleSceneController(std::string_view name) : SceneController(name) {
+  SimpleJob(std::string_view name) : Job(name) {
     ParseAccess(ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>());
   }
 
-  void Update(std::chrono::microseconds us) {
-    auto storages = GetStorages(ArgumentTypes{});
-    for (auto id : scene()->GetEntityIds()) {
-     Call(ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>(), storages, id);
+  Result<> Prepare(Scene* const& parameters) override {
+    return Success;
+  }
+
+  Result<> Execute(const SceneUpdate& parameters) override {
+    auto storages = GetStorages(parameters.scene, ArgumentTypes{});
+    for (auto id : parameters.scene->GetEntityIds()) {
+      OVIS_CHECK_RESULT(Call(ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>(), storages, id));
     }
+    return Success;
   }
 
  private:
@@ -52,13 +58,18 @@ class SimpleSceneController : public SceneController {
   }
 
   template <typename... T>
-  std::vector<ComponentStorage*> GetStorages(TypeList<T...>) {
-    return { scene()->template GetComponentStorage<std::remove_pointer_t<T>>()... };
+  std::vector<ComponentStorage*> GetStorages(Scene* scene, TypeList<T...>) {
+    return { scene->template GetComponentStorage<std::remove_pointer_t<T>>()... };
   }
 
   template <typename... T, std::size_t... I>
-  void Call(TypeList<T...>, std::index_sequence<I...>, const std::vector<ComponentStorage*>& storages, Entity::Id id) {
-    FUNCTION(Get<T>(storages, I, id)...);
+  Result<> Call(TypeList<T...>, std::index_sequence<I...>, const std::vector<ComponentStorage*>& storages, Entity::Id id) {
+    if constexpr (is_result_v<typename reflection::Invocable<FUNCTION>::ReturnType>) {
+      OVIS_CHECK_RESULT(FUNCTION(Get<T>(storages, I, id)...));
+    } else {
+      FUNCTION(Get<T>(storages, I, id)...);
+    }
+    return Success;
   }
 
   template <typename T>
@@ -73,10 +84,10 @@ class SimpleSceneController : public SceneController {
   }
 };
 
-#define OVIS_MAKE_SIMPLE_SCENE_CONTROLLER(function)                      \
-  class function##Controller : public SimpleSceneController<&function> { \
-   public:                                                               \
-    function##Controller() : SimpleSceneController(#function) {}         \
+#define OVIS_CREATE_SIMPLE_JOB(function)              \
+  class function##Job : public SimpleJob<&function> { \
+   public:                                            \
+    function##Job() : SimpleJob(#function) {}         \
   };
 
 }  // namespace ovis

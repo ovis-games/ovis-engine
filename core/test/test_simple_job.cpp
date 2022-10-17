@@ -1,8 +1,9 @@
 #include <string>
+
 #include <catch2/catch.hpp>
 
 #include "ovis/core/scene.hpp"
-#include "ovis/core/simple_scene_controller.hpp"
+#include "ovis/core/simple_job.hpp"
 #include "ovis/core/vm_bindings.hpp"
 
 using namespace ovis;
@@ -37,28 +38,28 @@ void Move(const Speed& speed, Position* position) {
   position->y += speed.y;
 }
 
-OVIS_MAKE_SIMPLE_SCENE_CONTROLLER(Move);
+OVIS_CREATE_SIMPLE_JOB(Move);
 
 TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
   REQUIRE(main_vm->GetType<Position>()->attributes().contains("Core.EntityComponent"));
   REQUIRE(main_vm->GetType<Speed>()->attributes().contains("Core.EntityComponent"));
 
   {
-    MoveController move_controller;
+    MoveJob move_job;
 
-    REQUIRE(!move_controller.read_access_components().contains(main_vm->GetTypeId<Position>()));
-    REQUIRE(move_controller.read_access_components().contains(main_vm->GetTypeId<Speed>()));
-    REQUIRE(move_controller.write_access_components().contains(main_vm->GetTypeId<Position>()));
-    REQUIRE(!move_controller.write_access_components().contains(main_vm->GetTypeId<Speed>()));
+    REQUIRE(!move_job.read_access().contains(main_vm->GetTypeId<Position>()));
+    REQUIRE(move_job.read_access().contains(main_vm->GetTypeId<Speed>()));
+    REQUIRE(move_job.write_access().contains(main_vm->GetTypeId<Position>()));
+    REQUIRE(!move_job.write_access().contains(main_vm->GetTypeId<Speed>()));
   }
 
   Scene s;
-  s.AddController<MoveController>();
-
-  REQUIRE(s.GetUsedEntityComponentTypes().contains(main_vm->GetTypeId<Speed>()));
-  REQUIRE(s.GetUsedEntityComponentTypes().contains(main_vm->GetTypeId<Position>()));
+  s.frame_scheduler().AddJob<MoveJob>();
 
   s.Prepare();
+
+  REQUIRE(s.frame_scheduler().GetUsedEntityComponents().contains(main_vm->GetTypeId<Speed>()));
+  REQUIRE(s.frame_scheduler().GetUsedEntityComponents().contains(main_vm->GetTypeId<Position>()));
 
   auto speed_storage = s.GetComponentStorage<Speed>();
   auto position_storage = s.GetComponentStorage<Position>();
@@ -82,7 +83,7 @@ TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
 
   s.Play();
 
-  s.Update(std::chrono::microseconds(100));
+  s.Update(0.1);
   {
     Speed speed = speed_storage->GetComponent<Speed>(object->id());
     REQUIRE(speed.x == 1);
@@ -93,7 +94,7 @@ TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
     REQUIRE(pos.y == 2);
   }
 
-  s.Update(std::chrono::microseconds(100));
+  s.Update(0.1);
   {
     Speed speed = speed_storage->GetComponent<Speed>(object->id());
     REQUIRE(speed.x == 1);

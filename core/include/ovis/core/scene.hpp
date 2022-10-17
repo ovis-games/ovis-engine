@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ovis/core/scheduler.hpp"
 #include "ovis/utils/all.hpp"
 #include "ovis/utils/down_cast.hpp"
 #include "ovis/utils/json.hpp"
@@ -19,10 +20,12 @@
 
 namespace ovis {
 
-class SceneController;
-class GraphicsContext;
-class Window;
-class SceneViewport;
+class Scene;
+
+struct SceneUpdate {
+  Scene* scene;
+  float delta_time;
+};
 
 class Scene : public Serializable {
   friend class SceneController;
@@ -34,37 +37,7 @@ class Scene : public Serializable {
 
   inline bool is_playing() const { return is_playing_; }
 
-  inline SceneViewport* main_viewport() const { return main_viewport_; }
-  inline void SetMainViewport(SceneViewport* viewport) { main_viewport_ = viewport; }
-
-  template <typename ControllerType, typename... ArgumentTypes>
-  ControllerType* AddController(ArgumentTypes&&... constructor_args) {
-    static_assert(std::is_base_of<SceneController, ControllerType>());
-    return static_cast<ControllerType*>(
-        AddController(std::make_unique<ControllerType>(std::forward<ArgumentTypes>(constructor_args)...)));
-  }
-  SceneController* AddController(std::unique_ptr<SceneController> scene_controller);
-  SceneController* AddController(const std::string& id);
-  SceneController* AddController(const std::string& id, const json& serialized_controller);
-  // SceneController* AddController(const std::string& id, const sol::table& properties);
-  std::string CreateControllerName(std::string_view base_name);
-  void RemoveController(const std::string& id);
-  void ClearControllers();
-  bool HasController(const std::string& id) const;
-  inline auto controller_ids() const { return Keys(controllers_); }
-  inline auto controllers() const { return Values(controllers_); }
-
-  template <typename ControllerType = SceneController>
-  inline ControllerType* GetController(const std::string& controller_name) const {
-    static_assert(std::is_base_of<SceneController, ControllerType>::value);
-    return down_cast<ControllerType*>(GetControllerInternal(controller_name));
-  }
-
-  template <typename ControllerType>
-  inline ControllerType* GetController() const {
-    static_assert(std::is_base_of<SceneController, ControllerType>::value);
-    return down_cast<ControllerType*>(GetControllerInternal(ControllerType::Name()));
-  }
+  auto& frame_scheduler() { return frame_scheduler_; }
 
   Entity* CreateEntity(std::string_view object_name, std::optional<Entity::Id> parent = std::nullopt);
   Entity* CreateEntity(std::string_view object_name, const json& serialized_object, std::optional<Entity::Id> parent = std::nullopt);
@@ -84,70 +57,29 @@ class Scene : public Serializable {
                           [](const auto& obj) { return obj.id(); });
   }
 
-  std::set<TypeId> GetUsedEntityComponentTypes() const;
-
   template <typename ComponentType>
   ComponentStorage* GetComponentStorage() {
     return GetComponentStorage(main_vm->GetTypeId<ComponentType>());
   }
   ComponentStorage* GetComponentStorage(TypeId component_type);
 
-  // bool ContainsObject(std::string_view object_reference);
-  // inline auto objects() const {
-  //   return TransformRange(objects_, [](const auto& name_object) { return name_object.second.get(); });
-  // }
-  // inline auto root_objects() const {
-  //   return FilterRange(objects(), [](const SceneObject* object) { return !object->has_parent(); });
-  // }
-
-  // template <typename ComponentType>
-  // auto ObjectComponentsOfType() {
-  //   return FilterRange(
-  //       TransformRange(objects_, [](auto& object) { return object.second->template GetComponent<ComponentType>(); }),
-  //       [](ComponentType* component) { return component != nullptr; });
-  // }
-  // template <typename ComponentType>
-  // auto ObjectsWithComponent() {
-  //   return FilterRange(
-  //       TransformRange(objects_, [](auto& object) { return object.second.get(); }),
-  //       [](SceneObject* object) { return object != nullptr; });
-  // }
-
   void Prepare();
 
   void Play();
   void Stop();
 
-  void BeforeUpdate();
-  void AfterUpdate();
-  void Update(std::chrono::microseconds delta_time);
-
-  void ProcessEvent(Event* event);
+  void Update(float delta_time);
 
   json Serialize() const override;
   bool Deserialize(const json& serialized_object) override;
-  const json* GetSchema() const override { return &schema_; }
 
  private:
-  void InvalidateControllerOrder();
-  void DeleteRemovedControllers();
-  void SortControllers();
-  SceneController* GetControllerInternal(std::string_view controller_name) const;
-
-  std::map<std::string, std::unique_ptr<SceneController>, std::less<>> controllers_;
-  std::vector<SceneController*> controller_order_;
-  std::vector<std::unique_ptr<SceneController>> removed_controllers_;
-  bool controllers_sorted_ = false;
+  Scheduler<Scene*, SceneUpdate> frame_scheduler_;
 
   std::vector<Entity> entities_;
   std::vector<ComponentStorage> component_storages_;
 
   bool is_playing_ = false;
-  std::size_t event_handler_index_;
-
-  SceneViewport* main_viewport_ = nullptr;
-
-  static const json schema_;
 };
 
 }  // namespace ovis

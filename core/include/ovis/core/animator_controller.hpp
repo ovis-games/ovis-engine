@@ -1,7 +1,5 @@
 #pragma once
 
-#include "ovis/core/scene_controller.hpp"
-
 namespace ovis {
 
 // class AnimatorController : public SceneController {

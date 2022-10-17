@@ -11,7 +11,8 @@ void InitializeMainVM() {
   main_vm = new VirtualMachine();
 
   main_vm->RegisterTypeAttribute("SceneComponent", "Core", true);
-  main_vm->RegisterTypeAttribute("SceneObjectComponent", "Core", true);
+  main_vm->RegisterTypeAttribute("EntityComponent", "Core", true);
+  main_vm->RegisterTypeAttribute("Event", "Core", true);
 
   for (const auto& binding : VirtualMachineBinding::bindings()) {
     if (!main_vm->IsModuleRegistered(binding.module_name)) {

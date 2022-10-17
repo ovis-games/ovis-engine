@@ -146,8 +146,23 @@ bool operator==(const T& lhs, const Result<T, E>& rhs) {
   return rhs.has_value() && lhs == *rhs;
 }
 
-template <typename T, typename E> requires std::is_base_of_v<Error, E>
-void LogOnError(const Result<T, E>& result, LogLevel log_level = LogLevel::ERROR) {
+template <typename T>
+struct is_result : std::false_type {};
+
+template <typename T, typename E>
+struct is_result<Result<T, E>> : std::true_type {};
+
+template <typename T>
+constexpr bool is_result_v = is_result<T>::value;
+
+template <typename T>
+concept ResultType = is_result_v<T>;
+
+template <typename T>
+concept NonResultType = !is_result_v<T>;
+
+template <typename T, typename E>
+requires std::is_base_of_v<Error, E> void LogOnError(const Result<T, E>& result, LogLevel log_level = LogLevel::ERROR) {
   if (!result) {
     Log::Write(log_level, "{}", result.error().message);
   }

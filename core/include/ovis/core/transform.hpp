@@ -2,7 +2,7 @@
 
 #include "ovis/core/matrix.hpp"
 #include "ovis/core/quaternion.hpp"
-#include "ovis/core/simple_scene_controller.hpp"
+#include "ovis/core/simple_job.hpp"
 #include "ovis/core/vector.hpp"
 #include "ovis/core/vm_bindings.hpp"
 
@@ -53,6 +53,6 @@ struct GlobalTransformMatrices {
 };
 
 void ComputeLocalTransformMatrices(const Transform&, LocalTransformMatrices* local_transform_matrices);
-OVIS_MAKE_SIMPLE_SCENE_CONTROLLER(ComputeLocalTransformMatrices);
+OVIS_CREATE_SIMPLE_JOB(ComputeLocalTransformMatrices);
 
 }  // namespace ovis

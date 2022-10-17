@@ -4,11 +4,11 @@ add_library(
   include/ovis/core/vm_bindings.hpp src/vm_bindings.cpp
   include/ovis/core/main_vm.hpp src/main_vm.cpp
   include/ovis/core/event.hpp src/event.cpp
+  include/ovis/core/event_storage.hpp src/event_storage.cpp
   include/ovis/core/json_schema.hpp src/json_schema.cpp
   include/ovis/core/scene.hpp src/scene.cpp
   include/ovis/core/component_storage.hpp src/component_storage.cpp
   include/ovis/core/scene_viewport.hpp src/scene_viewport.cpp
-  include/ovis/core/scene_controller.hpp src/scene_controller.cpp
   include/ovis/core/entity.hpp src/entity.cpp
   include/ovis/core/scene_object_animation.hpp src/scene_object_animation.cpp
   include/ovis/core/animator.hpp src/animator.cpp
@@ -69,7 +69,7 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_intersection.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scene.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scene_object.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_simple_scene_controller.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_simple_job.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
   )
 
@@ -86,7 +86,6 @@ if (OVIS_BUILD_TESTS)
       src/core_module.cpp
       src/scene.cpp
       src/scene_object.cpp
-      src/scene_controller.cpp
       src/scene_object_component.cpp
       src/transform.cpp
       src/camera.cpp
