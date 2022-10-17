@@ -26,7 +26,7 @@ class ScriptParser {
 
  private:
   NotNull<VirtualMachine*> virtual_machine_;
-  std::shared_ptr<Module> module_;
+  std::string module_;
   ParseScriptErrors errors_;
 
   struct TypeDefinition {

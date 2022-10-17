@@ -36,10 +36,9 @@ Result<ParseScriptResult, ParseScriptErrors> ParseScript(VirtualMachine* virtual
 }
 
 ScriptParser::ScriptParser(NotNull<VirtualMachine*> virtual_machine, std::string_view module_name)
-    : virtual_machine_(virtual_machine), module_(virtual_machine->GetModule(module_name)) {
-  if (module_ == nullptr) {
-    module_ = virtual_machine_->RegisterModule(module_name);
-    assert(module_);
+    : virtual_machine_(virtual_machine), module_(module_name) {
+  if (!virtual_machine->IsModuleRegistered(module_name)) {
+    virtual_machine_->RegisterModule(module_name);
   }
 }
 
@@ -80,7 +79,8 @@ bool ScriptParser::Parse() {
       auto parse_type_result = ParseScriptType(virtual_machine_, type_definition.definition,
                                                type_definition.script_name, type_definition.path);
       if (parse_type_result) {
-        module_->RegisterType(parse_type_result->type_description);
+        parse_type_result->type_description.module = module_;
+        virtual_machine_->RegisterType(parse_type_result->type_description);
       } else {
         errors_.insert(errors_.end(), parse_type_result.error().begin(), parse_type_result.error().end());
       }
@@ -92,7 +92,8 @@ bool ScriptParser::Parse() {
       auto parse_function_result = ParseScriptFunction(virtual_machine_, function_definition.definition,
                                                        function_definition.script_name, function_definition.path);
       if (parse_function_result.errors.empty()) {
-        module_->RegisterFunction(parse_function_result.function_description);
+        parse_function_result.function_description.module = module_;
+        virtual_machine_->RegisterFunction(parse_function_result.function_description);
       } else {
         errors_.insert(errors_.end(), parse_function_result.errors.begin(), parse_function_result.errors.end());
       }

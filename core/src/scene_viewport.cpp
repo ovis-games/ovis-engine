@@ -4,7 +4,7 @@
 namespace ovis {
 
 OVIS_VM_DEFINE_TYPE_BINDING(Core, SceneViewport) {
-  SceneViewport_type->attributes.insert("SceneComponent");
+  SceneViewport_type->AddAttribute("Core.SceneComponent");
 
   SceneViewport_type->AddProperty<&SceneViewport::dimensions>("dimensions");
   SceneViewport_type->AddProperty<&SceneViewport::world_to_view>("worldToView");

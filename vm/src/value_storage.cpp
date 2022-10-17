@@ -1,6 +1,8 @@
-#include <ovis/vm/execution_context.hpp>
-#include <ovis/vm/value_storage.hpp>
-#include <ovis/vm/type.hpp>
+#include "ovis/vm/value_storage.hpp"
+
+#include "ovis/vm/execution_context.hpp"
+#include "ovis/vm/function.hpp"
+#include "ovis/vm/type.hpp"
 
 namespace ovis {
 

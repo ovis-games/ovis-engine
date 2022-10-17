@@ -1,5 +1,7 @@
-#include <ovis/vm/function.hpp>
-#include <ovis/vm/module.hpp>
+#include "ovis/vm/function.hpp"
+
+#include "ovis/vm/virtual_machine.hpp"
+#include "ovis/vm/value.hpp"
 
 namespace ovis {
 
@@ -11,21 +13,21 @@ namespace ovis {
 //   assert(handle_.zero == 0);
 // }
 
-FunctionDescription FunctionDescription::CreateForNativeFunction(VirtualMachine* virtual_machine,
-                                                                 NativeFunction* function_pointer,
-                                                                 std::vector<ValueDeclaration> inputs,
-                                                                 std::vector<ValueDeclaration> outputs,
-                                                                 std::string name) {
-  return {
-    .virtual_machine = virtual_machine,
-    .name = std::move(name),
-    .inputs = std::move(inputs),
-    .outputs = std::move(outputs),
-    .definition = NativeFunctionDefinition {
-      .function_pointer = function_pointer
-    }
-  };
-}
+// FunctionDescription FunctionDescription::CreateForNativeFunction(VirtualMachine* virtual_machine,
+//                                                                  NativeFunction* function_pointer,
+//                                                                  std::vector<ValueDeclaration> inputs,
+//                                                                  std::vector<ValueDeclaration> outputs,
+//                                                                  std::string name) {
+//   return {
+//     .virtual_machine = virtual_machine,
+//     .name = std::move(name),
+//     .inputs = std::move(inputs),
+//     .outputs = std::move(outputs),
+//     .definition = NativeFunctionDefinition {
+//       .function_pointer = function_pointer
+//     }
+//   };
+// }
 
 Function::Function(FunctionDescription description)
     : virtual_machine_(description.virtual_machine),

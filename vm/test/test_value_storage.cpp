@@ -1,7 +1,9 @@
 #include <catch2/catch.hpp>
 
-#include <ovis/vm/value_storage.hpp>
-#include <ovis/vm/virtual_machine.hpp>
+#include "ovis/vm/type.hpp"
+#include "ovis/vm/value.hpp"
+#include "ovis/vm/value_storage.hpp"
+#include "ovis/vm/virtual_machine.hpp"
 
 using namespace ovis;
 

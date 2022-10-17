@@ -153,9 +153,9 @@ void LogOnError(const Result<T, E>& result, LogLevel log_level = LogLevel::ERROR
   }
 }
 
-#define OVIS_CHECK_RESULT(expression)      \
-  if (auto&& result = expression; !result) { \
-    return result.error();                 \
+#define OVIS_CHECK_RESULT(expression)                              \
+  if (auto&& ovis_check_result = expression; !ovis_check_result) { \
+    return ovis_check_result.error();                              \
   }
 
 }  // namespace ovis

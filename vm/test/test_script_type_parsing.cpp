@@ -14,7 +14,7 @@ TEST_CASE("Parse parse variable declaration", "[ovis][core][ScriptTypeParser]") 
   struct TestType {
     std::shared_ptr<double> x = std::make_shared<double>(100.0);
   };
-  auto test_type = vm.RegisterType<TestType>("Test", test_module.get());
+  auto test_type = vm.RegisterType<TestType>("Test", "Test");
 
   const auto parse_result = ParseScriptType(&vm, R"(
   {

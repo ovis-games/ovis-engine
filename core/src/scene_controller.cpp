@@ -77,14 +77,14 @@ void SceneController::UpdateAfter(std::string_view controller_name) {
 
 void SceneController::RequireReadAccess(TypeId resource_type) {
   auto type = main_vm->GetType(resource_type);
-  if (type->attributes().contains("SceneObjectComponent")) {
+  if (type->attributes().contains("Core.SceneObjectComponent")) {
     read_access_components_.insert(resource_type);
   }
 }
 
 void SceneController::RequireWriteAccess(TypeId resource_type) {
   auto type = main_vm->GetType(resource_type);
-  if (type->attributes().contains("SceneObjectComponent")) {
+  if (type->attributes().contains("Core.SceneObjectComponent")) {
     write_access_components_.insert(resource_type);
   }
 }

@@ -15,7 +15,7 @@ struct Speed {
 };
 
 OVIS_VM_DEFINE_TYPE_BINDING(Test, Speed) {
-  Speed_type->attributes.insert("SceneObjectComponent");
+  Speed_type->AddAttribute("Core.SceneObjectComponent");
   Speed_type->AddProperty<&Speed::x>("x");
   Speed_type->AddProperty<&Speed::y>("y");
 }
@@ -28,7 +28,7 @@ struct Position {
 };
 
 OVIS_VM_DEFINE_TYPE_BINDING(Test, Position) {
-  Position_type->attributes.insert("SceneObjectComponent");
+  Position_type->AddAttribute("Core.SceneObjectComponent");
 }
 
 void Move(const Speed& speed, Position* position) {
@@ -40,8 +40,8 @@ void Move(const Speed& speed, Position* position) {
 OVIS_MAKE_SIMPLE_SCENE_CONTROLLER(Move);
 
 TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
-  REQUIRE(main_vm->GetType<Position>()->attributes().contains("SceneObjectComponent"));
-  REQUIRE(main_vm->GetType<Speed>()->attributes().contains("SceneObjectComponent"));
+  REQUIRE(main_vm->GetType<Position>()->attributes().contains("Core.SceneObjectComponent"));
+  REQUIRE(main_vm->GetType<Speed>()->attributes().contains("Core.SceneObjectComponent"));
 
   {
     MoveController move_controller;

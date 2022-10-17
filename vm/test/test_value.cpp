@@ -1,14 +1,16 @@
+#include "test_utils.hpp"
+
 #include <catch2/catch.hpp>
 
-#include "test_utils.hpp"
-#include <ovis/vm/value.hpp>
+#include "ovis/vm/value.hpp"
+#include "ovis/vm/virtual_machine.hpp"
 
 using namespace ovis;
 
 TEST_CASE("Value", "[ovis][vm][Value]") {
   VirtualMachine vm;
   SECTION("Construct trivial value") {
-    ovis::Value value = Value::Create(&vm, 8.0);
+    ovis::Value value = vm.CreateValue(8.0);
     REQUIRE(value.type() == vm.GetType<double>());
     REQUIRE(value.as<double>() == 8.0);
   }
@@ -19,7 +21,7 @@ TEST_CASE("Value", "[ovis][vm][Value]") {
     auto shared_double = std::make_shared<double>(8.0);
     REQUIRE(shared_double.use_count() == 1);
     {
-      Value value = Value::Create(&vm, shared_double);
+      Value value = vm.CreateValue(shared_double);
       REQUIRE(value.type() == vm.GetType<SharedDouble>());
       REQUIRE(*value.as<SharedDouble>().get() == 8.0);
       REQUIRE(shared_double.use_count() == 2);
@@ -31,7 +33,7 @@ TEST_CASE("Value", "[ovis][vm][Value]") {
     auto shared_double = std::make_shared<double>(8.0);
     REQUIRE(shared_double.use_count() == 1);
     {
-      ovis::Value value = Value::Create(&vm, shared_double);
+      ovis::Value value = vm.CreateValue(shared_double);
       REQUIRE(value.type() == vm.GetType<SharedDouble>());
       REQUIRE(*value.as<SharedDouble>().get() == 8.0);
       REQUIRE(shared_double.use_count() == 2);
@@ -51,12 +53,12 @@ TEST_CASE("Value", "[ovis][vm][Value]") {
     auto other_shared_double = std::make_shared<double>(16.0);
     REQUIRE(shared_double.use_count() == 1);
     {
-      ovis::Value value = Value::Create(&vm, shared_double);
+      ovis::Value value = vm.CreateValue(shared_double);
       REQUIRE(value.type() == vm.GetType<SharedDouble>());
       REQUIRE(*value.as<SharedDouble>().get() == 8.0);
       REQUIRE(shared_double.use_count() == 2);
 
-      ovis::Value other_value = Value::Create(&vm, other_shared_double);
+      ovis::Value other_value = vm.CreateValue(other_shared_double);
       REQUIRE(other_value.type() == vm.GetType<SharedDouble>());
       REQUIRE(*other_value.as<SharedDouble>().get() == 16.0);
       REQUIRE(other_shared_double.use_count() == 2);
@@ -80,7 +82,7 @@ TEST_CASE("Value", "[ovis][vm][Value]") {
     auto shared_double = std::make_shared<double>(8.0);
     REQUIRE(shared_double.use_count() == 1);
 
-    Value value = Value::Create(&vm, shared_double);
+    Value value = vm.CreateValue(shared_double);
     REQUIRE(shared_double.use_count() == 2);
 
     ValueStorage storage;
@@ -117,45 +119,14 @@ TEST_CASE("Value", "[ovis][vm][Value]") {
     REQUIRE(shared_number.use_count() == 1);
   }
 
-  struct SomeReferenceType : public ovis::SafelyReferenceable {
-    double number;
-  };
-
-  SECTION("Store reference") {
-    auto some_reference_type = vm.RegisterType<SomeReferenceType>("SomeReferenceType");
-    REQUIRE(some_reference_type->is_reference_type());
-
-    ovis::Value value(some_reference_type);
-    REQUIRE(value.type() == some_reference_type);
-    REQUIRE(value.as<SomeReferenceType>().number == 0);
-    value.as<SomeReferenceType>().number = 10;
-    REQUIRE(value.as<SomeReferenceType>().number == 10);
-
-    // auto value_copy = value;
-    // REQUIRE(value.as<SomeReferenceType>().number == 10);
-
-    auto reference_to_value = Value::Create(&vm, &value.as<SomeReferenceType>());
-    REQUIRE(reference_to_value.is_reference());
-    REQUIRE(reference_to_value.as<SomeReferenceType>().number == 10);
-
-    auto another_reference_to_value = value.CreateReference();
-    REQUIRE(another_reference_to_value.is_reference());
-    REQUIRE(another_reference_to_value.as<SomeReferenceType>().number == 10);
-
-    value.as<SomeReferenceType>().number = 12;
-    // REQUIRE(value_copy.as<SomeReferenceType>().number == 10);
-    REQUIRE(reference_to_value.as<SomeReferenceType>().number == 12);
-    REQUIRE(another_reference_to_value.as<SomeReferenceType>().number == 12);
-  }
-
   SECTION("Properties") {
     struct SomeType {
       bool some_bool = true;
       double some_number = 42.0;
     };
-    auto type_desc = TypeDescription::CreateForNativeType<SomeType>(&vm, "SomeType");
-    type_desc.properties.push_back(TypePropertyDescription::Create<&SomeType::some_bool>(&vm, "SomeBool"));
-    type_desc.properties.push_back(TypePropertyDescription::Create<&SomeType::some_number>(&vm, "SomeNumber"));
+    auto type_desc = vm.CreateTypeDescription<SomeType>("SomeType", "Test");
+    type_desc.properties.push_back(vm.CreateTypePropertyDescription<&SomeType::some_bool>("SomeBool"));
+    type_desc.properties.push_back(vm.CreateTypePropertyDescription<&SomeType::some_number>("SomeNumber"));
     auto type = vm.RegisterType(type_desc);
 
     Value some_value(type);

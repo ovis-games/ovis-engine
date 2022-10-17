@@ -1,7 +1,8 @@
-#include <ovis/vm/function.hpp>
-#include <ovis/vm/module.hpp>
-#include <ovis/vm/type.hpp>
-#include <ovis/vm/virtual_machine.hpp>
+#include "ovis/vm/virtual_machine.hpp"
+
+#include "ovis/vm/function.hpp"
+#include "ovis/vm/type.hpp"
+#include "ovis/vm/value.hpp"
 
 namespace ovis {
 
@@ -17,12 +18,26 @@ VirtualMachine::VirtualMachine(std::size_t constant_capacity, std::size_t instru
   registered_types_.push_back({
     .id = Type::NONE_ID,
     .native_type_id = TypeOf<void>,
-    .type = std::make_shared<Type>(Type::NONE_ID, TypeDescription::CreateForNativeType<void>(this, "None"))
+    .type = std::make_shared<Type>(Type::NONE_ID, TypeDescription {
+      .virtual_machine = this,
+      .module = "",
+      .name = "None",
+      .memory_layout = {
+        .native_type_id = TypeOf<void>,
+        .is_constructible = false,
+        .is_copyable = false,
+        .alignment_in_bytes = 0,
+        .size_in_bytes = 0,
+        .construct = nullptr,
+        .copy = nullptr,
+        .destruct = nullptr,
+      }
+    })
   });
-  RegisterType(TypeDescription::CreateForNativeType<void*>(this, "MemoryAddress"));
-  RegisterType(TypeDescription::CreateForNativeType<bool>(this, "Boolean"));
-  RegisterType(TypeDescription::CreateForNativeType<double>(this, "Number"));
-  RegisterType(TypeDescription::CreateForNativeType<std::string>(this, "String"));
+  RegisterType<void*>("MemoryAddress", "");
+  RegisterType<bool>("Boolean", "");
+  RegisterType<double>("Number", "");
+  RegisterType<std::string>("String", "");
 
   InsertInstructions(std::array{ Instruction::CreateHalt() });
 }
@@ -61,33 +76,17 @@ const ValueStorage* VirtualMachine::GetConstantPointer(std::size_t offset) const
   return constants_.get() + offset;
 }
 
-std::shared_ptr<Module> VirtualMachine::RegisterModule(std::string_view name) {
-  if (GetModule(name)) {
-    return nullptr;
-  }
-
-  registered_modules_.push_back(std::make_shared<Module>(this, name));
-  return registered_modules_.back();
+Result<> VirtualMachine::RegisterModule(std::string_view name) {
+  return registered_modules_.emplace(name).second ? Result<>(Success) : Error("Module {} already registered", name);
 }
 
 Result<> VirtualMachine::DeregisterModule(std::string_view name) {
-  const auto module_it = std::find_if(registered_modules_.begin(), registered_modules_.end(),
-                                      [name](const auto& module) { return module->name() == name; });
-  if (module_it == registered_modules_.end()) {
-    return Error("Module {} is not registered", name);
-  }
-
-  registered_modules_.erase(module_it);
-  return Success;
+  return registered_modules_.erase(std::string(name)) > 0 ? Result<>(Success)
+                                                          : Error("Module {} is not registered", name);
 }
 
-std::shared_ptr<Module> VirtualMachine::GetModule(std::string_view name) {
-  for (const auto& module : registered_modules_) {
-    if (module->name() == name) {
-      return module;
-    }
-  }
-  return nullptr;
+bool VirtualMachine::IsModuleRegistered(std::string_view name) {
+  return registered_modules_.contains(std::string(name));
 }
 
 Type* VirtualMachine::RegisterType(TypeDescription description) {
@@ -180,20 +179,18 @@ Type* VirtualMachine::GetType(const json& data) {
     return nullptr;
   }
 
-  if (module_name.length() > 0) {
-    const std::shared_ptr<Module> module = GetModule(module_name);
-    if (module == nullptr) {
-      return nullptr;
+  for (const auto& type : registered_types_) {
+    if (type.type && type.type->name() == type_name && type.type->module() == module_name) {
+      return type.type.get();
     }
-    return module->GetType(type_name);
-  } else {
-    for (const auto& registered_type : registered_types_) {
-      if (registered_type.type && registered_type.type->module() == nullptr && registered_type.type->name() == type_name) {
-        return registered_type.type.get();
-      }
-    }
-    return nullptr;
   }
+
+  return nullptr;
+}
+
+Function* VirtualMachine::RegisterFunction(FunctionDescription description) {
+  registered_functions_.push_back(Function::Create(description));
+  return registered_functions_.back().get();
 }
 
 TypeId VirtualMachine::FindFreeTypeId() {

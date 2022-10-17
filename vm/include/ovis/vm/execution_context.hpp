@@ -3,10 +3,10 @@
 #include <vector>
 #include <span>
 
-#include <ovis/utils/result.hpp>
-#include <ovis/utils/not_null.hpp>
-#include <ovis/vm/function_handle.hpp>
-#include <ovis/vm/virtual_machine_instructions.hpp>
+#include "ovis/utils/result.hpp"
+#include "ovis/utils/not_null.hpp"
+#include "ovis/vm/function_handle.hpp"
+#include "ovis/vm/virtual_machine_instructions.hpp"
 
 namespace ovis {
 
@@ -95,10 +95,9 @@ Result<> NativeFunctionWrapper(ExecutionContext* context);
 
 }  // namespace ovis
 
-#include <ovis/utils/parameter_pack.hpp>
-#include <ovis/utils/reflection.hpp>
-#include <ovis/vm/value_storage.hpp>
-// #include <ovis/vm/virtual_machine.hpp>
+#include "ovis/utils/parameter_pack.hpp"
+#include "ovis/utils/reflection.hpp"
+#include "ovis/vm/value_storage.hpp"
 
 namespace ovis {
 
@@ -150,7 +149,7 @@ inline ValueStorage& ExecutionContext::GetStackValue(std::size_t offset) {
   return *(registers_.get() + offset);
 }
 
-template <typename ReturnType, typename... ArgumentTypes>
+template <typename ReturnType = void, typename... ArgumentTypes>
 inline Result<ReturnType> ExecutionContext::Call(FunctionHandle handle, ArgumentTypes&&... arguments) {
 #ifndef NDEBUG
   const auto stack_size_before_call = stack_size();

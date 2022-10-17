@@ -45,15 +45,15 @@ Result<RenderPass*> RenderingViewport::AddRenderPass(TypeId render_pass_type) {
     return Error("Render pass {} already added", main_vm->GetType(render_pass_type)->GetReferenceString());
   }
 
-  auto render_pass = ReferencableValue::Create(main_vm, render_pass_type);
-  OVIS_CHECK_RESULT(render_pass);
+  auto render_pass = main_vm->CreateValue(render_pass_type);
+  // OVIS_CHECK_RESULT(render_pass);
 
-  render_pass->as<RenderPass>().viewport_ = this;
+  render_pass.as<RenderPass>().viewport_ = this;
   if (context()) {
-    render_pass->as<RenderPass>().graphics_context_ = context();
-    render_pass->as<RenderPass>().CreateResources();
+    render_pass.as<RenderPass>().graphics_context_ = context();
+    render_pass.as<RenderPass>().CreateResources();
   }
-  render_passes_.push_back(std::move(*render_pass));
+  render_passes_.push_back(std::move(render_pass));
   render_passes_sorted_ = false;
 
   return &render_passes_.back().as<RenderPass>();

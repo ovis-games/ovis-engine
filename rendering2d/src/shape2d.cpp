@@ -232,8 +232,8 @@ void Shape2D::UpdateEllipse() {
   assert(vertices_.size() == ellipse_vertices + outline_vertices);
 }
 
-OVIS_VM_DEFINE_TYPE_BINDING(Rendering2D, Shape2D, SceneObjectComponent) {
-  Shape2D_type->attributes.insert("SceneObjectComponent");
+OVIS_VM_DEFINE_TYPE_BINDING(Rendering2D, Shape2D) {
+  Shape2D_type->AddAttribute("Core.SceneObjectComponent");
 }
 
 }  // namespace ovis

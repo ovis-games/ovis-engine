@@ -8,7 +8,7 @@
 namespace ovis {
 
 OVIS_VM_DEFINE_TYPE_BINDING(Core, Transform) {
-  Transform_type->attributes.insert("SceneObjectComponent");
+  Transform_type->AddAttribute("Core.SceneObjectComponent");
 
   Transform_type->AddProperty<&Transform::position>("position");
   Transform_type->AddProperty<&Transform::rotation>("rotation");
@@ -16,16 +16,14 @@ OVIS_VM_DEFINE_TYPE_BINDING(Core, Transform) {
 }
 
 OVIS_VM_DEFINE_TYPE_BINDING(Core, LocalTransformMatrices) {
-  LocalTransformMatrices_type->attributes.insert("SceneObjectComponent");
-  LocalTransformMatrices_type->attributes.insert("ComputedSceneObjectComponent");
+  LocalTransformMatrices_type->AddAttribute("Core.SceneObjectComponent");
 
   LocalTransformMatrices_type->AddProperty<&LocalTransformMatrices::local_to_parent>("localToParent");
   LocalTransformMatrices_type->AddProperty<&LocalTransformMatrices::local_to_parent>("parentToLocal");
 }
 
 OVIS_VM_DEFINE_TYPE_BINDING(Core, GlobalTransformMatrices) {
-  GlobalTransformMatrices_type->attributes.insert("SceneObjectComponent");
-  GlobalTransformMatrices_type->attributes.insert("ComputedSceneObjectComponent");
+  GlobalTransformMatrices_type->AddAttribute("Core.SceneObjectComponent");
 
   GlobalTransformMatrices_type->AddProperty<&GlobalTransformMatrices::local_to_world>("localToWorld");
   GlobalTransformMatrices_type->AddProperty<&GlobalTransformMatrices::world_to_local>("worldToLocal");

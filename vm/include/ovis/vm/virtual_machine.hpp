@@ -2,15 +2,20 @@
 
 #include <cstddef>
 #include <memory>
+#include <set>
 #include <span>
+#include <type_traits>
 #include <vector>
 
-#include <ovis/utils/json.hpp>
-#include <ovis/utils/native_type_id.hpp>
-#include <ovis/utils/range.hpp>
-#include <ovis/vm/execution_context.hpp>
-#include <ovis/vm/type_id.hpp>
-#include <ovis/vm/virtual_machine_instructions.hpp>
+#include "ovis/utils/json.hpp"
+#include "ovis/utils/range.hpp"
+#include "ovis/utils/reflection.hpp"
+#include "ovis/vm/execution_context.hpp"
+#include "ovis/vm/function.hpp"
+#include "ovis/vm/type.hpp"
+#include "ovis/vm/type_id.hpp"
+#include "ovis/vm/value.hpp"
+#include "ovis/vm/value_storage.hpp"
 
 namespace ovis {
 
@@ -20,14 +25,28 @@ class Type;
 class Function;
 class Value;
 class ValueStorage;
-class Module;
+
+template <typename T>
+class FunctionWrapper;
+
+template <typename ResultType, typename... ArgumentTypes>
+class FunctionWrapper<ResultType(ArgumentTypes...)> {
+ public:
+  FunctionWrapper(std::shared_ptr<Function> function);
+
+  auto function() const { return function_; }
+
+  Result<ResultType> operator()(ArgumentTypes&&... args) const;
+  Result<ResultType> operator()(ExecutionContext* execution_context, ArgumentTypes&&... args) const;
+    
+ private:
+  std::shared_ptr<Function> function_;
+};
 
 class VirtualMachine final {
-  friend class Module;
-
  public:
   static constexpr std::size_t DEFAULT_CONSTANT_CAPACITY = 1024; // 16KB constant storage
-  static constexpr std::size_t DEFAULT_INSTRUCTION_CAPACITY = 1024 * 1024; // 4MB instruction storage
+  static constexpr std::size_t DEFAULT_INSTRUCTION_CAPACITY = 4 * 1024 * 1024; // 4MB instruction storage
 
   VirtualMachine(std::size_t constant_capacity = DEFAULT_CONSTANT_CAPACITY,
                  std::size_t instruction_capacity = DEFAULT_INSTRUCTION_CAPACITY,
@@ -44,14 +63,26 @@ class VirtualMachine final {
   std::size_t InsertConstants(std::span<const Value> constants);
   const ValueStorage* GetConstantPointer(std::size_t offset) const;
 
-  std::shared_ptr<Module> RegisterModule(std::string_view name);
+  Result<> RegisterModule(std::string_view name);
   Result<> DeregisterModule(std::string_view name);
-  std::shared_ptr<Module> GetModule(std::string_view name);
-  auto registered_modules() {
-    return TransformRange(registered_modules_, [](const auto& module) { return module.get(); });
-  }
+  bool IsModuleRegistered(std::string_view name);
+  const std::set<std::string>& registered_modules() const { return registered_modules_; }
 
-  template <typename T, typename ParentType = void> Type* RegisterType(std::string_view name, Module* module = nullptr);
+  template <typename T>
+  AttributeDescription CreateAttributeDescription(std::string_view name, std::string_view module, T&& default_value);
+  Result<> RegisterTypeAttribute(AttributeDescription description);
+  template <typename T> Result<> RegisterTypeAttribute(std::string_view name, std::string_view module, T&& default_value);
+  Result<> RegisterFunctionAttribute(AttributeDescription description);
+  template <typename T> Result<> RegisterFunctionAttribute(std::string_view name, std::string_view module, T&& default_value);
+  Result<AttributeDescription> GetTypeAttribute(std::string_view attribute) const;
+  Result<AttributeDescription> GetFunctionAttribute(std::string_view attribute) const;
+
+  template <auto MEMBER_POINTER>
+  TypePropertyDescription CreateTypePropertyDescription(std::string_view name);
+
+  template <typename T>
+  TypeDescription CreateTypeDescription(std::string_view name, std::string_view module);
+  template <typename T> Type* RegisterType(std::string_view name, std::string_view module);
   Type* RegisterType(TypeDescription description);
 
   Result<> DeregisterType(TypeId type_id);
@@ -66,16 +97,39 @@ class VirtualMachine final {
   Type* GetType(NativeTypeId id);
   Type* GetType(const json& json);
 
+  template <auto FUNCTION>
+  FunctionDescription CreateFunctionDescription(std::string_view name, std::string_view module,
+                                                std::vector<std::string> input_names = {},
+                                                std::vector<std::string> output_names = {});
+  template <auto FUNCTION>
+  FunctionWrapper<std::remove_pointer_t<decltype(FUNCTION)>> CreateFunction(std::string_view name = "",
+                                                                            std::string_view module = "");
+
+  template <auto FUNCTION>
+  FunctionWrapper<std::remove_pointer_t<decltype(FUNCTION)>> RegisterFunction(
+      std::string_view name, std::string_view module, std::vector<std::string> input_names = {},
+      std::vector<std::string> output_names = {});
+  Function* RegisterFunction(FunctionDescription description);
+
+  template <typename T>
+  requires (!std::is_pointer_v<T> || std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
+  Value CreateValue(T&& native_value);
+  template <typename T>
+  requires (std::is_pointer_v<T> && !std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
+  Value CreateValue(T&& native_value);
+
  private:
   ExecutionContext main_execution_context_;
+
   std::unique_ptr<ValueStorage[]> constants_;
   const std::size_t constant_capacity_;
   std::size_t constant_count_;
+
   std::unique_ptr<Instruction[]> instructions_;
   const std::size_t instruction_capacity_;
   std::size_t instruction_count_;
 
-  std::vector<std::shared_ptr<Module>> registered_modules_;
+  std::set<std::string> registered_modules_;
 
   struct TypeRegistration {
     TypeId id;
@@ -85,20 +139,147 @@ class VirtualMachine final {
   std::vector<TypeRegistration> registered_types_;
   TypeId FindFreeTypeId();
 
+  std::vector<std::shared_ptr<Function>> registered_functions_;
+  std::unordered_map<std::string, AttributeDescription> registered_type_attributes_;
+  std::unordered_map<std::string, AttributeDescription> registered_function_attributes_;
 };
 
-// extern VirtualMachine vm;
+template <typename T>
+AttributeDescription VirtualMachine::CreateAttributeDescription(std::string_view name, std::string_view module, T&& default_value) {
+  return {
+    .name = std::string(name),
+    .module = std::string(module),
+    .type = GetTypeId<T>(),
+    .default_value = CreateValue(default_value),
+  };
+}
 
-}  // namespace ovis
+inline Result<> VirtualMachine::RegisterTypeAttribute(AttributeDescription description) {
+  const std::string reference = fmt::format("{}.{}", description.module, description.name);
+  if (registered_type_attributes_.contains(reference)) {
+    return Error("The attribute {} was already registered",  reference);
+  }
+  registered_type_attributes_.insert(std::make_pair(reference, description));
+  return Success;
+}
 
-#include <ovis/vm/type.hpp>
-#include <ovis/vm/value_storage.hpp>
+template <typename T>
+Result<> VirtualMachine::RegisterTypeAttribute(std::string_view name, std::string_view module, T&& default_value) {
+  return RegisterTypeAttribute(CreateAttributeDescription<T>(name, module, std::forward<T>(default_value)));
+}
 
-namespace ovis {
+inline Result<> VirtualMachine::RegisterFunctionAttribute(AttributeDescription description) {
+  const std::string reference = fmt::format("{}.{}", description.module, description.name);
+  if (registered_function_attributes_.contains(reference)) {
+    return Error("The attribute {} was already registered",  reference);
+  }
+  registered_function_attributes_.insert(std::make_pair(reference, description));
+  return Success;
+}
 
-template <typename T, typename ParentType>
-Type* VirtualMachine::RegisterType(std::string_view name, Module* module) {
-  return RegisterType(TypeDescription::CreateForNativeType<T, ParentType>(this, name, module));
+template <typename T>
+Result<> VirtualMachine::RegisterFunctionAttribute(std::string_view name, std::string_view module, T&& default_value) {
+  return RegisterFunctionAttribute(CreateAttributeDescription<T>(name, module, std::forward<T>(default_value)));
+}
+
+inline Result<AttributeDescription> VirtualMachine::GetTypeAttribute(std::string_view attribute) const {
+  const std::string ref(attribute);
+  if (!registered_type_attributes_.contains(ref)) {
+    return Error("attribute not registered");
+  }
+  return registered_type_attributes_.at(ref);
+}
+
+inline Result<AttributeDescription> VirtualMachine::GetFunctionAttribute(std::string_view attribute) const {
+  const std::string ref(attribute);
+  if (registered_function_attributes_.contains(ref)) {
+    return Error("attribute not registered");
+  }
+  return registered_function_attributes_.at(ref);
+}
+
+template <typename ResultType, typename... ArgumentTypes>
+FunctionWrapper<ResultType(ArgumentTypes...)>::FunctionWrapper(std::shared_ptr<Function> function) : function_(std::move(function)) {
+  if constexpr (std::is_same_v<ResultType, void>) {
+    assert(function_->outputs().size() == 0);
+  } else {
+    assert(function_->outputs().size() == 1);
+    assert(function_->outputs()[0].type == function_->virtual_machine()->GetTypeId<ResultType>());
+  }
+  assert(function_->inputs().size() == sizeof...(ArgumentTypes));
+  // TODO: assert function types
+}
+
+template <typename ResultType, typename... ArgumentTypes>
+Result<ResultType> FunctionWrapper<ResultType(ArgumentTypes...)>::operator()(ArgumentTypes&&... args) const {
+  return operator()(function_->virtual_machine()->main_execution_context(), std::forward<ArgumentTypes>(args)...);
+}
+
+template <typename ResultType, typename... ArgumentTypes>
+Result<ResultType> FunctionWrapper<ResultType(ArgumentTypes...)>::operator()(ExecutionContext* execution_context,
+                                                                             ArgumentTypes&&... args) const {
+  return execution_context->Call<ResultType>(function_->handle(), std::forward<ArgumentTypes>(args)...);
+}
+
+namespace detail {
+
+template <typename T>
+std::shared_ptr<Function> GetConstructFunction(VirtualMachine* virtual_machine) {
+  if constexpr (std::is_default_constructible_v<T>) {
+    return Function::Create(virtual_machine->CreateFunctionDescription<&type_helper::DefaultConstruct<T>>("", ""));
+  } else {
+    return nullptr;
+  }
+}
+
+template <typename T>
+std::shared_ptr<Function> GetCopyFunction(VirtualMachine* virtual_machine) {
+  if constexpr (std::is_copy_assignable_v<T> && !std::is_trivially_copy_assignable_v<T>) {
+    return Function::Create(virtual_machine->CreateFunctionDescription<&type_helper::CopyAssign<T>>("", ""));
+  } else {
+    return nullptr;
+  }
+}
+
+template <typename T>
+std::shared_ptr<Function> GetDestructFunction(VirtualMachine* virtual_machine) {
+  if constexpr (!std::is_trivially_destructible_v<T>) {
+    return Function::Create(virtual_machine->CreateFunctionDescription<&type_helper::Destruct<T>>("", ""));
+  } else {
+    return nullptr;
+  }
+}
+
+}  // namespace detail}
+
+template <auto PROPERTY>
+TypePropertyDescription VirtualMachine::CreateTypePropertyDescription(std::string_view name) {
+  return {
+    .name = std::string(name),
+    .type = GetTypeId<typename reflection::MemberPointer<PROPERTY>::MemberType>(),
+    .access = TypePropertyDescription::PrimitiveAccess {
+      .offset = reflection::MemberPointer<PROPERTY>::offset
+    }
+  };
+}
+
+template <typename T>
+TypeDescription VirtualMachine::CreateTypeDescription(std::string_view name, std::string_view module) {
+  return {
+    .virtual_machine = this,
+    .module = std::string(module),
+    .name = std::string(name),
+    .memory_layout = {
+      .native_type_id = TypeOf<T>,
+      .is_constructible = std::is_default_constructible_v<T>,
+      .is_copyable = std::is_copy_assignable_v<T>,
+      .alignment_in_bytes = alignof(T),
+      .size_in_bytes = sizeof(T),
+      .construct = detail::GetConstructFunction<T>(this),
+      .copy =  detail::GetCopyFunction<T>(this),
+      .destruct = detail::GetDestructFunction<T>(this),
+    }
+  };
 }
 
 template <typename T>
@@ -106,8 +287,7 @@ TypeId VirtualMachine::GetTypeId() {
   auto type_id = GetTypeId(TypeOf<T>);
   if constexpr (!std::is_same_v<void,T> && !std::is_same_v<void*,T>) {
     if (!registered_types_[type_id.index].type) {
-      registered_types_[type_id.index].type =
-          std::make_shared<Type>(type_id, TypeDescription::CreateForNativeType<T>(this, ""));
+      registered_types_[type_id.index].type = std::make_shared<Type>(type_id, CreateTypeDescription<T>("", ""));
     }
   }
   return type_id;
@@ -116,6 +296,115 @@ TypeId VirtualMachine::GetTypeId() {
 template <typename T>
 Type* VirtualMachine::GetType() {
   return registered_types_[GetTypeId<T>().index].type.get();
+}
+
+template <typename T>
+Type* VirtualMachine::RegisterType(std::string_view name, std::string_view module) {
+  return RegisterType(CreateTypeDescription<T>(name, module));
+}
+
+namespace detail {
+
+template <typename... ArgumentTypes>
+std::vector<ValueDeclaration> MakeValueDeclaration(VirtualMachine* virtual_machine, TypeList<ArgumentTypes...>, std::vector<std::string>&& names) {
+  std::array<TypeId, sizeof...(ArgumentTypes)> types = { virtual_machine->GetTypeId<ArgumentTypes>()... };
+  std::vector<ValueDeclaration> declarations(sizeof...(ArgumentTypes));
+  for (std::size_t i = 0; i < sizeof...(ArgumentTypes); ++i) {
+    declarations[i].type = types[i];
+    declarations[i].name = i < names.size() ? std::move(names[i]) : std::to_string(i);
+  }
+  return declarations;
+}
+
+}  // namespace detail
+   //
+template <auto FUNCTION>
+FunctionDescription VirtualMachine::CreateFunctionDescription(std::string_view name, std::string_view module,
+                                              std::vector<std::string> input_names,
+                                              std::vector<std::string> output_names) {
+  auto input_declarations = detail::MakeValueDeclaration(
+      this, typename reflection::Invocable<FUNCTION>::ArgumentTypes{}, std::move(input_names));
+
+  std::vector<ValueDeclaration> output_declarations;
+  using ReturnType = typename reflection::Invocable<FUNCTION>::ReturnType;
+  if constexpr (!std::is_same_v<void, ReturnType>) {
+    output_declarations.push_back(
+        {.name = output_names.size() > 0 ? std::move(output_names[0]) : "0", .type = GetTypeId<ReturnType>()});
+  }
+
+  return {
+    .virtual_machine = this,
+    .name = std::string(name),
+    .module = std::string(module),
+    .inputs = input_declarations,
+    .outputs = output_declarations,
+    .definition = NativeFunctionDefinition {
+      .function_pointer = &NativeFunctionWrapper<FUNCTION>,
+    }
+  };
+}
+
+template <auto FUNCTION>
+FunctionWrapper<std::remove_pointer_t<decltype(FUNCTION)>> VirtualMachine::CreateFunction(std::string_view name, std::string_view module) {
+  return Function::Create(CreateFunctionDescription<FUNCTION>(name, module));
+}
+
+template <auto FUNCTION>
+FunctionWrapper<std::remove_pointer_t<decltype(FUNCTION)>> VirtualMachine::RegisterFunction(std::string_view name, std::string_view module,
+                                                                     std::vector<std::string> input_names,
+                                                                     std::vector<std::string> output_names) {
+  return RegisterFunction(
+      CreateFunctionDescription<FUNCTION>(name, module, std::move(input_names), std::move(output_names)));
+}
+
+template <typename T>
+requires (!std::is_pointer_v<T> || std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
+Value VirtualMachine::CreateValue(T&& native_value) {
+  Value value(this);
+  value.type_id_ = GetTypeId<std::remove_cvref_t<T>>();
+  value.storage_.Store(std::forward<T>(native_value));
+  value.is_reference_ = false;
+  return value;
+}
+
+template <typename T>
+requires (std::is_pointer_v<T> && !std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)
+Value VirtualMachine::CreateValue(T&& native_value) {
+  Value value(this);
+  value.type_id_ = GetTypeId<std::remove_cvref_t<std::remove_pointer_t<T>>>();
+  value.storage_.Store(std::forward<T>(native_value));
+  value.is_reference_ = true;
+  return value;
+}
+
+template <auto MEMBER_POINTER> requires(std::is_member_object_pointer_v<decltype(MEMBER_POINTER)>)
+void TypeDescription::AddProperty(std::string_view name) {
+  properties.push_back(virtual_machine->CreateTypePropertyDescription<MEMBER_POINTER>(name));
+}
+
+template <auto GETTER> requires(!std::is_member_object_pointer_v<decltype(GETTER)>)
+void TypeDescription::AddProperty(std::string_view name) {
+}
+
+template <auto GETTER, auto SETTER>
+void TypeDescription::AddProperty(std::string_view name) {
+}
+
+template <auto METHOD>
+void TypeDescription::AddMethod(std::string_view name) {
+}
+
+template <typename T>
+Result<> TypeDescription::AddAttribute(std::string_view name, T&& value) {
+  return AddAttribute(name, virtual_machine->CreateValue(std::forward<T>(value)));
+}
+
+inline Result<> TypeDescription::AddAttribute(std::string_view name, std::optional<Value> value) {
+  const auto& attribute_result = virtual_machine->GetTypeAttribute(name);
+  OVIS_CHECK_RESULT(attribute_result);
+
+  attributes.insert(std::make_pair(name, value.value_or(attribute_result->default_value)));
+  return Success;
 }
 
 }  // namespace ovis
