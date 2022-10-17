@@ -181,8 +181,8 @@ void Transform::RegisterType(sol::table* module) {
   transform_type["world_position_to_local"] = &Transform::WorldPositionToLocal;
 }
 
-OVIS_VM_DEFINE_TYPE_BINDING(Core, Transform, SceneObjectComponent) {
-  Transform_type->attributes.insert("SceneObjectComponent");
+OVIS_VM_DEFINE_TYPE_BINDING(Core, Transform) {
+  Transform_type->AddAttribute("Core.SceneObjectComponent");
 
   Transform_type->AddProperty<&Transform::local_position, &Transform::SetLocalPosition>("localPosition");
   Transform_type->AddProperty<&Transform::world_position, &Transform::SetWorldPosition>("worldPosition");

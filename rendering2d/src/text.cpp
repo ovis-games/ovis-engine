@@ -38,8 +38,8 @@ bool Text::Deserialize(const json& data) {
   return true;
 }
 
-OVIS_VM_DEFINE_TYPE_BINDING(Rendering2D, Text, SceneObjectComponent) {
-  Text_type->attributes.insert("SceneObjectComponent");
+OVIS_VM_DEFINE_TYPE_BINDING(Rendering2D, Text) {
+  Text_type->AddAttribute("Core.SceneObjectComponent");
 }
 
 }  // namespace ovis

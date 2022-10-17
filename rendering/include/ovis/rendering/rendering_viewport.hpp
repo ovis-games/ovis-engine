@@ -67,7 +67,7 @@ class RenderingViewport : public SceneViewport {
   GraphicsContext* graphics_context_ = nullptr;
 
   std::multimap<TypeId, TypeId> render_pass_dependencies_;
-  std::vector<ReferencableValue> render_passes_;
+  std::vector<Value> render_passes_;
   std::vector<RenderPass*> render_pass_order_;
   bool render_passes_sorted_;
   std::unordered_map<std::string, std::unique_ptr<RenderTarget>> render_targets_;

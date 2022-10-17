@@ -4,7 +4,7 @@ namespace ovis {
 
 RenderPass::RenderPass()
 #if OVIS_ENABLE_BUILT_IN_PROFILING
-      cpu_render_profiler_(fmt::format("{}::Render", name))
+    cpu_render_profiler_(fmt::format("{}::Render", name))
 #endif
 {
 }

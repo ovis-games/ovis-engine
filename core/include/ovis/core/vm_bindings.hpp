@@ -4,13 +4,14 @@
 #include <string_view>
 #include <vector>
 
-#include <ovis/utils/function.hpp>
-#include <ovis/vm/type.hpp>
+#include "ovis/utils/function.hpp"
+#include "ovis/vm/type.hpp"
+#include "ovis/vm/virtual_machine.hpp"
 
 namespace ovis {
 
 struct VirtualMachineBinding {
-  using RegisterFunction = void();
+  using RegisterFunction = void(VirtualMachine*, std::string_view module);
 
   std::string_view module_name;
   RegisterFunction* register_function;
@@ -42,21 +43,20 @@ struct VirtualMachineBinding {
 
 // #define OVIS_VM_BINDING_INTERNAL(unique_name, module_name)
 
-#define OVIS_VM_DECLARE_TYPE_BINDING() \
-  static void RegisterType(Module*);     \
+#define OVIS_VM_DECLARE_TYPE_BINDING()                                   \
+  static void RegisterType(VirtualMachine* vm, std::string_view module); \
   static VirtualMachineBinding vm_binding;
 
-#define OVIS_VM_DEFINE_TYPE_BINDING_INTERNAL(unique_name, module_name, type, ...)                                 \
-  void unique_name(TypeDescription*);                                                                             \
-  VirtualMachineBinding type::vm_binding = VirtualMachineBinding::Create(#module_name, &type::RegisterType);      \
-  void type::RegisterType(Module* module) {                                                                       \
-    auto type_description = TypeDescription::CreateForNativeType<type __VA_OPT__(, ) __VA_ARGS__>(module, #type); \
-    unique_name(&type_description);                                                                               \
-    module->RegisterType(type_description);                                                                       \
-  }                                                                                                               \
+#define OVIS_VM_DEFINE_TYPE_BINDING_INTERNAL(unique_name, module_name, type)                                 \
+  void unique_name(TypeDescription*);                                                                        \
+  VirtualMachineBinding type::vm_binding = VirtualMachineBinding::Create(#module_name, &type::RegisterType); \
+  void type::RegisterType(VirtualMachine* vm, std::string_view module) {                                     \
+    auto type_description = vm->CreateTypeDescription<type>(#type, #module_name);                            \
+    unique_name(&type_description);                                                                          \
+    vm->RegisterType(type_description);                                                                      \
+  }                                                                                                          \
   void unique_name(TypeDescription* type##_type)
 
-#define OVIS_VM_DEFINE_TYPE_BINDING(module_name, type, ...)                                                        \
-  OVIS_VM_DEFINE_TYPE_BINDING_INTERNAL(OVIS_UNIQUE_NAME(vm_binding_##module_name##type, __COUNTER__), module_name, \
-                                       type, __VA_ARGS__)
+#define OVIS_VM_DEFINE_TYPE_BINDING(module_name, type) \
+  OVIS_VM_DEFINE_TYPE_BINDING_INTERNAL(OVIS_UNIQUE_NAME(vm_binding_##module_name##type, __COUNTER__), module_name, type)
 

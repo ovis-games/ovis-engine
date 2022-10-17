@@ -10,11 +10,13 @@ VirtualMachine* main_vm;
 void InitializeMainVM() {
   main_vm = new VirtualMachine();
 
+  main_vm->RegisterTypeAttribute("SceneObjectComponent", "Core", true);
+
   for (const auto& binding : VirtualMachineBinding::bindings()) {
     if (!main_vm->IsModuleRegistered(binding.module_name)) {
       main_vm->RegisterModule(binding.module_name);
     }
-    binding.register_function();
+    binding.register_function(main_vm, binding.module_name);
   }
 }
 

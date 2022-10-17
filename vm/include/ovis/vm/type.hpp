@@ -1,13 +1,16 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <span>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
+#include "ovis/vm/attributes.hpp"
 #include "ovis/vm/type_id.hpp"
 #include "ovis/vm/type_memory_layout.hpp"
-#include "ovis/vm/attributes.hpp"
+#include "ovis/vm/value.hpp"
 
 namespace ovis {
 
@@ -35,6 +38,24 @@ struct TypeDescription {
   std::vector<std::shared_ptr<Function>> methods;
   TypeMemoryLayout memory_layout;
   Attributes attributes;
+
+
+  // Implementations are in virtual_machine.hpp
+  template <auto MEMBER_POINTER> requires(std::is_member_object_pointer_v<decltype(MEMBER_POINTER)>)
+  void AddProperty(std::string_view name);
+
+  template <auto GETTER> requires(!std::is_member_object_pointer_v<decltype(GETTER)>)
+  void AddProperty(std::string_view name);
+
+  template <auto GETTER, auto SETTER>
+  void AddProperty(std::string_view name);
+
+  template <auto METHOD>
+  void AddMethod(std::string_view name);
+
+  Result<> AddAttribute(std::string_view name, std::optional<Value> value = std::nullopt);
+  template <typename T>
+  Result<> AddAttribute(std::string_view name, T&& value);
 };
 
 class Type : public std::enable_shared_from_this<Type> {

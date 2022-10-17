@@ -68,6 +68,15 @@ class VirtualMachine final {
   bool IsModuleRegistered(std::string_view name);
   const std::set<std::string>& registered_modules() const { return registered_modules_; }
 
+  template <typename T>
+  AttributeDescription CreateAttributeDescription(std::string_view name, std::string_view module, T&& default_value);
+  Result<> RegisterTypeAttribute(AttributeDescription description);
+  template <typename T> Result<> RegisterTypeAttribute(std::string_view name, std::string_view module, T&& default_value);
+  Result<> RegisterFunctionAttribute(AttributeDescription description);
+  template <typename T> Result<> RegisterFunctionAttribute(std::string_view name, std::string_view module, T&& default_value);
+  Result<AttributeDescription> GetTypeAttribute(std::string_view attribute) const;
+  Result<AttributeDescription> GetFunctionAttribute(std::string_view attribute) const;
+
   template <auto MEMBER_POINTER>
   TypePropertyDescription CreateTypePropertyDescription(std::string_view name);
 
@@ -131,9 +140,63 @@ class VirtualMachine final {
   TypeId FindFreeTypeId();
 
   std::vector<std::shared_ptr<Function>> registered_functions_;
-  std::unordered_map<std::string, TypeId> registered_function_attributes;
-  std::unordered_map<std::string, TypeId> registered_type_attributes;
+  std::unordered_map<std::string, AttributeDescription> registered_type_attributes_;
+  std::unordered_map<std::string, AttributeDescription> registered_function_attributes_;
 };
+
+template <typename T>
+AttributeDescription VirtualMachine::CreateAttributeDescription(std::string_view name, std::string_view module, T&& default_value) {
+  return {
+    .name = std::string(name),
+    .module = std::string(module),
+    .type = GetTypeId<T>(),
+    .default_value = CreateValue(default_value),
+  };
+}
+
+inline Result<> VirtualMachine::RegisterTypeAttribute(AttributeDescription description) {
+  const std::string reference = fmt::format("{}.{}", description.module, description.name);
+  if (registered_type_attributes_.contains(reference)) {
+    return Error("The attribute {} was already registered",  reference);
+  }
+  registered_type_attributes_.insert(std::make_pair(reference, description));
+  return Success;
+}
+
+template <typename T>
+Result<> VirtualMachine::RegisterTypeAttribute(std::string_view name, std::string_view module, T&& default_value) {
+  return RegisterTypeAttribute(CreateAttributeDescription<T>(name, module, std::forward<T>(default_value)));
+}
+
+inline Result<> VirtualMachine::RegisterFunctionAttribute(AttributeDescription description) {
+  const std::string reference = fmt::format("{}.{}", description.module, description.name);
+  if (registered_function_attributes_.contains(reference)) {
+    return Error("The attribute {} was already registered",  reference);
+  }
+  registered_function_attributes_.insert(std::make_pair(reference, description));
+  return Success;
+}
+
+template <typename T>
+Result<> VirtualMachine::RegisterFunctionAttribute(std::string_view name, std::string_view module, T&& default_value) {
+  return RegisterFunctionAttribute(CreateAttributeDescription<T>(name, module, std::forward<T>(default_value)));
+}
+
+inline Result<AttributeDescription> VirtualMachine::GetTypeAttribute(std::string_view attribute) const {
+  const std::string ref(attribute);
+  if (!registered_type_attributes_.contains(ref)) {
+    return Error("attribute not registered");
+  }
+  return registered_type_attributes_.at(ref);
+}
+
+inline Result<AttributeDescription> VirtualMachine::GetFunctionAttribute(std::string_view attribute) const {
+  const std::string ref(attribute);
+  if (registered_function_attributes_.contains(ref)) {
+    return Error("attribute not registered");
+  }
+  return registered_function_attributes_.at(ref);
+}
 
 template <typename ResultType, typename... ArgumentTypes>
 FunctionWrapper<ResultType(ArgumentTypes...)>::FunctionWrapper(std::shared_ptr<Function> function) : function_(std::move(function)) {
@@ -314,18 +377,34 @@ Value VirtualMachine::CreateValue(T&& native_value) {
   return value;
 }
 
+template <auto MEMBER_POINTER> requires(std::is_member_object_pointer_v<decltype(MEMBER_POINTER)>)
+void TypeDescription::AddProperty(std::string_view name) {
+  properties.push_back(virtual_machine->CreateTypePropertyDescription<MEMBER_POINTER>(name));
+}
+
+template <auto GETTER> requires(!std::is_member_object_pointer_v<decltype(GETTER)>)
+void TypeDescription::AddProperty(std::string_view name) {
+}
+
+template <auto GETTER, auto SETTER>
+void TypeDescription::AddProperty(std::string_view name) {
+}
+
+template <auto METHOD>
+void TypeDescription::AddMethod(std::string_view name) {
+}
+
+template <typename T>
+Result<> TypeDescription::AddAttribute(std::string_view name, T&& value) {
+  return AddAttribute(name, virtual_machine->CreateValue(std::forward<T>(value)));
+}
+
+inline Result<> TypeDescription::AddAttribute(std::string_view name, std::optional<Value> value) {
+  const auto& attribute_result = virtual_machine->GetTypeAttribute(name);
+  OVIS_CHECK_RESULT(attribute_result);
+
+  attributes.insert(std::make_pair(name, value.value_or(attribute_result->default_value)));
+  return Success;
+}
 
 }  // namespace ovis
-
-// #include "ovis/vm/type.hpp"
-// #include "ovis/vm/value_storage.hpp"
-
-// namespace ovis {
-
-// template <typename T, typename ParentType>
-// Type* VirtualMachine::RegisterType(std::string_view name, Module* module) {
-//   return RegisterType(TypeDescription::CreateForNativeType<T, ParentType>(this, name, module));
-// }
-
-
-// }  // namespace ovis

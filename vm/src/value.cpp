@@ -46,13 +46,20 @@ Result<> Value::CopyTo(NotNull<ExecutionContext*> execution_context, NotNull<Val
   // assign the new virtual machine (and please write a test for it!).
   assert(other->virtual_machine() == virtual_machine());
 
-  if (other->type_id() != type_id() || other->is_reference() != is_reference()) {
+  if (other->type_id() != type_id() || !other->is_reference() != !is_reference()) {
     other->Reset();
-    OVIS_CHECK_RESULT(other->storage_.Construct(execution_context, *memory_layout()));
-    other->type_id_ = type_id();
-    other->is_reference_ = is_reference();
+    if (!is_reference()) {
+      OVIS_CHECK_RESULT(other->storage_.Construct(execution_context, *memory_layout()));
+    }
   }
-  OVIS_CHECK_RESULT(ValueStorage::Copy(execution_context, *memory_layout(), &other->storage_, &storage_));
+  other->type_id_ = type_id();
+  other->is_reference_ = is_reference();
+
+  if (is_reference()) {
+    ValueStorage::CopyTrivially(&other->storage_, &storage_);
+  } else {
+    OVIS_CHECK_RESULT(ValueStorage::Copy(execution_context, *memory_layout(), &other->storage_, &storage_));
+  }
   return Success;
 }
 
@@ -89,6 +96,19 @@ const TypeMemoryLayout* Value::memory_layout() const {
 }
 
 bool Value::has_value() const { return type_id() != Type::NONE_ID; }
+
+Value Value::CreateReference() const {
+  assert(!is_reference());
+  static_assert(ValueStorage::stored_inline<decltype(GetValuePointer())>);
+
+  Value reference_value(virtual_machine());
+  reference_value.storage_.Store(GetValuePointer());
+  reference_value.is_reference_ = true;
+  reference_value.type_id_ = type_id();
+  assert(!reference_value.storage_.has_allocated_storage());
+
+  return reference_value;
+}
 
 Value::~Value() {
   storage_.Reset(virtual_machine()->main_execution_context());

@@ -6,18 +6,19 @@
 #include <typeindex>
 #include <unordered_map>
 
-#include <ovis/utils/class.hpp>
-#include <ovis/utils/down_cast.hpp>
-#include <ovis/utils/json.hpp>
-#include <ovis/utils/range.hpp>
-#include <ovis/utils/result.hpp>
-#include <ovis/utils/safe_pointer.hpp>
-#include <ovis/utils/serialize.hpp>
-#include <ovis/vm/value.hpp>
-#include <ovis/core/main_vm.hpp>
-#include <ovis/core/vm_bindings.hpp>
-#include <ovis/core/scene_object_animation.hpp>
-#include <ovis/core/scene_object_component.hpp>
+#include "ovis/utils/class.hpp"
+#include "ovis/utils/down_cast.hpp"
+#include "ovis/utils/json.hpp"
+#include "ovis/utils/range.hpp"
+#include "ovis/utils/result.hpp"
+#include "ovis/utils/safe_pointer.hpp"
+#include "ovis/utils/serialize.hpp"
+#include "ovis/vm/value.hpp"
+#include "ovis/vm/virtual_machine.hpp"
+#include "ovis/core/main_vm.hpp"
+#include "ovis/core/vm_bindings.hpp"
+#include "ovis/core/scene_object_animation.hpp"
+#include "ovis/core/scene_object_component.hpp"
 
 namespace ovis {
 

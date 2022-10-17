@@ -99,9 +99,6 @@ Result<Value> SceneObject::AddComponent(TypeId component_type) {
   if (!type) {
     return Error("Invalid component type");
   }
-  if (!type->IsDerivedFrom<SceneObjectComponent>()) {
-    return Error("{} does not derived from SceneObjectComponent", type->GetReferenceString());
-  }
 
   if (HasComponent(component_type)) {
     return Error("Object '{}' already has the component '{}'.", path(), type->name());
