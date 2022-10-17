@@ -7,9 +7,9 @@
 #include "ovis/utils/log.hpp"
 #include "ovis/utils/utf8.hpp"
 #include "ovis/core/asset_library.hpp"
+#include "ovis/core/entity.hpp"
 #include "ovis/core/lua.hpp"
 #include "ovis/core/scene_controller.hpp"
-#include "ovis/core/scene_object.hpp"
 #include "ovis/core/scene_viewport.hpp"
 
 namespace ovis {
@@ -20,9 +20,9 @@ Scene::Scene(std::size_t initial_object_capacity) {
   // TODO: what is this? do we need this?
   event_handler_index_ = RegisterGlobalEventHandler([this](Event* event) { ProcessEvent(event); });
 
-  objects_.reserve(initial_object_capacity);
+  entities_.reserve(initial_object_capacity);
   for (std::size_t i = 0; i < initial_object_capacity; ++i) {
-    objects_.emplace_back(this, SceneObject::Id(i));
+    entities_.emplace_back(this, Entity::Id(i));
   }
 }
 
@@ -122,13 +122,13 @@ bool Scene::HasController(const std::string& id) const {
 }
 
 
-SceneObject* Scene::CreateObject(std::string_view object_name, std::optional<SceneObject::Id> parent) {
-  assert(!parent || IsObjectIdValid(*parent));
+Entity* Scene::CreateEntity(std::string_view object_name, std::optional<Entity::Id> parent) {
+  assert(!parent || IsEntityIdValid(*parent));
 
-  for (std::size_t i = parent ? parent->index + 1 : 0; i < objects_.size(); ++i) {
-    if (!objects_[i].is_alive()) {
-      objects_[i].Wake(object_name, parent);
-      return &objects_[i];
+  for (std::size_t i = parent ? parent->index + 1 : 0; i < entities_.size(); ++i) {
+    if (!entities_[i].is_alive()) {
+      entities_[i].Wake(object_name, parent);
+      return &entities_[i];
     }
   }
   // TODO: check if an object with that name already exists
@@ -136,25 +136,25 @@ SceneObject* Scene::CreateObject(std::string_view object_name, std::optional<Sce
   return nullptr;
 }
 
-SceneObject* Scene::GetObject(SceneObject::Id id) {
-  return IsObjectIdValid(id) ? &objects_[id.index] : nullptr;
+Entity* Scene::GetEntity(Entity::Id id) {
+  return IsEntityIdValid(id) ? &entities_[id.index] : nullptr;
 }
 
-void Scene::DeleteObject(SceneObject::Id id) {
-  assert(IsObjectIdValid(id));
-  assert(objects_[id.index].is_alive());
-  objects_[id.index].Kill();
+void Scene::DeleteEntity(Entity::Id id) {
+  assert(IsEntityIdValid(id));
+  assert(entities_[id.index].is_alive());
+  entities_[id.index].Kill();
 }
 
-void Scene::ClearObjects() {
-  for (auto& object : objects_) {
+void Scene::ClearEntities() {
+  for (auto& object : entities_) {
     if (object.is_alive()) {
       object.Kill();
     }
   }
 }
 
-std::set<TypeId> Scene::GetUsedObjectComponentTypes() const {
+std::set<TypeId> Scene::GetUsedEntityComponentTypes() const {
   std::set<TypeId> types;
   for (const auto& [_, controller] : controllers_) {
     for (const auto type : controller->read_access_components()) {
@@ -169,41 +169,41 @@ std::set<TypeId> Scene::GetUsedObjectComponentTypes() const {
 
 ComponentStorage* Scene::GetComponentStorage(TypeId component_type) {
   for (auto& storage : component_storages_) {
-    if (storage.component_type() == component_type) {
+    if (storage.component_type_id() == component_type) {
       return &storage;
     }
   }
   return nullptr;
 }
 
-// void Scene::ClearObjects() {
-//   while (objects_.size() > 0) {
+// void Scene::ClearEntities() {
+//   while (entities_.size() > 0) {
 //     // Destroy one at a time because parent objects will explicitly destory their children
 //     // TODO: maybe set a special flag in the scene that we are already destructing?
-//     objects_.erase(objects_.begin());
+//     entities_.erase(entities_.begin());
 //   }
 // }
 
-// SceneObject* Scene::GetObject(std::string_view object_path) {
-//   auto object = objects_.find(std::string(object_path));
-//   if (object == objects_.end()) {
+// Entity* Scene::GetEntity(std::string_view object_path) {
+//   auto object = entities_.find(std::string(object_path));
+//   if (object == entities_.end()) {
 //     return nullptr;
 //   }
 //   { return object->second.get(); }
 // }
 
-// bool Scene::ContainsObject(std::string_view object_reference) {
-//   return objects_.count(std::string(object_reference));
+// bool Scene::ContainsEntity(std::string_view object_reference) {
+//   return entities_.count(std::string(object_reference));
 // }
 //
 
 void Scene::Prepare() {
   component_storages_.clear();
   {
-    const auto object_component_types = GetUsedObjectComponentTypes();
+    const auto object_component_types = GetUsedEntityComponentTypes();
     component_storages_.reserve(object_component_types.size());
     for (const auto component_type : object_component_types) {
-      component_storages_.emplace_back(this, component_type, objects_.size());
+      component_storages_.emplace_back(this, component_type, entities_.size());
     }
   }
 }
@@ -283,7 +283,7 @@ json Scene::Serialize() const {
 //   }
 
 //   auto& objects = serialized_object["objects"] = json::object();
-//   for (const auto& object : objects_) {
+//   for (const auto& object : entities_) {
 //     if (object.second->parent() == nullptr) {
 //       objects[object.first] = object.second->Serialize();
 //     }
@@ -307,7 +307,7 @@ bool Scene::Deserialize(const json& serialized_object) {
 //     return false;
 //   }
 
-//   ClearObjects();
+//   ClearEntities();
 //   ClearControllers();
 
 //   if (serialized_object.contains("controllers") && serialized_object["controllers"].is_object()) {
@@ -318,7 +318,7 @@ bool Scene::Deserialize(const json& serialized_object) {
 
 //   if (serialized_object.contains("objects") && serialized_object["objects"].is_object()) {
 //     for (const auto& object : serialized_object["objects"].items()) {
-//       CreateObject(object.key(), object.value());
+//       CreateEntity(object.key(), object.value());
 //     }
 //   }
 
@@ -328,7 +328,7 @@ bool Scene::Deserialize(const json& serialized_object) {
 //       // Need to copy out variable here as nlohmann json currently does not support direct
 //       // conversion to std::string_view
 //       const std::string camera_object_reference = serialized_object.at("camera");
-//       SceneObject* object = GetObject(camera_object_reference);
+//       Entity* object = GetEntity(camera_object_reference);
 //       if (object != nullptr && object->HasComponent<Camera>()) {
 //         main_viewport()->SetCamera(object->GetComponent<Camera>());
 //         LogD("Setting Camera");

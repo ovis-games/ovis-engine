@@ -2,44 +2,41 @@
 
 namespace ovis {
 
-const json Text::schema = json::object();
-
-Text::Text() : SceneObjectComponent() {}
-
-json Text::Serialize() const {
-  json text = json::object();
-  text["color"] = color_;
-  text["text"] = text_;
-  if (font_.size() > 0) {
-    text["font"] = font_;
+void to_json(json& data, const Text& text) {
+  data = json::object({
+    {"color", text.color},
+    {"text", text.text},
+  });
+  if (text.font.size() > 0) {
+    data["font"] = text.font;
   }
-  return text;
 }
-
-bool Text::Deserialize(const json& data) {
-  // TODO: check format
+void from_json(const json& data, Text& text) {
   if (data.contains("color")) {
-    color_ = data.at("color");
+    text.color = data.at("color");
   } else {
-    color_ = Color::White();
+    text.color = Color::White();
   }
 
   if (data.contains("text")) {
-    text_ = data.at("text");
+    text.text = data.at("text");
   } else {
-    text_ = "";
+    text.text = "";
   }
 
   if (data.contains("font")) {
-    font_ = data.at("font");
+    text.font = data.at("font");
   } else {
-    font_ = "";
+    text.font = "";
   }
-  return true;
 }
 
 OVIS_VM_DEFINE_TYPE_BINDING(Rendering2D, Text) {
-  Text_type->AddAttribute("Core.SceneObjectComponent");
+  Text_type->AddAttribute("Core.EntityComponent");
+
+  Text_type->AddProperty<&Text::color>("color");
+  Text_type->AddProperty<&Text::text>("text");
+  Text_type->AddProperty<&Text::font>("font");
 }
 
 }  // namespace ovis

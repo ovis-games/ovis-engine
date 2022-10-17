@@ -233,7 +233,7 @@ void Shape2D::UpdateEllipse() {
 }
 
 OVIS_VM_DEFINE_TYPE_BINDING(Rendering2D, Shape2D) {
-  Shape2D_type->AddAttribute("Core.SceneObjectComponent");
+  Shape2D_type->AddAttribute("Core.EntityComponent");
 }
 
 }  // namespace ovis

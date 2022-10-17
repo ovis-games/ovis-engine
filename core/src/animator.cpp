@@ -1,6 +1,6 @@
 #include "ovis/core/animator.hpp"
 
-#include "ovis/core/scene_object.hpp"
+#include "ovis/core/entity.hpp"
 
 namespace ovis {
 

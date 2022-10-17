@@ -3,9 +3,9 @@
 #include <sol/sol.hpp>
 
 #include "ovis/utils/json.hpp"
+#include "ovis/core/entity.hpp"
 #include "ovis/core/math_constants.hpp"
 #include "ovis/core/matrix.hpp"
-#include "ovis/core/scene_object.hpp"
 #include "ovis/core/transform.hpp"
 
 namespace ovis {

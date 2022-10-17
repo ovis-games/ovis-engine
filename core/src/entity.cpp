@@ -1,4 +1,5 @@
-#include "ovis/core/scene_object.hpp"
+#include "ovis/core/entity.hpp"
+
 #include "fmt/core.h"
 #include <charconv>
 
@@ -6,13 +7,13 @@
 
 namespace ovis {
 
-SceneObject::SceneObject(Scene* scene, Id id) : id_(id), is_alive_(false), scene_(scene) {}
+Entity::Entity(Scene* scene, Id id) : id_(id), is_alive_(false), scene_(scene) {}
 
-SceneObject* SceneObject::parent() const {
-  return parent_id() ? scene()->GetObject(*parent_id()) : nullptr;
+Entity* Entity::parent() const {
+  return parent_id() ? scene()->GetEntity(*parent_id()) : nullptr;
 }
 
-void SceneObject::Wake(std::string_view name, std::optional<SceneObject::Id> parent_id) {
+void Entity::Wake(std::string_view name, std::optional<Entity::Id> parent_id) {
   assert(!is_alive());
 
   name_ = name;
@@ -27,11 +28,11 @@ void SceneObject::Wake(std::string_view name, std::optional<SceneObject::Id> par
   is_alive_ = true;
 }
 
-void SceneObject::Kill() {
+void Entity::Kill() {
   while (children_ids_.size() > 0) {
     const auto child_id = *children_ids_.begin();
-    assert(scene()->GetObject(child_id));
-    scene()->GetObject(child_id)->Kill();
+    assert(scene()->GetEntity(child_id));
+    scene()->GetEntity(child_id)->Kill();
   }
   if (parent_id_) {
     parent()->children_ids_.erase(id());
@@ -40,7 +41,7 @@ void SceneObject::Kill() {
   is_alive_ = false;
 }
 
-bool SceneObject::IsValidName(std::string_view name) {
+bool Entity::IsValidName(std::string_view name) {
   for (const char c : name) {
     if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == ' ' || (c >= '0' && c <= '9') || c == '.' ||
         c == '-' || c == '#') {
@@ -53,7 +54,7 @@ bool SceneObject::IsValidName(std::string_view name) {
   return true;
 }
 
-std::pair<std::string_view, std::optional<unsigned int>> SceneObject::ParseName(std::string_view full_name) {
+std::pair<std::string_view, std::optional<unsigned int>> Entity::ParseName(std::string_view full_name) {
   using std::operator""sv;
   const auto position_of_last_non_digit = full_name.find_last_not_of("1234567890"sv);
   const auto substr_length =
@@ -439,7 +440,7 @@ std::pair<std::string_view, std::optional<unsigned int>> SceneObject::ParseName(
 //   return &templates[template_index].second;
 // }
 
-OVIS_VM_DEFINE_TYPE_BINDING(Core, SceneObject) {
+OVIS_VM_DEFINE_TYPE_BINDING(Core, Entity) {
   // SceneObject_type->AddProperty<&SceneObject::name>("name");
   // SceneObject_type->AddProperty<&SceneObject::path>("path");
   // SceneObject_type->AddProperty<&SceneObject::parent>("parent");

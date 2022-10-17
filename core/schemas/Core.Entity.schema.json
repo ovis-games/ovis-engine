@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "id": "Core.SceneObject",
-  "title": "Scene Object",
-  "description": "Description of an object inside a scene",
+  "id": "Core.Entity",
+  "title": "Entity",
+  "description": "",
   "type": "object",
   "properties": {
     "template": {
@@ -16,7 +16,7 @@
     },
     "children": {
       "type": "object",
-      "additionalProperties": {"$ref": "Core.SceneObject.schema.json" }
+      "additionalProperties": {"$ref": "Core.Entity.schema.json" }
     }
   },
   "additionalProperties": false

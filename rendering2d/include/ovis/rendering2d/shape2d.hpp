@@ -3,16 +3,14 @@
 #include <span>
 
 #include "ovis/core/color.hpp"
-#include "ovis/core/scene_object_component.hpp"
+#include "ovis/core/entity.hpp"
 #include "ovis/core/vector.hpp"
 #include "ovis/core/vm_bindings.hpp"
 #include "ovis/graphics/texture2d.hpp"
 
 namespace ovis {
 
-class Shape2D : public SceneObjectComponent {
-  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
-
+class Shape2D {
  public:
   enum class Type {
     RECTANGLE,
@@ -34,8 +32,6 @@ class Shape2D : public SceneObjectComponent {
   };
   static_assert(sizeof(Vertex) == 20);
 
-  explicit inline Shape2D() : SceneObjectComponent() {Deserialize({});}
-
   Color color() const { return color_; }
   Color outline_color() const { return outline_color_; }
   float outline_width() const { return outline_width_; }
@@ -51,11 +47,6 @@ class Shape2D : public SceneObjectComponent {
   void SetEllipse(const Ellipse& ellipse);
   void SetTexture(const std::string& texture_asset) { texture_asset_ = texture_asset; }
 
-  json Serialize() const override;
-  bool Deserialize(const json& data) override;
-  const json* GetSchema() const override { return &schema; }
-
-  static void RegisterType(sol::table* module);
   OVIS_VM_DECLARE_TYPE_BINDING();
 
  private:

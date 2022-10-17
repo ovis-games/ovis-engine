@@ -3,13 +3,13 @@
 #include <type_traits>
 #include <utility>
 
-#include "ovis/core/scene_object.hpp"
 #include "ovis/utils/log.hpp"
 #include "ovis/utils/parameter_pack.hpp"
 #include "ovis/utils/reflection.hpp"
 #include "ovis/utils/type_list.hpp"
 #include "ovis/vm/virtual_machine.hpp"
 #include "ovis/core/component_storage.hpp"
+#include "ovis/core/entity.hpp"
 #include "ovis/core/main_vm.hpp"
 #include "ovis/core/scene.hpp"
 #include "ovis/core/scene_controller.hpp"
@@ -27,7 +27,7 @@ class SimpleSceneController : public SceneController {
 
   void Update(std::chrono::microseconds us) {
     auto storages = GetStorages(ArgumentTypes{});
-    for (auto id : scene()->GetObjectIds()) {
+    for (auto id : scene()->GetEntityIds()) {
      Call(ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>(), storages, id);
     }
   }
@@ -57,12 +57,12 @@ class SimpleSceneController : public SceneController {
   }
 
   template <typename... T, std::size_t... I>
-  void Call(TypeList<T...>, std::index_sequence<I...>, const std::vector<ComponentStorage*>& storages, SceneObject::Id id) {
+  void Call(TypeList<T...>, std::index_sequence<I...>, const std::vector<ComponentStorage*>& storages, Entity::Id id) {
     FUNCTION(Get<T>(storages, I, id)...);
   }
 
   template <typename T>
-  auto Get(const std::vector<ComponentStorage*>& storages, std::size_t index, SceneObject::Id id) {
+  auto Get(const std::vector<ComponentStorage*>& storages, std::size_t index, Entity::Id id) {
     if constexpr (std::is_pointer_v<T>) {
       return &storages[index]->GetComponent<std::remove_pointer_t<T>>(id);
     } else if constexpr (std::is_reference_v<T> && std::is_const_v<std::remove_reference_t<T>>) {

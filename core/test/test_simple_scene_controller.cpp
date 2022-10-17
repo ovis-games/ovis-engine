@@ -15,7 +15,7 @@ struct Speed {
 };
 
 OVIS_VM_DEFINE_TYPE_BINDING(Test, Speed) {
-  Speed_type->AddAttribute("Core.SceneObjectComponent");
+  Speed_type->AddAttribute("Core.EntityComponent");
   Speed_type->AddProperty<&Speed::x>("x");
   Speed_type->AddProperty<&Speed::y>("y");
 }
@@ -28,7 +28,7 @@ struct Position {
 };
 
 OVIS_VM_DEFINE_TYPE_BINDING(Test, Position) {
-  Position_type->AddAttribute("Core.SceneObjectComponent");
+  Position_type->AddAttribute("Core.EntityComponent");
 }
 
 void Move(const Speed& speed, Position* position) {
@@ -40,8 +40,8 @@ void Move(const Speed& speed, Position* position) {
 OVIS_MAKE_SIMPLE_SCENE_CONTROLLER(Move);
 
 TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
-  REQUIRE(main_vm->GetType<Position>()->attributes().contains("Core.SceneObjectComponent"));
-  REQUIRE(main_vm->GetType<Speed>()->attributes().contains("Core.SceneObjectComponent"));
+  REQUIRE(main_vm->GetType<Position>()->attributes().contains("Core.EntityComponent"));
+  REQUIRE(main_vm->GetType<Speed>()->attributes().contains("Core.EntityComponent"));
 
   {
     MoveController move_controller;
@@ -55,8 +55,8 @@ TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
   Scene s;
   s.AddController<MoveController>();
 
-  REQUIRE(s.GetUsedObjectComponentTypes().contains(main_vm->GetTypeId<Speed>()));
-  REQUIRE(s.GetUsedObjectComponentTypes().contains(main_vm->GetTypeId<Position>()));
+  REQUIRE(s.GetUsedEntityComponentTypes().contains(main_vm->GetTypeId<Speed>()));
+  REQUIRE(s.GetUsedEntityComponentTypes().contains(main_vm->GetTypeId<Position>()));
 
   s.Prepare();
 
@@ -65,7 +65,7 @@ TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
   REQUIRE(speed_storage);
   REQUIRE(position_storage);
 
-  auto object = s.CreateObject("Obj");
+  auto object = s.CreateEntity("Obj");
 
   REQUIRE(speed_storage->AddComponent(object->id()));
   REQUIRE(position_storage->AddComponent(object->id()));

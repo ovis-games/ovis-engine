@@ -7,26 +7,26 @@ namespace ovis {
 
 ComponentStorage::ComponentStorage(Scene* scene, TypeId component_type)
     : scene_(scene),
-      component_type_(component_type),
+      component_type_id_(component_type),
       storage_(main_vm->GetType(component_type)->memory_layout()) {
 }
 
 ComponentStorage::ComponentStorage(Scene* scene, TypeId component_type, ContiguousStorage::SizeType initial_capacity)
     : scene_(scene),
-      component_type_(component_type),
+      component_type_id_(component_type),
       storage_(main_vm->GetType(component_type)->memory_layout(), initial_capacity),
       flags_(initial_capacity, false) {
 }
 
 ComponentStorage::ComponentStorage(ComponentStorage&& other)
-    : scene_(other.scene()), component_type_(other.component_type()), storage_(other.storage_.memory_layout()) {
+    : scene_(other.scene()), component_type_id_(other.component_type_id()), storage_(other.storage_.memory_layout()) {
   using std::swap;
   swap(storage_, other.storage_);
   swap(flags_, other.flags_);
 }
 
 Result<> ComponentStorage::Resize(ContiguousStorage::SizeType size) {
-  ContiguousStorage new_storage(main_vm->GetType(component_type())->memory_layout(), size);
+  ContiguousStorage new_storage(component_type()->memory_layout(), size);
 
   for (std::size_t i = 0; i < size; ++i) {
     if (flags_[i]) {
@@ -51,13 +51,13 @@ Result<> ComponentStorage::Resize(ContiguousStorage::SizeType size) {
   return Success;
 }
 
-Result<> ComponentStorage::AddComponent(SceneObject::Id object_id) {
-  if (!scene()->IsObjectIdValid(object_id)) {
-    return Error("Invalid object id");
+Result<> ComponentStorage::AddComponent(Entity::Id object_id) {
+  if (!scene()->IsEntityIdValid(object_id)) {
+    return Error("Invalid entity id");
   }
 
   if (flags_[object_id.index]) {
-    return Error("Object already has component");
+    return Error("Entity already has component {}", component_type()->name());
   }
 
   OVIS_CHECK_RESULT(storage_.Construct(object_id.index));
@@ -65,13 +65,13 @@ Result<> ComponentStorage::AddComponent(SceneObject::Id object_id) {
   return Success;
 }
 
-Result<> ComponentStorage::RemoveComponent(SceneObject::Id object_id) {
-  if (!scene()->IsObjectIdValid(object_id)) {
-    return Error("Invalid object id");
+Result<> ComponentStorage::RemoveComponent(Entity::Id object_id) {
+  if (!scene()->IsEntityIdValid(object_id)) {
+    return Error("Invalid entity id");
   }
 
   if (!flags_[object_id.index]) {
-    return Error("Object does not have the component");
+    return Error("Entity does not have the component {}", component_type()->name());
   }
 
   storage_.Destruct(object_id.index);
