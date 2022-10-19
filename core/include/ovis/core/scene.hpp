@@ -85,8 +85,10 @@ class Scene : public Serializable {
 
   bool is_playing_ = false;
 
-  void InsertChild(Entity* parent, EntityId child_id);
-  void RemoveChild(Entity* parent, EntityId child_id);
+  // Inserts a sibling in an existing sibling chain. All sibling indices in the chain as well as
+  // the new entity are corrected. It returns the id of the first sibling after the insertion.
+  EntityId InsertSibling(EntityId first_sibling_id, EntityId new_sibling_id);
+  bool RemoveSibling(EntityId old_sibling_id);
 };
 
 }  // namespace ovis

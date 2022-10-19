@@ -120,20 +120,12 @@ struct VersionedIndex<T, VERSION_BITS, INDEX_BITS, 0> {
 template <IndexType T, std::size_t VERSION_BITS, std::size_t INDEX_BITS, std::size_t FLAGS_BITS>
 inline bool operator==(VersionedIndex<T, VERSION_BITS, INDEX_BITS, FLAGS_BITS> lhs,
                        VersionedIndex<T, VERSION_BITS, INDEX_BITS, FLAGS_BITS> rhs) {
-  if constexpr (FLAGS_BITS == 0) {
-    return lhs.index == rhs.index && lhs.version == rhs.version;
-  } else {
-    return lhs.index == rhs.index && lhs.version == rhs.version && lhs.flags == rhs.flags;
-  }
+  return lhs.index == rhs.index && lhs.version == rhs.version;
 }
 
 template <IndexType T, std::size_t VERSION_BITS, std::size_t INDEX_BITS, std::size_t FLAGS_BITS>
 inline bool operator!=(VersionedIndex<T, VERSION_BITS, INDEX_BITS, FLAGS_BITS> lhs, VersionedIndex<T, VERSION_BITS, INDEX_BITS, FLAGS_BITS> rhs) {
-  if constexpr (FLAGS_BITS == 0) {
-    return lhs.index != rhs.index || lhs.version != rhs.version;
-  } else {
-    return lhs.index != rhs.index || lhs.version != rhs.version || lhs.flags != rhs.flags;
-  }
+  return lhs.index != rhs.index || lhs.version != rhs.version;
 }
 
 template <IndexType T, std::size_t VERSION_BITS, std::size_t INDEX_BITS, std::size_t FLAGS_BITS>

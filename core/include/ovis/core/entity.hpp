@@ -39,6 +39,7 @@ struct Entity {
   EntityId next_sibling_id;
   std::string name;
 
+  struct Siblings;
   struct SiblingIterator;
   struct ChildrenIterator;
 
@@ -68,6 +69,8 @@ struct Entity {
     return next_sibling_id != id;
   }
 
+  Siblings siblings(Scene* scene) const;
+
   static bool IsValidName(std::string_view name);
   static std::pair<std::string_view, std::optional<unsigned int>> ParseName(std::string_view name);
 
@@ -79,12 +82,38 @@ struct Entity {
 #endif
 
 struct Entity::SiblingIterator {
- private:
+  friend bool operator==(const Entity::SiblingIterator& lhs, const Entity::SiblingIterator& rhs);
+  friend bool operator!=(const Entity::SiblingIterator& lhs, const Entity::SiblingIterator& rhs);
+
+  using iterator_category = std::bidirectional_iterator_tag;
+  using difference_type = std::ptrdiff_t;
+  using value_type = Entity;
+  using pointer = Entity*;
+  using reference = Entity&;
+
+  Entity& operator*() const;
+  Entity* operator->();
+  SiblingIterator& operator++();
+  SiblingIterator operator++(int);
+  SiblingIterator& operator--();
+  SiblingIterator operator--(int);
+
   Scene* scene;
-  EntityId id;
+  EntityId current_sibling_id;
 };
 
-// static_assert(std::input_iterator<Entity::SiblingIterator>);
+struct Entity::Siblings {
+  Scene* scene;
+  EntityId entity_id;
+};
+
+bool operator==(const Entity::SiblingIterator& lhs, const Entity::SiblingIterator& rhs);
+bool operator!=(const Entity::SiblingIterator& lhs, const Entity::SiblingIterator& rhs);
+
+Entity::SiblingIterator begin(const Entity::Siblings& siblings);
+Entity::SiblingIterator end(const Entity::Siblings& siblings);
+
+static_assert(std::bidirectional_iterator<Entity::SiblingIterator>);
 
 // static_assert(std::forward_iterator<Entity::SiblingIterator>);
 

@@ -9,12 +9,44 @@ TEST_CASE("Create scene", "[ovis][core][Scene]") {
   Scene scene;
 
   auto entity = scene.CreateEntity("Test");
-  std::size_t c = 0;
-  for (auto id : scene.GetEntityIds()) {
-    REQUIRE(id == entity->id);
-    ++c;
+  REQUIRE(entity->is_active());
+  REQUIRE(!entity->has_parent());
+  REQUIRE(!entity->has_siblings());
+
+  SECTION("Test id range") {
+    std::size_t c = 0;
+    for (auto id : scene.GetEntityIds()) {
+      REQUIRE(id == entity->id);
+      ++c;
+    }
+    REQUIRE(c == 1);
   }
-  REQUIRE(c == 1);
+
+  SECTION("Test sibling range") {
+    std::size_t c = 0;
+    for (auto sibling : entity->siblings(&scene)) {
+      ++c;
+    }
+    REQUIRE(c == 0);
+  }
+
+  auto other_entity = scene.CreateEntity("Test2");
+  SECTION("Test sibling range of entity") {
+    std::size_t c = 0;
+    for (auto& sibling : entity->siblings(&scene)) {
+      REQUIRE(&sibling == other_entity);
+      ++c;
+    }
+    REQUIRE(c == 1);
+  }
+  SECTION("Test sibling range of other_entity") {
+    std::size_t c = 0;
+    for (auto& sibling : other_entity->siblings(&scene)) {
+      REQUIRE(&sibling == entity);
+      ++c;
+    }
+    REQUIRE(c == 1);
+  }
 }
 
 TEST_CASE("Create scene objects", "[Scene]") {

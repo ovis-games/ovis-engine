@@ -7,39 +7,27 @@
 
 namespace ovis {
 
-// Entity::Entity(Scene* scene, Id id) : id_(id), is_alive_(false), scene_(scene) {}
+Entity::Siblings Entity::siblings(Scene* scene) const {
+  return {
+    .scene = scene,
+    .entity_id = id,
+  };
+}
 
-// Entity* Entity::parent() const {
-//   return parent_id() ? scene()->GetEntity(*parent_id()) : nullptr;
-// }
+Entity::SiblingIterator begin(const Entity::Siblings& siblings) {
+  Entity* entity = siblings.scene->GetEntityUnchecked(siblings.entity_id);
+  return {
+    .scene = siblings.scene,
+    .current_sibling_id = entity->next_sibling_id,
+  };
+}
 
-// void Entity::Wake(std::string_view name, std::optional<Entity::Id> parent_id) {
-//   assert(!is_alive());
-
-//   name_ = name;
-//   parent_id_ = parent_id;
-//   if (parent_id_) {
-//     assert(parent_id_->index < id().index);
-//     path_ = fmt::format("{}/{}", parent()->path(), name_);
-//     parent()->children_ids_.insert(id());
-//   } else {
-//     path_ = name_;
-//   }
-//   is_alive_ = true;
-// }
-
-// void Entity::Kill() {
-//   while (children_ids_.size() > 0) {
-//     const auto child_id = *children_ids_.begin();
-//     assert(scene()->GetEntity(child_id));
-//     scene()->GetEntity(child_id)->Kill();
-//   }
-//   if (parent_id_) {
-//     parent()->children_ids_.erase(id());
-//   }
-//   id_ = id_.next();
-//   is_alive_ = false;
-// }
+Entity::SiblingIterator end(const Entity::Siblings& siblings) {
+  return {
+    .scene = siblings.scene,
+    .current_sibling_id = siblings.entity_id,
+  };
+}
 
 bool Entity::IsValidName(std::string_view name) {
   for (const char c : name) {
@@ -72,311 +60,55 @@ std::pair<std::string_view, std::optional<unsigned int>> Entity::ParseName(std::
   return {name, number};
 }
 
-// std::vector<std::pair<std::string, json>> SceneObject::templates;
-// std::map<std::pair<std::string, std::string>, SceneObjectAnimation, std::less<>> SceneObject::template_animations;
 
-// SceneObject::SceneObject(Scene* scene, std::string_view name, SceneObject* parent)
-//     : scene_(scene), parent_(parent), name_(name), path_(BuildPath(name, parent)) {
-//   SDL_assert(scene_ != nullptr);
-//   SDL_assert(IsValidName(name_));
-//   if (parent) {
-//     parent->children_.push_back(safe_ptr(this));
-//   }
-// }
+Entity& Entity::SiblingIterator::operator*() const {
+  return *scene->GetEntityUnchecked(current_sibling_id);
+}
 
-// SceneObject::~SceneObject() {
-//   ClearComponents();
-//   SDL_assert(components_.size() == 0);
-//   if (parent_) {
-//     parent()->children_.erase(parent()->FindChild(name()));
-//   }
-//   ClearChildObjects();
-// }
+Entity* Entity::SiblingIterator::operator->() {
+  return scene->GetEntityUnchecked(current_sibling_id);
+}
 
+Entity::SiblingIterator& Entity::SiblingIterator::operator++() {
+  current_sibling_id = scene->GetEntityUnchecked(current_sibling_id)->next_sibling_id;
+  return *this;
+}
 
-// SceneObject* SceneObject::CreateChildObject(std::string_view object_name) {
-//   return scene_->CreateObject(object_name, this);
-// }
+Entity::SiblingIterator Entity::SiblingIterator::operator++(int) {
+  const auto current = *this;
+  current_sibling_id = scene->GetEntityUnchecked(current_sibling_id)->previous_sibling_id;
+  return current;
+}
 
-// SceneObject* SceneObject::CreateChildObject(std::string_view object_name, const json& serialized_object) {
-//   return scene_->CreateObject(object_name, serialized_object, this);
-// }
+Entity::SiblingIterator& Entity::SiblingIterator::operator--() {
+  current_sibling_id = scene->GetEntityUnchecked(current_sibling_id)->previous_sibling_id;
+  return *this;
+}
 
-// void SceneObject::DeleteChildObject(std::string_view object_name) {
-//   auto child_iterator = FindChild(object_name);
-//   if (child_iterator != children_.end()) {
-//     scene_->DeleteObject(child_iterator->get());
-//   }
-// }
+Entity::SiblingIterator Entity::SiblingIterator::operator--(int) {
+  const auto current = *this;
+  current_sibling_id = scene->GetEntityUnchecked(current_sibling_id)->previous_sibling_id;
+  return current;
+}
 
-// void SceneObject::ClearChildObjects() {
-//   while (children().size() > 0) {
-//     scene()->DeleteObject(children().back().get());
-//   }
-// }
+bool operator==(const Entity::SiblingIterator& lhs, const Entity::SiblingIterator& rhs) {
+  // We can assume that both are from the same scene as stated in C++11 standard (n3337):
+  // § 24.2.1 — [iterator.requirements.general#6]
+  // An iterator j is called reachable from an iterator i if and only if there is a finite
+  // sequence of applications of the expression ++i that makes i == j. If j is reachable from i,
+  // they refer to elements of the same sequence.
 
-// SceneObject* SceneObject::GetChildObject(std::string_view object_name) {
-//   const auto child_iterator = FindChild(object_name);
-//   return child_iterator != children_.end() ? child_iterator->get() : nullptr;
-// }
+  // § 24.2.5 — [forward.iterators#2]
+  // The domain of == for forward iterators is that of iterators over the same underlying sequence.
+  assert(lhs.scene == rhs.scene);
 
-// bool SceneObject::ContainsChildObject(std::string_view object_name) {
-//   return FindChild(object_name) != children_.end();
-// }
+  return lhs.current_sibling_id == rhs.current_sibling_id;
+}
 
-// Result<Value> SceneObject::AddComponent(TypeId component_type) {
-//   const auto& type = main_vm->GetType(component_type);
-//   if (!type) {
-//     return Error("Invalid component type");
-//   }
-//   if (!type->IsDerivedFrom<SceneObjectComponent>()) {
-//     return Error("{} does not derived from SceneObjectComponent", type->GetReferenceString());
-//   }
-
-//   if (HasComponent(component_type)) {
-//     return Error("Object '{}' already has the component '{}'.", path(), type->name());
-//   }
-
-//   components_.emplace_back(std::make_unique<Value>(type));
-//   components_.back()->as<SceneObjectComponent>().scene_object_ = this;
-//   return components_.back()->CreateReference();
-// }
-
-// Result<Value> SceneObject::GetComponent(TypeId component_type) {
-//   for (const auto& component : components_) {
-//     if (component->type_id() == component_type) {
-//       return component->CreateReference();
-//     }
-//   }
-//   const auto type = main_vm->GetType(component_type);
-//   if (type) {
-//     return Error("Object {} does not have component", path(), type->name());
-//   } else {
-//     return Error("Invalid component type");
-//   }
-// }
-
-// Result<Value> SceneObject::GetComponent(TypeId component_type) const {
-//   for (const auto& component : components_) {
-//     if (component->type_id() == component_type) {
-//       return component->CreateReference();
-//     }
-//   }
-//   const auto type = main_vm->GetType(component_type);
-//   if (type) {
-//     return Error("Object {} does not have component", path(), type->name());
-//   } else {
-//     return Error("Invalid component type");
-//   }
-// }
-
-// bool SceneObject::HasComponent(TypeId component_type) const {
-//   for (const auto& component : components_) {
-//     if (component->type_id() == component_type) {
-//       return true;
-//     }
-//   }
-//   return false;
-// }
-
-// // bool SceneObject::RemoveComponent(const std::shared_ptr<Type>& type) {
-// //   const auto erased_count = std::erase_if(components_, [type](const auto& component) {
-// //       return component.type.lock() == type;
-// //   });
-// //   assert(erased_count <= 1);
-// //   return erased_count > 0;
-// // }
-
-// void SceneObject::ClearComponents() {
-//   components_.clear();
-// }
-
-// SceneObjectAnimation* SceneObject::GetAnimation(std::string_view name) const {
-//   for (const auto& animation : animations_) {
-//     if (animation->name() == name) {
-//       return animation.get();
-//     }
-//   }
-//   return nullptr;
-// }
-
-// json SceneObject::Serialize() const {
-//   json serialized_object = json::object();
-
-
-//   auto& components = serialized_object["components"] = json::object();
-//   for (const auto& component : components_) {
-//     const auto component_type = component->type();
-//     assert(component_type != nullptr);
-//     components[std::string(component_type->GetReferenceString())] = component->as<SceneObjectComponent>().Serialize();
-//   }
-//   auto& children = serialized_object["children"] = json::object();
-//   for (const auto& child : children_) {
-//     children[std::string(child->name())] = child->Serialize();
-//   }
-//   return serialized_object;
-// }
-
-// bool SceneObject::Deserialize(const json& serialized_object) {
-//   ClearComponents();
-//   ClearChildObjects();
-
-//   const Result<json> object_json = ResolveTemplateForObject(serialized_object);
-//   if (!object_json) {
-//     // Can happen if the template is invalid. E.g., it does not exist or contains circular references
-//     LogE("Failed to deserialize scene object");
-//     return false;
-//   }
-
-//   if (object_json->contains("components")) {
-//     const json& components = object_json->at("components");
-//     assert(components.is_object());
-//     for (const auto& [component_id, component_json] : components.items()) {
-//       const auto type_id = main_vm->GetTypeId(component_id);
-//       if (type_id == Type::NONE_ID) {
-//         LogE(
-//             "Scene object deserialization failed: cannot add component `{}` to object. This type has not been "
-//             "registered.",
-//             component_id);
-//         ClearComponents();
-//         return false;
-//       }
-//       auto component = AddComponent(type_id);
-//       if (!component) {
-//         // TODO: OVIS_CHECK_RESULT
-//         LogE("Failed to add component {}: {}", main_vm->GetType(type_id)->GetReferenceString(), component.error().message);
-//         return false;
-//       }
-//       if (!component->as<SceneObjectComponent>().Deserialize(component_json)) {
-//         LogE("Failed to deserialize scene object, could not deserialize `{}`", component_id);
-//         ClearComponents();
-//         return false;
-//       }
-//     }
-//   }
-
-//   if (object_json->contains("children")) {
-//     const auto& children = object_json->at("children");
-//     assert(children.is_object());
-//     for (const auto& [child_name, child_json] : children.items()) {
-//       assert(!ContainsChildObject(child_name));
-//       if (CreateChildObject(child_name, child_json) == nullptr) {
-//         LogE("Failed to deserialize scene object, could not add child object `{}`", child_name);
-//         ClearComponents();
-//         ClearChildObjects();
-//         return false;
-//       }
-//     }
-//   }
-
-//   return true;
-// }
-
-// SceneObjectAnimation* SceneObject::GetAnimation(std::string_view template_asset_id, std::string_view animation_name) {
-//   auto animation_it = template_animations.find(std::make_pair(std::string(template_asset_id), std::string(animation_name)));
-//   if (animation_it != template_animations.end()) {
-//     return &animation_it->second;
-//   } else {
-//     return nullptr;
-//   }
-// }
-
-// Result<json> SceneObject::ConstructObjectFromTemplate(std::string_view template_asset, std::span<std::string_view> parents) const {
-//   auto asset_library = GetAssetLibraryForAsset(template_asset);
-
-//   if (!asset_library) {
-//     return Error("Invalid scene object template `{}`: asset does not exist", template_asset);
-//   }
-//   if (auto asset_type = asset_library->GetAssetType(template_asset); !asset_type || *asset_type != "scene_object") {
-//     OVIS_CHECK_RESULT(asset_type);
-//     return Error("Invalid scene object template `{}`: asset has invalid type `{}`", template_asset, asset_type);
-//   }
-
-//   const auto object_template_data = asset_library->LoadAssetTextFile(template_asset, "json");
-//   OVIS_CHECK_RESULT(object_template_data);
-
-//   auto object_template = json::parse(*object_template_data);
-
-//   if (object_template.contains("template")) {
-//     const std::string parent_template_asset = object_template.at("template");
-
-//     for (const auto& parent : parents) {
-//       if (parent == parent_template_asset) {
-//         // Circular reference
-//         return Error("Object template {} contains a circular reference", template_asset);
-//       }
-//     }
-
-//     std::vector<std::string_view> parents_for_children;
-//     parents_for_children.reserve(parents.size() + 1);
-//     parents_for_children.insert(parents_for_children.end(), parents.begin(), parents.end());
-//     parents_for_children.push_back(template_asset);
-
-//     auto parent_template = ConstructObjectFromTemplate(parent_template_asset, parents_for_children);
-//     OVIS_CHECK_RESULT(parent_template);
-
-//     json animations = parent_template->contains("animations") ? parent_template->at("animations") : json::object();
-//     assert(animations.is_object());
-//     if (object_template.contains("animations")) {
-//       for (const auto& [name, animation] : object_template["animations"].items()) {
-//         assert(animation.is_array());
-//         assert(animation.size() == 1);
-//         if (animations.contains(name)) {
-//           assert(animations[name].is_array());
-//           animations[name].push_back(animation[0]);
-//         } else {
-//           animations[name] = animation;
-//         }
-//       }
-//     }
-//     object_template["animations"] = std::move(animations);
-
-//     parent_template->merge_patch(object_template);
-//     object_template = *parent_template;
-//   }
-
-//   if (object_template.contains("animation")) {
-//     for (auto& [name, animation_value] : object_template["animations"].items()) {
-//       std::pair<std::string, std::string> animation_identifier = std::make_pair(std::string(template_asset), name);
-//       if (!template_animations.contains(animation_identifier)) {
-//         SceneObjectAnimation animation(name);
-//         if (!animation.Deserialize(animation_value)) {
-//           LogE("Failed to deserialize animation");
-//         } else {
-//           template_animations.insert(std::make_pair(std::move(animation_identifier), std::move(animation)));
-//         }
-//       }
-//     }
-//   }
-  
-//   return object_template;
-// }
-
-// std::vector<safe_ptr<SceneObject>>::const_iterator SceneObject::FindChild(std::string_view name) const {
-//   return std::find_if(children_.cbegin(), children_.cend(),
-//                       [name](const safe_ptr<SceneObject>& object) { return object->name() == name; });
-// }
-
-// std::vector<safe_ptr<SceneObject>>::iterator SceneObject::FindChild(std::string_view name) {
-//   return std::find_if(children_.begin(), children_.end(),
-//                       [name](const safe_ptr<SceneObject>& object) { return object->name() == name; });
-// }
-
-// void SceneObject::ClearObjectTemplateChache() {
-//   templates.clear();
-// }
-
-// void SceneObject::RegisterType(sol::table* module) {
-// }
-
-// const json* SceneObject::FindTemplate(std::string_view asset_id) {
-//   for (const auto& object_template : templates) {
-//     if (object_template.first == asset_id) {
-//       return &object_template.second;
-//     }
-//   }
-//   return nullptr;
-// }
+bool operator!=(const Entity::SiblingIterator& lhs, const Entity::SiblingIterator& rhs) {
+  assert(lhs.scene == rhs.scene); // See above
+  return lhs.current_sibling_id != rhs.current_sibling_id;
+}
 
 // Result<json> SceneObject::ResolveTemplateForObject(const json& object) {
 //   json result_object;

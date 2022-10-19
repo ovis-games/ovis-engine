@@ -40,9 +40,8 @@ Entity* Scene::CreateEntity(std::string_view object_name, std::optional<EntityId
 
   Entity* entity = &entities_[first_inactive_entity_->index];
   if (entity->has_siblings()) {
-    entities_[entity->previous_sibling_id.index].next_sibling_id = entity->next_sibling_id;
-    entities_[entity->next_sibling_id.index].previous_sibling_id = entity->previous_sibling_id;
     first_inactive_entity_ = entity->next_sibling_id;
+    RemoveSibling(entity->id);
   } else {
     // This was the last inactive entity
     assert(entity->next_sibling_id == entity->id);
@@ -55,19 +54,22 @@ Entity* Scene::CreateEntity(std::string_view object_name, std::optional<EntityId
   if (parent_id) {
     Entity* parent = GetEntity(*parent_id);
     entity->parent_id = parent->id;
-    InsertChild(parent, entity->id);
-    // if (parent->first_children_id == parent_id) {
-    //   // Parent has no children yet
-    //   parent->first_children_id = entity->id;
-    // } else {
-    //   EntityId current_child_id = parent->first_children_id;
-    //   while (current_child_id.index < entity->id.index) {
-    //     current_child_id = GetEntity(current_child_id)->next_sibling_id;
-    //     if (current_child_id == parent->first_children_id) {
-    //       break;
-    //     }
-    //   }
-    // }
+    if (parent->has_children()) {
+      InsertSibling(parent->first_children_id, entity->id);
+    } else {
+      parent->first_children_id = entity->id;
+      entity->next_sibling_id = EntityId::CreateInactive(entity->id.index);
+      entity->previous_sibling_id = EntityId::CreateInactive(entity->id.index);
+    }
+  } else {
+    parent_id = EntityId::CreateInactive(entity->id.index);
+    if (first_active_entity_.has_value()) {
+      InsertSibling(*first_active_entity_, entity->id);
+    } else {
+      entity->next_sibling_id = EntityId::CreateInactive(entity->id.index);
+      entity->previous_sibling_id = EntityId::CreateInactive(entity->id.index);
+      first_active_entity_ = entity->id;
+    }
   }
 
   return entity;
@@ -75,6 +77,12 @@ Entity* Scene::CreateEntity(std::string_view object_name, std::optional<EntityId
 
 Entity* Scene::GetEntity(EntityId id) {
   return IsEntityIdValid(id) ? &entities_[id.index] : nullptr;
+}
+
+Entity* Scene::GetEntityUnchecked(EntityId id) {
+  assert(id.index < entities_.size());
+  assert(entities_[id.index].id == id);
+  return &entities_[id.index];
 }
 
 // void Scene::DeleteEntity(EntityId id) {
@@ -236,11 +244,50 @@ bool Scene::Deserialize(const json& serialized_object) {
  return true;
 }
 
-void Scene::InsertChild(Entity* parent, EntityId child_id) {
-  assert(false && "Not implmented yet");
+EntityId Scene::InsertSibling(EntityId first_sibling_id, EntityId new_sibling_id) {
+  Entity* first_sibling = GetEntityUnchecked(first_sibling_id);
+  EntityId last_sibling_id = first_sibling->previous_sibling_id;
+
+  Entity* previous_sibling;
+  Entity* next_sibling;
+  EntityId new_first_sibling_id;
+
+  if (new_sibling_id.index < first_sibling_id.index) {
+    new_first_sibling_id = new_sibling_id;
+    previous_sibling = GetEntityUnchecked(last_sibling_id);
+    next_sibling = first_sibling;
+  } else {
+    new_first_sibling_id = first_sibling_id;
+    previous_sibling = first_sibling;
+    next_sibling = GetEntityUnchecked(first_sibling->next_sibling_id);
+
+    while (new_sibling_id.index < next_sibling->id.index && next_sibling->id.index > previous_sibling->id.index) {
+      previous_sibling = next_sibling;
+      next_sibling = GetEntityUnchecked(previous_sibling->next_sibling_id);
+    }
+  }
+
+  Entity* new_sibling = GetEntityUnchecked(new_sibling_id);
+
+  previous_sibling->next_sibling_id = new_sibling_id;
+  new_sibling->previous_sibling_id = previous_sibling->id;
+  new_sibling->next_sibling_id = next_sibling->id;
+  next_sibling->previous_sibling_id = new_sibling_id;
+
+  return new_first_sibling_id;
 }
-void Scene::RemoveChild(Entity* parent, EntityId child_id) {
-  assert(false && "Not implmented yet");
+
+bool Scene::RemoveSibling(EntityId old_sibling_id) {
+  if (GetEntityUnchecked(old_sibling_id)->next_sibling_id == old_sibling_id) {
+    return false;
+  } else {
+    Entity* old_sibling = GetEntityUnchecked(old_sibling_id);
+    Entity* next_sibling = GetEntityUnchecked(old_sibling->next_sibling_id);
+    Entity* previous_sibling = GetEntityUnchecked(old_sibling->previous_sibling_id);
+    next_sibling->previous_sibling_id = previous_sibling->id;
+    previous_sibling->next_sibling_id = next_sibling->id;
+    return true;
+  }
 }
 
 }  // namespace ovis
