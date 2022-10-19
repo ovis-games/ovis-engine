@@ -26,8 +26,45 @@ namespace ovis {
 template <typename T>
 concept IndexType = std::is_unsigned_v<T> && !std::is_same_v<T, bool>;
 
-template <IndexType T, std::size_t VERSION_BITS, std::size_t INDEX_BITS = std::numeric_limits<T>::digits - VERSION_BITS>
+template <
+  IndexType T,
+  std::size_t VERSION_BITS,
+  std::size_t INDEX_BITS = std::numeric_limits<T>::digits - VERSION_BITS,
+  std::size_t FLAGS_BITS = std::numeric_limits<T>::digits - VERSION_BITS - INDEX_BITS
+>
 struct VersionedIndex {
+  static_assert(VERSION_BITS <= std::numeric_limits<T>::digits);
+  static_assert(INDEX_BITS <= std::numeric_limits<T>::digits);
+  static_assert(VERSION_BITS + INDEX_BITS <= std::numeric_limits<T>::digits);
+  static_assert(VERSION_BITS + INDEX_BITS + FLAGS_BITS <= std::numeric_limits<T>::digits);
+
+  static constexpr T NextVersion(T current_version) {
+    return (current_version + 1) & ((1 << VERSION_BITS) - 1);
+  }
+
+  VersionedIndex() = default;
+
+  constexpr VersionedIndex(T index, T version = 0, T flags = 0) : index(index), version(version), flags(flags) {
+    assert(index < (1 << INDEX_BITS));
+    assert(version < (1 << VERSION_BITS));
+    assert(flags < (1 << FLAGS_BITS));
+  }
+
+  constexpr VersionedIndex<T, VERSION_BITS, INDEX_BITS> next() const {
+    return VersionedIndex<T, VERSION_BITS, INDEX_BITS>(index, NextVersion(version), flags);
+  }
+
+  T index : INDEX_BITS;
+  T version : VERSION_BITS;
+  T flags : FLAGS_BITS;
+};
+
+template <
+  IndexType T,
+  std::size_t VERSION_BITS,
+  std::size_t INDEX_BITS
+>
+struct VersionedIndex<T, VERSION_BITS, INDEX_BITS, 0> {
   static_assert(VERSION_BITS <= std::numeric_limits<T>::digits);
   static_assert(INDEX_BITS <= std::numeric_limits<T>::digits);
   static_assert(VERSION_BITS + INDEX_BITS <= std::numeric_limits<T>::digits);
@@ -38,10 +75,7 @@ struct VersionedIndex {
 
   VersionedIndex() = default;
 
-  constexpr VersionedIndex(T index) : index(index), version(0) {
-    assert(index < (1 << INDEX_BITS));
-  }
-  constexpr VersionedIndex(T index, T version) : index(index), version(version) {
+  constexpr VersionedIndex(T index, T version = 0) : index(index), version(version) {
     assert(index < (1 << INDEX_BITS));
     assert(version < (1 << VERSION_BITS));
   }
@@ -54,18 +88,57 @@ struct VersionedIndex {
   T version : VERSION_BITS;
 };
 
-template <IndexType T, std::size_t VERSION_BITS, std::size_t INDEX_BITS>
-inline bool operator==(VersionedIndex<T, VERSION_BITS, INDEX_BITS> lhs, VersionedIndex<T, VERSION_BITS, INDEX_BITS> rhs) {
-  return lhs.index == rhs.index && lhs.version == rhs.version;
+// template <
+//   IndexType T,
+//   std::size_t VERSION_BITS,
+//   std::size_t INDEX_BITS
+// >
+// struct VersionedIndex<T, VERSION_BITS, INDEX_BITS, 0> {
+//   static_assert(VERSION_BITS <= std::numeric_limits<T>::digits);
+//   static_assert(INDEX_BITS <= std::numeric_limits<T>::digits);
+//   static_assert(VERSION_BITS + INDEX_BITS <= std::numeric_limits<T>::digits);
+
+//   static constexpr T NextVersion(T current_version) {
+//     return (current_version + 1) & ((1 << VERSION_BITS) - 1);
+//   }
+
+//   VersionedIndex() = default;
+
+//   constexpr VersionedIndex(T index, T version, T flags) : index(index), version(version) {
+//     assert(index < (1 << INDEX_BITS));
+//     assert(version < (1 << VERSION_BITS));
+//   }
+
+//   constexpr VersionedIndex<T, VERSION_BITS, INDEX_BITS> next() const {
+//     return VersionedIndex<T, VERSION_BITS, INDEX_BITS>(index, NextVersion(version));
+//   }
+
+//   T index : INDEX_BITS;
+//   T version : VERSION_BITS;
+// };
+
+template <IndexType T, std::size_t VERSION_BITS, std::size_t INDEX_BITS, std::size_t FLAGS_BITS>
+inline bool operator==(VersionedIndex<T, VERSION_BITS, INDEX_BITS, FLAGS_BITS> lhs,
+                       VersionedIndex<T, VERSION_BITS, INDEX_BITS, FLAGS_BITS> rhs) {
+  if constexpr (FLAGS_BITS == 0) {
+    return lhs.index == rhs.index && lhs.version == rhs.version;
+  } else {
+    return lhs.index == rhs.index && lhs.version == rhs.version && lhs.flags == rhs.flags;
+  }
 }
 
-template <IndexType T, std::size_t VERSION_BITS, std::size_t INDEX_BITS>
-inline bool operator!=(VersionedIndex<T, VERSION_BITS, INDEX_BITS> lhs, VersionedIndex<T, VERSION_BITS, INDEX_BITS> rhs) {
-  return lhs.index != rhs.index || lhs.version != rhs.version;
+template <IndexType T, std::size_t VERSION_BITS, std::size_t INDEX_BITS, std::size_t FLAGS_BITS>
+inline bool operator!=(VersionedIndex<T, VERSION_BITS, INDEX_BITS, FLAGS_BITS> lhs, VersionedIndex<T, VERSION_BITS, INDEX_BITS, FLAGS_BITS> rhs) {
+  if constexpr (FLAGS_BITS == 0) {
+    return lhs.index != rhs.index || lhs.version != rhs.version;
+  } else {
+    return lhs.index != rhs.index || lhs.version != rhs.version || lhs.flags != rhs.flags;
+  }
 }
 
-template <IndexType T, std::size_t VERSION_BITS, std::size_t INDEX_BITS>
-inline bool operator<(VersionedIndex<T, VERSION_BITS, INDEX_BITS> lhs, VersionedIndex<T, VERSION_BITS, INDEX_BITS> rhs) {
+template <IndexType T, std::size_t VERSION_BITS, std::size_t INDEX_BITS, std::size_t FLAGS_BITS>
+inline bool operator<(VersionedIndex<T, VERSION_BITS, INDEX_BITS, FLAGS_BITS> lhs,
+                      VersionedIndex<T, VERSION_BITS, INDEX_BITS, FLAGS_BITS> rhs) {
   return lhs.index < rhs.index || lhs.version < rhs.version;
 }
 

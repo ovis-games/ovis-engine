@@ -32,29 +32,30 @@ class Scene : public Serializable {
   friend class SceneObject;
 
  public:
-  Scene(std::size_t initial_object_capacity = 1000);
+  Scene(std::size_t initial_entity_capacity = 1000);
   virtual ~Scene();
 
   inline bool is_playing() const { return is_playing_; }
 
   auto& frame_scheduler() { return frame_scheduler_; }
 
-  Entity* CreateEntity(std::string_view object_name, std::optional<Entity::Id> parent = std::nullopt);
-  Entity* CreateEntity(std::string_view object_name, const json& serialized_object, std::optional<Entity::Id> parent = std::nullopt);
+  Entity* CreateEntity(std::string_view object_name, std::optional<EntityId> parent = std::nullopt);
+  Entity* CreateEntity(std::string_view object_name, const json& serialized_object, std::optional<EntityId> parent = std::nullopt);
 
-  Entity* GetEntity(Entity::Id id);
-  Entity* GetEntity(std::string_view object_path) const;
-  Entity::Id GetEntityId(std::string_view object_path) const { return GetEntity(object_path)->id(); }
+  Entity* GetEntity(EntityId id);
+  Entity* GetEntityUnchecked(EntityId id);
+  Entity* GetEntity(std::string_view entity_path) const;
+  EntityId GetEntityId(std::string_view entity_path) const { return GetEntity(entity_path)->id; }
 
-  void DeleteEntity(std::string_view object_path) { return DeleteEntity(GetEntityId(object_path)); }
-  void DeleteEntity(Entity* object) { return DeleteEntity(object->id()); }
-  void DeleteEntity(Entity::Id id);
+  void DeleteEntity(std::string_view entity_path) { return DeleteEntity(GetEntityId(entity_path)); }
+  void DeleteEntity(Entity* entity) { return DeleteEntity(entity->id); }
+  void DeleteEntity(EntityId id);
   void ClearEntities();
 
-  bool IsEntityIdValid(Entity::Id id) { return id.index < entities_.size() && entities_[id.index].id() == id; }
+  bool IsEntityIdValid(EntityId id) { return id.index < entities_.size() && entities_[id.index].id == id; }
   auto GetEntityIds() const {
-    return TransformRange(FilterRange(entities_, [](const auto& obj) { return obj.is_alive(); }),
-                          [](const auto& obj) { return obj.id(); });
+    return TransformRange(FilterRange(entities_, [](const auto& obj) { return obj.is_active(); }),
+                          [](const auto& obj) { return obj.id; });
   }
 
   template <typename ComponentType>
@@ -77,9 +78,15 @@ class Scene : public Serializable {
   Scheduler<Scene*, SceneUpdate> frame_scheduler_;
 
   std::vector<Entity> entities_;
+  std::optional<EntityId> first_active_entity_;
+  std::optional<EntityId> first_inactive_entity_;
+
   std::vector<ComponentStorage> component_storages_;
 
   bool is_playing_ = false;
+
+  void InsertChild(Entity* parent, EntityId child_id);
+  void RemoveChild(Entity* parent, EntityId child_id);
 };
 
 }  // namespace ovis

@@ -7,39 +7,39 @@
 
 namespace ovis {
 
-Entity::Entity(Scene* scene, Id id) : id_(id), is_alive_(false), scene_(scene) {}
+// Entity::Entity(Scene* scene, Id id) : id_(id), is_alive_(false), scene_(scene) {}
 
-Entity* Entity::parent() const {
-  return parent_id() ? scene()->GetEntity(*parent_id()) : nullptr;
-}
+// Entity* Entity::parent() const {
+//   return parent_id() ? scene()->GetEntity(*parent_id()) : nullptr;
+// }
 
-void Entity::Wake(std::string_view name, std::optional<Entity::Id> parent_id) {
-  assert(!is_alive());
+// void Entity::Wake(std::string_view name, std::optional<Entity::Id> parent_id) {
+//   assert(!is_alive());
 
-  name_ = name;
-  parent_id_ = parent_id;
-  if (parent_id_) {
-    assert(parent_id_->index < id().index);
-    path_ = fmt::format("{}/{}", parent()->path(), name_);
-    parent()->children_ids_.insert(id());
-  } else {
-    path_ = name_;
-  }
-  is_alive_ = true;
-}
+//   name_ = name;
+//   parent_id_ = parent_id;
+//   if (parent_id_) {
+//     assert(parent_id_->index < id().index);
+//     path_ = fmt::format("{}/{}", parent()->path(), name_);
+//     parent()->children_ids_.insert(id());
+//   } else {
+//     path_ = name_;
+//   }
+//   is_alive_ = true;
+// }
 
-void Entity::Kill() {
-  while (children_ids_.size() > 0) {
-    const auto child_id = *children_ids_.begin();
-    assert(scene()->GetEntity(child_id));
-    scene()->GetEntity(child_id)->Kill();
-  }
-  if (parent_id_) {
-    parent()->children_ids_.erase(id());
-  }
-  id_ = id_.next();
-  is_alive_ = false;
-}
+// void Entity::Kill() {
+//   while (children_ids_.size() > 0) {
+//     const auto child_id = *children_ids_.begin();
+//     assert(scene()->GetEntity(child_id));
+//     scene()->GetEntity(child_id)->Kill();
+//   }
+//   if (parent_id_) {
+//     parent()->children_ids_.erase(id());
+//   }
+//   id_ = id_.next();
+//   is_alive_ = false;
+// }
 
 bool Entity::IsValidName(std::string_view name) {
   for (const char c : name) {

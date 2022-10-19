@@ -13,47 +13,85 @@
 
 namespace ovis {
 
-Scene::Scene(std::size_t initial_object_capacity) {
-  entities_.reserve(initial_object_capacity);
-  for (std::size_t i = 0; i < initial_object_capacity; ++i) {
-    entities_.emplace_back(this, Entity::Id(i));
+Scene::Scene(std::size_t initial_entity_capacity) {
+  entities_.reserve(initial_entity_capacity);
+  for (std::size_t i = 0; i < initial_entity_capacity; ++i) {
+    entities_.push_back(Entity {
+      .id = EntityId::CreateInactive(i),
+      .parent_id = EntityId::CreateInactive(i),
+      .first_children_id = EntityId::CreateInactive(i),
+      .previous_sibling_id = EntityId::CreateInactive(i > 0 ? i - 1 : initial_entity_capacity - 1),
+      .next_sibling_id = EntityId::CreateInactive((i + 1) % initial_entity_capacity),
+    });
   }
+  first_inactive_entity_.emplace(EntityId::CreateInactive(0));
 }
 
 Scene::~Scene() {
 }
 
-Entity* Scene::CreateEntity(std::string_view object_name, std::optional<Entity::Id> parent) {
-  assert(!parent || IsEntityIdValid(*parent));
+Entity* Scene::CreateEntity(std::string_view object_name, std::optional<EntityId> parent_id) {
+  assert(!parent_id || IsEntityIdValid(*parent_id));
 
-  for (std::size_t i = parent ? parent->index + 1 : 0; i < entities_.size(); ++i) {
-    if (!entities_[i].is_alive()) {
-      entities_[i].Wake(object_name, parent);
-      return &entities_[i];
-    }
+  // No space left!
+  if (!first_inactive_entity_.has_value()) {
+    return nullptr;
   }
-  // TODO: check if an object with that name already exists
 
-  return nullptr;
+  Entity* entity = &entities_[first_inactive_entity_->index];
+  if (entity->has_siblings()) {
+    entities_[entity->previous_sibling_id.index].next_sibling_id = entity->next_sibling_id;
+    entities_[entity->next_sibling_id.index].previous_sibling_id = entity->previous_sibling_id;
+    first_inactive_entity_ = entity->next_sibling_id;
+  } else {
+    // This was the last inactive entity
+    assert(entity->next_sibling_id == entity->id);
+    assert(entity->previous_sibling_id == entity->id);
+    first_inactive_entity_.reset();
+  }
+
+  entity->id.flags = 1;
+
+  if (parent_id) {
+    Entity* parent = GetEntity(*parent_id);
+    entity->parent_id = parent->id;
+    InsertChild(parent, entity->id);
+    // if (parent->first_children_id == parent_id) {
+    //   // Parent has no children yet
+    //   parent->first_children_id = entity->id;
+    // } else {
+    //   EntityId current_child_id = parent->first_children_id;
+    //   while (current_child_id.index < entity->id.index) {
+    //     current_child_id = GetEntity(current_child_id)->next_sibling_id;
+    //     if (current_child_id == parent->first_children_id) {
+    //       break;
+    //     }
+    //   }
+    // }
+  }
+
+  return entity;
 }
 
-Entity* Scene::GetEntity(Entity::Id id) {
+Entity* Scene::GetEntity(EntityId id) {
   return IsEntityIdValid(id) ? &entities_[id.index] : nullptr;
 }
 
-void Scene::DeleteEntity(Entity::Id id) {
-  assert(IsEntityIdValid(id));
-  assert(entities_[id.index].is_alive());
-  entities_[id.index].Kill();
-}
+// void Scene::DeleteEntity(EntityId id) {
+//   Entity* entity = GetEntityUnchecked(id);
+//   assert(entity->is_active());
+//   if (entity->has_parent()) {
+//   }
+//   entities_[id.index].Kill();
+// }
 
-void Scene::ClearEntities() {
-  for (auto& object : entities_) {
-    if (object.is_alive()) {
-      object.Kill();
-    }
-  }
-}
+// void Scene::ClearEntities() {
+//   for (auto& object : entities_) {
+//     if (object.is_alive()) {
+//       object.Kill();
+//     }
+//   }
+// }
 
 ComponentStorage* Scene::GetComponentStorage(TypeId component_type) {
   for (auto& storage : component_storages_) {
@@ -196,6 +234,13 @@ bool Scene::Deserialize(const json& serialized_object) {
 //   }
 
  return true;
+}
+
+void Scene::InsertChild(Entity* parent, EntityId child_id) {
+  assert(false && "Not implmented yet");
+}
+void Scene::RemoveChild(Entity* parent, EntityId child_id) {
+  assert(false && "Not implmented yet");
 }
 
 }  // namespace ovis

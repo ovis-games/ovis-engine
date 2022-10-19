@@ -8,10 +8,10 @@ using namespace ovis;
 TEST_CASE("Create scene", "[ovis][core][Scene]") {
   Scene scene;
 
-  auto obj = scene.CreateEntity("Test");
+  auto entity = scene.CreateEntity("Test");
   std::size_t c = 0;
   for (auto id : scene.GetEntityIds()) {
-    REQUIRE(id == obj->id());
+    REQUIRE(id == entity->id);
     ++c;
   }
   REQUIRE(c == 1);

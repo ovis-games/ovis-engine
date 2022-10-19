@@ -63,7 +63,7 @@ class SimpleJob : public Job<Scene*, SceneUpdate> {
   }
 
   template <typename... T, std::size_t... I>
-  Result<> Call(TypeList<T...>, std::index_sequence<I...>, const std::vector<ComponentStorage*>& storages, Entity::Id id) {
+  Result<> Call(TypeList<T...>, std::index_sequence<I...>, const std::vector<ComponentStorage*>& storages, EntityId id) {
     if constexpr (is_result_v<typename reflection::Invocable<FUNCTION>::ReturnType>) {
       OVIS_CHECK_RESULT(FUNCTION(Get<T>(storages, I, id)...));
     } else {
@@ -73,7 +73,7 @@ class SimpleJob : public Job<Scene*, SceneUpdate> {
   }
 
   template <typename T>
-  auto Get(const std::vector<ComponentStorage*>& storages, std::size_t index, Entity::Id id) {
+  auto Get(const std::vector<ComponentStorage*>& storages, std::size_t index, EntityId id) {
     if constexpr (std::is_pointer_v<T>) {
       return &storages[index]->GetComponent<std::remove_pointer_t<T>>(id);
     } else if constexpr (std::is_reference_v<T> && std::is_const_v<std::remove_reference_t<T>>) {

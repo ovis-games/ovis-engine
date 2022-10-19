@@ -51,7 +51,7 @@ Result<> ComponentStorage::Resize(ContiguousStorage::SizeType size) {
   return Success;
 }
 
-Result<> ComponentStorage::AddComponent(Entity::Id object_id) {
+Result<> ComponentStorage::AddComponent(EntityId object_id) {
   if (!scene()->IsEntityIdValid(object_id)) {
     return Error("Invalid entity id");
   }
@@ -65,7 +65,7 @@ Result<> ComponentStorage::AddComponent(Entity::Id object_id) {
   return Success;
 }
 
-Result<> ComponentStorage::RemoveComponent(Entity::Id object_id) {
+Result<> ComponentStorage::RemoveComponent(EntityId object_id) {
   if (!scene()->IsEntityIdValid(object_id)) {
     return Error("Invalid entity id");
   }

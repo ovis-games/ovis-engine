@@ -15,38 +15,77 @@ namespace ovis {
 
 class Scene;
 
-class Entity {
-  friend class Scene;
+using EntityIdVersionedIndex = VersionedIndex<uint32_t, 15, 16, 1>;
 
- public:
-  using Id = VersionedIndex<uint32_t, 16>;
+struct EntityId : EntityIdVersionedIndex {
+  template <typename... T>
+  requires(std::is_constructible_v<EntityIdVersionedIndex, T...>)
+  constexpr EntityId(T&&... arguments) : VersionedIndex(std::forward<T>(arguments)...) {}
 
-  Entity(Scene* scene, Id id);
+  bool is_active() const {
+    return flags != 0;
+  }
 
-  Scene* scene() const { return scene_; }
-  Id id() const { return id_; }
-  bool is_alive() const { return is_alive_; }
-  std::string_view name() const { return name_; }
-  std::string_view path() const { return path_; }
-  std::optional<Id> parent_id() const { return parent_id_; }
-  Entity* parent() const;
+  constexpr static EntityId CreateInactive(uint32_t index) {
+    return EntityId(index, 0, 0);
+  }
+};
+
+struct Entity {
+  EntityId id;
+  EntityId parent_id;
+  EntityId first_children_id;
+  EntityId previous_sibling_id;
+  EntityId next_sibling_id;
+  std::string name;
+
+  struct SiblingIterator;
+  struct ChildrenIterator;
+
+  bool is_active() const {
+    return id.is_active();
+  }
+
+  void activate() {
+    assert(!is_active());
+    id.flags = 1;
+  }
+
+  void deactivate() {
+    assert(is_active());
+    id.flags = 0;
+  }
+
+  bool has_parent() const {
+    return parent_id != id;
+  }
+
+  bool has_children() const {
+    return first_children_id != id;
+  }
+
+  bool has_siblings() const {
+    return next_sibling_id != id;
+  }
 
   static bool IsValidName(std::string_view name);
   static std::pair<std::string_view, std::optional<unsigned int>> ParseName(std::string_view name);
 
- private:
-  Id id_;
-  bool is_alive_;
-  Scene* scene_;
-  std::optional<Id> parent_id_;
-  std::set<Id> children_ids_;  // TODO: should use a vector here but I am too lazy right now
-  std::string name_;
-  std::string path_;
-
-  void Wake(std::string_view name, std::optional<Entity::Id> parent = std::nullopt);
-  void Kill();
-
   OVIS_VM_DECLARE_TYPE_BINDING();
 };
+
+#if OVIS_EMSCRIPTEN
+  static_assert(sizeof(Entity) == 32);
+#endif
+
+struct Entity::SiblingIterator {
+ private:
+  Scene* scene;
+  EntityId id;
+};
+
+// static_assert(std::input_iterator<Entity::SiblingIterator>);
+
+// static_assert(std::forward_iterator<Entity::SiblingIterator>);
 
 }  // namespace ovis

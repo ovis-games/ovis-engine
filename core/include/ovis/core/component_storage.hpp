@@ -23,18 +23,18 @@ public:
 
   Result<> Resize(ContiguousStorage::SizeType size);
 
-  Result<> AddComponent(Entity::Id object_id);
-  Result<> RemoveComponent(Entity::Id object_id);
+  Result<> AddComponent(EntityId object_id);
+  Result<> RemoveComponent(EntityId object_id);
 
   template <typename T>
-  T& GetComponent(Entity::Id id) {
+  T& GetComponent(EntityId id) {
     assert(main_vm->GetTypeId<T>() == component_type_id_);
     assert(flags_[id.index]);
     return *reinterpret_cast<T*>(storage_[id.index]);
   }
 
   template <typename T>
-  const T& GetComponent(Entity::Id id) const {
+  const T& GetComponent(EntityId id) const {
     assert(main_vm->GetTypeId<T>() == component_type_id_);
     assert(flags_[id.index]);
     return *reinterpret_cast<const T*>(storage_[id.index]);
