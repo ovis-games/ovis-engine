@@ -41,7 +41,8 @@ struct Entity {
 
   struct Siblings;
   struct SiblingIterator;
-  struct ChildrenIterator;
+  struct Children;
+  struct ChildIterator;
 
   bool is_active() const {
     return id.is_active();
@@ -60,15 +61,16 @@ struct Entity {
   bool has_parent() const {
     return parent_id != id;
   }
+  Entity* parent() const;
 
   bool has_children() const {
     return first_children_id != id;
   }
+  Children children(Scene* scene) const;
 
   bool has_siblings() const {
     return next_sibling_id != id;
   }
-
   Siblings siblings(Scene* scene) const;
 
   static bool IsValidName(std::string_view name);
@@ -115,6 +117,46 @@ Entity::SiblingIterator end(const Entity::Siblings& siblings);
 
 static_assert(std::bidirectional_iterator<Entity::SiblingIterator>);
 
-// static_assert(std::forward_iterator<Entity::SiblingIterator>);
+struct Entity::ChildIterator {
+  friend bool operator==(const Entity::ChildIterator& lhs, const Entity::ChildIterator& rhs);
+  friend bool operator!=(const Entity::ChildIterator& lhs, const Entity::ChildIterator& rhs);
+
+  using iterator_category = std::bidirectional_iterator_tag;
+  using difference_type = std::ptrdiff_t;
+  using value_type = Entity;
+  using pointer = Entity*;
+  using reference = Entity&;
+
+  Entity& operator*() const { return *current_child; }
+  Entity* operator->() { return current_child; }
+  ChildIterator& operator++();
+  ChildIterator operator++(int);
+
+  Scene* scene;
+  Entity* parent;
+  Entity* current_child;
+};
+
+struct Entity::Children {
+  Scene* scene;
+  EntityId entity_id;
+};
+
+inline bool operator==(const Entity::ChildIterator& lhs, const Entity::ChildIterator& rhs) {
+  assert(lhs.scene == rhs.scene);
+  assert(lhs.parent == rhs.parent);
+  return lhs.current_child == rhs.current_child;
+}
+
+inline bool operator!=(const Entity::ChildIterator& lhs, const Entity::ChildIterator& rhs) {
+  assert(lhs.scene == rhs.scene);
+  assert(lhs.parent == rhs.parent);
+  return lhs.current_child != rhs.current_child;
+}
+
+Entity::ChildIterator begin(const Entity::Children& children);
+Entity::ChildIterator end(const Entity::Children& children);
+
+static_assert(std::forward_iterator<Entity::ChildIterator>);
 
 }  // namespace ovis

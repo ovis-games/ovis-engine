@@ -30,7 +30,23 @@ TEST_CASE("Create scene", "[ovis][core][Scene]") {
     REQUIRE(c == 0);
   }
 
+  SECTION("Test child range") {
+    std::size_t c = 0;
+    for (auto child : entity->children(&scene)) {
+      ++c;
+    }
+    REQUIRE(c == 0);
+  }
+
   auto other_entity = scene.CreateEntity("Test2");
+  REQUIRE(entity->has_siblings());
+  REQUIRE(!entity->has_parent());
+  REQUIRE(!entity->has_children());
+
+  REQUIRE(other_entity->has_siblings());
+  REQUIRE(!other_entity->has_parent());
+  REQUIRE(!other_entity->has_children());
+
   SECTION("Test sibling range of entity") {
     std::size_t c = 0;
     for (auto& sibling : entity->siblings(&scene)) {
@@ -47,17 +63,82 @@ TEST_CASE("Create scene", "[ovis][core][Scene]") {
     }
     REQUIRE(c == 1);
   }
+
+  auto child = scene.CreateEntity("Bob", entity->id);
+  REQUIRE(entity->has_siblings());
+  REQUIRE(!entity->has_parent());
+  REQUIRE(entity->has_children());
+
+  REQUIRE(other_entity->has_siblings());
+  REQUIRE(!other_entity->has_parent());
+  REQUIRE(!other_entity->has_children());
+
+  REQUIRE(!child->has_siblings());
+  REQUIRE(child->has_parent());
+  REQUIRE(!child->has_children());
+
+  SECTION("Children of entity") {
+    std::size_t c = 0;
+    for (auto& entity_child : entity->children(&scene)) {
+      REQUIRE(&entity_child == child);
+      ++c;
+    }
+    REQUIRE(c == 1);
+  }
+
+  auto second_child = scene.CreateEntity("Bob", entity->id);
+  REQUIRE(entity->has_siblings());
+  REQUIRE(!entity->has_parent());
+  REQUIRE(entity->has_children());
+
+  REQUIRE(other_entity->has_siblings());
+  REQUIRE(!other_entity->has_parent());
+  REQUIRE(!other_entity->has_children());
+
+  REQUIRE(child->has_siblings());
+  REQUIRE(child->has_parent());
+  REQUIRE(!child->has_children());
+
+  REQUIRE(second_child->has_siblings());
+  REQUIRE(second_child->has_parent());
+  REQUIRE(!second_child->has_children());
+
+  SECTION("Children of entity") {
+    std::size_t c = 0;
+    for (auto& entity_child : entity->children(&scene)) {
+      REQUIRE((&entity_child == child || &entity_child == second_child));
+      ++c;
+    }
+    REQUIRE(c == 2);
+  }
+
+  SECTION("Siblings of child") {
+    std::size_t c = 0;
+    for (auto& sibling : child->siblings(&scene)) {
+      REQUIRE(&sibling == second_child);
+      ++c;
+    }
+    REQUIRE(c == 1);
+  }
+  SECTION("Siblings of second_child") {
+    std::size_t c = 0;
+    for (auto& sibling : second_child->siblings(&scene)) {
+      REQUIRE(&sibling == child);
+      ++c;
+    }
+    REQUIRE(c == 1);
+  }
 }
 
 TEST_CASE("Create scene objects", "[Scene]") {
-  // BENCHMARK_ADVANCED("Create objects")(Catch::Benchmark::Chronometer meter) {
-  //   Scene scene;
-  //   meter.measure([&]() {
-  //     for (int i = 0; i < 1000; ++i) {
-  //       scene.CreateObject(std::to_string(i));
-  //     }
-  //   });
-  // };
+  BENCHMARK_ADVANCED("Create objects")(Catch::Benchmark::Chronometer meter) {
+    Scene scene;
+    meter.measure([&]() {
+      for (int i = 0; i < 1000; ++i) {
+        scene.CreateEntity(std::to_string(i));
+      }
+    });
+  };
 }
 
 // TEST_CASE("Create Scene Object", "[ovis][core][SceneObject]") {

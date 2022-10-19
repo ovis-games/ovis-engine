@@ -14,6 +14,13 @@ Entity::Siblings Entity::siblings(Scene* scene) const {
   };
 }
 
+Entity::Children Entity::children(Scene* scene) const {
+  return {
+    .scene = scene,
+    .entity_id = id,
+  };
+}
+
 Entity::SiblingIterator begin(const Entity::Siblings& siblings) {
   Entity* entity = siblings.scene->GetEntityUnchecked(siblings.entity_id);
   return {
@@ -108,6 +115,44 @@ bool operator==(const Entity::SiblingIterator& lhs, const Entity::SiblingIterato
 bool operator!=(const Entity::SiblingIterator& lhs, const Entity::SiblingIterator& rhs) {
   assert(lhs.scene == rhs.scene); // See above
   return lhs.current_sibling_id != rhs.current_sibling_id;
+}
+
+Entity::ChildIterator& Entity::ChildIterator::operator++() {
+  if (current_child->next_sibling_id == parent->first_children_id) {
+    current_child = nullptr;
+  } else {
+    current_child = scene->GetEntityUnchecked(current_child->next_sibling_id);
+  }
+  return *this;
+}
+
+Entity::ChildIterator Entity::ChildIterator::operator++(int) {
+  auto current = *this;
+  if (current_child->next_sibling_id == parent->first_children_id) {
+    current_child = nullptr;
+  } else {
+    current_child = scene->GetEntityUnchecked(current_child->next_sibling_id);
+  }
+  return current;
+}
+
+
+Entity::ChildIterator begin(const Entity::Children& children) {
+  auto parent = children.scene->GetEntityUnchecked(children.entity_id);
+  return {
+    .scene = children.scene,
+    .parent = parent,
+    .current_child = parent->has_children() ? children.scene->GetEntityUnchecked(parent->first_children_id) : nullptr, 
+  };
+}
+
+Entity::ChildIterator end(const Entity::Children& children) {
+  auto parent = children.scene->GetEntityUnchecked(children.entity_id);
+  return {
+    .scene = children.scene,
+    .parent = parent,
+    .current_child = nullptr,
+  };
 }
 
 // Result<json> SceneObject::ResolveTemplateForObject(const json& object) {
