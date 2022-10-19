@@ -55,7 +55,7 @@ Entity* Scene::CreateEntity(std::string_view object_name, std::optional<EntityId
     Entity* parent = GetEntity(*parent_id);
     entity->parent_id = parent->id;
     if (parent->has_children()) {
-      InsertSibling(parent->first_children_id, entity->id);
+      parent->first_children_id = InsertSibling(parent->first_children_id, entity->id);
     } else {
       parent->first_children_id = entity->id;
       entity->next_sibling_id = EntityId::CreateInactive(entity->id.index);
@@ -64,7 +64,7 @@ Entity* Scene::CreateEntity(std::string_view object_name, std::optional<EntityId
   } else {
     parent_id = EntityId::CreateInactive(entity->id.index);
     if (first_active_entity_.has_value()) {
-      InsertSibling(*first_active_entity_, entity->id);
+      first_active_entity_ = InsertSibling(*first_active_entity_, entity->id);
     } else {
       entity->next_sibling_id = EntityId::CreateInactive(entity->id.index);
       entity->previous_sibling_id = EntityId::CreateInactive(entity->id.index);

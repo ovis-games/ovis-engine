@@ -87,7 +87,7 @@ class Scene : public Serializable {
 
   // Inserts a sibling in an existing sibling chain. All sibling indices in the chain as well as
   // the new entity are corrected. It returns the id of the first sibling after the insertion.
-  EntityId InsertSibling(EntityId first_sibling_id, EntityId new_sibling_id);
+  [[nodiscard]] EntityId InsertSibling(EntityId first_sibling_id, EntityId new_sibling_id);
   bool RemoveSibling(EntityId old_sibling_id);
 };
 
