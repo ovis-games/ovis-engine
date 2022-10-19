@@ -15,7 +15,7 @@ TEST_CASE("Create scene", "[ovis][core][Scene]") {
 
   SECTION("Test id range") {
     std::size_t c = 0;
-    for (auto id : scene.GetEntityIds()) {
+    for (auto id : scene.entity_ids()) {
       REQUIRE(id == entity->id);
       ++c;
     }

@@ -2,6 +2,7 @@
 
 #include "ovis/core/main_vm.hpp"
 #include "ovis/core/entity.hpp"
+#include "ovis/utils/not_null.hpp"
 #include "ovis/utils/result.hpp"
 #include "ovis/vm/contiguous_storage.hpp"
 #include "ovis/vm/type_id.hpp"
@@ -23,8 +24,8 @@ public:
 
   Result<> Resize(ContiguousStorage::SizeType size);
 
-  Result<> AddComponent(EntityId object_id);
-  Result<> RemoveComponent(EntityId object_id);
+  Result<> AddComponent(EntityId entity_id);
+  Result<> RemoveComponent(EntityId entity_id);
 
   template <typename T>
   T& GetComponent(EntityId id) {
@@ -45,6 +46,29 @@ private:
   TypeId component_type_id_;
   ContiguousStorage storage_;
   std::vector<bool> flags_;
+};
+
+template <typename T>
+class ComponentStorageView {
+ public:
+  ComponentStorageView(NotNull<ComponentStorage*> storage) : storage_(storage) {
+    assert(storage_->component_type_id() == main_vm->GetTypeId<T>());
+  }
+
+  Scene* scene() const { return storage_->scene(); }
+  TypeId component_type_id() const { return storage_->component_type_id(); }
+  NotNull<Type*> component_type() const { return storage_->component_type(); }
+
+  Result<> Resize(ContiguousStorage::SizeType size) { return storage_->Resize(size); }
+
+  Result<> AddComponent(EntityId entity_id) { return storage_->AddComponent(entity_id); }
+  Result<> RemoveComponent(EntityId entity_id) { return storage_->RemoveComponent(entity_id); }
+
+  T& GetComponent(EntityId entity_id) { return storage_->GetComponent<T>(entity_id); }
+  const T& GetComponent(EntityId entity_id) const { return storage_->GetComponent<T>(entity_id); }
+
+ private:
+  NotNull<ComponentStorage*> storage_;
 };
 
 }  // namespace ovis

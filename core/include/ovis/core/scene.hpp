@@ -53,9 +53,23 @@ class Scene : public Serializable {
   void ClearEntities();
 
   bool IsEntityIdValid(EntityId id) { return id.index < entities_.size() && entities_[id.index].id == id; }
-  auto GetEntityIds() const {
-    return TransformRange(FilterRange(entities_, [](const auto& obj) { return obj.is_active(); }),
-                          [](const auto& obj) { return obj.id; });
+  auto entities() const {
+    return FilterRange(entities_, [](const auto& obj) { return obj.is_active(); });
+  }
+  auto entity_ids() const {
+    return TransformRange(entities(), [](const auto& obj) { return obj.id; });
+  }
+  Range<Entity::AscendingSiblingIterator> root_entities() {
+    return {
+      Entity::AscendingSiblingIterator {
+        .scene = this,
+        .entity = first_active_entity_ ? GetEntityUnchecked(*first_active_entity_) : nullptr,
+      },
+      Entity::AscendingSiblingIterator {
+        .scene = this,
+        .entity = nullptr,
+      },
+    };
   }
 
   template <typename ComponentType>

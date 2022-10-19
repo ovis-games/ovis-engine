@@ -32,7 +32,7 @@ class SimpleJob : public Job<Scene*, SceneUpdate> {
 
   Result<> Execute(const SceneUpdate& parameters) override {
     auto storages = GetStorages(parameters.scene, ArgumentTypes{});
-    for (auto id : parameters.scene->GetEntityIds()) {
+    for (auto id : parameters.scene->entity_ids()) {
       OVIS_CHECK_RESULT(Call(ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>(), storages, id));
     }
     return Success;
@@ -46,7 +46,8 @@ class SimpleJob : public Job<Scene*, SceneUpdate> {
 
   template <typename T>
   void ParseParameterAccess(std::size_t index) {
-    if constexpr (std::is_pointer_v<T>) {
+    if constexpr (std::is_same_v<Scene*, std::remove_cv_t<T>>) {
+    } else if constexpr (std::is_pointer_v<T>) {
       auto type = main_vm->GetTypeId<std::remove_pointer_t<T>>();
       RequireWriteAccess(type);
     } else if constexpr (std::is_reference_v<T> && std::is_const_v<std::remove_reference_t<T>>) {

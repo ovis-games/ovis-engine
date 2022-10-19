@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ovis/core/component_storage.hpp"
 #include "ovis/core/matrix.hpp"
 #include "ovis/core/quaternion.hpp"
 #include "ovis/core/simple_job.hpp"
@@ -54,5 +55,9 @@ struct GlobalTransformMatrices {
 
 void ComputeLocalTransformMatrices(const Transform&, LocalTransformMatrices* local_transform_matrices);
 OVIS_CREATE_SIMPLE_JOB(ComputeLocalTransformMatrices);
+
+void ComputeGlobalTransformMatrices(Scene* scene, const ComponentStorageView<LocalTransformMatrices>& local_transforms,
+                                    ComponentStorageView<GlobalTransformMatrices>* global_transforms);
+OVIS_CREATE_SIMPLE_JOB(ComputeGlobalTransformMatrices);
 
 }  // namespace ovis
