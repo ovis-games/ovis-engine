@@ -7,39 +7,24 @@
 
 namespace ovis {
 
-Entity::Siblings Entity::siblings(Scene* scene) const {
-  return {
-    .scene = scene,
-    .entity_id = id,
-  };
-}
-
-Entity::Children Entity::children(Scene* scene) const {
-  return {
-    .scene = scene,
-    .entity_id = id,
-  };
-}
-
-Entity::Descendants Entity::descendants(Scene* scene) {
+Entity::Siblings Entity::siblings(Scene* scene) {
   return {
     .scene = scene,
     .entity = this,
   };
 }
 
-Entity::SiblingIterator begin(const Entity::Siblings& siblings) {
-  Entity* entity = siblings.scene->GetEntityUnchecked(siblings.entity_id);
+Entity::Children Entity::children(Scene* scene) {
   return {
-    .scene = siblings.scene,
-    .current_sibling_id = entity->next_sibling_id,
+    .scene = scene,
+    .entity = this,
   };
 }
 
-Entity::SiblingIterator end(const Entity::Siblings& siblings) {
+Entity::Descendants Entity::descendants(Scene* scene) {
   return {
-    .scene = siblings.scene,
-    .current_sibling_id = siblings.entity_id,
+    .scene = scene,
+    .root = this,
   };
 }
 
@@ -74,120 +59,75 @@ std::pair<std::string_view, std::optional<unsigned int>> Entity::ParseName(std::
   return {name, number};
 }
 
-
-Entity& Entity::SiblingIterator::operator*() const {
-  return *scene->GetEntityUnchecked(current_sibling_id);
+void Entity::SiblingIterator::Increment() {
+  entity = scene->GetEntityUnchecked(entity->next_sibling_id);
 }
 
-Entity* Entity::SiblingIterator::operator->() {
-  return scene->GetEntityUnchecked(current_sibling_id);
+void Entity::AscendingSiblingIterator::Increment() {
+  // Detect "wrap aroung"
+  entity =
+      entity->id.index < entity->next_sibling_id.index ? scene->GetEntityUnchecked(entity->next_sibling_id) : nullptr;
 }
 
-Entity::SiblingIterator& Entity::SiblingIterator::operator++() {
-  current_sibling_id = scene->GetEntityUnchecked(current_sibling_id)->next_sibling_id;
-  return *this;
-}
-
-Entity::SiblingIterator Entity::SiblingIterator::operator++(int) {
-  const auto current = *this;
-  current_sibling_id = scene->GetEntityUnchecked(current_sibling_id)->previous_sibling_id;
-  return current;
-}
-
-Entity::SiblingIterator& Entity::SiblingIterator::operator--() {
-  current_sibling_id = scene->GetEntityUnchecked(current_sibling_id)->previous_sibling_id;
-  return *this;
-}
-
-Entity::SiblingIterator Entity::SiblingIterator::operator--(int) {
-  const auto current = *this;
-  current_sibling_id = scene->GetEntityUnchecked(current_sibling_id)->previous_sibling_id;
-  return current;
-}
-
-bool operator==(const Entity::SiblingIterator& lhs, const Entity::SiblingIterator& rhs) {
-  // We can assume that both are from the same scene as stated in C++11 standard (n3337):
-  // § 24.2.1 — [iterator.requirements.general#6]
-  // An iterator j is called reachable from an iterator i if and only if there is a finite
-  // sequence of applications of the expression ++i that makes i == j. If j is reachable from i,
-  // they refer to elements of the same sequence.
-
-  // § 24.2.5 — [forward.iterators#2]
-  // The domain of == for forward iterators is that of iterators over the same underlying sequence.
-  assert(lhs.scene == rhs.scene);
-
-  return lhs.current_sibling_id == rhs.current_sibling_id;
-}
-
-bool operator!=(const Entity::SiblingIterator& lhs, const Entity::SiblingIterator& rhs) {
-  assert(lhs.scene == rhs.scene); // See above
-  return lhs.current_sibling_id != rhs.current_sibling_id;
-}
-
-Entity::ChildIterator& Entity::ChildIterator::operator++() {
-  if (current_child->next_sibling_id == parent->first_children_id) {
-    current_child = nullptr;
-  } else {
-    current_child = scene->GetEntityUnchecked(current_child->next_sibling_id);
-  }
-  return *this;
-}
-
-Entity::ChildIterator Entity::ChildIterator::operator++(int) {
-  auto current = *this;
-  if (current_child->next_sibling_id == parent->first_children_id) {
-    current_child = nullptr;
-  } else {
-    current_child = scene->GetEntityUnchecked(current_child->next_sibling_id);
-  }
-  return current;
-}
-
-
-Entity::ChildIterator begin(const Entity::Children& children) {
-  auto parent = children.scene->GetEntityUnchecked(children.entity_id);
-  return {
-    .scene = children.scene,
-    .parent = parent,
-    .current_child = parent->has_children() ? children.scene->GetEntityUnchecked(parent->first_children_id) : nullptr, 
-  };
-}
-
-Entity::ChildIterator end(const Entity::Children& children) {
-  auto parent = children.scene->GetEntityUnchecked(children.entity_id);
-  return {
-    .scene = children.scene,
-    .parent = parent,
-    .current_child = nullptr,
-  };
-}
+namespace {
 
 // TODO: rename
 Entity* GoDown(Scene* scene, Entity* entity) {
   return entity->has_children() ? GoDown(scene, scene->GetEntityUnchecked(entity->first_children_id)) : entity;
 }
 
-Entity* Entity::DescendantIterator::GetNextDescendant() const {
+}  // namespace
+
+void Entity::DescendantIterator::Increment() {
   if (current_descendant->has_siblings() && current_descendant->next_sibling_id.index > current_descendant->id.index) {
-    return GoDown(scene, scene->GetEntityUnchecked(current_descendant->next_sibling_id));
+    current_descendant = GoDown(scene, scene->GetEntityUnchecked(current_descendant->next_sibling_id));
   } else {
-    return scene->GetEntityUnchecked(current_descendant->parent_id);
+    current_descendant = scene->GetEntityUnchecked(current_descendant->parent_id);
   }
 }
 
-Entity::DescendantIterator begin(const Entity::Descendants& descendants) {
+
+Entity::SiblingIterator Entity::Siblings::begin() const {
   return {
-    .scene = descendants.scene,
-    .root = descendants.entity,
-    .current_descendant = GoDown(descendants.scene, descendants.entity),
+    .scene = scene,
+    .entity = scene->GetEntityUnchecked(entity->next_sibling_id),
   };
 }
 
-Entity::DescendantIterator end(const Entity::Descendants& descendants) {
+Entity::SiblingIterator Entity::Siblings::end() const {
   return {
-    .scene = descendants.scene,
-    .root = descendants.entity,
-    .current_descendant = descendants.entity,
+    .scene = scene,
+    .entity = entity,
+  };
+}
+
+Entity::AscendingSiblingIterator Entity::Children::begin() const {
+  return {
+    .scene = scene,
+    .entity = entity->has_children() ? scene->GetEntityUnchecked(entity->first_children_id) : nullptr,
+  };
+}
+
+Entity::AscendingSiblingIterator Entity::Children::end() const {
+  return {
+    .scene = scene,
+    .entity = nullptr,
+  };
+}
+
+Entity::DescendantIterator Entity::Descendants::begin() const {
+  return {
+    .scene = scene,
+    .root = root,
+    .current_descendant = GoDown(scene, root),
+  };
+}
+
+Entity::DescendantIterator Entity::Descendants::end() const {
+  return {
+    .scene = scene,
+    .root = root,
+    .current_descendant = root,
   };
 }
 
