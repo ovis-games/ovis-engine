@@ -43,6 +43,8 @@ struct Entity {
   struct SiblingIterator;
   struct Children;
   struct ChildIterator;
+  struct Descendants;
+  struct DescendantIterator;
 
   bool is_active() const {
     return id.is_active();
@@ -72,6 +74,7 @@ struct Entity {
     return next_sibling_id != id;
   }
   Siblings siblings(Scene* scene) const;
+  Descendants descendants(Scene* scene);
 
   static bool IsValidName(std::string_view name);
   static std::pair<std::string_view, std::optional<unsigned int>> ParseName(std::string_view name);
@@ -158,5 +161,57 @@ Entity::ChildIterator begin(const Entity::Children& children);
 Entity::ChildIterator end(const Entity::Children& children);
 
 static_assert(std::forward_iterator<Entity::ChildIterator>);
+
+struct Entity::DescendantIterator {
+  friend bool operator==(const Entity::DescendantIterator& lhs, const Entity::DescendantIterator& rhs);
+  friend bool operator!=(const Entity::DescendantIterator& lhs, const Entity::DescendantIterator& rhs);
+
+  using iterator_category = std::bidirectional_iterator_tag;
+  using difference_type = std::ptrdiff_t;
+  using value_type = Entity;
+  using pointer = Entity*;
+  using reference = Entity&;
+
+  Entity& operator*() const { return *current_descendant; }
+  Entity* operator->() { return current_descendant; }
+  DescendantIterator& operator++() {
+    current_descendant = GetNextDescendant();
+    return *this;
+  }
+  DescendantIterator operator++(int) {
+    auto current = *this;
+    current_descendant = GetNextDescendant();
+    return current;
+  }
+
+  Scene* scene;
+  Entity* root;
+  Entity* current_descendant;
+
+  Entity* GetNextDescendant() const;
+};
+
+struct Entity::Descendants {
+  Scene* scene;
+  Entity* entity;
+};
+
+inline bool operator==(const Entity::DescendantIterator& lhs, const Entity::DescendantIterator& rhs) {
+  assert(lhs.scene == rhs.scene);
+  assert(lhs.root == rhs.root);
+  return lhs.current_descendant == rhs.current_descendant;
+}
+
+inline bool operator!=(const Entity::DescendantIterator& lhs, const Entity::DescendantIterator& rhs) {
+  assert(lhs.scene == rhs.scene);
+  assert(lhs.root == rhs.root);
+  return lhs.current_descendant != rhs.current_descendant;
+}
+
+Entity::DescendantIterator begin(const Entity::Descendants& descendants);
+Entity::DescendantIterator end(const Entity::Descendants& descendants);
+
+static_assert(std::forward_iterator<Entity::DescendantIterator>);
+
 
 }  // namespace ovis

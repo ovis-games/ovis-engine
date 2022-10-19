@@ -128,6 +128,19 @@ TEST_CASE("Create scene", "[ovis][core][Scene]") {
     }
     REQUIRE(c == 1);
   }
+
+  auto grandchild = scene.CreateEntity("Peter", child->id);
+
+  SECTION("Decendants of entity") {
+    std::vector<Entity*> descendants = { grandchild, child, second_child };
+    int i = 0;
+    for (const auto& d : entity->descendants(&scene)) {
+      REQUIRE(i < descendants.size());
+      REQUIRE(descendants[i] == &d);
+      ++i;
+    }
+    REQUIRE(i == descendants.size());
+  }
 }
 
 TEST_CASE("Create scene objects", "[Scene]") {

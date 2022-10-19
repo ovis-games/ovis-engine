@@ -21,6 +21,13 @@ Entity::Children Entity::children(Scene* scene) const {
   };
 }
 
+Entity::Descendants Entity::descendants(Scene* scene) {
+  return {
+    .scene = scene,
+    .entity = this,
+  };
+}
+
 Entity::SiblingIterator begin(const Entity::Siblings& siblings) {
   Entity* entity = siblings.scene->GetEntityUnchecked(siblings.entity_id);
   return {
@@ -152,6 +159,35 @@ Entity::ChildIterator end(const Entity::Children& children) {
     .scene = children.scene,
     .parent = parent,
     .current_child = nullptr,
+  };
+}
+
+// TODO: rename
+Entity* GoDown(Scene* scene, Entity* entity) {
+  return entity->has_children() ? GoDown(scene, scene->GetEntityUnchecked(entity->first_children_id)) : entity;
+}
+
+Entity* Entity::DescendantIterator::GetNextDescendant() const {
+  if (current_descendant->has_siblings() && current_descendant->next_sibling_id.index > current_descendant->id.index) {
+    return GoDown(scene, scene->GetEntityUnchecked(current_descendant->next_sibling_id));
+  } else {
+    return scene->GetEntityUnchecked(current_descendant->parent_id);
+  }
+}
+
+Entity::DescendantIterator begin(const Entity::Descendants& descendants) {
+  return {
+    .scene = descendants.scene,
+    .root = descendants.entity,
+    .current_descendant = GoDown(descendants.scene, descendants.entity),
+  };
+}
+
+Entity::DescendantIterator end(const Entity::Descendants& descendants) {
+  return {
+    .scene = descendants.scene,
+    .root = descendants.entity,
+    .current_descendant = descendants.entity,
   };
 }
 
