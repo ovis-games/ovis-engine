@@ -1,5 +1,6 @@
 #pragma once
 
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -23,65 +24,133 @@ class SimpleJob : public Job<Scene*, SceneUpdate> {
 
  public:
   SimpleJob(std::string_view name) : Job(name) {
-    ParseAccess(ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>());
+    ParseAccess(ArgumentTypes{});
   }
 
-  Result<> Prepare(Scene* const& parameters) override {
+  Result<> Prepare(Scene* const& scene) override {
+    GetSources(scene, ArgumentTypes{});
     return Success;
   }
 
   Result<> Execute(const SceneUpdate& parameters) override {
-    auto storages = GetStorages(parameters.scene, ArgumentTypes{});
-    for (auto id : parameters.scene->entity_ids()) {
-      OVIS_CHECK_RESULT(Call(ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>(), storages, id));
+    if constexpr (needs_iteration_) {
+      for (Entity& entity : parameters.scene->entities()) {
+        if (ShouldExecute(entity, ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>())) {
+          OVIS_CHECK_RESULT(Call(&entity, ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>()));
+        }
+      }
+      return Success;
+    } else {
+      OVIS_CHECK_RESULT(Call(nullptr, ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>()));
+      return Success;
     }
-    return Success;
   }
 
  private:
-  template <typename... T, std::size_t... I>
-  void ParseAccess(TypeList<T...>, std::index_sequence<I...>) {
-    (ParseParameterAccess<nth_parameter_t<I, T...>>(I), ...);
-  }
+  template <typename T> struct ParameterSource;
 
+  template <>
+  struct ParameterSource<Entity*> {
+    using type = Entity*;
+    static constexpr bool needs_iteration = true;
+    static void ParseAccess(SimpleJob* job) { }
+    static type GetSource(Scene* scene) { return nullptr; }
+    static bool ShouldExecute(Entity* entity, type source) { return true; }
+    static Entity* GetParameter(Entity* entity, type source) { return entity; }
+  };
+  template <>
+  struct ParameterSource<Scene*> {
+    using type = Scene*;
+    static constexpr bool needs_iteration = false;
+    static void ParseAccess(SimpleJob* job) { }
+    static type GetSource(Scene* scene) { return scene; }
+    static bool ShouldExecute(Entity* entity, type source) { return true; }
+    static Scene* GetParameter(Entity* entity, Scene* scene) { return scene; }
+  };
   template <typename T>
-  void ParseParameterAccess(std::size_t index) {
-    if constexpr (std::is_same_v<Scene*, std::remove_cv_t<T>>) {
-    } else if constexpr (std::is_pointer_v<T>) {
-      auto type = main_vm->GetTypeId<std::remove_pointer_t<T>>();
-      RequireWriteAccess(type);
-    } else if constexpr (std::is_reference_v<T> && std::is_const_v<std::remove_reference_t<T>>) {
-      auto type = main_vm->GetTypeId<std::remove_reference_t<T>>();
-      RequireReadAccess(type);
-    } else {
-      static_assert(true, "Invalid parameter type");
+  struct ParameterSource<ComponentStorageView<T>> {
+    using type = ComponentStorageView<T>;
+    static constexpr bool needs_iteration = false;
+    static void ParseAccess(SimpleJob* job) { ParameterSource<T>::ParseAccess(job); }
+    static type GetSource(Scene* scene) { return ParameterSource<T>::GetSource(scene);  }
+    static bool ShouldExecute(Entity* entity, type source) { return true; }
+    static T GetParameter(Scene* scene) { return scene; }
+  };
+  template <typename T>
+  struct ParameterSource<const T&> {
+    using type = ComponentStorageView<const T>;
+    static constexpr bool needs_iteration = true;
+    static void ParseAccess(SimpleJob* job) { job->RequireReadAccess(main_vm->GetTypeId<T>()); }
+    static type GetSource(Scene* scene) { return scene->GetComponentStorage<const T>(); }
+    static bool ShouldExecute(Entity* entity, type source) { return source.EntityHasComponent(entity->id); }
+    static auto GetParameter(Entity* entity, type source) { return source.GetComponent(entity->id); }
+  };
+  template <typename T>
+  struct ParameterSource<T&> {
+    using type = ComponentStorageView<const T>;
+    static constexpr bool needs_iteration = true;
+    static void ParseAccess(SimpleJob* job) { job->RequireWriteAccess(main_vm->GetTypeId<T>()); }
+    static type GetSource(Scene* scene) { return scene->GetComponentStorage<T>(); }
+    static bool ShouldExecute(Entity* entity, type source) { return source.EntityHasComponent(entity->id); }
+    static auto GetParameter(Entity* entity, type source) { return source.GetComponent(entity->id); }
+  };
+  template <typename T>
+  struct ParameterSource<const T*> {
+    using type = ComponentStorageView<T>;
+    static constexpr bool needs_iteration = true;
+    static void ParseAccess(SimpleJob* job) { job->RequireReadAccess(main_vm->GetTypeId<T>()); }
+    static type GetSource(Scene* scene) { return scene->GetComponentStorage<const T>(); }
+    static bool ShouldExecute(Entity* entity, type source) { return true; }
+    static auto GetParameter(Entity* entity, type source) {
+      assert(entity != nullptr);
+      return source.EntityHasComponent(entity->id) ? &source.GetComponent(entity->id) : nullptr;
     }
+  };
+  template <typename T>
+  struct ParameterSource<T*> {
+    using type = ComponentStorageView<T>;
+    static constexpr bool needs_iteration = true;
+    static void ParseAccess(SimpleJob* job) { job->RequireWriteAccess(main_vm->GetTypeId<T>()); }
+    static type GetSource(Scene* scene) { return scene->GetComponentStorage<T>(); }
+    static bool ShouldExecute(Entity* entity, type source) { return true; }
+    static auto GetParameter(Entity* entity, type source) {
+      assert(entity != nullptr);
+      return source.EntityHasComponent(entity->id) ? &source.GetComponent(entity->id) : nullptr;
+    }
+  };
+
+  template <typename T> struct ParameterSourceList;
+  template <typename... T> struct ParameterSourceList<TypeList<T...>> {
+    using type = std::tuple<typename ParameterSource<T>::type...>;
+    static constexpr bool needs_iteration = (... || ParameterSource<T>::needs_iteration);
+  };
+
+  typename ParameterSourceList<ArgumentTypes>::type parameter_sources_;
+  constexpr static bool needs_iteration_ = ParameterSourceList<ArgumentTypes>::needs_iteration;
+
+  template <typename... T>
+  void ParseAccess(TypeList<T...>) {
+    (ParameterSource<T>::ParseAccess(this), ...);
   }
 
   template <typename... T>
-  std::vector<ComponentStorage*> GetStorages(Scene* scene, TypeList<T...>) {
-    return { scene->template GetComponentStorage<std::remove_pointer_t<T>>()... };
+  void GetSources(Scene* scene, TypeList<T...>) {
+    parameter_sources_ = std::make_tuple(ParameterSource<T>::GetSource(scene)...);
   }
 
   template <typename... T, std::size_t... I>
-  Result<> Call(TypeList<T...>, std::index_sequence<I...>, const std::vector<ComponentStorage*>& storages, EntityId id) {
-    if constexpr (is_result_v<typename reflection::Invocable<FUNCTION>::ReturnType>) {
-      OVIS_CHECK_RESULT(FUNCTION(Get<T>(storages, I, id)...));
-    } else {
-      FUNCTION(Get<T>(storages, I, id)...);
-    }
-    return Success;
+  bool ShouldExecute(Entity& entity, TypeList<T...>, std::index_sequence<I...>) {
+    return (... && ParameterSource<T>::ShouldExecute(&entity, std::get<I>(parameter_sources_)));
   }
 
-  template <typename T>
-  auto Get(const std::vector<ComponentStorage*>& storages, std::size_t index, EntityId id) {
-    if constexpr (std::is_pointer_v<T>) {
-      return &storages[index]->GetComponent<std::remove_pointer_t<T>>(id);
-    } else if constexpr (std::is_reference_v<T> && std::is_const_v<std::remove_reference_t<T>>) {
-      return storages[index]->GetComponent<std::remove_cvref_t<T>>(id);
+  template <typename... T, std::size_t... I>
+  Result<> Call(Entity* entity, TypeList<T...>, std::index_sequence<I...>) {
+    if constexpr (is_result_v<typename reflection::Invocable<FUNCTION>::ReturnType>) {
+      OVIS_CHECK_RESULT(FUNCTION(ParameterSource<T>::GetParameter(entity, std::get<I>(parameter_sources_))...));
     } else {
-      static_assert(true, "Invalid parameter type");
+      FUNCTION(ParameterSource<T>::GetParameter(entity, std::get<I>(parameter_sources_))...);
     }
+    return Success;
   }
 };
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <type_traits>
 #include "ovis/core/main_vm.hpp"
 #include "ovis/core/entity.hpp"
 #include "ovis/utils/not_null.hpp"
@@ -26,6 +27,7 @@ public:
 
   Result<> AddComponent(EntityId entity_id);
   Result<> RemoveComponent(EntityId entity_id);
+  bool EntityHasComponent(EntityId entity_id) const;
 
   template <typename T>
   T& GetComponent(EntityId id) {
@@ -51,8 +53,8 @@ private:
 template <typename T>
 class ComponentStorageView {
  public:
-  ComponentStorageView(NotNull<ComponentStorage*> storage) : storage_(storage) {
-    assert(storage_->component_type_id() == main_vm->GetTypeId<T>());
+  ComponentStorageView(ComponentStorage* storage = nullptr) : storage_(storage) {
+    assert(!storage_ || storage_->component_type_id() == main_vm->GetTypeId<T>());
   }
 
   Scene* scene() const { return storage_->scene(); }
@@ -63,12 +65,29 @@ class ComponentStorageView {
 
   Result<> AddComponent(EntityId entity_id) { return storage_->AddComponent(entity_id); }
   Result<> RemoveComponent(EntityId entity_id) { return storage_->RemoveComponent(entity_id); }
+  bool EntityHasComponent(EntityId entity_id) const { return storage_->EntityHasComponent(entity_id); }
 
   T& GetComponent(EntityId entity_id) { return storage_->GetComponent<T>(entity_id); }
   const T& GetComponent(EntityId entity_id) const { return storage_->GetComponent<T>(entity_id); }
 
+  T& operator[](EntityId entity_id) { return storage_->GetComponent<T>(entity_id); }
+  const T& operator[](EntityId entity_id) const { return storage_->GetComponent<T>(entity_id); }
+
+  operator bool() const {
+    return storage_ != nullptr;
+  }
+
  private:
-  NotNull<ComponentStorage*> storage_;
+  ComponentStorage* storage_;
 };
+
+template <typename T> struct is_component_storage_view : std::false_type {};
+template <typename T> struct is_component_storage_view<ComponentStorageView<T>> : std::true_type {};
+template <typename T> constexpr bool is_component_storage_view_v = is_component_storage_view<T>::value;
+
+template <typename T> struct component_storage_view_component_type;
+template <typename T> struct component_storage_view_component_type<ComponentStorageView<T>> { using type = T; };
+template <typename T>
+using component_storage_view_component_type_t = typename component_storage_view_component_type<T>::type;
 
 }  // namespace ovis

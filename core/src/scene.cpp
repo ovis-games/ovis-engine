@@ -133,7 +133,6 @@ ComponentStorage* Scene::GetComponentStorage(TypeId component_type) {
 
 void Scene::Prepare() {
   component_storages_.clear();
-  frame_scheduler_.Prepare(this);
   {
     const auto object_component_types = frame_scheduler_.GetUsedEntityComponents();
     component_storages_.reserve(object_component_types.size());
@@ -141,6 +140,7 @@ void Scene::Prepare() {
       component_storages_.emplace_back(this, component_type, entities_.size());
     }
   }
+  frame_scheduler_.Prepare(this);
 }
 
 void Scene::Play() {

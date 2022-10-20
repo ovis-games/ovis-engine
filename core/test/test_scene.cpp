@@ -143,16 +143,16 @@ TEST_CASE("Create scene", "[ovis][core][Scene]") {
   }
 }
 
-TEST_CASE("Create scene objects", "[Scene]") {
-  BENCHMARK_ADVANCED("Create objects")(Catch::Benchmark::Chronometer meter) {
-    Scene scene;
-    meter.measure([&]() {
-      for (int i = 0; i < 1000; ++i) {
-        scene.CreateEntity(std::to_string(i));
-      }
-    });
-  };
-}
+// TEST_CASE("Create scene objects", "[Scene]") {
+//   BENCHMARK_ADVANCED("Create objects")(Catch::Benchmark::Chronometer meter) {
+//     Scene scene;
+//     meter.measure([&]() {
+//       for (int i = 0; i < 1000; ++i) {
+//         scene.CreateEntity(std::to_string(i));
+//       }
+//     });
+//   };
+// }
 
 // TEST_CASE("Create Scene Object", "[ovis][core][SceneObject]") {
 //   Scene test_scene;

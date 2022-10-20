@@ -68,15 +68,15 @@ TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
 
   auto entity = s.CreateEntity("Obj");
 
-  REQUIRE(speed_storage->AddComponent(entity->id));
-  REQUIRE(position_storage->AddComponent(entity->id));
+  REQUIRE(speed_storage.AddComponent(entity->id));
+  REQUIRE(position_storage.AddComponent(entity->id));
 
   {
-    Speed speed = speed_storage->GetComponent<Speed>(entity->id);
+    Speed speed = speed_storage[entity->id];
     REQUIRE(speed.x == 1);
     REQUIRE(speed.y == 2);
 
-    Position pos = position_storage->GetComponent<Position>(entity->id);
+    Position pos = position_storage[entity->id];
     REQUIRE(pos.x == 0);
     REQUIRE(pos.y == 0);
   }
@@ -85,22 +85,22 @@ TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
 
   s.Update(0.1);
   {
-    Speed speed = speed_storage->GetComponent<Speed>(entity->id);
+    Speed speed = speed_storage[entity->id];
     REQUIRE(speed.x == 1);
     REQUIRE(speed.y == 2);
 
-    Position pos = position_storage->GetComponent<Position>(entity->id);
+    Position pos = position_storage[entity->id];
     REQUIRE(pos.x == 1);
     REQUIRE(pos.y == 2);
   }
 
   s.Update(0.1);
   {
-    Speed speed = speed_storage->GetComponent<Speed>(entity->id);
+    Speed speed = speed_storage[entity->id];
     REQUIRE(speed.x == 1);
     REQUIRE(speed.y == 2);
 
-    Position pos = position_storage->GetComponent<Position>(entity->id);
+    Position pos = position_storage[entity->id];
     REQUIRE(pos.x == 2);
     REQUIRE(pos.y == 4);
   }

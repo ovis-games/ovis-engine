@@ -29,7 +29,6 @@ struct SceneUpdate {
 
 class Scene : public Serializable {
   friend class SceneController;
-  friend class SceneObject;
 
  public:
   Scene(std::size_t initial_entity_capacity = 1000);
@@ -56,6 +55,9 @@ class Scene : public Serializable {
   auto entities() const {
     return FilterRange(entities_, [](const auto& obj) { return obj.is_active(); });
   }
+  auto entities() {
+    return FilterRange(entities_, [](auto& obj) { return obj.is_active(); });
+  }
   auto entity_ids() const {
     return TransformRange(entities(), [](const auto& obj) { return obj.id; });
   }
@@ -73,7 +75,7 @@ class Scene : public Serializable {
   }
 
   template <typename ComponentType>
-  ComponentStorage* GetComponentStorage() {
+  ComponentStorageView<ComponentType> GetComponentStorage() {
     return GetComponentStorage(main_vm->GetTypeId<ComponentType>());
   }
   ComponentStorage* GetComponentStorage(TypeId component_type);

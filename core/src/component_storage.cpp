@@ -79,4 +79,9 @@ Result<> ComponentStorage::RemoveComponent(EntityId object_id) {
   return Success;
 }
 
+bool ComponentStorage::EntityHasComponent(EntityId entity_id) const {
+  assert(scene()->IsEntityIdValid(entity_id));
+  return flags_[entity_id.index];
+}
+
 }  // namespace ovis
