@@ -8,7 +8,6 @@
 #include "ovis/utils/utf8.hpp"
 #include "ovis/core/asset_library.hpp"
 #include "ovis/core/entity.hpp"
-#include "ovis/core/lua.hpp"
 #include "ovis/core/scene_viewport.hpp"
 
 namespace ovis {

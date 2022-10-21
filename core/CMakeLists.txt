@@ -15,7 +15,6 @@ add_library(
   include/ovis/core/camera.hpp src/camera.cpp
   include/ovis/core/transform.hpp src/transform.cpp
   include/ovis/core/asset_library.hpp src/asset_library.cpp
-  include/ovis/core/lua.hpp src/lua.cpp
   include/ovis/core/vector_types.hpp src/vector_types.cpp
   include/ovis/core/vector.hpp src/vector2.cpp src/vector3.cpp
   include/ovis/core/color_type.hpp src/color_type.cpp
@@ -39,7 +38,6 @@ target_link_libraries(
   PUBLIC
     ovis::utils
     ovis::vm
-    middleclass
 )
 
 target_add_assets(
@@ -77,22 +75,6 @@ if (OVIS_BUILD_TESTS)
     ovis-core-test
     PRIVATE
       -DCATCH_CONFIG_ENABLE_BENCHMARKING=1
-  )
-
-  target_add_ldoc_test(
-    TARGET ovis-core-test
-    MODULE core
-    INPUT_FILES
-      src/core_module.cpp
-      src/scene.cpp
-      src/scene_object.cpp
-      src/scene_object_component.cpp
-      src/transform.cpp
-      src/camera.cpp
-      src/vector2.cpp
-      src/vector3.cpp
-      src/matrix.cpp
-      src/color.cpp
   )
 
   target_link_libraries(
@@ -140,8 +122,6 @@ if (OVIS_BUILD_BENCHMARKS)
     PRIVATE
       benchmark::benchmark
       ovis::core
-      Lua
-      sol2_single
   )
   target_embed_assets(ovis-core-benchmark)
 endif ()

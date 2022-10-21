@@ -1,7 +1,5 @@
 #pragma once
 
-#include <sol/sol.hpp>
-
 #include "ovis/core/scene_viewport.hpp"
 #include "ovis/core/vector.hpp"
 #include "ovis/input/mouse_button.hpp"

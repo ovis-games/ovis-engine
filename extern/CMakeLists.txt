@@ -1,13 +1,7 @@
 add_subdirectory(fmt)
-add_subdirectory(dear_imgui)
-add_subdirectory(ImGuiColorTextEdit)
 add_subdirectory(nlohmann_json)
-add_subdirectory(lua)
-add_subdirectory(sol)
-add_subdirectory(middleclass)
 add_subdirectory(stb)
 add_subdirectory(microtar)
-add_subdirectory(box2d)
 add_subdirectory(Catch2)
 
 if (OVIS_BUILD_BENCHMARKS)

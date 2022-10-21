@@ -6,9 +6,9 @@
 #include <type_traits>
 #include <vector>
 
-#include <sol/sol.hpp>
-
 #include <ovis/utils/log.hpp>
+
+// TODO: Remove this
 
 namespace ovis {
 
@@ -184,16 +184,3 @@ std::ostream& operator<<(std::ostream& os, const safe_ptr<T>& pointer) {
 }
 
 }  // namespace ovis
-
-namespace sol {
-template <typename T>
-struct unique_usertype_traits<ovis::safe_ptr<T>> {
-  typedef T type;
-  typedef ovis::safe_ptr<T> actual_type;
-  static const bool value = true;
-
-  static bool is_null(const actual_type& ptr) { return ptr == nullptr; }
-
-  static type* get(const actual_type& ptr) { return ptr.get(); }
-};
-}  // namespace sol

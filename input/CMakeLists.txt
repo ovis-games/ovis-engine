@@ -29,17 +29,6 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
   )
 
-  target_add_ldoc_test(
-    TARGET ovis-input-test
-    MODULE input
-    INPUT_FILES
-      src/input_module.cpp
-      src/key.cpp
-      src/key_press_event.cpp
-      src/key_release_event.cpp
-      src/mouse_button.cpp
-  )
-
   target_link_libraries(
     ovis-input-test
     PRIVATE

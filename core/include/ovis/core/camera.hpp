@@ -1,7 +1,5 @@
 #pragma once
 
-#include <sol/sol.hpp>
-
 #include "ovis/utils/json.hpp"
 #include "ovis/core/entity.hpp"
 #include "ovis/core/math_constants.hpp"

@@ -35,12 +35,6 @@ if (OVIS_BUILD_TESTS)
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
   )
 
-  target_add_ldoc_test(
-    TARGET ovis-rendering-test
-    MODULE rendering
-    INPUT_FILES
-  )
-
   target_link_libraries(
     ovis-rendering-test
     PRIVATE

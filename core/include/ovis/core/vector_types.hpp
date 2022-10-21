@@ -4,11 +4,10 @@
 #include <type_traits>
 
 #include <fmt/format.h>
-#include <sol/sol.hpp>
 
-#include <ovis/utils/json.hpp>
-#include <ovis/core/math_constants.hpp>
-#include <ovis/core/vm_bindings.hpp>
+#include "ovis/utils/json.hpp"
+#include "ovis/core/math_constants.hpp"
+#include "ovis/core/vm_bindings.hpp"
 
 namespace ovis {
 
@@ -50,7 +49,6 @@ union alignas(sizeof(float) * 2) Vector2 {
     }};
   };
 
-  static void RegisterType(sol::table* module);
   OVIS_VM_DECLARE_TYPE_BINDING();
 };
 static_assert(sizeof(Vector2) == 8);
@@ -110,7 +108,6 @@ union alignas(sizeof(float) * 4) Vector3 {
     }};
   };
 
-  static void RegisterType(sol::table* module);
   OVIS_VM_DECLARE_TYPE_BINDING();
 };
 std::ostream& operator<<(std::ostream& stream, const Vector3& vector);
