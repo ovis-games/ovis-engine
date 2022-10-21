@@ -1,11 +1,10 @@
-#include "test_utils.hpp"
-#include <iostream>
-
 #include "catch2/catch.hpp"
+#include <iostream>
 #include <string>
 
 #include "ovis/utils/log.hpp"
 #include "ovis/vm/list.hpp"
+#include "ovis/test/utils.hpp"
 
 using namespace ovis;
 

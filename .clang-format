@@ -29,29 +29,25 @@ IncludeCategories:
     Priority:        3
     SortPriority:    7
 
-  - Regex:           '^(<|")ovis\/physics2d'
+  - Regex:           '^(<|")ovis\/input'
     Priority:        3
     SortPriority:    8
 
-  - Regex:           '^(<|")ovis\/input'
+  - Regex:           '^(<|")ovis\/networking'
     Priority:        3
     SortPriority:    9
 
-  - Regex:           '^(<|")ovis\/networking'
+  - Regex:           '^(<|")ovis\/audio'
     Priority:        3
     SortPriority:    10
 
-  - Regex:           '^(<|")ovis\/audio'
+  - Regex:           '^(<|")ovis\/application'
     Priority:        3
     SortPriority:    11
 
-  - Regex:           '^(<|")ovis\/imgui'
+  - Regex:           '^(<|")ovis\/test'
     Priority:        3
     SortPriority:    12
-
-  - Regex:           '^(<|")ovis\/application'
-    Priority:        3
-    SortPriority:    13
 
   - Regex:           '^(<|")ovis\/editor'
     Priority:        3

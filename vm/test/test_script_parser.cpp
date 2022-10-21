@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 
-#include "test_utils.hpp"
 #include "ovis/vm/script_parser.hpp"
+#include "ovis/test/utils.hpp"
 
 using namespace ovis;
 

@@ -82,6 +82,7 @@ if (OVIS_BUILD_TESTS)
     PRIVATE
       Catch2
       ovis::core
+      ovis::test
   )
   target_add_assets(
     ovis-core-test

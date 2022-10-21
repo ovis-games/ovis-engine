@@ -89,6 +89,25 @@ target_compile_definitions(
 )
 
 if (OVIS_BUILD_TESTS)
+  add_library(
+    ovis-test
+    INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_utils/ovis/test/utils.hpp
+  )
+  target_include_directories(
+    ovis-test
+    INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/test_utils
+  )
+  target_link_libraries(
+    ovis-test
+    INTERFACE
+      Catch2
+      ovis::utils
+      fmt::fmt
+  )
+  add_library(ovis::test ALIAS ovis-test)
+
   add_executable(
     ovis-utils-test
 

@@ -58,6 +58,7 @@ if (OVIS_BUILD_TESTS)
     PRIVATE
       Catch2
       ovis::vm
+      ovis::test
   )
   target_add_assets(
     ovis-vm-test

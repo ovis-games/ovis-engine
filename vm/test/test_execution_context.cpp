@@ -1,10 +1,9 @@
-#include "test_utils.hpp"
-
 #include <catch2/catch.hpp>
 
 #include "ovis/vm/function.hpp"
 #include "ovis/vm/value.hpp"
 #include "ovis/vm/virtual_machine.hpp"
+#include "ovis/test/utils.hpp"
 
 using namespace ovis;
 

@@ -1,4 +1,3 @@
-#include "test_utils.hpp"
 #include <string>
 
 #include <catch2/catch.hpp>
@@ -7,6 +6,7 @@
 #include "ovis/core/scene.hpp"
 #include "ovis/core/simple_job.hpp"
 #include "ovis/core/vm_bindings.hpp"
+#include "ovis/test/utils.hpp"
 
 using namespace ovis;
 
