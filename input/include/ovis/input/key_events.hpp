@@ -1,42 +1,20 @@
 #pragma once
 
-#include <sol/sol.hpp>
-
-#include <ovis/core/event.hpp>
-#include <ovis/input/key.hpp>
+#include "ovis/core/vm_bindings.hpp"
+#include "ovis/input/key.hpp"
 
 namespace ovis {
 
-class KeyboardEvent : public Event {
- public:
-  inline KeyboardEvent(std::string type, Key key) : Event(std::move(type)), key_(key) {}
+struct KeyPressEvent {
+  Key key;
 
-  inline Key key() const { return key_; }
-
- private:
-  Key key_;
+  OVIS_VM_DECLARE_TYPE_BINDING();
 };
 
-class KeyPressEvent : public KeyboardEvent {
-  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
+struct KeyReleaseEvent {
+  Key key;
 
- public:
-  inline static const std::string TYPE = "KeyPress";
-
-  inline KeyPressEvent(Key key) : KeyboardEvent(TYPE, key) {}
-
-  static void RegisterType(sol::table* module);
-};
-
-class KeyReleaseEvent : public KeyboardEvent {
-  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
-
- public:
-  inline static const std::string TYPE = "KeyRelease";
-
-  inline KeyReleaseEvent(Key key) : KeyboardEvent(TYPE, key) {}
-
-  static void RegisterType(sol::table* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 };
 
 }  // namespace ovis

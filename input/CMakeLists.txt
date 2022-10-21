@@ -2,10 +2,10 @@ add_library(
   ovis-input
   
   include/ovis/input/key.hpp src/key.cpp
-  include/ovis/input/key_events.hpp src/key_press_event.cpp src/key_release_event.cpp
+  include/ovis/input/key_events.hpp src/key_events.cpp
   include/ovis/input/text_input_event.hpp src/text_input_event.cpp
   include/ovis/input/mouse_button.hpp src/mouse_button.cpp
-  include/ovis/input/mouse_events.hpp src/mouse_button_press_event.cpp src/mouse_button_release_event.cpp src/mouse_move_event.cpp src/mouse_wheel_event.cpp
+  include/ovis/input/mouse_events.hpp src/mouse_events.cpp
   include/ovis/input/emscripten_callbacks.hpp src/emscripten_callbacks.cpp
 )
 add_library(ovis::input ALIAS ovis-input)

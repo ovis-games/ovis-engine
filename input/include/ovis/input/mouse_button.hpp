@@ -5,7 +5,7 @@
 #include <string_view>
 
 #include <SDL2/SDL_scancode.h>
-#include <sol/sol.hpp>
+#include "ovis/core/vm_bindings.hpp"
 
 namespace ovis {
 
@@ -23,7 +23,7 @@ struct MouseButton {
   static constexpr MouseButton Four() { return {3}; }
   static constexpr MouseButton Five() { return {4}; }
 
-  static void RegisterType(sol::table* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 };
 static_assert(sizeof(MouseButton) == 1);
 
