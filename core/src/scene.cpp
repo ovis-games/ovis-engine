@@ -110,6 +110,15 @@ ComponentStorage* Scene::GetComponentStorage(TypeId component_type) {
   return nullptr;
 }
 
+EventStorage* Scene::GetEventStorage(TypeId event_type) {
+  for (auto& storage : event_storages_) {
+    if (storage.event_type_id() == event_type) {
+      return &storage;
+    }
+  }
+  return nullptr;
+}
+
 // void Scene::ClearEntities() {
 //   while (entities_.size() > 0) {
 //     // Destroy one at a time because parent objects will explicitly destory their children
@@ -132,49 +141,41 @@ ComponentStorage* Scene::GetComponentStorage(TypeId component_type) {
 //
 
 void Scene::Prepare() {
-  component_storages_.clear();
   {
-    const auto object_component_types = frame_scheduler_.GetUsedEntityComponents();
+    const auto object_component_types = frame_scheduler().GetUsedEntityComponents();
+    component_storages_.clear();
     component_storages_.reserve(object_component_types.size());
+
     for (const auto component_type : object_component_types) {
       component_storages_.emplace_back(this, component_type, entities_.size());
+    }
+  }
+  {
+    const auto event_types = frame_scheduler().GetUsedEvents();
+    event_storages_.clear();
+    event_storages_.reserve(event_types.size());
+
+    for (const auto event_type : event_types) {
+      event_storages_.emplace_back(event_type);
     }
   }
   frame_scheduler_.Prepare(this);
 }
 
 void Scene::Play() {
-  // assert(!is_playing());
-  // if (!controllers_sorted_) {
-  //   SortControllers();
-  // }
-  // for (const auto& controller : controller_order_) {
-  //   controller->Play();
-  // }
   is_playing_ = true;
 }
 
 void Scene::Stop() {
-  // assert(is_playing());
-  // if (!controllers_sorted_) {
-  //   SortControllers();
-  // }
-  // for (const auto& controller : controller_order_) {
-  //   controller->Stop();
-  // }
-  // DeleteRemovedControllers();
   is_playing_ = false;
 }
 
 void Scene::Update(float delta_time) {
   assert(is_playing() && "Call Play() before calling Update().");
+  for (auto& event_storage : event_storages_) {
+    event_storage.Clear();
+  }
   frame_scheduler_(SceneUpdate{.scene = this, .delta_time = delta_time});
-  // if (!controllers_sorted_) {
-  //   SortControllers();
-  // }
-  // for (const auto& controller : controller_order_) {
-  //   controller->UpdateWrapper(delta_time);
-  // }
 }
 
 json Scene::Serialize() const {

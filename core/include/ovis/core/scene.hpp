@@ -6,7 +6,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ovis/core/scheduler.hpp"
 #include "ovis/utils/all.hpp"
 #include "ovis/utils/down_cast.hpp"
 #include "ovis/utils/json.hpp"
@@ -15,7 +14,9 @@
 #include "ovis/utils/serialize.hpp"
 #include "ovis/core/component_storage.hpp"
 #include "ovis/core/entity.hpp"
-#include "ovis/core/event.hpp"
+#include "ovis/core/event_storage.hpp"
+#include "ovis/core/job.hpp"
+#include "ovis/core/scheduler.hpp"
 #include "ovis/core/vector.hpp"
 
 namespace ovis {
@@ -26,6 +27,9 @@ struct SceneUpdate {
   Scene* scene;
   float delta_time;
 };
+
+using FrameScheduler = Scheduler<Scene*, SceneUpdate>;
+using FrameJob = Job<Scene*, SceneUpdate>;
 
 class Scene : public Serializable {
   friend class SceneController;
@@ -80,6 +84,16 @@ class Scene : public Serializable {
   }
   ComponentStorage* GetComponentStorage(TypeId component_type);
 
+  template <typename EventType>
+  EventEmitter<EventType> GetEventEmitter() {
+    return GetEventStorage(main_vm->GetTypeId<EventType>());
+  }
+  template <typename EventType>
+  EventStorageView<EventType> GetEventStorage() {
+    return GetEventStorage(main_vm->GetTypeId<EventType>());
+  }
+  EventStorage* GetEventStorage(TypeId event_type);
+
   void Prepare();
 
   void Play();
@@ -91,13 +105,14 @@ class Scene : public Serializable {
   bool Deserialize(const json& serialized_object) override;
 
  private:
-  Scheduler<Scene*, SceneUpdate> frame_scheduler_;
+  FrameScheduler frame_scheduler_;
 
   std::vector<Entity> entities_;
   std::optional<EntityId> first_active_entity_;
   std::optional<EntityId> first_inactive_entity_;
 
   std::vector<ComponentStorage> component_storages_;
+  std::vector<EventStorage> event_storages_;
 
   bool is_playing_ = false;
 

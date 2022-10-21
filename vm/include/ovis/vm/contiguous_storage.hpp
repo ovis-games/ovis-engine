@@ -63,7 +63,7 @@ class ContiguousStorage {
   }
 
   void DestructRange(SizeType index, SizeType count) {
-    assert(index + count < capacity());
+    assert(index + count <= capacity());
     memory_layout_.DestructN(GetElementAddress(index), count);
   }
 
@@ -78,12 +78,12 @@ class ContiguousStorage {
   void* data_;
 
   void* GetElementAddress(SizeType index) {
-    assert(index < capacity());
+    assert(index == 0 || index < capacity());
     return OffsetAddress(data_, index * memory_layout_.size_in_bytes);
   }
 
   const void* GetElementAddress(SizeType index) const {
-    assert(index < capacity());
+    assert(index == 0 || index < capacity());
     return OffsetAddress(data_, index * memory_layout_.size_in_bytes);
   }
 };

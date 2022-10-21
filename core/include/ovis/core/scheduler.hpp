@@ -28,20 +28,25 @@ class Scheduler {
   std::unordered_set<TypeId> GetUsedSceneComponents() const;
   std::unordered_set<TypeId> GetUsedEvents() const;
 
+  Job<PrepareParameters, ExecuteParameters>* GetJob(std::string_view id) {
+    for (const auto& job : jobs_) {
+      if (job->id() == id) {
+        return job.get();
+      }
+    }
+    return nullptr;
+  }
+
  private:
   std::vector<std::unique_ptr<Job<PrepareParameters, ExecuteParameters>>> jobs_;
 
-  std::vector<EventStorage> event_storages_;
-
   Result<> SortJobs();
-  Result<> SetupEventStorage();
   Result<> PrepareJobs(const PrepareParameters& parameters);
 };
 
 template <typename PrepareParameters, typename ExecuteParameters>
 Result<> Scheduler<PrepareParameters, ExecuteParameters>::Prepare(const PrepareParameters& parameters) {
   OVIS_CHECK_RESULT(SortJobs());
-  OVIS_CHECK_RESULT(SetupEventStorage());
   OVIS_CHECK_RESULT(PrepareJobs(parameters));
   return Success;
 }
@@ -122,19 +127,6 @@ Result<> Scheduler<PrepareParameters, ExecuteParameters>::SortJobs() {
 
     using std::swap;
     swap(*unsorted_section_start, *next_job);
-  }
-
-  return Success;
-}
-
-template <typename PrepareParameters, typename ExecuteParameters>
-Result<> Scheduler<PrepareParameters, ExecuteParameters>::SetupEventStorage() {
-  const auto event_types = GetUsedEvents();
-  event_storages_.clear();
-  event_storages_.reserve(event_types.size());
-
-  for (const auto event_type : event_types) {
-    event_storages_.emplace_back(event_type);
   }
 
   return Success;

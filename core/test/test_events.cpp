@@ -1,0 +1,74 @@
+#include <string>
+
+#include <catch2/catch.hpp>
+
+#include "ovis/core/event_storage.hpp"
+#include "ovis/core/scene.hpp"
+#include "ovis/core/simple_job.hpp"
+#include "ovis/core/vm_bindings.hpp"
+
+using namespace ovis;
+
+struct NumberEvent {
+  double number;
+
+  OVIS_VM_DECLARE_TYPE_BINDING();
+};
+
+OVIS_VM_DEFINE_TYPE_BINDING(Test, NumberEvent) {
+  NumberEvent_type->AddAttribute("Core.Event");
+}
+
+void NumberEventEmitter(EventEmitter<NumberEvent> number_event_emitter) {
+  for (int i = 0; i < 10; ++i) {
+    number_event_emitter.Emit({
+      .number = 100,
+    });
+  }
+}
+OVIS_CREATE_SIMPLE_JOB(NumberEventEmitter)
+
+class NumberEventListener : public FrameJob {
+  public:
+    NumberEventListener() : FrameJob("NumberEventListener") {
+      RequireReadAccess(main_vm->GetTypeId<NumberEvent>());
+    }
+
+    Result<> Prepare(Scene* const& update) override { return Success; }
+    Result<> Execute(const SceneUpdate& update) override {
+      auto storage = update.scene->GetEventStorage<NumberEvent>();
+
+      for (auto event : storage) {
+        sum_ += event->number;
+      }
+
+      return Success;
+    }
+
+    double sum() { return sum_; }
+
+   private:
+    double sum_ = 0.0;
+};
+
+TEST_CASE("Emit and receive events", "[ovis][core][Events]") {
+  Scene scene;
+  scene.frame_scheduler().AddJob<NumberEventEmitterJob>();
+  scene.frame_scheduler().AddJob<NumberEventListener>();
+  scene.Prepare();
+  scene.Play();
+
+  for (int i = 0; i < 10; ++i) {
+    scene.Update(1.0);
+  }
+  REQUIRE(static_cast<NumberEventListener*>(scene.frame_scheduler().GetJob("NumberEventListener"))->sum() ==
+          10 * 10 * 100);
+
+  BENCHMARK_ADVANCED("Emit events")(Catch::Benchmark::Chronometer meter) {
+    meter.measure([&]() {
+      for (int i = 0; i < 1000; ++i) {
+        scene.Update(1.0);
+      }
+    });
+  };
+}

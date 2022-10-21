@@ -53,7 +53,7 @@ std::pair<std::string_view, std::optional<unsigned int>> Entity::ParseName(std::
     const std::string_view number_string = full_name.substr(substr_length);
     unsigned int value;
     auto result = std::from_chars(number_string.data(), number_string.data() + number_string.size(), value);
-    SDL_assert(result.ec == std::errc());  // There should be no possibility that there is an error
+    assert(result.ec == std::errc());  // There should be no possibility that there is an error
     number = value;
   }
   return {name, number};

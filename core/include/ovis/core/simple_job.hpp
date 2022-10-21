@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "ovis/core/event_storage.hpp"
 #include "ovis/utils/log.hpp"
 #include "ovis/utils/parameter_pack.hpp"
 #include "ovis/utils/reflection.hpp"
@@ -80,10 +81,26 @@ class SimpleJob : public Job<Scene*, SceneUpdate> {
   struct ParameterSource<const T&> {
     using type = ComponentStorageView<const T>;
     static constexpr bool needs_iteration = true;
-    static void ParseAccess(SimpleJob* job) { job->RequireReadAccess(main_vm->GetTypeId<T>()); }
+    static void ParseAccess(SimpleJob* job) {
+      // assert(main_vm->GetType<T>()
+      job->RequireReadAccess(main_vm->GetTypeId<T>());
+    }
     static type GetSource(Scene* scene) { return scene->GetComponentStorage<const T>(); }
     static bool ShouldExecute(Entity* entity, type source) { return source.EntityHasComponent(entity->id); }
     static auto GetParameter(Entity* entity, type source) { return source.GetComponent(entity->id); }
+  };
+  template <typename T>
+  struct ParameterSource<EventEmitter<T>> {
+    using type = EventEmitter<T>;
+    static constexpr bool is_event_emitter = true;
+    static constexpr bool needs_iteration = false;
+    static void ParseAccess(SimpleJob* job) {
+      assert(main_vm->GetType<T>()->attributes().contains("Core.Event"));
+      job->RequireWriteAccess(main_vm->GetTypeId<T>()); 
+    }
+    static type GetSource(Scene* scene) { return scene->GetEventEmitter<T>();  }
+    static bool ShouldExecute(Entity* entity, type source) { return true; }
+    static auto GetParameter(Entity* entity, type source) { return source; }
   };
   template <typename T>
   struct ParameterSource<T&> {

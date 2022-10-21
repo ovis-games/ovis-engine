@@ -85,6 +85,9 @@ Result<> List::Resize(SizeType new_size) {
 }
 
 Result<> List::Add(const Value& value) {
+  if (value.type_id() != element_type()) {
+    return Error("Invalid type.");
+  }
   return AddInternal(value.GetValuePointer());
 }
 
