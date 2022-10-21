@@ -38,7 +38,7 @@ struct TypeDescription {
   std::vector<std::shared_ptr<Function>> methods;
   TypeMemoryLayout memory_layout;
   Attributes attributes;
-
+  std::unordered_map<std::string, Value> constants;
 
   // Implementations are in virtual_machine.hpp
   template <auto MEMBER_POINTER> requires(std::is_member_object_pointer_v<decltype(MEMBER_POINTER)>)
