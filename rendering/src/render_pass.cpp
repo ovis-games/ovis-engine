@@ -2,19 +2,22 @@
 
 namespace ovis {
 
-RenderPass::RenderPass()
-#if OVIS_ENABLE_BUILT_IN_PROFILING
-    cpu_render_profiler_(fmt::format("{}::Render", name))
-#endif
-{
+RenderPass::RenderPass(std::string_view job_id, GraphicsContext* graphics_context)
+    : FrameJob(job_id), graphics_context_(graphics_context) {}
+
+RenderPass::~RenderPass() {
+  ReleaseResources();
 }
 
-void RenderPass::RenderBefore(TypeId render_pass_type) {
-  render_before_list_.insert(render_pass_type);
+Result<> RenderPass::Prepare(Scene* const& scene) {
+  CreateResources();
+  return Success;
 }
 
-void RenderPass::RenderAfter(TypeId render_pass_type) {
-  render_after_list_.insert(render_pass_type);
+Result<> RenderPass::Execute(const SceneUpdate& parameters) {
+  SceneViewport viewport;
+  Render(viewport);
+  return Success;
 }
 
 }  // namespace ovis

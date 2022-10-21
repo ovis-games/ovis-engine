@@ -6,15 +6,15 @@
 #include <memory>
 #include <span>
 
-#include <ovis/core/color.hpp>
-#include <ovis/core/intersection.hpp>
-#include <ovis/core/matrix.hpp>
-#include <ovis/core/vector.hpp>
-#include <ovis/graphics/graphics_context.hpp>
-#include <ovis/graphics/shader_program.hpp>
-#include <ovis/graphics/vertex_buffer.hpp>
-#include <ovis/graphics/vertex_input.hpp>
-#include <ovis/rendering/render_pass.hpp>
+#include "ovis/core/color.hpp"
+#include "ovis/core/intersection.hpp"
+#include "ovis/core/matrix.hpp"
+#include "ovis/core/vector.hpp"
+#include "ovis/graphics/graphics_context.hpp"
+#include "ovis/graphics/shader_program.hpp"
+#include "ovis/graphics/vertex_buffer.hpp"
+#include "ovis/graphics/vertex_input.hpp"
+#include "ovis/rendering/render_pass.hpp"
 
 namespace ovis {
 
@@ -22,7 +22,7 @@ class PrimitiveRenderer : public RenderPass {
  public:
   enum class DrawSpace { WORLD, SCREEN };
 
-  PrimitiveRenderer();
+  PrimitiveRenderer(std::string_view job_id, GraphicsContext* graphics_context);
 
   void CreateResources() override;
   void ReleaseResources() override;
@@ -31,7 +31,7 @@ class PrimitiveRenderer : public RenderPass {
   inline DrawSpace draw_space() const { return draw_space_; }
 
  protected:
-  void BeginDraw(const RenderContext& render_context);
+  void BeginDraw(const SceneViewport& viewport);
   void EndDraw();
 
   struct Vertex {

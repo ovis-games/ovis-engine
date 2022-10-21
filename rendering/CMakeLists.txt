@@ -1,8 +1,7 @@
 add_library(
   ovis-rendering
 
-  include/ovis/rendering/rendering_viewport.hpp src/rendering_viewport.cpp
-  include/ovis/rendering/render_target_viewport.hpp src/render_target_viewport.cpp
+  # include/ovis/rendering/render_target_viewport.hpp src/render_target_viewport.cpp
   include/ovis/rendering/render_pass.hpp src/render_pass.cpp
   include/ovis/rendering/clear_pass.hpp src/clear_pass.cpp
   include/ovis/rendering/primitive_renderer.hpp src/primitive_renderer.cpp
@@ -33,6 +32,7 @@ if (OVIS_BUILD_TESTS)
     ovis-rendering-test
 
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_clear_pass.cpp
   )
 
   target_link_libraries(
@@ -40,6 +40,7 @@ if (OVIS_BUILD_TESTS)
     PRIVATE
       Catch2
       ovis::rendering
+      ovis::test
   )
 
   if (OVIS_EMSCRIPTEN)

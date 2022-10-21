@@ -1,11 +1,11 @@
-#include <ovis/core/math_constants.hpp>
-#include <ovis/rendering/primitive_renderer.hpp>
-#include <ovis/rendering/rendering_viewport.hpp>
+#include "ovis/core/math_constants.hpp"
+#include "ovis/rendering/primitive_renderer.hpp"
 
 namespace ovis {
 std::map<GraphicsContext*, std::weak_ptr<PrimitiveRenderer::Resources>> PrimitiveRenderer::resources;
 
-PrimitiveRenderer::PrimitiveRenderer() : RenderPass() {}
+PrimitiveRenderer::PrimitiveRenderer(std::string_view job_id, GraphicsContext* graphics_context)
+    : RenderPass(job_id, graphics_context) {}
 
 void PrimitiveRenderer::CreateResources() {
   SDL_assert(!is_drawing_);
@@ -50,21 +50,21 @@ void PrimitiveRenderer::SetDrawSpace(DrawSpace space) {
   draw_space_ = space;
 }
 
-void PrimitiveRenderer::BeginDraw(const RenderContext& render_context) {
+void PrimitiveRenderer::BeginDraw(const SceneViewport& viewport) {
   SDL_assert(!is_drawing_);
   SDL_assert(resources_);
 
   is_drawing_ = true;
   resources_->vertices.clear();
 
-  const Vector2 viewport_size = viewport()->GetDimensions();
+  const Vector2 viewport_size = viewport.dimensions;
   screen_aabb_ = AxisAlignedBoundingBox2D::FromMinMax(Vector2::Zero(), viewport_size);
 
   const Matrix4 screen_to_clip_space =
       Matrix4::FromOrthographicProjection(0.0f, viewport_size.x, viewport_size.y, 0.0f, -1.0f, 1.0f);
 
   if (draw_space_ == DrawSpace::WORLD) {
-    to_screen_space_ = Invert(screen_to_clip_space) * render_context.world_to_clip_space;
+    to_screen_space_ = Invert(screen_to_clip_space) * viewport.world_to_clip;
   } else {
     to_screen_space_ = Matrix4::Identity();
   }
@@ -290,7 +290,7 @@ void PrimitiveRenderer::Flush() {
   draw_item.vertex_input = resources_->vertex_input.get();
   draw_item.shader_program = resources_->shader.get();
   draw_item.primitive_topology = PrimitiveTopology::TRIANGLE_LIST;
-  draw_item.render_target_configuration = viewport()->GetDefaultRenderTargetConfiguration();
+  // draw_item.render_target_configuration = viewport()->GetDefaultRenderTargetConfiguration();
   draw_item.count = vertex_count;
   if (enable_alpha_blending_) {
     draw_item.blend_state.enabled = true;

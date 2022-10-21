@@ -1,9 +1,9 @@
 #pragma once
 
-#include <catch2/catch.hpp>
+#include "catch2/catch.hpp"
+#include "fmt/format.h"
 
-#include <fmt/format.h>
-#include <ovis/utils/result.hpp>
+#include "ovis/utils/result.hpp"
 
 #define REQUIRE_RESULT(expr) \
   do { \
@@ -13,3 +13,6 @@
     } \
     REQUIRE(require_result); \
   } while (false)
+
+// Define the namespace to make the statement 'using namespace ovis' not an error in snippets.
+namespace ovis {}

@@ -11,6 +11,8 @@ struct SceneViewport {
   Matrix3x4 view_to_world;
   Matrix4 view_to_clip;
   Matrix4 clip_to_view;
+  Matrix4 world_to_clip;
+  Matrix4 clip_to_world;
   Vector2 dimensions;
 
   Ray3D CalculateViewRay(Vector2 screen_space_coordinates) {
