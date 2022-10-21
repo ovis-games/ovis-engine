@@ -33,7 +33,6 @@ OVIS_VM_DEFINE_TYPE_BINDING(Test, Position) {
 }
 
 void Move(const Speed& speed, Position* position) {
-  LogI("Hello from move");
   position->x += speed.x;
   position->y += speed.y;
 }

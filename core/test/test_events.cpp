@@ -1,3 +1,4 @@
+#include "test_utils.hpp"
 #include <string>
 
 #include <catch2/catch.hpp>
@@ -32,13 +33,12 @@ class NumberEventListener : public FrameJob {
   public:
     NumberEventListener() : FrameJob("NumberEventListener") {
       RequireReadAccess(main_vm->GetTypeId<NumberEvent>());
+      ExecuteAfter("NumberEventEmitter");
     }
 
     Result<> Prepare(Scene* const& update) override { return Success; }
     Result<> Execute(const SceneUpdate& update) override {
-      auto storage = update.scene->GetEventStorage<NumberEvent>();
-
-      for (auto event : storage) {
+      for (auto event : update.scene->GetEventStorage<NumberEvent>()) {
         sum_ += event->number;
       }
 
@@ -53,9 +53,10 @@ class NumberEventListener : public FrameJob {
 
 TEST_CASE("Emit and receive events", "[ovis][core][Events]") {
   Scene scene;
-  scene.frame_scheduler().AddJob<NumberEventEmitterJob>();
+  // Insert the jobs in the "wrong" order on purpose
   scene.frame_scheduler().AddJob<NumberEventListener>();
-  scene.Prepare();
+  scene.frame_scheduler().AddJob<NumberEventEmitterJob>();
+  REQUIRE_RESULT(scene.Prepare());
   scene.Play();
 
   for (int i = 0; i < 10; ++i) {

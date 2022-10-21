@@ -99,14 +99,14 @@ std::unordered_set<TypeId> Scheduler<PrepareParameters, ExecuteParameters>::GetU
 
 template <typename PrepareParameters, typename ExecuteParameters>
 Result<> Scheduler<PrepareParameters, ExecuteParameters>::SortJobs() {
-  std::unordered_multimap<std::string_view, std::string_view> dependencies;
+  std::unordered_multimap<std::string, std::string> dependencies;
 
   for (const auto& job : jobs_) {
     for (const auto& execute_after : job->execute_after()) {
-      dependencies.insert(std::make_pair(job->id(), execute_after));
+      dependencies.insert(std::make_pair(std::string(job->id()), execute_after));
     }
     for (const auto& execute_before : job->execute_before()) {
-      dependencies.insert(std::make_pair(execute_before, job->id()));
+      dependencies.insert(std::make_pair(execute_before, std::string(job->id())));
     }
   }
 
@@ -115,7 +115,7 @@ Result<> Scheduler<PrepareParameters, ExecuteParameters>::SortJobs() {
   for (size_t processed_jobs = 0; processed_jobs < jobs_.size(); ++processed_jobs) {
     auto unsorted_section_start = jobs_.begin() + processed_jobs;
     auto next_job = std::find_if(unsorted_section_start, jobs_.end(),
-                                 [&](const auto& job) { return dependencies.count(job->id()) == 0; });
+                                 [&](const auto& job) { return dependencies.count(std::string(job->id())) == 0; });
     if (next_job == jobs_.end()) {
       return Error("Job dependencies cannot be resolved");
     }

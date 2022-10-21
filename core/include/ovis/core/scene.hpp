@@ -10,6 +10,7 @@
 #include "ovis/utils/down_cast.hpp"
 #include "ovis/utils/json.hpp"
 #include "ovis/utils/range.hpp"
+#include "ovis/utils/result.hpp"
 #include "ovis/utils/safe_pointer.hpp"
 #include "ovis/utils/serialize.hpp"
 #include "ovis/core/component_storage.hpp"
@@ -94,7 +95,7 @@ class Scene : public Serializable {
   }
   EventStorage* GetEventStorage(TypeId event_type);
 
-  void Prepare();
+  Result<> Prepare();
 
   void Play();
   void Stop();

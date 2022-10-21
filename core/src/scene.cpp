@@ -140,7 +140,7 @@ EventStorage* Scene::GetEventStorage(TypeId event_type) {
 // }
 //
 
-void Scene::Prepare() {
+Result<> Scene::Prepare() {
   {
     const auto object_component_types = frame_scheduler().GetUsedEntityComponents();
     component_storages_.clear();
@@ -159,7 +159,7 @@ void Scene::Prepare() {
       event_storages_.emplace_back(event_type);
     }
   }
-  frame_scheduler_.Prepare(this);
+  return frame_scheduler_.Prepare(this);
 }
 
 void Scene::Play() {
