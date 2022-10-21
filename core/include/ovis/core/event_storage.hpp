@@ -31,7 +31,7 @@ class EventStorage {
     return events_.Get<T>(index);
   }
 
-  bool IsEventPropagating(ContiguousStorage::SizeType index) const {
+  bool IsEventPropagating(ContiguousStorage::SizeType index) const{
     return propagating_state_[index];
   }
 
@@ -131,7 +131,7 @@ class EventStorageView {
       ContiguousStorage::SizeType new_index = event_.index();
       do {
         ++new_index;
-      } while (!storage->IsEventPropagating(new_index) && new_index < storage_size);
+      } while (new_index < storage_size && !storage->IsEventPropagating(new_index));
       event_ = Event<T>(storage, new_index);
     }
     Event<T> event_;
@@ -140,7 +140,7 @@ class EventStorageView {
   
   Iterator begin() {
     ContiguousStorage::SizeType index = 0;
-    while (!event_storage_->IsEventPropagating(index) && index < event_storage_->size()) {
+    while (index < event_storage_->size() && !event_storage_->IsEventPropagating(index)) {
       ++index;
     }
     return Iterator(event_storage_, index);
