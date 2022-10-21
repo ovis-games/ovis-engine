@@ -36,12 +36,14 @@ if (OVIS_BUILD_TESTS)
 
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/test/test_shape2d.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_renderer2d.cpp
   )
   target_link_libraries(
     ovis-rendering2d-test
     PRIVATE
       Catch2
       ovis::rendering2d
+      ovis::test
   )
   # target_add_assets(
   #   ovis-rendering-test

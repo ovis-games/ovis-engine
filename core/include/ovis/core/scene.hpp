@@ -57,15 +57,12 @@ class Scene : public Serializable {
   void ClearEntities();
 
   bool IsEntityIdValid(EntityId id) { return id.index < entities_.size() && entities_[id.index].id == id; }
-  auto entities() const {
-    return FilterRange(entities_, [](const auto& obj) { return obj.is_active(); });
-  }
-  auto entities() {
-    return FilterRange(entities_, [](auto& obj) { return obj.is_active(); });
-  }
-  auto entity_ids() const {
-    return TransformRange(entities(), [](const auto& obj) { return obj.id; });
-  }
+
+  struct EntityIterator;
+  friend struct EntityIterator;
+  EntityIterator begin();
+  EntityIterator end();
+
   Range<Entity::AscendingSiblingIterator> root_entities() {
     return {
       Entity::AscendingSiblingIterator {
@@ -110,6 +107,7 @@ class Scene : public Serializable {
 
   std::vector<Entity> entities_;
   std::optional<EntityId> first_active_entity_;
+  std::optional<EntityId> last_active_entity_;
   std::optional<EntityId> first_inactive_entity_;
 
   std::vector<ComponentStorage> component_storages_;
@@ -122,5 +120,43 @@ class Scene : public Serializable {
   [[nodiscard]] EntityId InsertSibling(EntityId first_sibling_id, EntityId new_sibling_id);
   bool RemoveSibling(EntityId old_sibling_id);
 };
+
+struct Scene::EntityIterator : ovis::EntityIterator {
+  Entity& operator*() const { return *entity; }
+  Entity* operator->() { return entity; }
+  EntityIterator& operator++() {
+    Increment();
+    return *this;
+  }
+  EntityIterator operator++(int) {
+    auto current = *this;
+    Increment();
+    return current;
+  }
+
+  Scene* scene;
+  Entity* entity;
+
+  void Increment() {
+    assert(scene->last_active_entity_.has_value() &&
+           "This has to be true, otherwise the scene would not contain any entities and an increment would be illegal");
+    std::size_t entity_index = entity->id.index;
+    do {
+      ++entity_index;
+    } while (entity_index <= scene->last_active_entity_->index && !scene->entities_[entity_index].is_active());
+
+    entity = &scene->entities_[entity_index];
+  }
+};
+
+inline bool operator==(const Scene::EntityIterator& lhs, const Scene::EntityIterator& rhs) {
+  assert(lhs.scene == rhs.scene);
+  return lhs.entity == rhs.entity;
+}
+
+inline bool operator!=(const Scene::EntityIterator& lhs, const Scene::EntityIterator& rhs) {
+  assert(lhs.scene == rhs.scene);
+  return lhs.entity != rhs.entity;
+}
 
 }  // namespace ovis

@@ -1,16 +1,18 @@
-#include <ovis/core/asset_library.hpp>
-#include <ovis/core/transform.hpp>
-#include <ovis/graphics/graphics_context.hpp>
-#include <ovis/graphics/render_target_configuration.hpp>
-#include <ovis/rendering/rendering_viewport.hpp>
-#include <ovis/rendering/clear_pass.hpp>
-#include <ovis/rendering2d/renderer2d.hpp>
-#include <ovis/rendering2d/text.hpp>
+#include "ovis/core/asset_library.hpp"
+#include "ovis/core/transform.hpp"
+#include "ovis/graphics/graphics_context.hpp"
+#include "ovis/graphics/render_target_configuration.hpp"
+#include "ovis/rendering/clear_pass.hpp"
+#include "ovis/rendering2d/renderer2d.hpp"
+#include "ovis/rendering2d/shape2d.hpp"
+#include "ovis/rendering2d/text.hpp"
 
 namespace ovis {
 
-Renderer2D::Renderer2D() {
-  RenderAfter<ClearPass>();
+Renderer2D::Renderer2D(GraphicsContext* graphics_context) : RenderPass("Renderer2D", graphics_context) {
+  ExecuteAfter("ClearPass");
+  RequireReadAccess<Shape2D>();
+  RequireReadAccess<Text>();
 }
 
 void Renderer2D::CreateResources() {
@@ -50,43 +52,43 @@ void Renderer2D::ReleaseResources() {
   empty_texture_.reset();
 }
 
-void Renderer2D::Render(const RenderContext& render_context) {
-  object_cache_.clear();
-  for (auto* object : viewport()->scene()->objects()) {
-    if (object->HasComponent<Shape2D>() || object->HasComponent<Text>()) {
-      object_cache_.push_back(object);
-    }
-  }
+void Renderer2D::Render(const SceneUpdate& update, const SceneViewport& viewport) {
+  // // auto& objects_with_shape2d = object_cache_;
+  // std::sort(object_cache_.begin(), object_cache_.end(), [](SceneObject* lhs, SceneObject* rhs) {
+  //   Vector3 lhs_position;
+  //   Transform* lhs_transform = lhs->GetComponent<Transform>();
+  //   if (lhs_transform != nullptr) {
+  //     lhs_position = lhs_transform->world_position();
+  //   }
 
-  // auto& objects_with_shape2d = object_cache_;
-  std::sort(object_cache_.begin(), object_cache_.end(), [](SceneObject* lhs, SceneObject* rhs) {
-    Vector3 lhs_position;
-    Transform* lhs_transform = lhs->GetComponent<Transform>();
-    if (lhs_transform != nullptr) {
-      lhs_position = lhs_transform->world_position();
-    }
+  //   Vector3 rhs_position;
+  //   Transform* rhs_transform = rhs->GetComponent<Transform>();
+  //   if (rhs_transform != nullptr) {
+  //     rhs_position = rhs_transform->world_position();
+  //   }
 
-    Vector3 rhs_position;
-    Transform* rhs_transform = rhs->GetComponent<Transform>();
-    if (rhs_transform != nullptr) {
-      rhs_position = rhs_transform->world_position();
-    }
+  //   // TODO: project into camera view axis instead of using the z coordinates
+  //   return lhs_position.z > rhs_position.z;
+  // });
+  //
+  // auto trnsform_storage = 
 
-    // TODO: project into camera view axis instead of using the z coordinates
-    return lhs_position.z > rhs_position.z;
-  });
+  auto shape_storage = update.scene->GetComponentStorage<Shape2D>();
+  auto text_storage = update.scene->GetComponentStorage<Text>();
 
   Texture2D* bound_texture = nullptr;
-  for (SceneObject* object : object_cache_) {
-    Transform* transform = object->GetComponent<Transform>();
-    const Matrix4 world_to_clip_space =
-        transform ? AffineCombine(render_context.world_to_clip_space, transform->local_to_world_matrix())
-                  : render_context.world_to_clip_space;
+  for (Entity& entity : *update.scene) {
+    // Transform* transform = object->GetComponent<Transform>();
+    // const Matrix4 world_to_clip_space =
+    //     transform ? AffineCombine(render_context.world_to_clip_space, transform->local_to_world_matrix())
+    //               : render_context.world_to_clip_space;
+    const Matrix4 world_to_clip_space = Matrix4::Identity();
 
-    if(Shape2D* shape = object->GetComponent<Shape2D>(); shape != nullptr) {
-      const std::span<const Shape2D::Vertex> vertices = shape->vertices();
+    if (shape_storage.EntityHasComponent(entity.id)) {
+      const Shape2D& shape = shape_storage[entity.id];
+      const std::span<const Shape2D::Vertex> vertices = shape.vertices();
 
-      const std::string texture_asset = shape->texture_asset();
+      const std::string texture_asset = shape.texture_asset();
       Texture2D* texture = empty_texture_.get();
       if (texture_asset.size() > 0) {
         auto texture_iterator = textures_.find(texture_asset);
@@ -113,7 +115,9 @@ void Renderer2D::Render(const RenderContext& render_context) {
       shape_vertex_count_ += vertices.size();
     }
 
-    if(Text* text = object->GetComponent<Text>(); text != nullptr) {
+    if (text_storage.EntityHasComponent(entity.id)) {
+      const Text& text = text_storage[entity.id];
+
       DrawShapeVertices(); // TODO: check if texture different
       Vector2 position = Vector2::Zero();
 
@@ -122,8 +126,8 @@ void Renderer2D::Render(const RenderContext& render_context) {
         shape_shader_->SetTexture("Texture", texture);
         bound_texture = texture;
       }
-      for (char character : text->text()) {
-        auto vertices = font_atlases_[0].GetCharacterVertices(character, &position, text->color());
+      for (char character : text.text) {
+        auto vertices = font_atlases_[0].GetCharacterVertices(character, &position, text.color);
         if (shape_vertex_count_ + vertices.size() > VERTEX_BUFFER_ELEMENT_COUNT) {
           DrawShapeVertices();
         }
@@ -154,7 +158,7 @@ void Renderer2D::DrawShapeVertices() {
   draw_item.vertex_input = vertex_input_.get();
   draw_item.shader_program = shape_shader_.get();
   draw_item.primitive_topology = PrimitiveTopology::TRIANGLE_LIST;
-  draw_item.render_target_configuration = viewport()->GetDefaultRenderTargetConfiguration();
+  // draw_item.render_target_configuration = viewport()->GetDefaultRenderTargetConfiguration();
   draw_item.count = shape_vertex_count_;
   draw_item.blend_state.enabled = true;
   draw_item.blend_state.source_color_factor = SourceBlendFactor::SOURCE_ALPHA;

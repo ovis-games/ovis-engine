@@ -21,7 +21,7 @@ class RenderPass : public FrameJob {
 
   virtual void CreateResources() {}
   virtual void ReleaseResources() {}
-  virtual void Render(const SceneViewport& viewport) = 0;
+  virtual void Render(const SceneUpdate& update, const SceneViewport& viewport) = 0;
 
  private:
   GraphicsContext* graphics_context_ = nullptr;

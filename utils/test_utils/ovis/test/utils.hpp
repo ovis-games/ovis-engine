@@ -71,6 +71,10 @@ struct TestWindow {
     glReadPixels(0, 0, client_width, client_height, GL_RGBA,  GL_UNSIGNED_BYTE, framebuffer.data());
     return framebuffer;
   }
+
+  void Swap() {
+    SDL_GL_SwapWindow(window.get());
+  }
 };
 
 }  // namespace test

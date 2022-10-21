@@ -43,6 +43,8 @@ class Shape2D {
   std::span<const Vertex> vertices() const { return vertices_; }
 
   void SetColor(const Color& color);
+  void SetOutlineColor(const Color& color);
+  void SetOutlineWidth(float width);
   void SetRectangle(const Rectangle& rectangle);
   void SetEllipse(const Ellipse& ellipse);
   void SetTexture(const std::string& texture_asset) { texture_asset_ = texture_asset; }
@@ -62,11 +64,12 @@ class Shape2D {
 
   std::vector<Vertex> vertices_;
 
-  static const json schema;
-
   void Update();
   void UpdateRectangle();
   void UpdateEllipse();
 };
+
+void to_json(json& data, const Shape2D& shape2d);
+void from_json(const json& data, Shape2D& shape2d);
 
 }  // namespace ovis

@@ -3,8 +3,10 @@
 #include <string>
 #include <unordered_set>
 
+#include "ovis/core/main_vm.hpp"
 #include "ovis/utils/result.hpp"
 #include "ovis/vm/type_id.hpp"
+#include "ovis/vm/virtual_machine.hpp"
 
 namespace ovis {
 
@@ -35,7 +37,9 @@ class Job {
   virtual Result<> Execute(const ExecuteParameters& parameters) = 0;
 
  protected:
+  template <typename T> void RequireReadAccess() { RequireReadAccess(main_vm->GetTypeId<T>()); }
   void RequireReadAccess(TypeId resource_type) { read_access_.insert(resource_type); }
+  template <typename T> void RequireWriteAccess() { RequireWriteAccess(main_vm->GetTypeId<T>()); }
   void RequireWriteAccess(TypeId resource_type) { write_access_.insert(resource_type); }
 
   void ExecuteAfter(std::string_view job_id) { execute_after_.emplace(job_id); }

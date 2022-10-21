@@ -16,7 +16,7 @@ Result<> RenderPass::Prepare(Scene* const& scene) {
 
 Result<> RenderPass::Execute(const SceneUpdate& parameters) {
   SceneViewport viewport;
-  Render(viewport);
+  Render(parameters, viewport);
   return Success;
 }
 

@@ -35,7 +35,7 @@ class SimpleJob : public Job<Scene*, SceneUpdate> {
 
   Result<> Execute(const SceneUpdate& parameters) override {
     if constexpr (needs_iteration_) {
-      for (Entity& entity : parameters.scene->entities()) {
+      for (Entity& entity : *parameters.scene) {
         if (ShouldExecute(entity, ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>())) {
           OVIS_CHECK_RESULT(Call(&entity, ArgumentTypes{}, std::make_index_sequence<ArgumentTypes::size>()));
         }

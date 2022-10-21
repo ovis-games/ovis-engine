@@ -7,7 +7,7 @@ namespace ovis {
 ClearPass::ClearPass(GraphicsContext* context, std::optional<Color> clear_color)
     : RenderPass("ClearPass", context), clear_color_(clear_color) {}
 
-void ClearPass::Render(const SceneViewport&) {
+void ClearPass::Render(const SceneUpdate& update, const SceneViewport& viewport) {
   if (clear_color()) {
     context()->default_render_target_configuration()->ClearColor(0, clear_color()->data);
   }

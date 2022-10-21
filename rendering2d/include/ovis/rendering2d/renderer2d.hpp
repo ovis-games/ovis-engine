@@ -1,23 +1,23 @@
 #pragma once
 
-#include <ovis/graphics/shader_program.hpp>
-#include <ovis/graphics/texture2d.hpp>
-#include <ovis/graphics/vertex_buffer.hpp>
-#include <ovis/graphics/vertex_input.hpp>
-#include <ovis/rendering/render_pass.hpp>
-#include <ovis/rendering2d/shape2d.hpp>
-#include <ovis/rendering2d/font_atlas.hpp>
+#include "ovis/graphics/shader_program.hpp"
+#include "ovis/graphics/texture2d.hpp"
+#include "ovis/graphics/vertex_buffer.hpp"
+#include "ovis/graphics/vertex_input.hpp"
+#include "ovis/rendering/render_pass.hpp"
+#include "ovis/rendering2d/font_atlas.hpp"
+#include "ovis/rendering2d/shape2d.hpp"
 
 namespace ovis {
 
 class Renderer2D : public RenderPass {
  public:
-  Renderer2D();
+  Renderer2D(GraphicsContext* graphics_context);
 
   void CreateResources() override;
   void ReleaseResources() override;
 
-  void Render(const RenderContext& render_context) override;
+  void Render(const SceneUpdate& update, const SceneViewport& viewport) override;
 
  private:
   static constexpr size_t VERTEX_BUFFER_ELEMENT_COUNT = 64 * 1024;
@@ -30,8 +30,6 @@ class Renderer2D : public RenderPass {
   std::unordered_map<std::string, std::unique_ptr<Texture2D>> textures_;
 
   std::vector<FontAtlas> font_atlases_;
-
-  std::vector<SceneObject*> object_cache_;
 
   void DrawShapeVertices();
 };

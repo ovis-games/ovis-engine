@@ -16,7 +16,7 @@ class ClearPass : public RenderPass {
   void SetClearColor(Color color) { clear_color_ = color; }
   void DisableColorClearing() { clear_color_.reset(); }
 
-  void Render(const SceneViewport&) override;
+  void Render(const SceneUpdate& update, const SceneViewport& viewport) override;
 
  private:
   std::optional<ovis::Color> clear_color_ = Color::Black();

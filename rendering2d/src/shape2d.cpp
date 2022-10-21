@@ -1,90 +1,64 @@
-#include <ovis/rendering2d/shape2d.hpp>
-#include <ovis/core/scene_object.hpp>
+#include "ovis/rendering2d/shape2d.hpp"
 
 namespace ovis {
 
-const json Shape2D::schema = {{"$ref", "rendering2d#/$defs/shape2d"}};
+void to_json(json& data, const Shape2D& shape2d) {
+  data = {
+    {"color", shape2d.color()},
+    {"outlineColor", shape2d.outline_color()},
+    {"outlineWidth", shape2d.outline_width()},
+    {"texture", shape2d.texture_asset()}
+  };
 
-json Shape2D::Serialize() const {
-  json data = {{"color", color_},
-               {"outlineColor", outline_color_},
-               {"outlineWidth", outline_width_},
-               {"texture", texture_asset_}};
-
-  switch (type()) {
-    case Type::RECTANGLE:
+  switch (shape2d.type()) {
+    case Shape2D::Type::RECTANGLE:
       data["type"] = "Rectangle";
-      data["size"] = rectangle_.size;
+      data["size"] = shape2d.rectangle().size;
       break;
 
-    case Type::ELLIPSE:
+    case Shape2D::Type::ELLIPSE:
       data["type"] = "Ellipse";
-      data["size"] = ellipse_.size;
-      data["segmentCount"] = ellipse_.num_segments;
+      data["size"] = shape2d.ellipse().size;
+      data["segmentCount"] = shape2d.ellipse().num_segments;
       break;
   }
-
-  return data;
 }
 
-bool Shape2D::Deserialize(const json& data) {
-  if (data.contains("color")) {
-    color_ = data.at("color");
-  } else {
-    color_ = Color::White();
-  }
-  if (data.contains("outlineColor")) {
-    outline_color_ = data.at("outlineColor");
-  } else {
-    outline_color_ = Color::Black();
-  }
-  if (data.contains("outlineWidth")) {
-    outline_width_ = data.at("outlineWidth");
-  } else {
-    outline_width_ = 1.0f;
-  }
-  if (data.contains("texture")) {
-    texture_asset_ = data.at("texture");
-  } else {
-    texture_asset_ = "";
-  }
+void from_json(const json& data, Shape2D& shape2d) {
+  shape2d.SetColor(data.contains("color") ? data.at("color").get<Color>() : Color::White());
+  shape2d.SetOutlineColor(data.contains("outlineColor") ? data.at("outlineColor").get<Color>() : Color::Black());
+  shape2d.SetOutlineWidth(data.contains("outlineWidth") ? data.at("outlineWidth").get<float>() : 1.0);
+  shape2d.SetTexture(data.contains("texture") ? data.at("texture").get<std::string>() : "");
 
   const std::string& type = data.contains("type") ? data.at("type") : "Rectangle";
   if (type == "Rectangle") {
-    type_ = Type::RECTANGLE;
-    Rectangle rect;
-    if (data.contains("size")) {
-      rect.size = data.at("size");
-    } else {
-      rect.size = { 10.0f, 10.0f};
-    }
-    SetRectangle(rect);
+    Shape2D::Rectangle rect {
+      .size = data.contains("size") ? data.at("size").get<Vector2>() : Vector2 { 10.0f, 10.0f},
+    };
+    shape2d.SetRectangle(rect);
   } else if (type == "Ellipse") {
-    type_ = Type::ELLIPSE;
-    Ellipse ellipse;
-    if (data.contains("size")) {
-      ellipse.size = data.at("size");
-    } else {
-      ellipse.size = { 10.0f, 10.0f};
-    }
-    if (data.contains("segmentCount")) {
-      ellipse.num_segments = data.at("segmentCount");
-    } else {
-      ellipse.num_segments = 32;
-    }
-    SetEllipse(ellipse);
+    Shape2D::Ellipse ellipse {
+      .size = data.contains("size") ? data.at("size").get<Vector2>() : Vector2 { 10.0f, 10.0f},
+      .num_segments = data.contains("segmentCount") ? data.at("segmentCount").get<uint32_t>() : 32,
+    };
+    shape2d.SetEllipse(ellipse);
   } else {
-    return false;
+    assert(false);
   }
-  return true;
 }
 
 void Shape2D::SetColor(const Color& color) {
   color_ = color;
-  const uint32_t color_rgba = ConvertToRGBA8(color_);
-  for (auto& vertex : vertices_) {
-    vertex.color = color_rgba;
-  }
+  Update();
+}
+
+void Shape2D::SetOutlineColor(const Color& color) {
+  outline_color_ = color;
+  Update();
+}
+void Shape2D::SetOutlineWidth(float width) {
+  outline_width_ = width;
+  Update();
 }
 
 void Shape2D::SetRectangle(const Rectangle& rect) {

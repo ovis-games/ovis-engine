@@ -63,11 +63,16 @@ Entity* Scene::CreateEntity(std::string_view object_name, std::optional<EntityId
   } else {
     parent_id = EntityId::CreateInactive(entity->id.index);
     if (first_active_entity_.has_value()) {
+      assert(last_active_entity_.has_value());
       first_active_entity_ = InsertSibling(*first_active_entity_, entity->id);
+      if (entity->id.index > last_active_entity_->index) {
+        last_active_entity_ = entity->id;
+      }
     } else {
       entity->next_sibling_id = EntityId::CreateInactive(entity->id.index);
       entity->previous_sibling_id = EntityId::CreateInactive(entity->id.index);
       first_active_entity_ = entity->id;
+      last_active_entity_ = entity->id;
     }
   }
 
@@ -99,6 +104,21 @@ Entity* Scene::GetEntityUnchecked(EntityId id) {
 //     }
 //   }
 // }
+
+
+Scene::EntityIterator Scene::begin() {
+  return {
+    .scene = this,
+    .entity = first_active_entity_ ? &entities_[first_active_entity_->index] : nullptr,
+  };
+}
+
+Scene::EntityIterator Scene::end() {
+  return {
+    .scene = this,
+    .entity = last_active_entity_ ? &entities_[last_active_entity_->index + 1] : nullptr,
+  };
+}
 
 ComponentStorage* Scene::GetComponentStorage(TypeId component_type) {
   for (auto& storage : component_storages_) {
@@ -140,13 +160,16 @@ EventStorage* Scene::GetEventStorage(TypeId event_type) {
 //
 
 Result<> Scene::Prepare() {
+  LogV("Preparing scene");
   {
     const auto object_component_types = frame_scheduler().GetUsedEntityComponents();
     component_storages_.clear();
     component_storages_.reserve(object_component_types.size());
 
+    LogV(" Used entity components:");
     for (const auto component_type : object_component_types) {
       component_storages_.emplace_back(this, component_type, entities_.size());
+      LogV(" - {}", main_vm->GetType(component_type)->GetReferenceString());
     }
   }
   {
@@ -154,8 +177,10 @@ Result<> Scene::Prepare() {
     event_storages_.clear();
     event_storages_.reserve(event_types.size());
 
+    LogV(" Used events:");
     for (const auto event_type : event_types) {
       event_storages_.emplace_back(event_type);
+      LogV(" - {}", main_vm->GetType(event_type)->GetReferenceString());
     }
   }
   return frame_scheduler_.Prepare(this);
