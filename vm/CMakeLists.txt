@@ -40,23 +40,21 @@ if (OVIS_BUILD_TESTS)
   add_executable(
     ovis-vm-test
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_virtual_machine.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_value_storage.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_value.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_type.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_function.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_execution_context.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_type_parsing.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_function_parser.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_script_parser.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_list.cpp
+    test/test_virtual_machine.cpp
+    test/test_value_storage.cpp
+    test/test_value.cpp
+    test/test_type.cpp
+    test/test_function.cpp
+    test/test_execution_context.cpp
+    test/test_script_type_parsing.cpp
+    test/test_script_function_parser.cpp
+    test/test_script_parser.cpp
+    test/test_list.cpp
   )
 
   target_link_libraries(
     ovis-vm-test
     PRIVATE
-      Catch2
       ovis::vm
       ovis::test
   )

@@ -1,13 +1,14 @@
 #include <string>
-
-#include "catch2/catch.hpp"
 #include <thread>
+
+#include "catch2/catch_test_macros.hpp"
 
 #include "ovis/core/scene.hpp"
 #include "ovis/rendering/clear_pass.hpp"
 #include "ovis/rendering2d/renderer2d.hpp"
 #include "ovis/rendering2d/text.hpp"
-#include "ovis/test/utils.hpp"
+#include "ovis/test/test_window.hpp"
+#include "ovis/test/require_result.hpp"
 
 using namespace ovis;
 
@@ -23,7 +24,7 @@ TEST_CASE("Display shapes", "[ovis][rendering2d][Renderer2D]") {
   Scene scene;
   scene.frame_scheduler().AddJob<ClearPass>(&window.graphics_context, Color::Aqua());
   scene.frame_scheduler().AddJob<Renderer2D>(&window.graphics_context);
-  scene.Prepare();
+  REQUIRE_RESULT(scene.Prepare());
 
   auto circle = scene.CreateEntity("Circle");
   scene.GetComponentStorage<Shape2D>().AddComponent(circle->id);

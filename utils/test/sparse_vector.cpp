@@ -1,6 +1,6 @@
-#include <catch2/catch.hpp>
+#include "ovis/utils/sparse_vector.hpp"
 
-#include <ovis/utils/sparse_vector.hpp>
+#include "catch2/catch_test_macros.hpp"
 
 TEST_CASE("sparse_vector", "[ovis][utils]") {
   using namespace ovis;

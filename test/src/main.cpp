@@ -1,9 +1,8 @@
-#define CATCH_CONFIG_RUNNER
-#include <catch2/catch.hpp>
-#include <ovis/utils/log.hpp>
-#include <ovis/core/asset_library.hpp>
-#include <ovis/core/vm_bindings.hpp>
-#include <ovis/core/main_vm.hpp>
+#include "catch2/catch_all.hpp"
+
+#include "ovis/utils/log.hpp"
+#include "ovis/core/asset_library.hpp"
+#include "ovis/core/main_vm.hpp"
 
 int main(int argc, char* argv[]) {
   ovis::Log::AddListener(ovis::ConsoleLogger);
@@ -11,8 +10,8 @@ int main(int argc, char* argv[]) {
 
   Catch::Session session;
 
-  std::string assets_directory = ".";
-  auto cli = session.cli() | Catch::clara::Opt(assets_directory, "assets directory")["--assets-directory"](
+  std::string assets_directory = "";
+  auto cli = session.cli() | Catch::Clara::Opt(assets_directory, "assets directory")["--assets-directory"](
                                  "The directory containing the assets for the test.");
   session.cli(cli);
 
@@ -24,11 +23,9 @@ int main(int argc, char* argv[]) {
     return returnCode;
   }
 
-#if OVIS_EMSCRIPTEN
-  ovis::SetEngineAssetsDirectory("/ovis_assets");
-#else
-  ovis::SetEngineAssetsDirectory(assets_directory);
-#endif
+  if (assets_directory.length() > 0) {
+    ovis::SetEngineAssetsDirectory(assets_directory);
+  }
  
   // writing to session.configData() or session.Config() here 
   // overrides command line args

@@ -1,4 +1,4 @@
-#include <catch2/catch.hpp>
+#include "catch2/catch_test_macros.hpp"
 
 #include "ovis/vm/value.hpp"
 #include "ovis/vm/virtual_machine.hpp"

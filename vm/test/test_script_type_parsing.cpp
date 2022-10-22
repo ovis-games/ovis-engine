@@ -1,10 +1,10 @@
 #include <iostream>
 
-#include <catch2/catch.hpp>
+#include "catch2/catch_test_macros.hpp"
 
-#include <ovis/utils/log.hpp>
-#include <ovis/vm/script_type_parser.hpp>
-#include "ovis/test/utils.hpp"
+#include "ovis/utils/log.hpp"
+#include "ovis/vm/script_type_parser.hpp"
+#include "ovis/test/require_result.hpp"
 
 using namespace ovis;
 

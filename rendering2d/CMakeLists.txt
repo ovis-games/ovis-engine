@@ -34,21 +34,18 @@ if (OVIS_BUILD_TESTS)
   add_executable(
     ovis-rendering2d-test
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_shape2d.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_renderer2d.cpp
+    test/test_shape2d.cpp
+    test/test_renderer2d.cpp
   )
   target_link_libraries(
     ovis-rendering2d-test
     PRIVATE
-      Catch2
       ovis::rendering2d
       ovis::test
   )
   # target_add_assets(
-  #   ovis-rendering-test
+  #   ovis-rendering2d-test
 
-  #   test/assets/template.scene_object.json
   # )
   target_embed_assets(ovis-rendering2d-test)
 

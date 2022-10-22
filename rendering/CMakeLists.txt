@@ -31,14 +31,12 @@ if (OVIS_BUILD_TESTS)
   add_executable(
     ovis-rendering-test
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_clear_pass.cpp
+    test/test_clear_pass.cpp
   )
 
   target_link_libraries(
     ovis-rendering-test
     PRIVATE
-      Catch2
       ovis::rendering
       ovis::test
   )

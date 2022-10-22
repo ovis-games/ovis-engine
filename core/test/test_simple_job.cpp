@@ -1,6 +1,6 @@
 #include <string>
 
-#include <catch2/catch.hpp>
+#include "catch2/catch_test_macros.hpp"
 
 #include "ovis/core/scene.hpp"
 #include "ovis/core/simple_job.hpp"

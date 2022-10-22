@@ -1,12 +1,13 @@
 #include <string>
 
-#include <catch2/catch.hpp>
+#include "catch2/benchmark/catch_benchmark.hpp"
+#include "catch2/catch_test_macros.hpp"
 
 #include "ovis/core/event_storage.hpp"
 #include "ovis/core/scene.hpp"
 #include "ovis/core/simple_job.hpp"
 #include "ovis/core/vm_bindings.hpp"
-#include "ovis/test/utils.hpp"
+#include "ovis/test/require_result.hpp"
 
 using namespace ovis;
 

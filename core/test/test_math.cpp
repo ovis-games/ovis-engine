@@ -1,6 +1,6 @@
-#include <catch2/catch.hpp>
+#include "catch2/catch_test_macros.hpp"
 
-#include <ovis/core/math.hpp>
+#include "ovis/core/math.hpp"
 
 TEST_CASE("GetLineStripInsertPosition", "[ovis][core][math]") {
   const std::vector<ovis::Vector2> strip = {

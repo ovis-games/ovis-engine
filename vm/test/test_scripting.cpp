@@ -1,14 +1,13 @@
 #include <iostream>
 
-#include <catch2/catch.hpp>
+// #include "catch2/catch_test_macros.hpp"
 
-#include <ovis/utils/log.hpp>
-#include <ovis/core/core_module.hpp>
-#include <ovis/core/script_function.hpp>
-#include <ovis/core/script_parser.hpp>
+// #include "ovis/utils/log.hpp"
+// #include "ovis/core/script_function.hpp"
+// #include "ovis/core/script_parser.hpp"
 
-using namespace ovis;
-using namespace ovis::vm;
+// using namespace ovis;
+// using namespace ovis::vm;
 
 // const ovis::json add_10_and_20 = ovis::json::parse(R"(
 //     {

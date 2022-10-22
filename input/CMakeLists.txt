@@ -22,26 +22,26 @@ target_link_libraries(
     ovis::core
 )
 
-if (OVIS_BUILD_TESTS)
-  add_executable(
-    ovis-input-test
+# if (OVIS_BUILD_TESTS)
+#   add_executable(
+#     ovis-input-test
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
-  )
 
-  target_link_libraries(
-    ovis-input-test
-    PRIVATE
-      Catch2
-      ovis::input
-  )
+#   )
 
-  if (OVIS_EMSCRIPTEN)
-    add_test(
-      ovis-input-test
-      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-input-test.js
-    )
-  else ()
-    add_test(ovis-input-test ovis-input-test)
-  endif ()
-endif ()
+#   target_link_libraries(
+#     ovis-input-test
+#     PRIVATE
+#       ovis::input
+#       ovis::test
+#   )
+
+#   if (OVIS_EMSCRIPTEN)
+#     add_test(
+#       ovis-input-test
+#       ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-input-test.js
+#     )
+#   else ()
+#     add_test(ovis-input-test ovis-input-test)
+#   endif ()
+# endif ()

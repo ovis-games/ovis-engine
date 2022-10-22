@@ -61,26 +61,18 @@ if (OVIS_BUILD_TESTS)
   add_executable(
     ovis-core-test
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_math.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_intersection.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scene.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scene_object.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_simple_job.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_events.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_scripting.cpp
-  )
-
-  target_compile_definitions(
-    ovis-core-test
-    PRIVATE
-      -DCATCH_CONFIG_ENABLE_BENCHMARKING=1
+    test/test_math.cpp
+    test/test_intersection.cpp
+    test/test_scene.cpp
+    test/test_scene_object.cpp
+    test/test_simple_job.cpp
+    test/test_events.cpp
+    test/test_scripting.cpp
   )
 
   target_link_libraries(
     ovis-core-test
     PRIVATE
-      Catch2
       ovis::core
       ovis::test
   )
@@ -101,12 +93,12 @@ if (OVIS_BUILD_TESTS)
   if (OVIS_EMSCRIPTEN)
     add_test(
       ovis-core-test
-      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-core-test.js
+      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-core-test.js --skip-benchmarks
     )
   else ()
     add_test(
       NAME ovis-core-test
-      COMMAND ovis-core-test --assets-directory ${CMAKE_CURRENT_BINARY_DIR}/assets/ovis-core-test/
+      COMMAND ovis-core-test --skip-benchmarks --assets-directory ${CMAKE_CURRENT_BINARY_DIR}/assets/ovis-core-test/
     )
   endif ()
 endif ()

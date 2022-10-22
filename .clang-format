@@ -53,7 +53,7 @@ IncludeCategories:
     Priority:        3
     SortPriority:    14
 
-  - Regex:           '\.(hpp|hh|h)>$'
+  - Regex:           '\.(hpp|hh|h)(>|")$'
     Priority:        2
 
   - Regex:           '.*'
