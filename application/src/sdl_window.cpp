@@ -2,10 +2,11 @@
 
 #include <algorithm>
 #include <cassert>
+#include "SDL.h"
 
+#include "ovis/core/simple_job.hpp"
 #include "ovis/utils/log.hpp"
 #include "ovis/utils/profiling.hpp"
-#include "ovis/core/lua.hpp"
 #include "ovis/core/scene.hpp"
 #include "ovis/input/key_events.hpp"
 #include "ovis/input/mouse_events.hpp"
@@ -35,51 +36,51 @@ SDL_GLContext CreateOpenGLContext(SDL_Window* window) {
   return context;
 }
 
+void PollSDLEvents() {
+  SDL_Event event;
+  while (SDL_PollEvent(&event)) {
+    // TODO: only post events to the according window
+    // for (auto window : Window::all_windows()) {
+    //   window->SendEvent(event);
+    // }
+  }
+}
+OVIS_CREATE_SIMPLE_JOB(PollSDLEvents);
+
 }  // namespace
 
-std::vector<Window*> Window::all_windows_;
-
-Window::Window(const WindowDescription& desc)
+SDLWindow::SDLWindow(const SDLWindowDescription& desc)
     : sdl_window_(SDL_CreateWindow(desc.title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, desc.width,
                                    desc.height, SDL_WINDOW_OPENGL)),
-      id_(SDL_GetWindowID(sdl_window_)),
       opengl_context_(CreateOpenGLContext(sdl_window_)),
-      graphics_context_(GetDimensions()) {
+      graphics_context_(GetDrawableSize()) {
   assert(sdl_window_ != nullptr);
-  all_windows_.push_back(this);
-
-  SetGraphicsContext(&graphics_context_);
-  SetScene(&scene_);
-  scene_.SetMainViewport(this);
+  if (desc.scene == nullptr) {
+    LogE("Window is not assigned to display a scene");
+  } else{
+    if (desc.scene->frame_scheduler().HasJob("PollSDLEvents")) {
+      desc.scene->frame_scheduler().AddJob<PollSDLEventsJob>();
+    }
+  }
 }
 
-Window::~Window() {
-  auto it = std::find(all_windows_.begin(), all_windows_.end(), this);
-  assert(it != all_windows_.end());
-  std::swap(*it, all_windows_.back());
-  all_windows_.pop_back();
-
-  ClearResources();
+SDLWindow::~SDLWindow() {
   SDL_GL_DeleteContext(opengl_context_);
   SDL_DestroyWindow(sdl_window_);
 }
 
-RenderTargetConfiguration* Window::GetDefaultRenderTargetConfiguration() {
-  return graphics_context_.default_render_target_configuration();
-}
-
-Vector2 Window::GetDimensions() const {
+Vector2 SDLWindow::GetDrawableSize() const {
   int width;
   int height;
-  SDL_GetWindowSize(sdl_window_, &width, &height);
+  SDL_GL_GetDrawableSize(sdl_window_, &width, &height);
   return {static_cast<float>(width), static_cast<float>(height)};
 }
 
-void Window::Resize(int width, int height) {
+void SDLWindow::Resize(int width, int height) {
   SDL_SetWindowSize(sdl_window_, width, height);
 }
 
-bool Window::SendEvent(const SDL_Event& event) {
+bool SDLWindow::SendEvent(const SDL_Event& event) {
   if (event.type == SDL_WINDOWEVENT) {
     switch (event.window.event) {
       case SDL_WINDOWEVENT_CLOSE:
@@ -102,76 +103,70 @@ bool Window::SendEvent(const SDL_Event& event) {
     }
   };
 
-#if !OVIS_EMSCRIPTEN
-  switch (event.type) {
-    case SDL_MOUSEWHEEL: {
-      MouseWheelEvent mouse_wheel_event({static_cast<float>(event.wheel.x), static_cast<float>(event.wheel.y)});
-      ProcessEvent(&mouse_wheel_event);
-      return !mouse_wheel_event.is_propagating();
-    }
+// #if !OVIS_EMSCRIPTEN
+//   switch (event.type) {
+//     case SDL_MOUSEWHEEL: {
+//       MouseWheelEvent mouse_wheel_event({static_cast<float>(event.wheel.x), static_cast<float>(event.wheel.y)});
+//       ProcessEvent(&mouse_wheel_event);
+//       return !mouse_wheel_event.is_propagating();
+//     }
 
-    case SDL_MOUSEMOTION: {
-      MouseMoveEvent mouse_move_event(this, {static_cast<float>(event.motion.x), static_cast<float>(event.motion.y)},
-                                      {static_cast<float>(event.motion.xrel), static_cast<float>(event.motion.yrel)});
-      ProcessEvent(&mouse_move_event);
-      return !mouse_move_event.is_propagating();
-    }
+//     case SDL_MOUSEMOTION: {
+//       MouseMoveEvent mouse_move_event(this, {static_cast<float>(event.motion.x), static_cast<float>(event.motion.y)},
+//                                       {static_cast<float>(event.motion.xrel), static_cast<float>(event.motion.yrel)});
+//       ProcessEvent(&mouse_move_event);
+//       return !mouse_move_event.is_propagating();
+//     }
 
-    case SDL_MOUSEBUTTONDOWN: {
-      const auto button = sdl_button_to_mouse_button(event.button.button);
-      MouseButtonPressEvent mouse_button_event(
-          this, {static_cast<float>(event.button.x), static_cast<float>(event.button.y)}, button);
-      SetMouseButtonState(button, true);
-      ProcessEvent(&mouse_button_event);
-      return !mouse_button_event.is_propagating();
-    }
+//     case SDL_MOUSEBUTTONDOWN: {
+//       const auto button = sdl_button_to_mouse_button(event.button.button);
+//       MouseButtonPressEvent mouse_button_event(
+//           this, {static_cast<float>(event.button.x), static_cast<float>(event.button.y)}, button);
+//       SetMouseButtonState(button, true);
+//       ProcessEvent(&mouse_button_event);
+//       return !mouse_button_event.is_propagating();
+//     }
 
-    case SDL_MOUSEBUTTONUP: {
-      const auto button = sdl_button_to_mouse_button(event.button.button);
-      MouseButtonReleaseEvent mouse_button_event(
-          this, {static_cast<float>(event.button.x), static_cast<float>(event.button.y)}, button);
-      SetMouseButtonState(button, false);
-      ProcessEvent(&mouse_button_event);
-      return !mouse_button_event.is_propagating();
-    }
+//     case SDL_MOUSEBUTTONUP: {
+//       const auto button = sdl_button_to_mouse_button(event.button.button);
+//       MouseButtonReleaseEvent mouse_button_event(
+//           this, {static_cast<float>(event.button.x), static_cast<float>(event.button.y)}, button);
+//       SetMouseButtonState(button, false);
+//       ProcessEvent(&mouse_button_event);
+//       return !mouse_button_event.is_propagating();
+//     }
 
-    case SDL_TEXTINPUT: {
-      TextInputEvent text_input_event(event.text.text);
-      ProcessEvent(&text_input_event);
-      return !text_input_event.is_propagating();
-    }
+//     case SDL_TEXTINPUT: {
+//       TextInputEvent text_input_event(event.text.text);
+//       ProcessEvent(&text_input_event);
+//       return !text_input_event.is_propagating();
+//     }
 
-    case SDL_KEYDOWN: {
-      KeyPressEvent key_press_event(Key{static_cast<uint16_t>(event.key.keysym.scancode)});
-      SetKeyState(key_press_event.key(), true);
-      ProcessEvent(&key_press_event);
-      return !key_press_event.is_propagating();
-    }
+//     case SDL_KEYDOWN: {
+//       KeyPressEvent key_press_event(Key{static_cast<uint16_t>(event.key.keysym.scancode)});
+//       SetKeyState(key_press_event.key(), true);
+//       ProcessEvent(&key_press_event);
+//       return !key_press_event.is_propagating();
+//     }
 
-    case SDL_KEYUP: {
-      KeyReleaseEvent key_release_event(Key{static_cast<uint16_t>(event.key.keysym.scancode)});
-      SetKeyState(key_release_event.key(), false);
-      ProcessEvent(&key_release_event);
-      return !key_release_event.is_propagating();
-    }
-  }
-#endif
+//     case SDL_KEYUP: {
+//       KeyReleaseEvent key_release_event(Key{static_cast<uint16_t>(event.key.keysym.scancode)});
+//       SetKeyState(key_release_event.key(), false);
+//       ProcessEvent(&key_release_event);
+//       return !key_release_event.is_propagating();
+//     }
+//   }
+// #endif
 
   return false;
 }
 
-void Window::Update(std::chrono::microseconds delta_time) {
-  if (scene_.is_playing()) {
-    scene_.BeforeUpdate();
-    scene_.Update(delta_time);
-    scene_.AfterUpdate();
-  }
-}
-
-void Window::Render() {
-  SDL_GL_MakeCurrent(sdl_window_, opengl_context_);
-  RenderingViewport::Render();
-  SDL_GL_SwapWindow(sdl_window_);
+void SDLWindow::Update(std::chrono::microseconds delta_time) {
+  // if (scene_.is_playing()) {
+  //   scene_.BeforeUpdate();
+  //   scene_.Update(delta_time);
+  //   scene_.AfterUpdate();
+  // }
 }
 
 }  // namespace ovis

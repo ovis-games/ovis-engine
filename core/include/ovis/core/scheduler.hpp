@@ -28,6 +28,7 @@ class Scheduler {
   std::unordered_set<TypeId> GetUsedSceneComponents() const;
   std::unordered_set<TypeId> GetUsedEvents() const;
 
+  bool HasJob(std::string_view id) { return GetJob(id) != nullptr; }
   Job<PrepareParameters, ExecuteParameters>* GetJob(std::string_view id) {
     for (const auto& job : jobs_) {
       if (job->id() == id) {
