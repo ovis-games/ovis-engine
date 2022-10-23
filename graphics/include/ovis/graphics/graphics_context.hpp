@@ -5,14 +5,12 @@
 #include <set>
 #include <vector>
 
-#include <SDL2/SDL.h>
-
-#include <ovis/utils/class.hpp>
-#include <ovis/core/rect.hpp>
-#include <ovis/graphics/blend_state.hpp>
-#include <ovis/graphics/depth_buffer_state.hpp>
-#include <ovis/graphics/gl.hpp>
-#include <ovis/graphics/uniform_buffer.hpp>
+#include "ovis/utils/class.hpp"
+#include "ovis/core/rect.hpp"
+#include "ovis/graphics/blend_state.hpp"
+#include "ovis/graphics/depth_buffer_state.hpp"
+#include "ovis/graphics/gl.hpp"
+#include "ovis/graphics/uniform_buffer.hpp"
 
 namespace ovis {
 
@@ -39,9 +37,9 @@ struct DrawItem {
   VertexInput* vertex_input = nullptr;
   IndexBuffer* index_buffer = nullptr;
   PrimitiveTopology primitive_topology = PrimitiveTopology::TRIANGLE_LIST;
-  Uint32 start = 0;
-  Uint32 count = 3;
-  Uint32 base_vertex = 0;
+  uint32_t start = 0;
+  uint32_t count = 3;
+  uint32_t base_vertex = 0;
   DepthBufferState depth_buffer_state;
   BlendState blend_state;
   std::optional<Rect<int>> scissor_rect;
@@ -108,7 +106,7 @@ class GraphicsContext final {
   size_t viewport_height_;
 
   inline void BindTexture(GLenum texture_type, GLuint texture_name, GLuint texture_unit) {
-    SDL_assert(texture_unit < m_bound_textures.size());
+    assert(texture_unit < m_bound_textures.size());
     if (m_bound_textures[texture_unit] != texture_name) {
       ActivateTextureUnit(texture_unit);
       glBindTexture(texture_type, texture_name);
@@ -124,7 +122,7 @@ class GraphicsContext final {
   }
 
   inline void EnableVertexAttribArray(GLuint index) {
-    SDL_assert(index < m_vertex_attrib_array_states.size());
+    assert(index < m_vertex_attrib_array_states.size());
     if (!m_vertex_attrib_array_states[index]) {
       glEnableVertexAttribArray(index);
       m_vertex_attrib_array_states[index] = true;
@@ -132,7 +130,7 @@ class GraphicsContext final {
   }
 
   inline void DisableVertexAttribArray(GLuint index) {
-    SDL_assert(index < m_vertex_attrib_array_states.size());
+    assert(index < m_vertex_attrib_array_states.size());
     if (m_vertex_attrib_array_states[index]) {
       glDisableVertexAttribArray(index);
       m_vertex_attrib_array_states[index] = false;

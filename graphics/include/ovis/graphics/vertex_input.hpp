@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-#include <ovis/graphics/gl.hpp>
-#include <ovis/graphics/graphics_resource.hpp>
+#include "ovis/graphics/gl.hpp"
+#include "ovis/graphics/graphics_resource.hpp"
 
 namespace ovis {
 

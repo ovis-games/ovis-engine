@@ -49,7 +49,7 @@ std::size_t GetUniformSize(GLenum type) {
       return 0;
 
     default:
-      SDL_assert(false);
+      assert(false);
       return 0;
   }
 }
@@ -79,7 +79,7 @@ UniformBuffer::UniformBuffer(GraphicsContext* context, const UniformBufferDescri
     m_uniform_descriptions[i].name = uniform_name_buffer.data();
 
     m_uniform_descriptions[i].location = glGetUniformLocation(program_name, uniform_name_buffer.data());
-    SDL_assert(m_uniform_descriptions[i].location >= 0);
+    assert(m_uniform_descriptions[i].location >= 0);
 
     current_size += GetUniformSize(m_uniform_descriptions[i].type) * m_uniform_descriptions[i].size;
 
@@ -90,7 +90,7 @@ UniformBuffer::UniformBuffer(GraphicsContext* context, const UniformBufferDescri
       m_uniform_descriptions[i].base_texture_unit = -1;
     }
 
-    SDL_assert(uniform_name_buffer[0] == 'u' && uniform_name_buffer[1] == '_');
+    assert(uniform_name_buffer[0] == 'u' && uniform_name_buffer[1] == '_');
     m_uniform_indices[uniform_name_buffer.data() + 2] = i;
     LogD("{}={}", uniform_name_buffer.data(), i);
   }
@@ -158,13 +158,13 @@ void UniformBuffer::Bind() {
 
       case GL_SAMPLER_2D:
       case GL_SAMPLER_CUBE:
-        SDL_assert(count == 1);
+        assert(count == 1);
         glUniform1i(location, uniform_desc.base_texture_unit);
         break;
     }
   }
 
-  for (auto it : IndexRange<Uint32>(m_textures)) {
+  for (auto it : IndexRange<uint32_t>(m_textures)) {
     if (it.value() != nullptr) {
       it.value()->Bind(it.index());
     } else {

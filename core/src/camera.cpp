@@ -1,6 +1,5 @@
-#include <SDL2/SDL_assert.h>
-
 #include "ovis/core/camera.hpp"
+
 #include "ovis/core/math_constants.hpp"
 
 namespace ovis {
@@ -11,7 +10,7 @@ void to_json(json& data, const ProjectionType& projection_type) {
   } else if (projection_type == ProjectionType::PERSPECTIVE) {
     data = "Perspective";
   } else {
-    SDL_assert(false && "Invalid projection type");
+    assert(false && "Invalid projection type");
   }
 }
 
@@ -21,7 +20,7 @@ void from_json(const json& data, ProjectionType& projection_type) {
   } else if (data == "Perspective") {
     projection_type = ProjectionType::PERSPECTIVE;
   } else {
-    SDL_assert(false && "Invalid projection type");
+    assert(false && "Invalid projection type");
   }
 }
 

@@ -1,11 +1,11 @@
-#include <ovis/graphics/gpu_time_profiler.hpp>
+#include "ovis/graphics/gpu_time_profiler.hpp"
 
 namespace ovis {
 
 GPUQuery::GPUQuery(GraphicsContext* context) : GraphicsResource(context, Type::QUERY), name_(0) {
 #if !OVIS_EMSCRIPTEN
   glGenQueries(1, &name_);
-  SDL_assert(name_ != 0);
+  assert(name_ != 0);
 #endif
 }
 
@@ -18,14 +18,14 @@ GPUQuery::~GPUQuery() {
 GPUElapsedTimeQuery::GPUElapsedTimeQuery(GraphicsContext* context) : GPUQuery(context) {}
 
 void GPUElapsedTimeQuery::Begin() {
-  SDL_assert(!started_);
+  assert(!started_);
 #if !OVIS_EMSCRIPTEN
   glBeginQuery(GL_TIME_ELAPSED, name_);
 #endif
   started_ = true;
 }
 void GPUElapsedTimeQuery::End() {
-  SDL_assert(started_);
+  assert(started_);
 #if !OVIS_EMSCRIPTEN
   glEndQuery(GL_TIME_ELAPSED);
 #endif

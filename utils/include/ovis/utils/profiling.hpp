@@ -6,8 +6,6 @@
 #include <string>
 #include <vector>
 
-#include <SDL2/SDL_assert.h>
-
 #include <ovis/utils/class.hpp>
 
 namespace ovis {
@@ -74,12 +72,12 @@ class CPUTimeProfiler : public Profiler {
   CPUTimeProfiler(const std::string& id);
 
   inline void BeginMeasurement() {
-    SDL_assert(measurement_started_ == false);
+    assert(measurement_started_ == false);
     begin_time_ = clock::now();
     measurement_started_ = true;
   }
   inline void EndMeasurement() {
-    SDL_assert(measurement_started_ == true);
+    assert(measurement_started_ == true);
     target_duration duration = clock::now() - begin_time_;
     measurement_started_ = false;
     AddMeasurement(duration.count());

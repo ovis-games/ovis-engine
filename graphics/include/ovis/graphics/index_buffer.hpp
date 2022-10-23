@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include <ovis/graphics/graphics_buffer.hpp>
+#include "ovis/graphics/graphics_buffer.hpp"
 
 namespace ovis {
 
