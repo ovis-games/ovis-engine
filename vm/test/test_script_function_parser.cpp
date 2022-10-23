@@ -125,8 +125,10 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
       "statements": [
         {
           "statementType": "variable_declaration",
-          "variableName": "test",
-          "variableType": "Number",
+          "variable": {
+            "name": "test",
+            "type": "Number"
+          },
           "value": 1337.0
         },
         {
@@ -153,8 +155,8 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
     {
       "inputs": [
         {
-          "variableType": "Number",
-          "variableName": "someNumber"
+          "type": "Number",
+          "name": "someNumber"
         }
       ],
       "outputs": [
@@ -169,7 +171,7 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
           "outputs": {
             "outputNumber": {
               "expressionType": "variable",
-              "variableName": "someNumber"
+              "name": "someNumber"
             }
           }
         }
@@ -198,12 +200,12 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
   //   {
   //     "inputs": [
   //       {
-  //         "variableType": "Number",
-  //         "variableName": "first"
+  //         "type": "Number",
+  //         "name": "first"
   //       },
   //       {
-  //         "variableType": "Number",
-  //         "variableName": "second"
+  //         "type": "Number",
+  //         "name": "second"
   //       }
   //     ],
   //     "outputs": [
@@ -215,8 +217,8 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
   //     "statements": [
   //       {
   //         "statementType": "variable_declaration",
-  //         "variableName": "test",
-  //         "variableType": "Number",
+  //         "name": "test",
+  //         "type": "Number",
   //         "value": {
   //           "expressionType": "number_operation",
   //           "operation": "add",

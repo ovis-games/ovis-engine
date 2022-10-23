@@ -5,13 +5,8 @@
   "description": "Describes a new type for the virtual machine",
   "type": "object",
   "properties": {
-    "name": { "$ref": "VM.VariableName.schema.json" },
-    "definitionType": "type",
-    "properties": {
-      "type": "array",
-      "items": { "$ref": "VM.VariableDeclaration.schema.json" }
-    }
+    "name": { "$ref": "VM.VariableName.schema.json" }
   },
   "additionalProperties": false,
-  "required": ["name", "definitionType", "properties"]
+  "required": ["name"]
 }

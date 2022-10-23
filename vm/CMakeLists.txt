@@ -22,12 +22,19 @@ target_include_directories(
   ovis-vm
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}/include
 )
 
 target_link_libraries(
   ovis-vm
   PUBLIC
     ovis::utils
+)
+
+target_add_schemas(
+  ovis-vm
+  schemas/VM.Script.schema.json
+  schemas/VM.Type.schema.json
 )
 
 install(

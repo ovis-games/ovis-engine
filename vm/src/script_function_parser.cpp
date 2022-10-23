@@ -3,6 +3,7 @@
 #include <deque>
 
 #include "ovis/vm/virtual_machine.hpp"
+#include "schemas/VM.Script.hpp"
 
 namespace ovis {
 
@@ -81,10 +82,10 @@ void ScriptFunctionParser::ParseOutputs(const json& outputs, std::string_view pa
 
 void ScriptFunctionParser::ParseInputs(const json& inputs, std::string_view path) {
   for (const auto& input : inputs) {
-    assert(input.contains("variableName"));
-    assert(input.contains("variableType"));
-    const auto& type = input.at("variableType");
-    const std::string& name = input.at("variableName");
+    assert(input.contains("name"));
+    assert(input.contains("type"));
+    const auto& type = input.at("type");
+    const std::string& name = input.at("name");
     const auto type_id = virtual_machine->GetTypeId(type);
     auto add_variable_result = current_scope()->AddVariable(type_id, name);
     if (add_variable_result) {
@@ -144,12 +145,12 @@ void ScriptFunctionParser::ParseVariableDeclarationStatement(const json& variabl
   assert(variable_declaration.contains("statementType"));
   assert(variable_declaration["statementType"] == "variable_declaration");
 
-  assert(variable_declaration.contains("variableName"));
-  assert(variable_declaration.contains("variableType"));
+  assert(variable_declaration.contains("name"));
+  assert(variable_declaration.contains("type"));
 
-  const auto type = virtual_machine->GetType(variable_declaration.at("variableType"));
+  const auto type = virtual_machine->GetType(variable_declaration.at("type"));
   if (!type) {
-    AddError(path, "Unknown variable type {}", variable_declaration["variableType"].dump());
+    AddError(path, "Unknown variable type {}", variable_declaration["type"].dump());
     return;
   }
 
@@ -164,7 +165,7 @@ void ScriptFunctionParser::ParseVariableDeclarationStatement(const json& variabl
       AddError(path, "Invalid expression type. Expected {}, got {}.", type->name(),
                virtual_machine->GetType(value->type_id)->name());
     }
-    value->name = variable_declaration.at("variableName");
+    value->name = variable_declaration.at("name");
   }
 }
 
@@ -191,10 +192,10 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseExpression(const json& expr
 
 ScriptFunctionScopeValue* ScriptFunctionParser::ParseVariableExpression(const json& variable_expression_definition, std::string_view path) {
   assert(variable_expression_definition["expressionType"] == "variable");
-  assert(variable_expression_definition.contains("variableName"));
-  const auto variable = current_scope()->GetVariable(static_cast<std::string>(variable_expression_definition.at("variableName")));
+  assert(variable_expression_definition.contains("name"));
+  const auto variable = current_scope()->GetVariable(static_cast<std::string>(variable_expression_definition.at("name")));
   if (!variable) {
-    AddError(path, "Unknown variable: {}", variable_expression_definition.at("variableName"));
+    AddError(path, "Unknown variable: {}", variable_expression_definition.at("name"));
     return nullptr;
   }
 
