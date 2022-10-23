@@ -6,7 +6,6 @@ option(OVIS_BUILD_DOCS "Build the Ovis documentation" ON)
 
 include(cmake/emscripten.cmake)
 include(cmake/assets.cmake)
-include(cmake/module.cmake)
 include(cmake/CPM.cmake)
 
 set(CMAKE_CXX_STANDARD 20)
