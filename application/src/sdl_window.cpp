@@ -31,7 +31,7 @@ SDL_GLContext CreateOpenGLContext(SDL_Window* window) {
   auto context = SDL_GL_CreateContext(window);
   SDL_assert(context != nullptr);
   SDL_GL_MakeCurrent(window, context);
-  LogI("OpenGL version: {}", glGetString(GL_VERSION));
+  LogI("OpenGL version: {}", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
 
   return context;
 }

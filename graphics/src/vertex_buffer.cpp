@@ -1,12 +1,13 @@
-#include <ovis/graphics/graphics_context.hpp>
-#include <ovis/graphics/vertex_buffer.hpp>
+#include "ovis/graphics/vertex_buffer.hpp"
+
+#include "ovis/graphics/graphics_context.hpp"
 
 namespace ovis {
 
 VertexBuffer::VertexBuffer(GraphicsContext* context, const VertexBufferDescription& description,
                            const void* vertex_data)
     : GraphicsBuffer(context, Type::VERTEX_BUFFER), m_description(description) {
-  SDL_assert(description.vertex_size_in_bytes <= description.size_in_bytes);
+  assert(description.vertex_size_in_bytes <= description.size_in_bytes);
   Bind();
   glBufferData(GL_ARRAY_BUFFER, description.size_in_bytes, vertex_data, GL_STATIC_DRAW);
 }

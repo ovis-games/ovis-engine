@@ -1,4 +1,5 @@
 #if __has_include("ovis/graphics/graphics_context.hpp")
+#include "catch2/interfaces/catch_interfaces_capture.hpp"
 #include "SDL_video.h"
 #include "ovis/graphics/graphics_context.hpp"
 
@@ -21,9 +22,9 @@ inline SDL_GLContext CreateOpenGLContext(SDL_Window* window) {
 #endif
 
   auto context = SDL_GL_CreateContext(window);
-  SDL_assert(context != nullptr);
+  assert(context != nullptr);
   SDL_GL_MakeCurrent(window, context);
-  LogI("OpenGL version: {}", glGetString(GL_VERSION));
+  LogI("OpenGL version: {}", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
 
   return context;
 }
