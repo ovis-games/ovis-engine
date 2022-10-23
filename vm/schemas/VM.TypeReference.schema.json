@@ -1,7 +1,0 @@
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "id": "VM.TypeReference",
-  "title": "TypeReference",
-  "description": "A reference to a VM type",
-  "type": "string"
-}

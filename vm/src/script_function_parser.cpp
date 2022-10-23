@@ -3,7 +3,6 @@
 #include <deque>
 
 #include "ovis/vm/virtual_machine.hpp"
-#include "schemas/VM.Script.hpp"
 
 namespace ovis {
 

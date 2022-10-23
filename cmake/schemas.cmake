@@ -21,7 +21,19 @@ function(target_add_schema target schema_filename)
   set(output_filename ${CMAKE_CURRENT_BINARY_DIR}/include/${base_filename}.hpp)
   add_custom_command(
     OUTPUT ${output_filename}
-    COMMAND ${QUICKTYPE_EXECUTABLE} -o ${output_filename} --src-lang schema --lang cpp ${schema_filename}
+    COMMAND
+      ${QUICKTYPE_EXECUTABLE}
+      --src-lang schema
+      --lang cpp 
+      --namespace ovis::schemas
+      --code-format with-struct
+      --type-style pascal-case
+      --member-style underscore-case
+      --enumerator-style upper-underscore-case
+      --no-boost
+      --hide-null-optional
+      -o ${output_filename}
+      ${schema_filename}
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     MAIN_DEPENDENCY ${schema_filename}
   )
