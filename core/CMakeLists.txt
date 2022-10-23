@@ -102,19 +102,3 @@ if (OVIS_BUILD_TESTS)
     )
   endif ()
 endif ()
-
-if (OVIS_BUILD_BENCHMARKS)
-  add_executable(
-    ovis-core-benchmark
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/benchmark/bench_scripting.cpp
-  )
-
-  target_link_libraries(
-    ovis-core-benchmark
-    PRIVATE
-      benchmark::benchmark
-      ovis::core
-  )
-  target_embed_assets(ovis-core-benchmark)
-endif ()

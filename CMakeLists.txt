@@ -3,7 +3,6 @@ project(ovis)
 
 option(OVIS_BUILD_TESTS "Build the Ovis unit tests" ON)
 option(OVIS_BUILD_DOCS "Build the Ovis documentation" ON)
-option(OVIS_BUILD_BENCHMARKS "Build the benchmarks" ON)
 
 include(cmake/emscripten.cmake)
 include(cmake/assets.cmake)
@@ -29,8 +28,6 @@ CPMAddPackage("gh:catchorg/Catch2@3.1.1")
 CPMAddPackage("gh:ovis-games/stb-cmake-wrapper@0.1")
 
 set(OVIS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
-
-add_subdirectory(extern)
 
 add_subdirectory(utils)
 add_subdirectory(vm)
