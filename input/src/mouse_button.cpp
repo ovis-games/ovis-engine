@@ -2,7 +2,6 @@
 
 #include <unordered_map>
 
-#include <SDL2/SDL_assert.h>
 #include "ovis/core/main_vm.hpp"
 
 namespace ovis {
@@ -27,7 +26,7 @@ std::string_view MouseButton::id() const {
     case Right().code: return "RIGHT";
     case Four().code: return "FOUR";
     case Five().code: return "FIVE";
-    default: SDL_assert(false);  return "";
+    default: assert(false);  return "";
   }
   // clang-format on
 }
@@ -40,7 +39,7 @@ std::string_view MouseButton::name() const {
     case Right().code: return "Right Mouse Button";
     case Four().code: return "Mouse Button 4";
     case Five().code: return "Mouse Button 5";
-    default: SDL_assert(false);  return "";
+    default: assert(false);  return "";
   }
   // clang-format on
 }
@@ -62,12 +61,12 @@ bool mouse_button_states[5] = {false};
 }
 
 bool GetMouseButtonState(MouseButton button) {
-  SDL_assert(button.code < 5);
+  assert(button.code < 5);
   return mouse_button_states[button.code];
 }
 
 void SetMouseButtonState(MouseButton button, bool pressed) {
-  SDL_assert(button.code < 5);
+  assert(button.code < 5);
   mouse_button_states[button.code] = pressed;
 }
 

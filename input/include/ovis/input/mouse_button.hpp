@@ -4,7 +4,6 @@
 #include <limits>
 #include <string_view>
 
-#include <SDL2/SDL_scancode.h>
 #include "ovis/core/vm_bindings.hpp"
 
 namespace ovis {

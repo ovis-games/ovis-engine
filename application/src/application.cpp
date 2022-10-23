@@ -1,4 +1,3 @@
-#include <SDL2/SDL.h>
 #include "ovis/application/tick_receiver.hpp"
 #if OVIS_EMSCRIPTEN
 #include "ovis/application/canvas_viewport.hpp"
