@@ -26,7 +26,7 @@ ProfilingLog::ProfilingLog(const std::string& filename, char delimiter)
 }
 
 ProfilingLog::~ProfilingLog() {
-  SDL_assert(profilers_.size() == 0);
+  assert(profilers_.size() == 0);
 }
 
 ProfilingLog* ProfilingLog::default_log() {
@@ -38,13 +38,13 @@ ProfilingLog* ProfilingLog::default_log() {
 
 void ProfilingLog::AddProfiler(Profiler* profiler_to_add) {
   for (auto profiler : profilers_) {
-    SDL_assert(profiler->id() != profiler_to_add->id());
+    assert(profiler->id() != profiler_to_add->id());
   }
   profilers_.push_back(profiler_to_add);
 }
 void ProfilingLog::RemoveProfiler(Profiler* profiler) {
   auto profiler_it = std::find(profilers_.begin(), profilers_.end(), profiler);
-  SDL_assert(profiler_it != profilers_.end());
+  assert(profiler_it != profilers_.end());
   profilers_.erase(profiler_it);
 }
 

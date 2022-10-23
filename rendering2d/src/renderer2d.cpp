@@ -150,7 +150,7 @@ void Renderer2D::DrawShapeVertices() {
   if (shape_vertex_count_ == 0) {
     return;
   }
-  SDL_assert(shape_vertex_count_ % 3 == 0);
+  assert(shape_vertex_count_ % 3 == 0);
 
   vertex_buffer_->Write(0, shape_vertex_count_ * sizeof(Shape2D::Vertex), shape_vertices_.data());
 

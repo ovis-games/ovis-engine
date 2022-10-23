@@ -1,11 +1,12 @@
-#include <ovis/graphics/graphics_context.hpp>
-#include <ovis/graphics/index_buffer.hpp>
+#include "ovis/graphics/index_buffer.hpp"
+
+#include "ovis/graphics/graphics_context.hpp"
 
 namespace ovis {
 
 IndexBuffer::IndexBuffer(GraphicsContext* context, const IndexBufferDescription& description, const void* index_data)
     : GraphicsBuffer(context, Type::INDEX_BUFFER), m_description(description) {
-  SDL_assert(description.index_format != IndexFormat::UINT16 || description.size_in_bytes % 2 == 0);
+  assert(description.index_format != IndexFormat::UINT16 || description.size_in_bytes % 2 == 0);
   Bind();
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, description.size_in_bytes, index_data, GL_STATIC_DRAW);
 
@@ -23,7 +24,7 @@ IndexBuffer::IndexBuffer(GraphicsContext* context, const IndexBufferDescription&
       break;
 
     default:
-      SDL_assert(false);
+      assert(false);
   }
 }
 

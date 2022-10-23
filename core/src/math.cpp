@@ -1,14 +1,13 @@
-#include <SDL2/SDL_assert.h>
+#include "ovis/core/math.hpp"
 
-#include <ovis/utils/range.hpp>
-#include <ovis/core/intersection.hpp>
-#include <ovis/core/math.hpp>
+#include "ovis/utils/range.hpp"
+#include "ovis/core/intersection.hpp"
 
 namespace ovis {
 
 bool IsConvex(std::span<const Vector2> vertices) {
   // https://stackoverflow.com/questions/471962/how-do-i-efficiently-determine-if-a-polygon-is-convex-non-convex-or-complex
-  SDL_assert(vertices.size() >= 3);
+  assert(vertices.size() >= 3);
 
   Vector2 prev_prev = vertices[vertices.size() - 2];
   Vector2 prev = vertices[vertices.size() - 1];
@@ -34,7 +33,7 @@ bool IsConvex(std::span<const Vector2> vertices) {
 }
 
 size_t GetLineStripInsertPosition(std::span<const Vector2> strip, Vector2 new_position) {
-  SDL_assert(strip.size() >= 2);
+  assert(strip.size() >= 2);
 
   float shortest_distance_squared = SquaredDistance(strip.front(), new_position);
   size_t best_position = 0;
@@ -61,7 +60,7 @@ size_t GetLineStripInsertPosition(std::span<const Vector2> strip, Vector2 new_po
 }
 
 size_t GetLineLoopInsertPosition(std::span<const Vector2> loop, Vector2 new_position) {
-  SDL_assert(loop.size() >= 3);
+  assert(loop.size() >= 3);
 
   float shortest_distance_squared = std::numeric_limits<float>::infinity();
   size_t best_position;

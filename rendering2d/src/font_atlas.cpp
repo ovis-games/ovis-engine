@@ -1,4 +1,4 @@
-#include <ovis/rendering2d/font_atlas.hpp>
+#include "ovis/rendering2d/font_atlas.hpp"
 
 namespace ovis {
 
