@@ -50,7 +50,6 @@ uint32_t ScriptFunctionScope::PopValue() {
 }
 
 void ScriptFunctionParser::Parse(const json& json_definition) {
-  LogD("{}", json_definition.dump(2));
   // TODO: check format
   result.function_description.name = json_definition.contains("name") ? json_definition.at("name") : "";
   PushScope();
@@ -192,10 +191,10 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseExpression(const json& expr
 
 ScriptFunctionScopeValue* ScriptFunctionParser::ParseVariableExpression(const json& variable_expression_definition, std::string_view path) {
   assert(variable_expression_definition["expressionType"] == "variable");
-  assert(variable_expression_definition.contains("name"));
-  const auto variable = current_scope()->GetVariable(static_cast<std::string>(variable_expression_definition.at("name")));
+  assert(variable_expression_definition.contains("variableName"));
+  const auto variable = current_scope()->GetVariable(static_cast<std::string>(variable_expression_definition.at("variableName")));
   if (!variable) {
-    AddError(path, "Unknown variable: {}", variable_expression_definition.at("name"));
+    AddError(path, "Unknown variable: {}", variable_expression_definition.at("variableName"));
     return nullptr;
   }
 

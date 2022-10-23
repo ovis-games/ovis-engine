@@ -11,20 +11,111 @@ using namespace ovis;
 
 TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
   VirtualMachine vm;
-  
-  SECTION("Variable declaration") {
+
+  SECTION("Return statement") {
     const auto parse_result = ParseScriptFunction(&vm, R"(
     {
-      "inputs": [
+      "inputs": [],
+      "outputs": [
         {
-          "variableType": "Number",
-          "variableName": "first"
-        },
-        {
-          "variableType": "Number",
-          "variableName": "second"
+          "type": "Number",
+          "name": "outputNumber"
         }
       ],
+      "statements": [
+        {
+          "statementType": "return",
+          "outputs": {
+            "outputNumber": 42.0
+          }
+        }
+      ]
+    }
+    )"_json);
+    REQUIRE(parse_result.errors.empty());
+    const FunctionDescription& function_description = parse_result.function_description;
+    REQUIRE(function_description.inputs.size() == 0);
+    REQUIRE(function_description.outputs.size() == 1);
+    const auto function = FunctionWrapper<double()>(Function::Create(parse_result.function_description));
+    const auto call_result = function();
+    REQUIRE_RESULT(call_result);
+    REQUIRE(*call_result == 42.0);
+  }
+
+  SECTION("Add number operation expression") {
+    const auto parse_result = ParseScriptFunction(&vm, R"(
+    {
+      "inputs": [],
+      "outputs": [
+        {
+          "type": "Number",
+          "name": "outputNumber"
+        }
+      ],
+      "statements": [
+        {
+          "statementType": "return",
+          "outputs": {
+            "outputNumber": {
+              "expressionType": "number_operation",
+              "operation": "add",
+              "firstOperand": 40.5,
+              "secondOperand": 1.5
+            }
+          }
+        }
+      ]
+    }
+    )"_json);
+    REQUIRE(parse_result.errors.empty());
+    const FunctionDescription& function_description = parse_result.function_description;
+    REQUIRE(function_description.inputs.size() == 0);
+    REQUIRE(function_description.outputs.size() == 1);
+    const auto function = FunctionWrapper<double()>(Function::Create(parse_result.function_description));
+    const auto call_result = function();
+    REQUIRE_RESULT(call_result);
+    REQUIRE(*call_result == 42.0);
+  }
+
+  SECTION("Greater number operation expression") {
+    const auto parse_result = ParseScriptFunction(&vm, R"(
+    {
+      "inputs": [],
+      "outputs": [
+        {
+          "type": "Number",
+          "name": "outputNumber"
+        }
+      ],
+      "statements": [
+        {
+          "statementType": "return",
+          "outputs": {
+            "outputNumber": {
+              "expressionType": "number_operation",
+              "operation": "greater",
+              "firstOperand": 40.5,
+              "secondOperand": 1.5
+            }
+          }
+        }
+      ]
+    }
+    )"_json);
+    REQUIRE(parse_result.errors.empty());
+    const FunctionDescription& function_description = parse_result.function_description;
+    REQUIRE(function_description.inputs.size() == 0);
+    REQUIRE(function_description.outputs.size() == 1);
+    const auto function = FunctionWrapper<bool()>(Function::Create(parse_result.function_description));
+    const auto call_result = function();
+    REQUIRE_RESULT(call_result);
+    REQUIRE(*call_result == true);
+  }
+
+  SECTION("Variable declaration statement") {
+    const auto parse_result = ParseScriptFunction(&vm, R"(
+    {
+      "inputs": [],
       "outputs": [
         {
           "type": "Number",
@@ -36,25 +127,49 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
           "statementType": "variable_declaration",
           "variableName": "test",
           "variableType": "Number",
-          "value": {
-            "expressionType": "number_operation",
-            "operation": "add",
-            "firstOperand": {
-              "expressionType": "variable",
-              "name": "first"
-            },
-            "secondOperand": {
-              "expressionType": "variable",
-              "name": "second"
-            }
-          }
+          "value": 1337.0
         },
+        {
+          "statementType": "return",
+          "outputs": {
+            "outputNumber": 42.0
+          }
+        }
+      ]
+    }
+    )"_json);
+    REQUIRE(parse_result.errors.empty());
+    const FunctionDescription& function_description = parse_result.function_description;
+    REQUIRE(function_description.inputs.size() == 0);
+    REQUIRE(function_description.outputs.size() == 1);
+    const auto function = FunctionWrapper<double()>(Function::Create(parse_result.function_description));
+    const auto call_result = function();
+    REQUIRE_RESULT(call_result);
+    REQUIRE(*call_result == 42.0);
+  }
+
+  SECTION("Variable expression") {
+    const auto parse_result = ParseScriptFunction(&vm, R"(
+    {
+      "inputs": [
+        {
+          "variableType": "Number",
+          "variableName": "someNumber"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "Number",
+          "name": "outputNumber"
+        }
+      ],
+      "statements": [
         {
           "statementType": "return",
           "outputs": {
             "outputNumber": {
               "expressionType": "variable",
-              "name": "test"
+              "variableName": "someNumber"
             }
           }
         }
@@ -63,11 +178,77 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
     )"_json);
     REQUIRE(parse_result.errors.empty());
     const FunctionDescription& function_description = parse_result.function_description;
-    REQUIRE(function_description.inputs.size() == 2);
+    REQUIRE(function_description.inputs.size() == 1);
     REQUIRE(function_description.outputs.size() == 1);
-    const auto function = FunctionWrapper<double(double, double)>(Function::Create(parse_result.function_description));
-    const auto call_result = function(1.0, 2.0);
-    REQUIRE_RESULT(call_result);
-    // REQUIRE(*call_result == 3.0);
+    const auto function = FunctionWrapper<double(double)>(Function::Create(parse_result.function_description));
+    {
+      const auto call_result = function(42);
+      REQUIRE_RESULT(call_result);
+      REQUIRE(*call_result == 42.0);
+    }
+    {
+      const auto call_result = function(1337);
+      REQUIRE_RESULT(call_result);
+      REQUIRE(*call_result == 1337.0);
+    }
   }
+  
+  // SECTION("Variable declaration") {
+  //   const auto parse_result = ParseScriptFunction(&vm, R"(
+  //   {
+  //     "inputs": [
+  //       {
+  //         "variableType": "Number",
+  //         "variableName": "first"
+  //       },
+  //       {
+  //         "variableType": "Number",
+  //         "variableName": "second"
+  //       }
+  //     ],
+  //     "outputs": [
+  //       {
+  //         "type": "Number",
+  //         "name": "outputNumber"
+  //       }
+  //     ],
+  //     "statements": [
+  //       {
+  //         "statementType": "variable_declaration",
+  //         "variableName": "test",
+  //         "variableType": "Number",
+  //         "value": {
+  //           "expressionType": "number_operation",
+  //           "operation": "add",
+  //           "firstOperand": {
+  //             "expressionType": "variable",
+  //             "name": "first"
+  //           },
+  //           "secondOperand": {
+  //             "expressionType": "variable",
+  //             "name": "second"
+  //           }
+  //         }
+  //       },
+  //       {
+  //         "statementType": "return",
+  //         "outputs": {
+  //           "outputNumber": {
+  //             "expressionType": "variable",
+  //             "name": "test"
+  //           }
+  //         }
+  //       }
+  //     ]
+  //   }
+  //   )"_json);
+  //   REQUIRE(parse_result.errors.empty());
+  //   const FunctionDescription& function_description = parse_result.function_description;
+  //   REQUIRE(function_description.inputs.size() == 2);
+  //   REQUIRE(function_description.outputs.size() == 1);
+  //   const auto function = FunctionWrapper<double(double, double)>(Function::Create(parse_result.function_description));
+  //   const auto call_result = function(1.0, 2.0);
+  //   REQUIRE_RESULT(call_result);
+  //   // REQUIRE(*call_result == 3.0);
+  // }
 }
