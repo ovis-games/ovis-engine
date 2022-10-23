@@ -1,8 +1,5 @@
-add_subdirectory(fmt)
-add_subdirectory(nlohmann_json)
 add_subdirectory(stb)
 add_subdirectory(microtar)
-add_subdirectory(Catch2)
 
 if (OVIS_BUILD_BENCHMARKS)
   SET(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Don't include testing for google benchmark (requires google test)")

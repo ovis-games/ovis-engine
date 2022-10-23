@@ -8,6 +8,7 @@ option(OVIS_BUILD_BENCHMARKS "Build the benchmarks" ON)
 include(cmake/emscripten.cmake)
 include(cmake/assets.cmake)
 include(cmake/module.cmake)
+include(cmake/CPM.cmake)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
@@ -22,7 +23,12 @@ find_program(
   DOC "Node.js executable for running tests"
 )
 
+CPMAddPackage("gh:fmtlib/fmt#9.1.0")
+CPMAddPackage("gh:nlohmann/json@3.11.2")
+CPMAddPackage("gh:catchorg/Catch2@3.1.1")
+
 set(OVIS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_subdirectory(extern)
 
 add_subdirectory(utils)

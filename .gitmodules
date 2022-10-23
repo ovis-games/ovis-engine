@@ -4,10 +4,3 @@
 [submodule "extern/stb"]
 	path = extern/stb
 	url = ../stb.git
-[submodule "extern/Catch2"]
-	path = extern/Catch2
-	url = https://github.com/catchorg/Catch2.git
-	branch = v2.13.9
-[submodule "extern/nlohmann_json"]
-	path = extern/nlohmann_json
-	url = https://github.com/nlohmann/json.git
