@@ -5,7 +5,7 @@
 #include <string_view>
 #include <vector>
 
-#include <SDL2/SDL_scancode.h>
+#include "SDL_scancode.h"
 
 #include "ovis/core/vm_bindings.hpp"
 

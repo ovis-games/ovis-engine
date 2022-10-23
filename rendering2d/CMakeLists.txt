@@ -18,7 +18,7 @@ target_link_libraries(
   ovis-rendering2d
   PUBLIC
     ovis::rendering
-    stb
+    stb::truetype
 )
 
 target_add_assets(

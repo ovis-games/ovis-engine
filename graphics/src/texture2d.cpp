@@ -1,10 +1,8 @@
-#include <SDL2/SDL_assert.h>
-#include <SDL2/SDL_surface.h>
+#include "ovis/graphics/texture2d.hpp"
 
-#include <ovis/utils/file.hpp>
-#include <ovis/utils/log.hpp>
-#include <ovis/graphics/graphics_context.hpp>
-#include <ovis/graphics/texture2d.hpp>
+#include "ovis/utils/file.hpp"
+#include "ovis/utils/log.hpp"
+#include "ovis/graphics/graphics_context.hpp"
 
 namespace ovis {
 
@@ -36,21 +34,21 @@ Texture2D::Texture2D(GraphicsContext* context, const Texture2DDescription& descr
       break;
 
     case TextureFormat::DEPTH_UINT16:
-      SDL_assert(pixels == nullptr);
+      assert(pixels == nullptr);
       internal_format = GL_DEPTH_COMPONENT16;
       source_format = GL_DEPTH_COMPONENT;
       source_type = GL_FLOAT;
       break;
 
     case TextureFormat::DEPTH_UINT24:
-      SDL_assert(pixels == nullptr);
+      assert(pixels == nullptr);
       internal_format = GL_DEPTH_COMPONENT24;
       source_format = GL_DEPTH_COMPONENT;
       source_type = GL_FLOAT;
       break;
 
     case TextureFormat::DEPTH_FLOAT32:
-      SDL_assert(pixels == nullptr);
+      assert(pixels == nullptr);
       internal_format = GL_DEPTH_COMPONENT32F;
       source_format = GL_DEPTH_COMPONENT;
       source_type = GL_FLOAT;
@@ -58,7 +56,7 @@ Texture2D::Texture2D(GraphicsContext* context, const Texture2DDescription& descr
 #endif
 
     default:
-      SDL_assert(false && "Invalid texture format");
+      assert(false && "Invalid texture format");
       break;
   }
 
@@ -93,13 +91,13 @@ Texture2D::Texture2D(GraphicsContext* context, const Texture2DDescription& descr
       break;
 
     case TextureFilter::TRILINEAR:
-      // SDL_assert(description.mip_map_count > 1);
+      // assert(description.mip_map_count > 1);
       min_filter = GL_LINEAR_MIPMAP_LINEAR;
       mag_filter = GL_LINEAR;
       break;
 
     default:
-      SDL_assert(false);
+      assert(false);
       break;
   }
 
@@ -127,7 +125,7 @@ void Texture2D::Write(std::size_t level, std::size_t x, std::size_t y, std::size
       break;
 
     default:
-      SDL_assert(false);
+      assert(false);
       break;
   }
 
@@ -187,7 +185,7 @@ std::unique_ptr<Texture2D> LoadTexture2D(const std::string& asset_id, GraphicsCo
 
 std::unique_ptr<Texture2D> LoadTexture2D(AssetLibrary* asset_library, const std::string& asset_id,
                                          GraphicsContext* graphics_context) {
-  SDL_assert(graphics_context != nullptr);
+  assert(graphics_context != nullptr);
 
   Result<Texture2DDescription> description = LoadTexture2DDescription(asset_library, asset_id);
   Result<Blob> mip_level_data = asset_library->LoadAssetBinaryFile(asset_id, "0");

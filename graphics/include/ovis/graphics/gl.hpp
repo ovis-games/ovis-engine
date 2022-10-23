@@ -1,7 +1,5 @@
 #pragma once
 
-#include <SDL2/SDL_platform.h>
-
 #if defined(__IPHONEOS__)
 #include <SDL2/SDL_opengles2.h>
 #elif defined(__EMSCRIPTEN__)

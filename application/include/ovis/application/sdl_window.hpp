@@ -7,8 +7,6 @@
 #include <vector>
 
 #include "SDL.h"
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_video.h>
 
 #include "ovis/application/tick_receiver.hpp"
 #include "ovis/utils/all.hpp"

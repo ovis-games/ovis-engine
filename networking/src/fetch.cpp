@@ -1,7 +1,6 @@
 #include <array>
 #include <vector>
 
-#include <SDL2/SDL_assert.h>
 #if OVIS_EMSCRIPTEN
 #include <emscripten/fetch.h>
 #endif
@@ -71,7 +70,7 @@ struct FetchContext {
 }  // namespace
 
 void Fetch(const std::string& url, const FetchOptions& options, Blob body) {
-  SDL_assert(static_cast<int>(options.method) < MethodStrings.size());
+  assert(static_cast<int>(options.method) < MethodStrings.size());
 
   FetchContext* context = new FetchContext();
   context->on_success = options.on_success;

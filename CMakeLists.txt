@@ -3,11 +3,11 @@ project(ovis)
 
 option(OVIS_BUILD_TESTS "Build the Ovis unit tests" ON)
 option(OVIS_BUILD_DOCS "Build the Ovis documentation" ON)
-option(OVIS_BUILD_BENCHMARKS "Build the benchmarks" ON)
 
 include(cmake/emscripten.cmake)
 include(cmake/assets.cmake)
 include(cmake/module.cmake)
+include(cmake/CPM.cmake)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
@@ -22,8 +22,11 @@ find_program(
   DOC "Node.js executable for running tests"
 )
 
-set(OVIS_ROOT ${CMAKE_CURRENT_SOURCE_DIR})
-add_subdirectory(extern)
+CPMAddPackage("gh:fmtlib/fmt#9.1.0")
+CPMAddPackage("gh:nlohmann/json@3.11.2")
+CPMAddPackage("gh:catchorg/Catch2@3.1.1")
+CPMAddPackage("gh:ovis-games/stb-cmake-wrapper@0.1")
+CPMAddPackage("gh:libsdl-org/SDL#release-2.24.1")
 
 add_subdirectory(utils)
 add_subdirectory(vm)
