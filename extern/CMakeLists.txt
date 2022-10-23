@@ -1,4 +1,3 @@
-add_subdirectory(stb)
 add_subdirectory(microtar)
 
 if (OVIS_BUILD_BENCHMARKS)
