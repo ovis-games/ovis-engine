@@ -1,6 +1,7 @@
 #include "ovis/vm/script_function_parser.hpp"
 
 #include <deque>
+#include <variant>
 
 #include "ovis/vm/virtual_machine.hpp"
 
@@ -49,86 +50,73 @@ uint32_t ScriptFunctionScope::PopValue() {
   return index;
 }
 
-void ScriptFunctionParser::Parse(const json& json_definition) {
-  // TODO: check format
-  result.function_description.name = json_definition.contains("name") ? json_definition.at("name") : "";
+void ScriptFunctionParser::Parse(const schemas::Function& function) {
+  result.function_description.name = function.name;
   PushScope();
-  if (json_definition.contains("outputs")) {
-    ParseOutputs(json_definition["outputs"], "/outputs");
-  }
+  ParseOutputs(function.outputs, "/outputs");
   current_scope()->PushValue(virtual_machine->GetTypeId<uint32_t>());
   current_scope()->PushValue(virtual_machine->GetTypeId<uint32_t>());
   current_scope()->PushValue(virtual_machine->GetTypeId<uint32_t>());
-  if (json_definition.contains("inputs")) {
-    ParseInputs(json_definition["inputs"], "/inputs");
-  }
-  ParseStatements(json_definition["statements"], "/statements");
+  ParseInputs(function.inputs, "/inputs");
+  ParseStatements(function.statements, "/statements");
 }
 
-void ScriptFunctionParser::ParseOutputs(const json& outputs, std::string_view path) {
-  assert(outputs.is_array());
-  
+void ScriptFunctionParser::ParseOutputs(const std::vector<schemas::Variable>& outputs, std::string_view path) {
   for (const auto& output : outputs) {
-    assert(output.contains("name"));
-    assert(output.contains("type"));
-    const auto& type = output.at("type");
-    const std::string& name = output.at("name");
-    const auto type_id = virtual_machine->GetTypeId(type);
-    // current_scope()->AddVariable(type_id, name);
-    result.function_description.outputs.push_back({ .name = name, .type = type_id });
+    const auto type_id = virtual_machine->GetTypeId(output.type);
+    current_scope()->AddVariable(type_id, "");
+    result.function_description.outputs.push_back({ .name = output.name, .type = type_id });
   }
 }
 
-void ScriptFunctionParser::ParseInputs(const json& inputs, std::string_view path) {
+void ScriptFunctionParser::ParseInputs(const std::vector<schemas::Variable>& inputs, std::string_view path) {
   for (const auto& input : inputs) {
-    assert(input.contains("name"));
-    assert(input.contains("type"));
-    const auto& type = input.at("type");
-    const std::string& name = input.at("name");
-    const auto type_id = virtual_machine->GetTypeId(type);
-    auto add_variable_result = current_scope()->AddVariable(type_id, name);
+    const auto type_id = virtual_machine->GetTypeId(input.type);
+    auto add_variable_result = current_scope()->AddVariable(type_id, input.name);
     if (add_variable_result) {
-      result.function_description.inputs.push_back({ .name = name, .type = type_id });
+      result.function_description.inputs.push_back({.name = input.name, .type = type_id});
     } else {
       AddError(path, add_variable_result.error().message);
     }
   }
 }
 
-void ScriptFunctionParser::ParseStatements(const json& statements_definiton, std::string_view path) {
-  for (const auto& [index, statement_definition] : statements_definiton.items()) {
-    assert(std::stoi(index) >= 0);
-    ParseStatement(statement_definition, fmt::format("{}/{}", path, index));
+void ScriptFunctionParser::ParseStatements(const std::vector<schemas::StatementSchema>& statements, std::string_view path) {
+  for (const auto& statement : IndexRange(statements)) {
+    ParseStatement(*statement, fmt::format("{}/{}", path, statement.index()));
   }
 }
 
-void ScriptFunctionParser::ParseStatement(const json& statement_definiton, std::string_view path) {
-  const std::string& type = statement_definiton.contains("statementType") ? statement_definiton["statementType"] : "";
-  if (type == "return") {
-    ParseReturnStatement(statement_definiton, path);
-  } else if (type == "variable_declaration") {
-    ParseVariableDeclarationStatement(statement_definiton, path);
-  } else {
-    AddError(path, "Invalid statement type: {}", type);
+void ScriptFunctionParser::ParseStatement(const schemas::StatementSchema& statement, std::string_view path) {
+  switch (statement.type) {
+    case schemas::StatementType::RETURN:
+      assert(statement.statement_schema_return);
+      ParseReturnStatement(*statement.statement_schema_return.get(), path);
+      return;
+
+    case schemas::StatementType::VARIABLE_DECLARATION:
+      assert(statement.variable_declaration);
+      ParseVariableDeclarationStatement(*statement.variable_declaration, path);
+      return;
+
+    default:
+      AddError(path, "Invalid statement type: {}", virtual_machine->GetType(statement.type)->name());
   }
 }
 
-void ScriptFunctionParser::ParseReturnStatement(const json& return_definition, std::string_view path) {
-  assert(return_definition.contains("statementType"));
-  assert(return_definition["statementType"] == "return");
+void ScriptFunctionParser::ParseReturnStatement(const std::vector<schemas::ExpressionSchema>& return_values, std::string_view path) {
+  if (return_values.size() != result.function_description.outputs.size()) {
+    AddError(path, "Invalid number of return values. Expected: {}, got {}.", result.function_description.outputs.size(),
+             return_values.size());
+    return;
+  }
 
-  const auto& outputs = return_definition["outputs"];
-
-  for (const auto& output : IndexRange(result.function_description.outputs)) {
-    if (!outputs.contains(output->name)) {
-      AddError(path, "Missing return value: {}", output->name);
-      continue;
-    }
-
-    const auto value = ParseExpression(outputs[output->name], fmt::format("{}/outputs/{}", path, output->name));
-    if (!value || value->type_id != output->type) {
-      AddError(path, "Incorrect return type for output {}. Expected {}, got {}", output->name,
-               virtual_machine->GetType(output->type)->name(),
+  for (const auto& output : IndexRange(return_values)) {
+    const auto& function_output = result.function_description.outputs[output.index()];
+    const auto value = ParseExpression(*output, fmt::format("{}/{}", path, output.index()));
+    if (!value || value->type_id != function_output.type) {
+      AddError(path, "Incorrect return type for output {}: {}. Expected {}, got {}", output.index(),
+               function_output.name, virtual_machine->GetType(function_output.type)->name(),
                virtual_machine->GetType(value ? value->type_id : Type::NONE_ID)->name());
       continue;
     }
@@ -140,22 +128,17 @@ void ScriptFunctionParser::ParseReturnStatement(const json& return_definition, s
   });
 }
 
-void ScriptFunctionParser::ParseVariableDeclarationStatement(const json& variable_declaration, std::string_view path) {
-  assert(variable_declaration.contains("statementType"));
-  assert(variable_declaration["statementType"] == "variable_declaration");
-
-  assert(variable_declaration.contains("name"));
-  assert(variable_declaration.contains("type"));
-
-  const auto type = virtual_machine->GetType(variable_declaration.at("type"));
+void ScriptFunctionParser::ParseVariableDeclarationStatement(
+    const schemas::VariableDeclaration& variable_declaration_statement, std::string_view path) {
+  const auto type = virtual_machine->GetType(variable_declaration_statement.variable.type);
   if (!type) {
-    AddError(path, "Unknown variable type {}", variable_declaration["type"].dump());
+    AddError(path, "Unknown variable type {}", variable_declaration_statement.variable.type);
     return;
   }
 
   ScriptFunctionScopeValue* value;
-  if (variable_declaration.contains("value")) {
-    value = ParseExpression(variable_declaration.at("value"), fmt::format("{}/variable/value", path));
+  if (variable_declaration_statement.value) {
+    value = ParseExpression(*variable_declaration_statement.value, fmt::format("{}/variable/value", path));
   } else {
     value = InsertConstructTypeInstructions(path, type);
   }
@@ -164,37 +147,50 @@ void ScriptFunctionParser::ParseVariableDeclarationStatement(const json& variabl
       AddError(path, "Invalid expression type. Expected {}, got {}.", type->name(),
                virtual_machine->GetType(value->type_id)->name());
     }
-    value->name = variable_declaration.at("name");
+    value->name = variable_declaration_statement.variable.name;
   }
 }
 
-ScriptFunctionScopeValue* ScriptFunctionParser::ParseExpression(const json& expression_definition, std::string_view path) {
-  if (expression_definition.is_number()) {
-    return InsertPushConstantInstructions(path, static_cast<double>(expression_definition));
-  } else if (expression_definition.is_string()) {
-    return InsertPushConstantInstructions(path, static_cast<std::string>(expression_definition));
-  } else if (expression_definition.is_boolean()) {
-    return InsertPushConstantInstructions(path, static_cast<bool>(expression_definition));
-  } else if (expression_definition.is_object()) {
-    assert(expression_definition.contains("expressionType"));
-    const std::string& type = expression_definition.at("expressionType");
-    if (type == "variable") {
-      return ParseVariableExpression(expression_definition, path);
-    } else if (type == "number_operation") {
-      return ParseNumberOperationExpression(expression_definition, path);
-    }
-  }
+ScriptFunctionScopeValue* ScriptFunctionParser::ParseExpression(const schemas::ExpressionSchema& expression_definition,
+                                                                std::string_view path) {
+  switch (expression_definition.type) {
+    case schemas::ReturnType::CONSTANT:
+      assert(expression_definition.constant);
+      return ParseConstantExpression(*expression_definition.constant, fmt::format("{}/constant", path));
 
-  AddError(path, "Unknown expression: {}", expression_definition.dump());
+    case schemas::ReturnType::FUNCTION_CALL:
+      assert(expression_definition.function_call);
+      return ParseFunctionCallExpression(*expression_definition.function_call, fmt::format("{}/functionCall", path));
+
+    case schemas::ReturnType::OPERATOR:
+      assert(expression_definition.expression_schema_operator);
+      return ParseOperatorExpression(*expression_definition.expression_schema_operator, fmt::format("{}/operator", path));
+
+    case schemas::ReturnType::VARIABLE:
+      assert(expression_definition.variable);
+      return ParseVariableExpression(*expression_definition.variable, fmt::format("{}/variable", path));
+
+    default:
+      AddError(path, "Unknown expression");
+      return nullptr;
+  };
+}
+
+ScriptFunctionScopeValue* ScriptFunctionParser::ParseConstantExpression(const schemas::Constant& constant_expression, std::string_view path) {
+  return std::visit([this, path](const auto& value) { return InsertPushConstantInstructions(path, value); },
+                    constant_expression);
+}
+
+ScriptFunctionScopeValue* ScriptFunctionParser::ParseFunctionCallExpression(
+    const schemas::FunctionCall& function_call_expression, std::string_view path) {
+  assert(false && "Not implemented yet");
   return nullptr;
 }
 
-ScriptFunctionScopeValue* ScriptFunctionParser::ParseVariableExpression(const json& variable_expression_definition, std::string_view path) {
-  assert(variable_expression_definition["expressionType"] == "variable");
-  assert(variable_expression_definition.contains("name"));
-  const auto variable = current_scope()->GetVariable(static_cast<std::string>(variable_expression_definition.at("name")));
+ScriptFunctionScopeValue* ScriptFunctionParser::ParseVariableExpression(const std::string& variable_name, std::string_view path) {
+  const auto variable = current_scope()->GetVariable(variable_name);
   if (!variable) {
-    AddError(path, "Unknown variable: {}", variable_expression_definition.at("name"));
+    AddError(path, "Unknown variable: {}", variable_name);
     return nullptr;
   }
 
@@ -204,76 +200,145 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseVariableExpression(const js
   return new_value;
 }
 
-ScriptFunctionScopeValue* ScriptFunctionParser::ParseNumberOperationExpression(const json& expression_definition,
-                                                                               std::string_view path) {
-  assert(expression_definition.contains("expressionType"));
-  assert(expression_definition["expressionType"] == "number_operation");
-
-  if (!expression_definition.contains("firstOperand")) {
-    return nullptr;
+ScriptFunctionScopeValue* ScriptFunctionParser::ParseOperatorExpression(
+    const schemas::OperatorClass& operator_expression, std::string_view path) {
+  std::vector<ScriptFunctionScopeValue*> operands(operator_expression.operands.size());
+  for (size_t i = 0; i < operator_expression.operands.size(); ++i) {
+    operands[i] = ParseExpression(operator_expression.operands[i], fmt::format("{}/operands/{}", path, i));
   }
 
-  auto* first_operand = ParseExpression(expression_definition["firstOperand"], fmt::format("{}/firstOperand", path));
-  if (!first_operand) {
-    return nullptr;
-  }
-
-  assert(expression_definition.contains("operation"));
-  const std::string& operation = expression_definition["operation"];
-
-  if (operation != "negate") {
-    if (!expression_definition.contains("secondOperand")) {
-      return nullptr;
-    }
-
-    auto* second_operand = ParseExpression(expression_definition.at("secondOperand"), fmt::format("{}/secondOperand", path));
-    if (!second_operand) {
-      return nullptr;
-    }
-
-    if (operation == "add") {
+  switch (operator_expression.operator_operator) {
+    case schemas::OperatorEnum::ADD:
+      if (operands.size() != 2) {
+        AddError(path, "Add operator requires 2 operands, {} provided.", operands.size());
+        return nullptr;
+      }
+      if (operands[0]->type_id != virtual_machine->GetTypeId<double>() ||
+          operands[1]->type_id != virtual_machine->GetTypeId<double>()) {
+        AddError(path, "Add operator currently only works on numbers.");
+        return nullptr;
+      }
       InsertInstructions(path, { Instruction::CreateAddNumbers() });
-    } else if (operation == "subtract") {
-      InsertInstructions(path, { Instruction::CreateSubtractNumbers() });
-    } else if (operation == "multiply") {
-      InsertInstructions(path, { Instruction::CreateMultiplyNumbers() });
-    } else if (operation == "divide") {
-      InsertInstructions(path, { Instruction::CreateDivideNumbers() });
-    } else if (operation == "less") {
-      InsertInstructions(path, { Instruction::CreateIsNumberLess() });
-      first_operand->type_id = virtual_machine->GetTypeId<bool>();
-    } else if (operation == "less") {
-      InsertInstructions(path, { Instruction::CreateIsNumberLess() });
-      first_operand->type_id = virtual_machine->GetTypeId<bool>();
-    } else if (operation == "less") {
-      InsertInstructions(path, { Instruction::CreateIsNumberLess() });
-      first_operand->type_id = virtual_machine->GetTypeId<bool>();
-    } else if (operation == "less_equal") {
-      InsertInstructions(path, { Instruction::CreateIsNumberLessEqual() });
-      first_operand->type_id = virtual_machine->GetTypeId<bool>();
-    } else if (operation == "greater") {
+      current_scope()->PopValue();
+      assert(current_scope()->values.back().type_id == virtual_machine->GetTypeId<double>());
+      assert(!current_scope()->values.back().name.has_value());
+      return &current_scope()->values.back();
+
+    // case schemas::OperatorEnum::SUBTRACT:
+    //   if (operands.size() != 2) {
+    //     AddError(path, "Add operator requires 2 operands, {} provided.", operands.size());
+    //     return nullptr;
+    //   }
+    //   if (operands[0]->type_id != virtual_machine->GetTypeId<double>() ||
+    //       operands[1]->type_id != virtual_machine->GetTypeId<double>()) {
+    //     AddError(path, "Add operator currently only works on numbers.");
+    //     return nullptr;
+    //   }
+    //   InsertInstructions(path, { Instruction::CreateSubtractNumbers() });
+    //   break;
+
+    case schemas::OperatorEnum::MULTIPLY:
+
+    case schemas::OperatorEnum::AND:
+    case schemas::OperatorEnum::DIVIDE:
+    case schemas::OperatorEnum::EQUALS:
+    case schemas::OperatorEnum::GREATER:
+      if (operands.size() != 2) {
+        AddError(path, "Greater operator requires 2 operands, {} provided.", operands.size());
+        return nullptr;
+      }
+      if (operands[0]->type_id != virtual_machine->GetTypeId<double>() ||
+          operands[1]->type_id != virtual_machine->GetTypeId<double>()) {
+        AddError(path, "Greater operator currently only works on numbers.");
+        return nullptr;
+      }
       InsertInstructions(path, { Instruction::CreateIsNumberGreater() });
-      first_operand->type_id = virtual_machine->GetTypeId<bool>();
-    } else if (operation == "greater_equal") {
-      InsertInstructions(path, { Instruction::CreateIsNumberGreaterEqual() });
-      first_operand->type_id = virtual_machine->GetTypeId<bool>();
-    } else if (operation == "equal") {
-      InsertInstructions(path, { Instruction::CreateIsNumberEqual() });
-      first_operand->type_id = virtual_machine->GetTypeId<bool>();
-    } else if (operation == "not_equal") {
-      InsertInstructions(path, { Instruction::CreateIsNumberNotEqual() });
-      first_operand->type_id = virtual_machine->GetTypeId<bool>();
-    } else {
-      AddError(path, "Invalid number operation: {}", operation);
-    }
-    current_scope()->PopValue();
-  } else {
-    return nullptr;
+      current_scope()->PopValue();
+      current_scope()->values.back().type_id = virtual_machine->GetTypeId<bool>();
+      assert(!current_scope()->values.back().name.has_value());
+      return &current_scope()->values.back();
+
+    case schemas::OperatorEnum::LESS:
+    case schemas::OperatorEnum::NEGATE:
+    case schemas::OperatorEnum::NOT:
+    case schemas::OperatorEnum::NOT_EQUALS:
+    case schemas::OperatorEnum::OR:
+      break;
   }
-  assert(current_scope()->values.back().type_id == virtual_machine->GetTypeId<double>());
-  assert(!current_scope()->values.back().name.has_value());
-  return &current_scope()->values.back();
+
+  return nullptr;
 }
+
+// ScriptFunctionScopeValue* ScriptFunctionParser::ParseNumberOperationExpression(const json& expression_definition,
+//                                                                                std::string_view path) {
+//   assert(expression_definition.contains("expressionType"));
+//   assert(expression_definition["expressionType"] == "number_operation");
+
+//   if (!expression_definition.contains("firstOperand")) {
+//     return nullptr;
+//   }
+
+//   auto* first_operand = ParseExpression(expression_definition["firstOperand"], fmt::format("{}/firstOperand", path));
+//   if (!first_operand) {
+//     return nullptr;
+//   }
+
+//   assert(expression_definition.contains("operation"));
+//   const std::string& operation = expression_definition["operation"];
+
+//   if (operation != "negate") {
+//     if (!expression_definition.contains("secondOperand")) {
+//       return nullptr;
+//     }
+
+//     auto* second_operand = ParseExpression(expression_definition.at("secondOperand"), fmt::format("{}/secondOperand", path));
+//     if (!second_operand) {
+//       return nullptr;
+//     }
+
+//     if (operation == "add") {
+//       InsertInstructions(path, { Instruction::CreateAddNumbers() });
+//     } else if (operation == "subtract") {
+//       InsertInstructions(path, { Instruction::CreateSubtractNumbers() });
+//     } else if (operation == "multiply") {
+//       InsertInstructions(path, { Instruction::CreateMultiplyNumbers() });
+//     } else if (operation == "divide") {
+//       InsertInstructions(path, { Instruction::CreateDivideNumbers() });
+//     } else if (operation == "less") {
+//       InsertInstructions(path, { Instruction::CreateIsNumberLess() });
+//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
+//     } else if (operation == "less") {
+//       InsertInstructions(path, { Instruction::CreateIsNumberLess() });
+//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
+//     } else if (operation == "less") {
+//       InsertInstructions(path, { Instruction::CreateIsNumberLess() });
+//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
+//     } else if (operation == "less_equal") {
+//       InsertInstructions(path, { Instruction::CreateIsNumberLessEqual() });
+//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
+//     } else if (operation == "greater") {
+//       InsertInstructions(path, { Instruction::CreateIsNumberGreater() });
+//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
+//     } else if (operation == "greater_equal") {
+//       InsertInstructions(path, { Instruction::CreateIsNumberGreaterEqual() });
+//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
+//     } else if (operation == "equal") {
+//       InsertInstructions(path, { Instruction::CreateIsNumberEqual() });
+//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
+//     } else if (operation == "not_equal") {
+//       InsertInstructions(path, { Instruction::CreateIsNumberNotEqual() });
+//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
+//     } else {
+//       AddError(path, "Invalid number operation: {}", operation);
+//     }
+//     current_scope()->PopValue();
+//   } else {
+//     return nullptr;
+//   }
+//   assert(current_scope()->values.back().type_id == virtual_machine->GetTypeId<double>());
+//   assert(!current_scope()->values.back().name.has_value());
+//   return &current_scope()->values.back();
+// }
 
 // void ScriptFunctionParser::ParseFunctionCall(const json& statement_definiton, std::string_view path) {
 //   assert(statement_definiton["id"] == "function_call");

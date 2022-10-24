@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <type_traits>
 
+#include "fmt/core.h"
+
 namespace ovis {
 
 enum class OpCode : std::uint32_t {
@@ -193,3 +195,126 @@ static_assert(std::is_trivial_v<Instruction>);
 static_assert(sizeof(Instruction) == 4);
 
 }  // namespace ovis
+
+template <>
+struct fmt::formatter<ovis::Instruction>
+{
+  template <typename ParseContext>
+  constexpr auto parse(ParseContext& ctx) { return ctx.begin(); }
+
+  template <typename FormatContext>
+  auto format(const ovis::Instruction& instruction, FormatContext& ctx) {
+    switch (instruction.opcode) {
+      case ovis::OpCode::HALT:
+        return fmt::format_to(ctx.out(), "{0:+04} | HALT", 0);
+
+      case ovis::OpCode::PUSH:
+        return fmt::format_to(ctx.out(), "{0:+04} | PUSH count={0}", (int)instruction.stack_index_data.stack_index);
+
+      case ovis::OpCode::PUSH_TRIVIAL_CONSTANT:
+        return fmt::format_to(ctx.out(), "{:+04} | PUSH_TRIVIAL_CONSTANT constant_index={}", 1, instruction.constant_index_data.constant_index);
+
+      case ovis::OpCode::PUSH_TRIVIAL_STACK_VALUE:
+        return fmt::format_to(ctx.out(), "{:+04} | PUSH_TRIVIAL_STACK_VALUE stack_index={}", 1, instruction.constant_index_data.constant_index);
+
+      case ovis::OpCode::PUSH_ALLOCATED:
+        return fmt::format_to(ctx.out(), "{:+04} | PUSH_ALLOCATED alignment={} size={}", 1, instruction.allocate_data.alignment, instruction.allocate_data.size);
+
+      case ovis::OpCode::PUSH_STACK_VALUE_DATA_ADDRESS:
+        return fmt::format_to(ctx.out(), "{:+04} | PUSH_STACK_VALUE_DATA_ADDRESS stack_index={}", 1, instruction.constant_index_data.constant_index);
+
+      case ovis::OpCode::PUSH_STACK_VALUE_ALLOCATED_ADDRESS:
+        return fmt::format_to(ctx.out(), "{:+04} | PUSH_STACK_VALUE_ALLOCATED_ADDRESS stack_index={}", 1, instruction.constant_index_data.constant_index);
+
+      case ovis::OpCode::PUSH_CONSTANT_DATA_ADDRESS:
+        return fmt::format_to(ctx.out(), "{:+04} | PUSH_CONSTANT_DATA_ADDRESS constant_index={}", 1, instruction.constant_index_data.constant_index);
+
+      case ovis::OpCode::PUSH_CONSTANT_ALLOCATED_ADDRESS:
+        return fmt::format_to(ctx.out(), "{:+04} | PUSH_CONSTANT_ALLOCATED_ADDRESS constant_index={}", 1, instruction.constant_index_data.constant_index);
+
+      case ovis::OpCode::POP:
+        return fmt::format_to(ctx.out(), "{:+04} | POP count={}", -instruction.stack_index_data.stack_index, instruction.stack_index_data.stack_index);
+
+      case ovis::OpCode::POP_TRIVIAL:
+        return fmt::format_to(ctx.out(), "{:+04} | POP_TRIVIAL count={}", -instruction.stack_index_data.stack_index, instruction.stack_index_data.stack_index);
+
+      case ovis::OpCode::ASSIGN_TRIVIAL:
+        return fmt::format_to(ctx.out(), "{:+04} | ASSIGN_TRIVIAL destination={}", -1, instruction.stack_index_data.stack_index);
+
+      case ovis::OpCode::COPY_TRIVIAL:
+        return fmt::format_to(ctx.out(), "{:+04} | COPY_TRIVIAL destination={} source={}", 0, instruction.stack_addresses_data.address1, instruction.stack_addresses_data.address2);
+
+      case ovis::OpCode::MEMORY_COPY:
+        return fmt::format_to(ctx.out(), "{:+04} | MEMORY_COPY size={}", -2, instruction.allocate_data.size);
+
+      case ovis::OpCode::OFFSET_ADDRESS:
+        return fmt::format_to(ctx.out(), "{:+04} | OFFSET_ADDRESS stack_index={} offset={}", 0, instruction.offset_address_data.stack_index, instruction.offset_address_data.offset);
+
+      case ovis::OpCode::CALL_NATIVE_FUNCTION:
+        return fmt::format_to(ctx.out(), "{:+04} | CALL_NATIVE_FUNCTION input_count={}", -1, instruction.call_native_data.input_count);
+
+      case ovis::OpCode::PREPARE_SCRIPT_FUNCTION_CALL:
+        return fmt::format_to(ctx.out(), "{:+04} | PREPARE_SCRIPT_FUNCTION_CALL output_count={}", 3, instruction.stack_index_data.stack_index);
+
+      case ovis::OpCode::CALL_SCRIPT_FUNCTION:
+        return fmt::format_to(ctx.out(), "{:+04} | CALL_SCRIPT_FUNCTION input_count={} output_count={}", -1, instruction.stack_addresses_data.address1, instruction.stack_addresses_data.address2);
+
+      case ovis::OpCode::SET_CONSTANT_BASE_OFFSET:
+        return fmt::format_to(ctx.out(), "{:+04} | SET_CONSTANT_BASE_OFFSET base_offset={}", -1, instruction.set_constant_base_offset_data.base_offset);
+
+      case ovis::OpCode::RETURN:
+        return fmt::format_to(ctx.out(), "{:+04} | RETURN output_count={}", 0, instruction.return_data.output_count);
+
+      case ovis::OpCode::NOT:
+        return fmt::format_to(ctx.out(), "{:+04} | NOT input_index={}", 1, instruction.stack_addresses_data.address1);
+
+      case ovis::OpCode::AND:
+        return fmt::format_to(ctx.out(), "{:+04} | AND lhs_index={} rhs_index={}", 1, instruction.stack_addresses_data.address1, instruction.stack_addresses_data.address2);
+
+      case ovis::OpCode::OR:
+        return fmt::format_to(ctx.out(), "{:+04} | OR lhs_index={} rhs_index={}", 1, instruction.stack_addresses_data.address1, instruction.stack_addresses_data.address2);
+
+      case ovis::OpCode::ADD_NUMBERS:
+        return fmt::format_to(ctx.out(), "{:+04} | ADD_NUMBERS", -1);
+
+      case ovis::OpCode::SUBTRACT_NUMBERS:
+        return fmt::format_to(ctx.out(), "{:+04} | SUBTRACT_NUMBERS", -1);
+
+      case ovis::OpCode::MULTIPLY_NUMBERS:
+        return fmt::format_to(ctx.out(), "{:+04} | MULTIPLY_NUMBERS", -1);
+
+      case ovis::OpCode::DIVIDE_NUMBERS:
+        return fmt::format_to(ctx.out(), "{:+04} | DIVIDE_NUMBERS", -1);
+
+      case ovis::OpCode::IS_NUMBER_GREATER:
+        return fmt::format_to(ctx.out(), "{:+04} | IS_NUMBER_GREATER", -1);
+
+      case ovis::OpCode::IS_NUMBER_LESS:
+        return fmt::format_to(ctx.out(), "{:+04} | IS_NUMBER_LESS", -1);
+
+      case ovis::OpCode::IS_NUMBER_GREATER_EQUAL:
+        return fmt::format_to(ctx.out(), "{:+04} | IS_NUMBER_GREATER_EQUAL", -1);
+
+      case ovis::OpCode::IS_NUMBER_LESS_EQUAL:
+        return fmt::format_to(ctx.out(), "{:+04} | IS_NUMBER_LESS_EQUAL", -1);
+
+      case ovis::OpCode::IS_NUMBER_EQUAL:
+        return fmt::format_to(ctx.out(), "{:+04} | IS_NUMBER_EQUAL", -1);
+
+      case ovis::OpCode::IS_NUMBER_NOT_EQUAL:
+        return fmt::format_to(ctx.out(), "{:+04} | IS_NUMBER_NOT_EQUAL", -1);
+
+      case ovis::OpCode::JUMP:
+        return fmt::format_to(ctx.out(), "{:+04} | JUMP offset={}", 0, instruction.jump_data.offset);
+
+      case ovis::OpCode::JUMP_IF_TRUE:
+        return fmt::format_to(ctx.out(), "{:+04} | JUMP_IF_TRUE offset={}", -1, instruction.jump_data.offset);
+
+      case ovis::OpCode::JUMP_IF_FALSE:
+        return fmt::format_to(ctx.out(), "{:+04} | JUMP_IF_FALSE offset={}", -1, instruction.jump_data.offset);
+
+      case ovis::OpCode::COUNT:
+        return fmt::format_to(ctx.out(), "COUNT");
+    }
+  }
+};

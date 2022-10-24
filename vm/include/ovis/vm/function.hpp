@@ -44,6 +44,8 @@ struct FunctionDescription {
   std::vector<ValueDeclaration> inputs;
   std::vector<ValueDeclaration> outputs;
   std::variant<NativeFunctionDefinition, ScriptFunctionDefinition> definition;
+
+  std::string PrintDefinition() const;
 };
 
 // A function can either be a native (C++) function or script function.

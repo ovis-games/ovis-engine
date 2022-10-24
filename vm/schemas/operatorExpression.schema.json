@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "operatorExpression.schema.json",
+  "type": "object",
+  "properties": {
+    "operator": {
+      "type": "string",
+      "enum": ["equals", "not_equals", "less", "greater", "not", "or", "and", "add", "subtract", "multiply", "divide", "negate"]
+    },
+    "operands": {
+      "type": "array",
+      "items": { "$ref": "expression.schema.json" }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["operator", "operands"]
+}

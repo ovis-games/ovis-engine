@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "functionCallExpression.schema.json",
+  "type": "object",
+  "properties": {
+    "function": { "$ref": "identifier.schema.json" },
+    "inputs": {
+      "type": "array",
+      "items": { "$ref": "expression.schema.json" }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["function", "inputs"]
+}

@@ -10,7 +10,7 @@
 #include "ovis/vm/type.hpp"
 #include "ovis/vm/value.hpp"
 #include "ovis/vm/parse_script_error.hpp"
-// #include "schemas/"
+#include "schemas/function.hpp"
 
 namespace ovis {
 
@@ -64,20 +64,23 @@ struct ScriptFunctionParser {
     result.errors.emplace_back(ScriptErrorLocation(script_name, path), error_message, std::forward<FormatArguments>(format_arguments)...);
   }
 
-  void Parse(const json& function_definition);
-  void ParseOutputs(const json& outputs, std::string_view path);
-  void ParseInputs(const json& inputs, std::string_view path);
+  void Parse(const schemas::Function& function);
+  void ParseOutputs(const std::vector<schemas::Variable>& outputs, std::string_view path);
+  void ParseInputs(const std::vector<schemas::Variable>& inputs, std::string_view path);
 
   // Statement parsing
-  void ParseStatements(const json& statements_definiton, std::string_view path);
-  void ParseStatement(const json& statement_definiton, std::string_view path);
-  void ParseReturnStatement(const json& statement_definition, std::string_view path);
-  void ParseVariableDeclarationStatement(const json& statement_definiton, std::string_view path);
+  void ParseStatements(const std::vector<schemas::StatementSchema>& statements, std::string_view path);
+  void ParseStatement(const schemas::StatementSchema& statement, std::string_view path);
+  void ParseReturnStatement(const std::vector<schemas::ExpressionSchema>& return_values, std::string_view path);
+  void ParseVariableDeclarationStatement(const schemas::VariableDeclaration& variable_declaration_statement,
+                                         std::string_view path);
 
   // Expression parsing
-  ScriptFunctionScopeValue* ParseExpression(const json& expression_definition, std::string_view path);
-  ScriptFunctionScopeValue* ParseVariableExpression(const json& variable_expression_definition, std::string_view path);
-  ScriptFunctionScopeValue* ParseNumberOperationExpression(const json& expression_definition, std::string_view path);
+  ScriptFunctionScopeValue* ParseExpression(const schemas::ExpressionSchema& expression_definition, std::string_view path);
+  ScriptFunctionScopeValue* ParseConstantExpression(const schemas::Constant& constant_expression, std::string_view path);
+  ScriptFunctionScopeValue* ParseFunctionCallExpression(const schemas::FunctionCall& function_call_expression, std::string_view path);
+  ScriptFunctionScopeValue* ParseVariableExpression(const std::string& variable, std::string_view path);
+  ScriptFunctionScopeValue* ParseOperatorExpression(const schemas::OperatorClass& operator_expression, std::string_view path);
 
   void ParseFunctionCall(const json& statement_definiton, std::string_view path);
   void ParsePushValue(const json& value_definition, std::string_view path, TypeId type);

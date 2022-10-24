@@ -5,6 +5,20 @@
 
 namespace ovis {
 
+std::string FunctionDescription::PrintDefinition() const {
+  std::string serialized_definition;
+  if (std::holds_alternative<NativeFunctionDefinition>(definition)) {
+    serialized_definition = fmt::format("Native function: {}", (void*)std::get<0>(definition).function_pointer);
+  } else {
+    serialized_definition = "instructions:";
+    for (const auto& instruction : std::get<1>(definition).instructions) {
+      serialized_definition += fmt::format("\n{}", instruction);
+    }
+  }
+
+  return serialized_definition;
+}
+
 // Function::Function()
 //     : name_(name), inputs_(inputs), outputs_(outputs) {
 //   handle_.native_function = function_pointer;
