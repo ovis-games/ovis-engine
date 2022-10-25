@@ -32,6 +32,7 @@ class FunctionWrapper;
 template <typename ResultType, typename... ArgumentTypes>
 class FunctionWrapper<ResultType(ArgumentTypes...)> {
  public:
+  FunctionWrapper(Function* function) : FunctionWrapper(function->shared_from_this()) {}
   FunctionWrapper(std::shared_ptr<Function> function);
 
   auto function() const { return function_; }
@@ -110,6 +111,8 @@ class VirtualMachine final {
       std::string_view name, std::string_view module, std::vector<std::string> input_names = {},
       std::vector<std::string> output_names = {});
   Function* RegisterFunction(FunctionDescription description);
+
+  Function* GetFunction(std::string_view function);
 
   template <typename T>
   requires (!std::is_pointer_v<T> || std::is_function_v<std::remove_cvref_t<std::remove_pointer_t<T>>>)

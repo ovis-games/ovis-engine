@@ -43,11 +43,7 @@ std::string FunctionDescription::PrintDefinition() const {
 //   };
 // }
 
-Function::Function(FunctionDescription description)
-    : virtual_machine_(description.virtual_machine),
-      name_(std::move(description.name)),
-      inputs_(std::move(description.inputs)),
-      outputs_(std::move(description.outputs)) {
+Function::Function(FunctionDescription description) : description_(description) {
   if (description.definition.index() == 0) {
     auto native_definition = std::get<NativeFunctionDefinition>(description.definition);
     handle_ = FunctionHandle::FromNativeFunction(native_definition.function_pointer);
@@ -66,7 +62,7 @@ bool Function::IsCallableWithArguments(std::span<const TypeId> type_ids) const {
   }
 
   for (std::size_t i = 0; i < type_ids.size(); ++i) {
-    if (inputs_[i].type != type_ids[i]) {
+    if (inputs()[i].type != type_ids[i]) {
       return false;
     }
   }

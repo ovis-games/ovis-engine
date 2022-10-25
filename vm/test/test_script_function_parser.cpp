@@ -250,4 +250,167 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
       REQUIRE(*call_result == 1337.0);
     }
   }
+
+  SECTION("Function call expression with native function") {
+    struct AddOne {
+      static double Call(double input) { return input + 1.0; }
+    };
+    vm.RegisterFunction<&AddOne::Call>("addOne", "Test", { "input" }, { "output" });
+
+    const auto parse_result = ParseScriptFunction(&vm, R"(
+    {
+      "name": "callNativeFunction",
+      "inputs": [
+        {
+          "type": "Number",
+          "name": "test"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "Number",
+          "name": "outputNumber"
+        }
+      ],
+      "statements": [
+        {
+          "type": "return",
+          "return": [
+            {
+              "type": "functionCall",
+              "functionCall": {
+                "function": "Test.addOne",
+                "inputs": [
+                  {
+                    "type": "variable",
+                    "variable": "test"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+    )"_json);
+    REQUIRE(parse_result.errors.empty());
+    const FunctionDescription& function_description = parse_result.function_description;
+    REQUIRE(function_description.inputs.size() == 1);
+    REQUIRE(function_description.outputs.size() == 1);
+    const auto function = FunctionWrapper<double(double)>(vm.RegisterFunction(parse_result.function_description));
+    {
+      const auto call_result = function(41);
+      REQUIRE_RESULT(call_result);
+      UNSCOPED_INFO(function_description.PrintDefinition());
+      REQUIRE(*call_result == 42.0);
+    }
+    {
+      const auto call_result = function(1336);
+      REQUIRE_RESULT(call_result);
+      REQUIRE(*call_result == 1337.0);
+    }
+  }
+
+  SECTION("Function call expression with script function") {
+    const auto add_one_parse_result = ParseScriptFunction(&vm, R"(
+    {
+      "name": "addOne",
+      "inputs": [
+        {
+          "type": "Number",
+          "name": "input"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "Number",
+          "name": "output"
+        }
+      ],
+      "statements": [
+        {
+          "type": "return",
+          "return": [
+            {
+              "type": "operator",
+              "operator": {
+                "operator": "add",
+                "operands": [
+                  {
+                    "type": "variable",
+                    "variable": "input"
+                  },
+                  {
+                    "type": "constant",
+                    "constant": 1
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+    )"_json);
+    REQUIRE(add_one_parse_result.errors.empty());
+    FunctionDescription add_one_function_desc = add_one_parse_result.function_description;
+    add_one_function_desc.module = "Test";
+    REQUIRE(add_one_function_desc.inputs.size() == 1);
+    REQUIRE(add_one_function_desc.outputs.size() == 1);
+    vm.RegisterFunction(add_one_function_desc);
+
+    const auto parse_result = ParseScriptFunction(&vm, R"(
+    {
+      "name": "callScriptFunction",
+      "inputs": [
+        {
+          "type": "Number",
+          "name": "test"
+        }
+      ],
+      "outputs": [
+        {
+          "type": "Number",
+          "name": "outputNumber"
+        }
+      ],
+      "statements": [
+        {
+          "type": "return",
+          "return": [
+            {
+              "type": "functionCall",
+              "functionCall": {
+                "function": "Test.addOne",
+                "inputs": [
+                  {
+                    "type": "variable",
+                    "variable": "test"
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+    )"_json);
+    REQUIRE(parse_result.errors.empty());
+    const FunctionDescription& function_description = parse_result.function_description;
+    REQUIRE(function_description.inputs.size() == 1);
+    REQUIRE(function_description.outputs.size() == 1);
+    const auto function = FunctionWrapper<double(double)>(vm.RegisterFunction(parse_result.function_description));
+    {
+      UNSCOPED_INFO(add_one_function_desc.PrintDefinition());
+      UNSCOPED_INFO(function_description.PrintDefinition());
+      const auto call_result = function(41);
+      REQUIRE_RESULT(call_result);
+      REQUIRE(*call_result == 42.0);
+    }
+    {
+      const auto call_result = function(1336);
+      REQUIRE_RESULT(call_result);
+      REQUIRE(*call_result == 1337.0);
+    }
+  }
 }

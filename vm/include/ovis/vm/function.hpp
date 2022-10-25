@@ -53,9 +53,10 @@ class Function : public std::enable_shared_from_this<Function> {
  public:
   Function(FunctionDescription description);
 
-  std::string_view name() const { return name_; }
-  std::string_view text() const { return text_; }
-  VirtualMachine* virtual_machine() const { return virtual_machine_; }
+  std::string_view name() const { return description_.name; }
+  std::string_view module() const { return description_.module; }
+  std::string GetReferenceString() const { return fmt::format("{}.{}", module(), name()); }
+  VirtualMachine* virtual_machine() const { return description_.virtual_machine; }
 
   // Returns the native function pointer. It is only valid to call this function if the function is actually a native
   // function. Can be checked via is_native_function().
@@ -70,12 +71,12 @@ class Function : public std::enable_shared_from_this<Function> {
   // Returns the handle of the function
   FunctionHandle handle() const { return handle_; }
 
-  std::span<const ValueDeclaration> inputs() const { return inputs_; }
+  std::span<const ValueDeclaration> inputs() const { return description_.inputs; }
   std::optional<std::size_t> GetInputIndex(std::string_view input_name) const;
   std::optional<ValueDeclaration> GetInput(std::string_view input_name) const;
   std::optional<ValueDeclaration> GetInput(std::size_t input_index) const;
 
-  std::span<const ValueDeclaration> outputs() const { return outputs_; }
+  std::span<const ValueDeclaration> outputs() const { return description_.outputs; }
   std::optional<std::size_t> GetOutputIndex(std::string_view output_name) const;
   std::optional<ValueDeclaration> GetOutput(std::size_t output_index) const;
   std::optional<ValueDeclaration> GetOutput(std::string_view output_name) const;
@@ -94,12 +95,8 @@ class Function : public std::enable_shared_from_this<Function> {
   static std::shared_ptr<Function> Create(FunctionDescription description);
 
  private:
-  VirtualMachine* virtual_machine_;
-  std::string name_;
-  std::string text_;
+  FunctionDescription description_;
   FunctionHandle handle_; // This handle has always the unused bit set to 0.
-  std::vector<ValueDeclaration> inputs_;
-  std::vector<ValueDeclaration> outputs_;
 
   auto FindInput(std::string_view name) const {
     return std::find_if(inputs().begin(), inputs().end(), [name](const auto& value) { return value.name == name; });

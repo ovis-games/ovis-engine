@@ -183,8 +183,33 @@ ScriptFunctionScopeValue* ScriptFunctionParser::ParseConstantExpression(const sc
 
 ScriptFunctionScopeValue* ScriptFunctionParser::ParseFunctionCallExpression(
     const schemas::FunctionCall& function_call_expression, std::string_view path) {
-  assert(false && "Not implemented yet");
-  return nullptr;
+  const auto function = virtual_machine->GetFunction(function_call_expression.function);
+  if (!function) {
+    AddError(path, "Unknown function: {}", function_call_expression.function);
+    return nullptr;
+  }
+  if (function->outputs().size() != 1) {
+    AddError(path, "Functions with more than one output can currently not be called as an expression.");
+    return nullptr;
+  }
+  if (function->inputs().size() != function_call_expression.inputs.size()) {
+    AddError(path, "Incorrect number of inputs. Expected: {}, got {}.", function->inputs().size(),
+             function_call_expression.inputs.size());
+    return nullptr;
+  }
+  InsertPrepareFunctionCallInstructions(path, function);
+  for (int i = 0; i < function_call_expression.inputs.size(); ++i) {
+    const auto input_path = fmt::format("{}/inputs/{}", path, i);
+    auto input = ParseExpression(function_call_expression.inputs[i], input_path);
+    if (!input || function->inputs()[i].type != input->type_id) {
+      AddError(input_path, "Incorrect type for input {}: {}. Expected {}, got {}", i, function->inputs()[i].name,
+               virtual_machine->GetType(function->inputs()[i].type)->name(),
+               virtual_machine->GetType(input ? input->type_id : Type::NONE_ID)->name());
+    }
+  }
+  InsertFunctionCallInstructions(path, function);
+  assert(current_scope()->values.back().type_id == function->outputs()[0].type);
+  return &current_scope()->values.back();
 }
 
 ScriptFunctionScopeValue* ScriptFunctionParser::ParseVariableExpression(const std::string& variable_name, std::string_view path) {
@@ -563,7 +588,7 @@ void ScriptFunctionParser::InsertPrepareFunctionCallInstructions(std::string_vie
 
 void ScriptFunctionParser::InsertFunctionCallInstructions(std::string_view path, NotNull<const Function*> function) {
   if (function->is_script_function()) {
-    InsertPushConstantInstructions(path, function->handle());
+    InsertPushConstantInstructions(path, function->handle().instruction_offset);
     InsertInstructions(path, {
       Instruction::CreateScriptFunctionCall(function->outputs().size(), function->inputs().size()),
     });
