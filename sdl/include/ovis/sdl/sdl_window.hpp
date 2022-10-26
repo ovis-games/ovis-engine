@@ -8,7 +8,7 @@
 
 #include "SDL.h"
 
-#include "ovis/application/tick_receiver.hpp"
+#include "ovis/core/application.hpp"
 #include "ovis/utils/all.hpp"
 #include "ovis/utils/class.hpp"
 #include "ovis/core/scene.hpp"
@@ -37,7 +37,7 @@ class SDLInitSubsystem {
   ~SDLInitSubsystem() { SDL_QuitSubSystem(SUBSYSTEM); }
 };
 
-class SDLWindow : public TickReceiver, public SDLInitSubsystem<SDL_INIT_VIDEO> {
+class SDLWindow : public ApplicationJob, public SDLInitSubsystem<SDL_INIT_VIDEO> {
   MAKE_NON_COPY_OR_MOVABLE(SDLWindow);
 
  public:
@@ -52,7 +52,9 @@ class SDLWindow : public TickReceiver, public SDLInitSubsystem<SDL_INIT_VIDEO> {
   void Resize(int width, int height);
 
   virtual bool SendEvent(const SDL_Event& event);
-  void Update(std::chrono::microseconds delta_time) override;
+
+  Result<> Prepare(const Nothing&) override { return Success; }
+  Result<> Execute(const double& delta_time) override { return Success; }
 
  private:
   SDL_Window* sdl_window_;

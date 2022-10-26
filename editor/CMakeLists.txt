@@ -37,7 +37,7 @@ target_link_options(
 target_link_libraries(
   ovis-editor
   PUBLIC
-    ovis::application
+    ovis::emscripten
 )
 
 target_include_assets(ovis-editor)

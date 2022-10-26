@@ -20,7 +20,10 @@ CPMAddPackage("gh:fmtlib/fmt#9.1.0")
 CPMAddPackage("gh:nlohmann/json@3.11.2")
 CPMAddPackage("gh:catchorg/Catch2@3.1.1")
 CPMAddPackage("gh:ovis-games/stb-cmake-wrapper@0.1")
-CPMAddPackage("gh:libsdl-org/SDL#release-2.24.1")
+if (NOT OVIS_EMSCRIPTEN)
+  # We use the built-in version of SDL when using emscripten
+  CPMAddPackage("gh:libsdl-org/SDL#release-2.24.1")
+endif ()
 
 find_program(
   NODE_EXECUTABLE
@@ -47,8 +50,9 @@ add_subdirectory(input)
 add_subdirectory(networking)
 # add_subdirectory(audio)
 add_subdirectory(rendering2d)
-add_subdirectory(application)
+add_subdirectory(sdl)
 
 if (OVIS_EMSCRIPTEN)
+  add_subdirectory(emscripten)
   add_subdirectory(editor)
 endif ()

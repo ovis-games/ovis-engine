@@ -1,6 +1,7 @@
 add_library(
   ovis-core
   
+  include/ovis/core/application.hpp src/application.cpp
   include/ovis/core/vm_bindings.hpp src/vm_bindings.cpp
   include/ovis/core/main_vm.hpp src/main_vm.cpp
   include/ovis/core/event_storage.hpp src/event_storage.cpp

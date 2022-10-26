@@ -23,7 +23,7 @@ Result<ParseScriptResult, ParseScriptErrors> ParseScript(VirtualMachine* virtual
         result.types.push_back(std::move(*type));
       }
     } else {
-      errors.emplace_back(ScriptErrorLocation("", "/{}", definition.key()), "Invalid definition type {}",
+      errors.emplace_back(ScriptErrorLocation("", fmt::format("/{}", definition.key())), "Invalid definition type {}",
                           definition_type);
     }
   }
@@ -65,8 +65,8 @@ void ScriptParser::AddScript(json script_definition, std::string_view script_nam
             .type_id = Type::NONE_ID,
       }));
     } else {
-      errors_.emplace_back(ScriptErrorLocation(name, "/{}", definition.key()), "Invalid definition type {}",
-                           definition_type);
+      errors_.emplace_back(ScriptErrorLocation(name, fmt::format("/{}", definition.key())),
+                           "Invalid definition type {}", definition_type);
     }
   }
 }

@@ -20,7 +20,7 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
   if (const auto& name = type_definition.find("name"); name != type_definition.end() && name->is_string()) {
     description.name = *name;
   } else {
-    errors.emplace_back(ScriptErrorLocation(script_name, "{}/name", base_path), "Invalid name");
+    errors.emplace_back(ScriptErrorLocation(script_name, fmt::format("{}/name", base_path)), "Invalid name");
   }
 
   FunctionDescription construct_function = {
@@ -54,15 +54,16 @@ Result<ParseScriptTypeResult, ParseScriptErrors> ParseScriptType(VirtualMachine*
     const std::string& property_name = property_definition["variableName"];
     for (const auto& existing_property : description.properties) {
       if (existing_property.name == property_name) {
-        errors.emplace_back(ScriptErrorLocation(script_name, "{}/properties/{}/variableName", base_path, property_index),
-                            "Duplicate property name {}", property_name);
+        errors.emplace_back(
+            ScriptErrorLocation(script_name, fmt::format("{}/properties/{}/variableName", base_path, property_index)),
+            "Duplicate property name {}", property_name);
         break;
       }
     }
 
     const auto& property_type = virtual_machine->GetType(property_definition.at("variableType"));
     if (!property_type) {
-      errors.emplace_back(ScriptErrorLocation(script_name, "{}/properties/{}", base_path, property_index),
+      errors.emplace_back(ScriptErrorLocation(script_name, fmt::format("{}/properties/{}", base_path, property_index)),
                           "Invalid type for property {}: {}", property_name, property_definition.at("variableType"));
       continue;
     }

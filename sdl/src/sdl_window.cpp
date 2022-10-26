@@ -1,13 +1,14 @@
-#include "ovis/application/sdl_window.hpp"
+#include "ovis/sdl/sdl_window.hpp"
 
 #include <algorithm>
 #include <cassert>
+
 #include "SDL.h"
 
-#include "ovis/core/simple_job.hpp"
 #include "ovis/utils/log.hpp"
 #include "ovis/utils/profiling.hpp"
 #include "ovis/core/scene.hpp"
+#include "ovis/core/simple_job.hpp"
 #include "ovis/input/key_events.hpp"
 #include "ovis/input/mouse_events.hpp"
 #include "ovis/input/text_input_event.hpp"
@@ -50,7 +51,8 @@ OVIS_CREATE_SIMPLE_JOB(PollSDLEvents);
 }  // namespace
 
 SDLWindow::SDLWindow(const SDLWindowDescription& desc)
-    : sdl_window_(SDL_CreateWindow(desc.title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, desc.width,
+    : ApplicationJob(fmt::format("SDLWindow:{}", desc.title)),
+      sdl_window_(SDL_CreateWindow(desc.title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, desc.width,
                                    desc.height, SDL_WINDOW_OPENGL)),
       opengl_context_(CreateOpenGLContext(sdl_window_)),
       graphics_context_(GetDrawableSize()) {
@@ -161,12 +163,12 @@ bool SDLWindow::SendEvent(const SDL_Event& event) {
   return false;
 }
 
-void SDLWindow::Update(std::chrono::microseconds delta_time) {
+// void SDLWindow::Update(std::chrono::microseconds delta_time) {
   // if (scene_.is_playing()) {
   //   scene_.BeforeUpdate();
   //   scene_.Update(delta_time);
   //   scene_.AfterUpdate();
   // }
-}
+// }
 
 }  // namespace ovis

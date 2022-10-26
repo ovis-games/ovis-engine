@@ -51,12 +51,12 @@ if (OVIS_BUILD_TESTS)
 
   if (OVIS_EMSCRIPTEN)
     add_test(
-      ovis-renderin2d-test
+      ovis-rendering2d-test
       ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-rendering2d-test.js
     )
   else ()
     add_test(
-      NAME ovis-renderin2d-test
+      NAME ovis-rendering2d-test
       COMMAND ovis-rendering2d-test --assets-directory ${CMAKE_CURRENT_BINARY_DIR}/assets/ovis-rendering2d-test/
     )
   endif ()

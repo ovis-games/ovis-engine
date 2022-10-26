@@ -13,7 +13,7 @@ namespace ovis {
 
 struct Error {
   template <typename... Args>
-  Error(std::string_view message, Args&&... args) : message(fmt::format(message, std::forward<Args>(args)...)) {}
+  Error(std::string_view message, Args&&... args) : message(fmt::format(fmt::runtime(message), std::forward<Args>(args)...)) {}
 
   std::string message;
 };

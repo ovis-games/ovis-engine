@@ -19,6 +19,7 @@ if (OVIS_EMSCRIPTEN)
       -g
       -O0
       "SHELL:-s DISABLE_EXCEPTION_CATCHING=0"
+      "SHELL:-s ALLOW_MEMORY_GROWTH=1"
     )
     add_link_options(
       -g
@@ -33,4 +34,7 @@ if (OVIS_EMSCRIPTEN)
       -O3
     )
   endif ()
+  add_link_options(
+    -sALLOW_MEMORY_GROWTH
+  )
 endif()
