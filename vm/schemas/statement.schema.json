@@ -5,10 +5,11 @@
   "properties": {
     "type": {
       "type": "string",
-      "enum": ["return", "variableDeclaration"]
+      "enum": ["return", "variableDeclaration", "expression"]
     },
-    "return": { "$ref": "returnStatement.schema.json" },
-    "variableDeclaration": { "$ref": "variableDeclarationStatement.schema.json" }
+    "return": { "$ref": "expression.schema.json" },
+    "variableDeclaration": { "$ref": "variableDeclarationStatement.schema.json" },
+    "expression": { "$ref": "expression.schema.json" }
   },
   "additionalProperties": false,
   "required": ["type"]

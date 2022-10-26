@@ -7,6 +7,21 @@
 #include "ovis/vm/virtual_machine.hpp"
 #include "ovis/test/require_result.hpp"
 
+#define REQUIRE_PARSE_RESULT(expr)                                                                  \
+  do {                                                                                              \
+    auto&& require_parse_result_value = expr;                                                       \
+    if (!require_parse_result_value.errors.empty()) {                                               \
+      for (const auto& error : require_parse_result_value.errors) {                                 \
+        std::string location = "";                                                                  \
+        if (error.location) {                                                                       \
+          location = fmt::format("{}[{}]", error.location->script_name, error.location->json_path); \
+        }                                                                                           \
+        UNSCOPED_INFO(fmt::format("{}: {}", location, error.message));                              \
+      }                                                                                             \
+    }                                                                                               \
+    REQUIRE(require_parse_result_value.errors.empty());                                             \
+  } while (false)
+
 using namespace ovis;
 
 TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
@@ -45,17 +60,15 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
       "statements": [
         {
           "type": "return",
-          "return": [
-            {
-              "type": "constant",
-              "constant": 42.0
-            }
-          ]
+          "return": {
+            "type": "constant",
+            "constant": 42.0
+          }
         }
       ]
     }
     )"_json);
-    REQUIRE(parse_result.errors.empty());
+    REQUIRE_PARSE_RESULT(parse_result);
     const FunctionDescription& function_description = parse_result.function_description;
     REQUIRE(function_description.inputs.size() == 0);
     REQUIRE(function_description.outputs.size() == 1);
@@ -79,29 +92,25 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
       "statements": [
         {
           "type": "return",
-          "return": [
-            {
-              "type": "operator",
-              "operator": {
-                "operator": "add",
-                "operands": [
-                  {
-                    "type": "constant",
-                    "constant": 40.5
-                  },
-                  {
-                    "type": "constant",
-                    "constant": 1.5
-                  }
-                ]
+          "return": {
+            "type": "operator",
+            "operator": {
+              "operator": "add",
+              "leftHandSide": {
+                "type": "constant",
+                "constant": 40.5
+              },
+              "rightHandSide": {
+                "type": "constant",
+                "constant": 1.5
               }
             }
-          ]
+          }
         }
       ]
     }
     )"_json);
-    REQUIRE(parse_result.errors.empty());
+    REQUIRE_PARSE_RESULT(parse_result);
     const FunctionDescription& function_description = parse_result.function_description;
     REQUIRE(function_description.inputs.size() == 0);
     REQUIRE(function_description.outputs.size() == 1);
@@ -125,29 +134,25 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
       "statements": [
         {
           "type": "return",
-          "return": [
-            {
-              "type": "operator",
-              "operator": {
-                "operator": "greater",
-                "operands": [
-                  {
-                    "type": "constant",
-                    "constant": 40.5
-                  },
-                  {
-                    "type": "constant",
-                    "constant": 1.5
-                  }
-                ]
+          "return": {
+            "type": "operator",
+            "operator": {
+              "operator": "greater",
+              "leftHandSide": {
+                "type": "constant",
+                "constant": 40.5
+              },
+              "rightHandSide": {
+                "type": "constant",
+                "constant": 1.5
               }
             }
-          ]
+          }
         }
       ]
     }
     )"_json);
-    REQUIRE(parse_result.errors.empty());
+    REQUIRE_PARSE_RESULT(parse_result);
     const FunctionDescription& function_description = parse_result.function_description;
     REQUIRE(function_description.inputs.size() == 0);
     REQUIRE(function_description.outputs.size() == 1);
@@ -184,17 +189,15 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
         },
         {
           "type": "return",
-          "return": [
-            {
-              "type": "constant",
-              "constant": 42.0
-            }
-          ]
+          "return": {
+            "type": "constant",
+            "constant": 42.0
+          }
         }
       ]
     }
     )"_json);
-    REQUIRE(parse_result.errors.empty());
+    REQUIRE_PARSE_RESULT(parse_result);
     const FunctionDescription& function_description = parse_result.function_description;
     REQUIRE(function_description.inputs.size() == 0);
     REQUIRE(function_description.outputs.size() == 1);
@@ -223,17 +226,15 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
       "statements": [
         {
           "type": "return",
-          "return": [
-            {
-              "type": "variable",
-              "variable": "test"
-            }
-          ]
+          "return": {
+            "type": "variable",
+            "variable": "test"
+          }
         }
       ]
     }
     )"_json);
-    REQUIRE(parse_result.errors.empty());
+    REQUIRE_PARSE_RESULT(parse_result);
     const FunctionDescription& function_description = parse_result.function_description;
     REQUIRE(function_description.inputs.size() == 1);
     REQUIRE(function_description.outputs.size() == 1);
@@ -275,25 +276,23 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
       "statements": [
         {
           "type": "return",
-          "return": [
-            {
-              "type": "functionCall",
-              "functionCall": {
-                "function": "Test.addOne",
-                "inputs": [
-                  {
-                    "type": "variable",
-                    "variable": "test"
-                  }
-                ]
-              }
+          "return": {
+            "type": "functionCall",
+            "functionCall": {
+              "function": "Test.addOne",
+              "inputs": [
+                {
+                  "type": "variable",
+                  "variable": "test"
+                }
+              ]
             }
-          ]
+          }
         }
       ]
     }
     )"_json);
-    REQUIRE(parse_result.errors.empty());
+    REQUIRE_PARSE_RESULT(parse_result);
     const FunctionDescription& function_description = parse_result.function_description;
     REQUIRE(function_description.inputs.size() == 1);
     REQUIRE(function_description.outputs.size() == 1);
@@ -330,29 +329,25 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
       "statements": [
         {
           "type": "return",
-          "return": [
-            {
-              "type": "operator",
-              "operator": {
-                "operator": "add",
-                "operands": [
-                  {
-                    "type": "variable",
-                    "variable": "input"
-                  },
-                  {
-                    "type": "constant",
-                    "constant": 1
-                  }
-                ]
+          "return": {
+            "type": "operator",
+            "operator": {
+              "operator": "add",
+              "leftHandSide": {
+                "type": "variable",
+                "variable": "input"
+              },
+              "rightHandSide": {
+                "type": "constant",
+                "constant": 1
               }
             }
-          ]
+          }
         }
       ]
     }
     )"_json);
-    REQUIRE(add_one_parse_result.errors.empty());
+    REQUIRE_PARSE_RESULT(add_one_parse_result);
     FunctionDescription add_one_function_desc = add_one_parse_result.function_description;
     add_one_function_desc.module = "Test";
     REQUIRE(add_one_function_desc.inputs.size() == 1);
@@ -377,25 +372,23 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
       "statements": [
         {
           "type": "return",
-          "return": [
-            {
-              "type": "functionCall",
-              "functionCall": {
-                "function": "Test.addOne",
-                "inputs": [
-                  {
-                    "type": "variable",
-                    "variable": "test"
-                  }
-                ]
-              }
+          "return": {
+            "type": "functionCall",
+            "functionCall": {
+              "function": "Test.addOne",
+              "inputs": [
+                {
+                  "type": "variable",
+                  "variable": "test"
+                }
+              ]
             }
-          ]
+          }
         }
       ]
     }
     )"_json);
-    REQUIRE(parse_result.errors.empty());
+    REQUIRE_PARSE_RESULT(parse_result);
     const FunctionDescription& function_description = parse_result.function_description;
     REQUIRE(function_description.inputs.size() == 1);
     REQUIRE(function_description.outputs.size() == 1);

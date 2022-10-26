@@ -32,7 +32,7 @@ struct ScriptFunctionScopeValue {
 struct ScriptFunctionScope {
   ScriptFunctionScope * parent = nullptr;
   uint32_t base_index;
-  std::vector<ScriptFunctionScopeValue> values;
+  std::deque<ScriptFunctionScopeValue> values;
 
   ScriptFunctionScopeValue* GetValue(std::uint32_t index);
   const ScriptFunctionScopeValue* GetVariable(std::string_view name);
@@ -71,16 +71,19 @@ struct ScriptFunctionParser {
   // Statement parsing
   void ParseStatements(const std::vector<schemas::StatementSchema>& statements, std::string_view path);
   void ParseStatement(const schemas::StatementSchema& statement, std::string_view path);
-  void ParseReturnStatement(const std::vector<schemas::ExpressionSchema>& return_values, std::string_view path);
+  void ParseReturnStatement(const schemas::Expression& return_expression, std::string_view path);
+  void ParseExpressionStatement(const schemas::Expression& expression, std::string_view path);
   void ParseVariableDeclarationStatement(const schemas::VariableDeclaration& variable_declaration_statement,
                                          std::string_view path);
 
   // Expression parsing
-  ScriptFunctionScopeValue* ParseExpression(const schemas::ExpressionSchema& expression_definition, std::string_view path);
-  ScriptFunctionScopeValue* ParseConstantExpression(const schemas::Constant& constant_expression, std::string_view path);
-  ScriptFunctionScopeValue* ParseFunctionCallExpression(const schemas::FunctionCall& function_call_expression, std::string_view path);
-  ScriptFunctionScopeValue* ParseVariableExpression(const std::string& variable, std::string_view path);
-  ScriptFunctionScopeValue* ParseOperatorExpression(const schemas::OperatorClass& operator_expression, std::string_view path);
+  std::span<ScriptFunctionScopeValue> ParseExpression(const schemas::Expression& expression_definition, std::string_view path);
+  std::span<ScriptFunctionScopeValue> ParseConstantExpression(const schemas::Constant& constant_expression, std::string_view path);
+  std::span<ScriptFunctionScopeValue> ParseFunctionCallExpression(const schemas::FunctionCall& function_call_expression, std::string_view path);
+  std::span<ScriptFunctionScopeValue> ParseVariableExpression(const std::string& variable, std::string_view path);
+  std::span<ScriptFunctionScopeValue> ParseOperatorExpression(const schemas::OperatorClass& operator_expression, std::string_view path);
+  std::span<ScriptFunctionScopeValue> ParseInfixOperatorOperands(const schemas::OperatorClass& operator_expression, std::string_view path);
+  bool CheckValueTypes(std::span<ScriptFunctionScopeValue> values, const std::vector<TypeId>& expected_types, std::string_view path, std::string_view error_message = "");
 
   void ParseFunctionCall(const json& statement_definiton, std::string_view path);
   void ParsePushValue(const json& value_definition, std::string_view path, TypeId type);
