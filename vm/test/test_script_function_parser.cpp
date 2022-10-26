@@ -405,4 +405,55 @@ TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
       REQUIRE(*call_result == 1337.0);
     }
   }
+
+  SECTION("Expression statement") {
+    struct AddOne {
+      static double Call(double input) { return input + 1.0; }
+    };
+    vm.RegisterFunction<&AddOne::Call>("addOne", "Test", { "input" }, { "output" });
+
+    const auto parse_result = ParseScriptFunction(&vm, R"(
+    {
+      "name": "foo",
+      "inputs": [
+        {
+          "type": "Number",
+          "name": "test"
+        }
+      ],
+      "outputs": [],
+      "statements": [
+        {
+          "type": "expression",
+          "expression": {
+            "type": "functionCall",
+            "functionCall": {
+              "function": "Test.addOne",
+              "inputs": [
+                {
+                  "type": "variable",
+                  "variable": "test"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+    )"_json);
+    REQUIRE_PARSE_RESULT(parse_result);
+    const FunctionDescription& function_description = parse_result.function_description;
+    REQUIRE(function_description.inputs.size() == 1);
+    REQUIRE(function_description.outputs.size() == 0);
+    const auto function = FunctionWrapper<void(double)>(vm.RegisterFunction(parse_result.function_description));
+    {
+      const auto call_result = function(41);
+      UNSCOPED_INFO(function_description.PrintDefinition());
+      REQUIRE_RESULT(call_result);
+    }
+    {
+      const auto call_result = function(1336);
+      REQUIRE_RESULT(call_result);
+    }
+  }
 }

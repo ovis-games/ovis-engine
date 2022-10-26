@@ -103,8 +103,13 @@ void ScriptFunctionParser::ParseStatement(const schemas::StatementSchema& statem
       ParseVariableDeclarationStatement(*statement.variable_declaration, path);
       return;
 
+    case schemas::StatementType::EXPRESSION:
+      assert(statement.expression);
+      ParseExpressionStatement(*statement.expression, path);
+      return;
+
     default:
-      AddError(path, "Invalid statement type: {}", virtual_machine->GetType(statement.type)->name());
+      AddError(path, "Invalid statement type.");
   }
 }
 
@@ -123,6 +128,11 @@ void ScriptFunctionParser::ParseReturnStatement(const schemas::Expression& retur
   InsertInstructions(path, {
     Instruction::CreateReturn(result.function_description.outputs.size()),
   });
+}
+
+void ScriptFunctionParser::ParseExpressionStatement(const schemas::Expression& expression, std::string_view path) {
+  auto values = ParseExpression(expression, path);
+  InsertPopValueInstructions(path, values.size());
 }
 
 void ScriptFunctionParser::ParseVariableDeclarationStatement(
@@ -496,6 +506,18 @@ ScriptFunctionScopeValue* ScriptFunctionParser::InsertConstructTypeInstructions(
   InsertFunctionCallInstructions(path, construct_function);
 
   return value;
+}
+
+void ScriptFunctionParser::InsertPopValueInstructions(std::string_view path, std::size_t count) {
+  for (std::size_t i = 0; i < count; ++i) {
+    Type* type = virtual_machine->GetType(current_scope()->values.back().type_id);
+    if (type->trivially_destructible()) {
+      InsertInstructions(path, {Instruction::CreatePopTrivial(1)});
+    } else {
+      InsertInstructions(path, {Instruction::CreatePop(1)});
+    }
+    current_scope()->PopValue();
+  }
 }
 
 void ScriptFunctionParser::InsertCopyInstructions(std::string_view path, NotNull<const Type*> type, uint32_t destination_index, uint32_t source_index) {

@@ -99,6 +99,7 @@ struct ScriptFunctionParser {
   template <typename T> std::uint32_t InsertConstant(T&& value);
   template <typename T> ScriptFunctionScopeValue* InsertPushConstantInstructions(std::string_view path, T&& value);
   ScriptFunctionScopeValue* InsertConstructTypeInstructions(std::string_view path, NotNull<const Type*> type);
+  void InsertPopValueInstructions(std::string_view path, std::size_t count);
   void InsertCopyInstructions(std::string_view path, NotNull<const Type*> type, uint32_t destination_index, uint32_t source_index);
   void InsertAssignInstructions(std::string_view path, NotNull<const Type*> type, uint32_t destination_index);
   void InsertPrepareFunctionCallInstructions(std::string_view path, NotNull<const Function*> function);
