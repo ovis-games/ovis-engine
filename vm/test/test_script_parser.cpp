@@ -30,12 +30,12 @@ const auto TEST_SCRIPT = R"(
     "name": "addNumbers",
     "inputs": [
       {
-        "variableType": "Number",
-        "variableName": "first"
+        "type": "Number",
+        "name": "first"
       },
       {
-        "variableType": "Number",
-        "variableName": "second"
+        "type": "Number",
+        "name": "second"
       }
     ],
     "outputs": [
@@ -46,29 +46,33 @@ const auto TEST_SCRIPT = R"(
     ],
     "statements": [
       {
-        "statementType": "variable_declaration",
-        "variableName": "test",
-        "variableType": "Number",
-        "value": {
-          "expressionType": "number_operation",
-          "operation": "add",
-          "firstOperand": {
-            "expressionType": "variable",
-            "name": "first"
+        "type": "variableDeclaration",
+        "variableDeclaration": {
+          "variable": {
+            "name": "test",
+            "type": "Number"
           },
-          "secondOperand": {
-            "expressionType": "variable",
-            "name": "second"
+          "value": {
+            "type": "operator",
+            "operator": {
+              "operator": "add",
+              "leftHandSide": {
+                "type": "variable",
+                "variable": "first"
+              },
+              "rightHandSide": {
+                "type": "variable",
+                "variable": "second"
+              }
+            }
           }
         }
       },
       {
-        "statementType": "return",
-        "outputs": {
-          "outputNumber": {
-            "expressionType": "variable",
-            "name": "test"
-          }
+        "type": "return",
+        "return": {
+          "type": "variable",
+          "variable": "test"
         }
       }
     ]

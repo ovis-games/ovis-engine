@@ -4,10 +4,11 @@
     "name": "consumeType",
     "inputs": [
       {
-        "variableName": "someString",
-        "variableType": "SomeString"
+        "name": "someString",
+        "type": "SomeType"
       }
     ],
+    "outputs": [],
     "statements": [
     ]
   },
