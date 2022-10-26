@@ -4,12 +4,13 @@
 #include <vector>
 #include <deque>
 
-#include <ovis/utils/json.hpp>
-#include <ovis/utils/result.hpp>
-#include <ovis/vm/function.hpp>
-#include <ovis/vm/type.hpp>
-#include <ovis/vm/value.hpp>
-#include <ovis/vm/parse_script_error.hpp>
+#include "ovis/utils/json.hpp"
+#include "ovis/utils/result.hpp"
+#include "ovis/vm/function.hpp"
+#include "ovis/vm/type.hpp"
+#include "ovis/vm/value.hpp"
+#include "ovis/vm/parse_script_error.hpp"
+#include "schemas/function.hpp"
 
 namespace ovis {
 
@@ -31,7 +32,7 @@ struct ScriptFunctionScopeValue {
 struct ScriptFunctionScope {
   ScriptFunctionScope * parent = nullptr;
   uint32_t base_index;
-  std::vector<ScriptFunctionScopeValue> values;
+  std::deque<ScriptFunctionScopeValue> values;
 
   ScriptFunctionScopeValue* GetValue(std::uint32_t index);
   const ScriptFunctionScopeValue* GetVariable(std::string_view name);
@@ -63,20 +64,26 @@ struct ScriptFunctionParser {
     result.errors.emplace_back(ScriptErrorLocation(script_name, path), error_message, std::forward<FormatArguments>(format_arguments)...);
   }
 
-  void Parse(const json& function_definition);
-  void ParseOutputs(const json& outputs, std::string_view path);
-  void ParseInputs(const json& inputs, std::string_view path);
+  void Parse(const schemas::Function& function);
+  void ParseOutputs(const std::vector<schemas::Variable>& outputs, std::string_view path);
+  void ParseInputs(const std::vector<schemas::Variable>& inputs, std::string_view path);
 
   // Statement parsing
-  void ParseStatements(const json& statements_definiton, std::string_view path);
-  void ParseStatement(const json& statement_definiton, std::string_view path);
-  void ParseReturnStatement(const json& statement_definition, std::string_view path);
-  void ParseVariableDeclarationStatement(const json& statement_definiton, std::string_view path);
+  void ParseStatements(const std::vector<schemas::StatementSchema>& statements, std::string_view path);
+  void ParseStatement(const schemas::StatementSchema& statement, std::string_view path);
+  void ParseReturnStatement(const schemas::Expression& return_expression, std::string_view path);
+  void ParseExpressionStatement(const schemas::Expression& expression, std::string_view path);
+  void ParseVariableDeclarationStatement(const schemas::VariableDeclaration& variable_declaration_statement,
+                                         std::string_view path);
 
   // Expression parsing
-  ScriptFunctionScopeValue* ParseExpression(const json& expression_definition, std::string_view path);
-  ScriptFunctionScopeValue* ParseVariableExpression(const json& variable_expression_definition, std::string_view path);
-  ScriptFunctionScopeValue* ParseNumberOperationExpression(const json& expression_definition, std::string_view path);
+  std::span<ScriptFunctionScopeValue> ParseExpression(const schemas::Expression& expression_definition, std::string_view path);
+  std::span<ScriptFunctionScopeValue> ParseConstantExpression(const schemas::Constant& constant_expression, std::string_view path);
+  std::span<ScriptFunctionScopeValue> ParseFunctionCallExpression(const schemas::FunctionCall& function_call_expression, std::string_view path);
+  std::span<ScriptFunctionScopeValue> ParseVariableExpression(const std::string& variable, std::string_view path);
+  std::span<ScriptFunctionScopeValue> ParseOperatorExpression(const schemas::OperatorClass& operator_expression, std::string_view path);
+  std::span<ScriptFunctionScopeValue> ParseInfixOperatorOperands(const schemas::OperatorClass& operator_expression, std::string_view path);
+  bool CheckValueTypes(std::span<ScriptFunctionScopeValue> values, const std::vector<TypeId>& expected_types, std::string_view path, std::string_view error_message = "");
 
   void ParseFunctionCall(const json& statement_definiton, std::string_view path);
   void ParsePushValue(const json& value_definition, std::string_view path, TypeId type);
@@ -92,6 +99,7 @@ struct ScriptFunctionParser {
   template <typename T> std::uint32_t InsertConstant(T&& value);
   template <typename T> ScriptFunctionScopeValue* InsertPushConstantInstructions(std::string_view path, T&& value);
   ScriptFunctionScopeValue* InsertConstructTypeInstructions(std::string_view path, NotNull<const Type*> type);
+  void InsertPopValueInstructions(std::string_view path, std::size_t count);
   void InsertCopyInstructions(std::string_view path, NotNull<const Type*> type, uint32_t destination_index, uint32_t source_index);
   void InsertAssignInstructions(std::string_view path, NotNull<const Type*> type, uint32_t destination_index);
   void InsertPrepareFunctionCallInstructions(std::string_view path, NotNull<const Function*> function);

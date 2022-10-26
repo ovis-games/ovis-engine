@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "function.schema.json",
+  "type": "object",
+  "properties": {
+    "name": { "$ref": "identifier.schema.json" },
+    "inputs": {
+      "type": "array",
+      "items": { "$ref": "variableDeclaration.schema.json" }
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "$ref": "variableDeclaration.schema.json" }
+    },
+    "statements": {
+      "type": "array",
+      "items": { "$ref": "statement.schema.json" }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["name", "inputs", "outputs", "statements"]
+}

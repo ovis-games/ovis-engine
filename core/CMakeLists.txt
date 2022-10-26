@@ -47,10 +47,6 @@ target_add_assets(
   assets/vector2.script_documentation.en-US.json
 )
 
-ovis_export_module_definition(
-  MODULE_NAME Core
-)
-
 install(
   DIRECTORY schemas/
   DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/schemas

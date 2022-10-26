@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "assignmentStatement.schema.json",
+  "type": "object",
+  "properties": {
+    "variables": {
+      "type": "array",
+      "items": { "$ref": "identifier.schema.json" }
+    },
+    "values": {
+      "type": "array",
+      "items": { "$ref": "expression.schema.json" }
+    }
+  },
+  "additionalProperties": false,
+  "required": ["variables", "values"]
+}

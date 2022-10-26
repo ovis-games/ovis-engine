@@ -5,6 +5,20 @@
 
 namespace ovis {
 
+std::string FunctionDescription::PrintDefinition() const {
+  std::string serialized_definition;
+  if (std::holds_alternative<NativeFunctionDefinition>(definition)) {
+    serialized_definition = fmt::format("Native function: {}", (void*)std::get<0>(definition).function_pointer);
+  } else {
+    serialized_definition = "instructions:";
+    for (const auto& instruction : std::get<1>(definition).instructions) {
+      serialized_definition += fmt::format("\n{}", instruction);
+    }
+  }
+
+  return serialized_definition;
+}
+
 // Function::Function()
 //     : name_(name), inputs_(inputs), outputs_(outputs) {
 //   handle_.native_function = function_pointer;
@@ -29,11 +43,7 @@ namespace ovis {
 //   };
 // }
 
-Function::Function(FunctionDescription description)
-    : virtual_machine_(description.virtual_machine),
-      name_(std::move(description.name)),
-      inputs_(std::move(description.inputs)),
-      outputs_(std::move(description.outputs)) {
+Function::Function(FunctionDescription description) : description_(description) {
   if (description.definition.index() == 0) {
     auto native_definition = std::get<NativeFunctionDefinition>(description.definition);
     handle_ = FunctionHandle::FromNativeFunction(native_definition.function_pointer);
@@ -52,7 +62,7 @@ bool Function::IsCallableWithArguments(std::span<const TypeId> type_ids) const {
   }
 
   for (std::size_t i = 0; i < type_ids.size(); ++i) {
-    if (inputs_[i].type != type_ids[i]) {
+    if (inputs()[i].type != type_ids[i]) {
       return false;
     }
   }

@@ -193,6 +193,15 @@ Function* VirtualMachine::RegisterFunction(FunctionDescription description) {
   return registered_functions_.back().get();
 }
 
+Function* VirtualMachine::GetFunction(std::string_view function_reference) {
+  for (const auto& function : registered_functions_) {
+    if (function->GetReferenceString() == function_reference) {
+      return function.get();
+    }
+  }
+  return nullptr;
+}
+
 TypeId VirtualMachine::FindFreeTypeId() {
   for (const auto& type_registration : registered_types_) {
     if (type_registration.native_type_id == TypeOf<void> && type_registration.type == nullptr &&
