@@ -2,7 +2,7 @@ add_library(
   ovis-emscripten
   
   include/ovis/emscripten/canvas.hpp src/canvas.cpp
-  include/ovis/emscripten/event_callbacks.hpp src/event_callbacks.cpp
+  include/ovis/emscripten/key_codes.hpp src/key_codes.cpp
 )
 add_library(ovis::emscripten ALIAS ovis-emscripten)
 
@@ -15,7 +15,9 @@ target_include_directories(
 target_link_libraries(
   ovis-emscripten
   PUBLIC
-    ovis::rendering
+    ovis::core
+    ovis::graphics
+    ovis::input
     stb::truetype
 )
 
