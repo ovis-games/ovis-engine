@@ -53,12 +53,16 @@ uint32_t ScriptFunctionScope::PopValue() {
 void ScriptFunctionParser::Parse(const schemas::Function& function) {
   result.function_description.name = function.name;
   PushScope();
-  ParseOutputs(function.outputs, "/outputs");
+  ParseOutputs(function.outputs, fmt::format("{}/outputs", base_path));
   current_scope()->PushValue(virtual_machine->GetTypeId<uint32_t>());
   current_scope()->PushValue(virtual_machine->GetTypeId<uint32_t>());
   current_scope()->PushValue(virtual_machine->GetTypeId<uint32_t>());
-  ParseInputs(function.inputs, "/inputs");
-  ParseStatements(function.statements, "/statements");
+  ParseInputs(function.inputs, fmt::format("{}/inputs", base_path));
+  ParseStatements(function.statements, fmt::format("{}/statments", base_path));
+  // Insert an implicit return at the end of the function
+  InsertInstructions(base_path, {
+    Instruction::CreateReturn(result.function_description.outputs.size()),
+  });
 }
 
 void ScriptFunctionParser::ParseOutputs(const std::vector<schemas::Variable>& outputs, std::string_view path) {

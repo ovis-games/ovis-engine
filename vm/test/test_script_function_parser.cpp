@@ -27,24 +27,23 @@ using namespace ovis;
 TEST_CASE("Script function parsing", "[ovis][core][ScriptFunctionParser]") {
   VirtualMachine vm;
 
-// An empty function is actually invalid but we currently do not test for it
-//   SECTION("Empty") {
-//     const auto parse_result = ParseScriptFunction(&vm, R"(
-//     {
-//       "name": "empty",
-//       "inputs": [],
-//       "outputs": [],
-//       "statements": []
-//     }
-//     )"_json);
-//     REQUIRE(parse_result.errors.empty());
-//     const FunctionDescription& function_description = parse_result.function_description;
-//     REQUIRE(function_description.inputs.size() == 0);
-//     REQUIRE(function_description.outputs.size() == 0);
-//     const auto function = FunctionWrapper<void()>(Function::Create(parse_result.function_description));
-//     const auto call_result = function();
-//     REQUIRE_RESULT(call_result);
-//   }
+  SECTION("Empty") {
+    const auto parse_result = ParseScriptFunction(&vm, R"(
+    {
+      "name": "empty",
+      "inputs": [],
+      "outputs": [],
+      "statements": []
+    }
+    )"_json);
+    REQUIRE(parse_result.errors.empty());
+    const FunctionDescription& function_description = parse_result.function_description;
+    REQUIRE(function_description.inputs.size() == 0);
+    REQUIRE(function_description.outputs.size() == 0);
+    const auto function = FunctionWrapper<void()>(Function::Create(parse_result.function_description));
+    const auto call_result = function();
+    REQUIRE_RESULT(call_result);
+  }
 
   SECTION("Return statement") {
     const auto parse_result = ParseScriptFunction(&vm, R"(
