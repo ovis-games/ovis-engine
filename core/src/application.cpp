@@ -40,6 +40,7 @@ void EmscriptenUpdate() {
 }  // namespace
 
 void RunApplicationLoop() {
+  quit = false;
 #if OVIS_EMSCRIPTEN
   emscripten_set_main_loop(&EmscriptenUpdate, 0, true);
 #else
@@ -47,6 +48,10 @@ void RunApplicationLoop() {
     Update();
   }
 #endif
+}
+
+void QuitApplicationLoop() {
+  quit = true;
 }
 
 }  // namespace ovis

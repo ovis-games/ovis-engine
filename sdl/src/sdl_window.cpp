@@ -4,7 +4,10 @@
 #include <cassert>
 
 #include "SDL.h"
+#include "SDL_stdinc.h"
+#include "SDL_video.h"
 
+#include "ovis/sdl/sdl_event_processor.hpp"
 #include "ovis/utils/log.hpp"
 #include "ovis/utils/profiling.hpp"
 #include "ovis/core/scene.hpp"
@@ -37,38 +40,27 @@ SDL_GLContext CreateOpenGLContext(SDL_Window* window) {
   return context;
 }
 
-void PollSDLEvents() {
-  SDL_Event event;
-  while (SDL_PollEvent(&event)) {
-    // TODO: only post events to the according window
-    // for (auto window : Window::all_windows()) {
-    //   window->SendEvent(event);
-    // }
-  }
-}
-OVIS_CREATE_SIMPLE_JOB(PollSDLEvents);
-
 }  // namespace
 
 SDLWindow::SDLWindow(const SDLWindowDescription& desc)
-    : ApplicationJob(fmt::format("SDLWindow:{}", desc.title)),
-      sdl_window_(SDL_CreateWindow(desc.title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, desc.width,
+    : sdl_window_(SDL_CreateWindow(desc.title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, desc.width,
                                    desc.height, SDL_WINDOW_OPENGL)),
       opengl_context_(CreateOpenGLContext(sdl_window_)),
-      graphics_context_(GetDrawableSize()) {
+      graphics_context_(GetDrawableSize()),
+      is_open_(true) {
   assert(sdl_window_ != nullptr);
   if (desc.scene == nullptr) {
     LogE("Window is not assigned to display a scene");
-  } else{
-    if (desc.scene->frame_scheduler().HasJob("PollSDLEvents")) {
-      desc.scene->frame_scheduler().AddJob<PollSDLEventsJob>();
-    }
+  } 
+
+  if (!application_scheduler.HasJob("SDLEventProcessor")) {
+    application_scheduler.AddJob<SDLEventProcessor>();
   }
+  id_ = SDL_GetWindowID(sdl_window());
 }
 
 SDLWindow::~SDLWindow() {
-  SDL_GL_DeleteContext(opengl_context_);
-  SDL_DestroyWindow(sdl_window_);
+  Close();
 }
 
 Vector2 SDLWindow::GetDrawableSize() const {
@@ -78,15 +70,23 @@ Vector2 SDLWindow::GetDrawableSize() const {
   return {static_cast<float>(width), static_cast<float>(height)};
 }
 
+void SDLWindow::Close() {
+  if (is_open()) {
+    SDL_GL_DeleteContext(opengl_context_);
+    SDL_DestroyWindow(sdl_window_);
+    is_open_ = false;
+  }
+}
+
 void SDLWindow::Resize(int width, int height) {
   SDL_SetWindowSize(sdl_window_, width, height);
 }
 
-bool SDLWindow::SendEvent(const SDL_Event& event) {
+void SDLWindow::ProcessEvent(const SDL_Event& event) {
   if (event.type == SDL_WINDOWEVENT) {
     switch (event.window.event) {
       case SDL_WINDOWEVENT_CLOSE:
-        is_open_ = false;
+        Close();
         break;
     }
   }
@@ -159,16 +159,15 @@ bool SDLWindow::SendEvent(const SDL_Event& event) {
 //     }
 //   }
 // #endif
-
-  return false;
 }
 
-// void SDLWindow::Update(std::chrono::microseconds delta_time) {
-  // if (scene_.is_playing()) {
-  //   scene_.BeforeUpdate();
-  //   scene_.Update(delta_time);
-  //   scene_.AfterUpdate();
-  // }
-// }
+SDLWindow* SDLWindow::GetWindowById(Uint32 id) {
+  for (auto window : all()) {
+    if (window->id() == id) {
+      return window;
+    }
+  }
+  return nullptr;
+}
 
 }  // namespace ovis
