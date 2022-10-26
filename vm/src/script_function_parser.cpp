@@ -230,6 +230,8 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseVariableExpressio
 std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseOperatorExpression(
     const schemas::OperatorClass& operator_expression, std::string_view path) {
   const auto number_type = virtual_machine->GetTypeId<double>();
+  const auto boolean_type = virtual_machine->GetTypeId<bool>();
+
   switch (operator_expression.operator_operator) {
     case schemas::OperatorEnum::ADD:
       if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {number_type, number_type}, path)) {
@@ -237,47 +239,91 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseOperatorExpressio
       }
       InsertInstructions(path, { Instruction::CreateAddNumbers() });
       current_scope()->PopValue();
-      assert(current_scope()->values.back().type_id == virtual_machine->GetTypeId<double>());
+      assert(current_scope()->values.back().type_id == number_type);
       assert(!current_scope()->values.back().name.has_value());
       return {&current_scope()->values.back(), 1};
 
-      // case schemas::OperatorEnum::SUBTRACT:
-      //   if (operands.size() != 2) {
-      //     AddError(path, "Add operator requires 2 operands, {} provided.", operands.size());
-      //     return nullptr;
-      //   }
-      //   if (operands[0]->type_id != virtual_machine->GetTypeId<double>() ||
-      //       operands[1]->type_id != virtual_machine->GetTypeId<double>()) {
-      //     AddError(path, "Add operator currently only works on numbers.");
-      //     return nullptr;
-      //   }
-      //   InsertInstructions(path, { Instruction::CreateSubtractNumbers() });
-      //   break;
+    case schemas::OperatorEnum::SUBTRACT:
+      if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {number_type, number_type}, path)) {
+        return {};
+      }
+      InsertInstructions(path, { Instruction::CreateSubtractNumbers() });
+      current_scope()->PopValue();
+      return {&current_scope()->values.back(), 1};
 
     case schemas::OperatorEnum::MULTIPLY:
+      if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {number_type, number_type}, path)) {
+        return {};
+      }
+      InsertInstructions(path, { Instruction::CreateMultiplyNumbers() });
+      current_scope()->PopValue();
+      return {&current_scope()->values.back(), 1};
+
+    case schemas::OperatorEnum::DIVIDE:
+      if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {number_type, number_type}, path)) {
+        return {};
+      }
+      InsertInstructions(path, { Instruction::CreateDivideNumbers() });
+      current_scope()->PopValue();
+      return {&current_scope()->values.back(), 1};
+
+    case schemas::OperatorEnum::NEGATE:
+      AddError(path, "Negate operator is not implemented yet");
+      return {};
 
     case schemas::OperatorEnum::AND:
-    case schemas::OperatorEnum::DIVIDE:
+      AddError(path, "And operator is not implemented yet");
+      return {};
+      // if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {boolean_type, boolean_type}, path)) {
+      //   return {};
+      // }
+      // InsertInstructions(path, { Instruction::CreateAnd() });
+      // current_scope()->PopValue();
+      // return {&current_scope()->values.back(), 1};
+
+    case schemas::OperatorEnum::OR:
+      AddError(path, "Or operator is not implemented yet");
+      return {};
+      // if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {boolean_type, boolean_type}, path)) {
+      //   return {};
+      // }
+      // InsertInstructions(path, { Instruction::CreateOr() });
+      // current_scope()->PopValue();
+      // return {&current_scope()->values.back(), 1};
+
+    case schemas::OperatorEnum::NOT:
+      AddError(path, "Not operator is not implemented yet");
+      return {};
+
     case schemas::OperatorEnum::EQUALS:
+      AddError(path, "Equals operator is not implemented yet");
+      return {};
+
+    case schemas::OperatorEnum::NOT_EQUALS:
+      AddError(path, "Not-equale operator is not implemented yet");
+      return {};
+
     case schemas::OperatorEnum::GREATER:
       if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {number_type, number_type}, path)) {
         return {};
       }
       InsertInstructions(path, { Instruction::CreateIsNumberGreater() });
       current_scope()->PopValue();
-      current_scope()->values.back().type_id = virtual_machine->GetTypeId<bool>();
+      current_scope()->values.back().type_id = boolean_type;
       assert(!current_scope()->values.back().name.has_value());
       return {&current_scope()->values.back(), 1};
 
     case schemas::OperatorEnum::LESS:
-    case schemas::OperatorEnum::NEGATE:
-    case schemas::OperatorEnum::NOT:
-    case schemas::OperatorEnum::NOT_EQUALS:
-    case schemas::OperatorEnum::OR:
-      break;
-  }
+      if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {number_type, number_type}, path)) {
+        return {};
+      }
+      InsertInstructions(path, { Instruction::CreateIsNumberLess() });
+      current_scope()->PopValue();
+      current_scope()->values.back().type_id = boolean_type;
+      assert(!current_scope()->values.back().name.has_value());
+      return {&current_scope()->values.back(), 1};
 
-  return {};
+  }
 }
 
 std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseInfixOperatorOperands(const schemas::OperatorClass& operator_expression, std::string_view path) {
@@ -344,127 +390,6 @@ bool ScriptFunctionParser::CheckValueTypes(std::span<ScriptFunctionScopeValue> v
 
   return correct;
 }
-
-// ScriptFunctionScopeValue* ScriptFunctionParser::ParseNumberOperationExpression(const json& expression_definition,
-//                                                                                std::string_view path) {
-//   assert(expression_definition.contains("expressionType"));
-//   assert(expression_definition["expressionType"] == "number_operation");
-
-//   if (!expression_definition.contains("firstOperand")) {
-//     return nullptr;
-//   }
-
-//   auto* first_operand = ParseExpression(expression_definition["firstOperand"], fmt::format("{}/firstOperand", path));
-//   if (!first_operand) {
-//     return nullptr;
-//   }
-
-//   assert(expression_definition.contains("operation"));
-//   const std::string& operation = expression_definition["operation"];
-
-//   if (operation != "negate") {
-//     if (!expression_definition.contains("secondOperand")) {
-//       return nullptr;
-//     }
-
-//     auto* second_operand = ParseExpression(expression_definition.at("secondOperand"), fmt::format("{}/secondOperand", path));
-//     if (!second_operand) {
-//       return nullptr;
-//     }
-
-//     if (operation == "add") {
-//       InsertInstructions(path, { Instruction::CreateAddNumbers() });
-//     } else if (operation == "subtract") {
-//       InsertInstructions(path, { Instruction::CreateSubtractNumbers() });
-//     } else if (operation == "multiply") {
-//       InsertInstructions(path, { Instruction::CreateMultiplyNumbers() });
-//     } else if (operation == "divide") {
-//       InsertInstructions(path, { Instruction::CreateDivideNumbers() });
-//     } else if (operation == "less") {
-//       InsertInstructions(path, { Instruction::CreateIsNumberLess() });
-//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
-//     } else if (operation == "less") {
-//       InsertInstructions(path, { Instruction::CreateIsNumberLess() });
-//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
-//     } else if (operation == "less") {
-//       InsertInstructions(path, { Instruction::CreateIsNumberLess() });
-//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
-//     } else if (operation == "less_equal") {
-//       InsertInstructions(path, { Instruction::CreateIsNumberLessEqual() });
-//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
-//     } else if (operation == "greater") {
-//       InsertInstructions(path, { Instruction::CreateIsNumberGreater() });
-//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
-//     } else if (operation == "greater_equal") {
-//       InsertInstructions(path, { Instruction::CreateIsNumberGreaterEqual() });
-//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
-//     } else if (operation == "equal") {
-//       InsertInstructions(path, { Instruction::CreateIsNumberEqual() });
-//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
-//     } else if (operation == "not_equal") {
-//       InsertInstructions(path, { Instruction::CreateIsNumberNotEqual() });
-//       first_operand->type_id = virtual_machine->GetTypeId<bool>();
-//     } else {
-//       AddError(path, "Invalid number operation: {}", operation);
-//     }
-//     current_scope()->PopValue();
-//   } else {
-//     return nullptr;
-//   }
-//   assert(current_scope()->values.back().type_id == virtual_machine->GetTypeId<double>());
-//   assert(!current_scope()->values.back().name.has_value());
-//   return &current_scope()->values.back();
-// }
-
-// void ScriptFunctionParser::ParseFunctionCall(const json& statement_definiton, std::string_view path) {
-//   assert(statement_definiton["id"] == "function_call");
-//   const auto function = Function::Deserialize(statement_definiton["function"]);
-//   if (!function) {
-//     errors.emplace_back(fmt::format("Unknown function: {}", statement_definiton["function"].dump(), path));
-//     return;
-//   }
-  
-//   for (const auto& input : function->inputs()) {
-//   }
-// }
-
-// void ScriptFunctionParser::ParsePushValue(const json& value_definition, std::string_view path, TypeId type) {
-//   if (value_definition.is_string()) {
-//     if (type == virtual_machine->GetTypeId<std::string>()) {
-//       errors.emplace_back(path, "Parsing constant Core.String not implemented yet");
-//     } else {
-//       const auto requested_type = virtual_machine->GetType(type);
-//       errors.emplace_back(path, fmt::format("Expected {}, got {}", requested_type ? requested_type->GetReferenceString() : "Unknown", "Core.String"));
-//     }
-//   } else if (value_definition.is_number()) {
-//     if (type == virtual_machine->GetTypeId<double>()) {
-//       errors.emplace_back("Parsing constant Core.Number not implemented yet");
-//     } else {
-//       const auto requested_type = virtual_machine->GetType(type);
-//       errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->GetReferenceString() : "Unknown", "Core.Number"));
-//     }
-//   } else if (value_definition.is_boolean()) {
-//     if (type == virtual_machine->GetTypeId<bool>()) {
-//       errors.emplace_back("Parsing constant Core.Number not implemented yet", path);
-//     } else {
-//       const auto requested_type = virtual_machine->GetType(type);
-//       errors.emplace_back(fmt::format("Expected {}, got {}", requested_type ? requested_type->GetReferenceString() : "Unknown", "Core.Boolean"));
-//     }
-//   } else if (value_definition.is_object()) {
-//     const std::string& id = value_definition["id"];
-//     if (id == "variable") {
-//       ParsePushVariable(value_definition, path, type);
-//     } else {
-//       errors.emplace_back("Invalid value definition", path);
-//     }
-//   } else {
-//     errors.emplace_back("Invalid value definition", path);
-//   }
-// }
-
-// void ScriptFunctionParser::ParsePushVariable(const json& value_definition, std::string_view path, TypeId type) {
-//   assert(value_definition["id"] == "variable");
-// }
 
 ScriptFunctionScope* ScriptFunctionParser::PushScope() {
   if (scopes.size() == 0) {
