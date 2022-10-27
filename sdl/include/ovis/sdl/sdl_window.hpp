@@ -8,11 +8,12 @@
 
 #include "SDL.h"
 
-#include "ovis/application/tick_receiver.hpp"
 #include "ovis/utils/all.hpp"
 #include "ovis/utils/class.hpp"
+#include "ovis/core/application.hpp"
 #include "ovis/core/scene.hpp"
 #include "ovis/graphics/graphics_context.hpp"
+#include "ovis/sdl/sdl_init_subsystem.hpp"
 
 namespace ovis {
 
@@ -26,18 +27,7 @@ struct SDLWindowDescription {
   Scene* scene = nullptr;
 };
 
-// This is a helper class that ensures a specific subsystem is initialized on construction and uninitalized on
-// destruction.
-template <Uint32 SUBSYSTEM>
-class SDLInitSubsystem {
-  MAKE_NON_COPY_OR_MOVABLE(SDLInitSubsystem);
-
- public:
-  SDLInitSubsystem() { SDL_InitSubSystem(SUBSYSTEM); }
-  ~SDLInitSubsystem() { SDL_QuitSubSystem(SUBSYSTEM); }
-};
-
-class SDLWindow : public TickReceiver, public SDLInitSubsystem<SDL_INIT_VIDEO> {
+class SDLWindow : public All<SDLWindow>, public SDLInitSubsystem<SDL_INIT_VIDEO> {
   MAKE_NON_COPY_OR_MOVABLE(SDLWindow);
 
  public:
@@ -48,11 +38,17 @@ class SDLWindow : public TickReceiver, public SDLInitSubsystem<SDL_INIT_VIDEO> {
   inline Uint32 id() const { return id_; }
   inline bool is_open() const { return is_open_; }
 
+  void Close();
+
   Vector2 GetDrawableSize() const;
   void Resize(int width, int height);
 
-  virtual bool SendEvent(const SDL_Event& event);
-  void Update(std::chrono::microseconds delta_time) override;
+  void ProcessEvent(const SDL_Event& event);
+
+  // Result<> Prepare(const Nothing&) override { return Success; }
+  // Result<> Execute(const double& delta_time) override { return Success; }
+
+  static SDLWindow* GetWindowById(Uint32 id);
 
  private:
   SDL_Window* sdl_window_;

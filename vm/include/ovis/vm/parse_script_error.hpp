@@ -11,8 +11,8 @@ namespace ovis {
 
 struct ScriptErrorLocation {
   template <typename... FormatArgs>
-  ScriptErrorLocation(std::string_view script_name, std::string_view path, FormatArgs&&... format_arguments)
-      : script_name(script_name), json_path(fmt::format(path, std::forward<FormatArgs>(format_arguments)...)) {}
+  ScriptErrorLocation(std::string_view script_name, std::string_view path)
+      : script_name(script_name), json_path(path) {}
 
   std::string script_name;
   std::string json_path;

@@ -99,11 +99,11 @@ function (target_embed_assets target)
         PUBLIC
           "SHELL:--embed-file ${asset}@/ovis_assets/"
       )
-      target_compile_options(
-        ${target}
-        PUBLIC
-          "SHELL:--embed-file ${asset}@/ovis_assets/"
-      )
+      # target_compile_options(
+      #   ${target}
+      #   PUBLIC
+      #     "SHELL:--embed-file ${asset}@/ovis_assets/"
+      # )
     endforeach()
 
     set(assets_dummy_cpp ${CMAKE_CURRENT_BINARY_DIR}/${target}_assets.cpp)

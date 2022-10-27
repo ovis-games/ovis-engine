@@ -212,7 +212,7 @@ struct fmt::formatter<ovis::Vector2> {
 
   template <typename FormatContext>
   auto format(const ovis::Vector2& vector, FormatContext& ctx) {
-    return format_to(ctx.out(), presentation == 'f' ? "({:.1f}, {:.1f})" : "({:.1e}, {:.1e})", vector.x, vector.y);
+    return format_to(ctx.out(), fmt::runtime(presentation == 'f' ? "({:.1f}, {:.1f})" : "({:.1e}, {:.1e})"), vector.x, vector.y);
   }
 };
 
@@ -230,7 +230,7 @@ struct fmt::formatter<ovis::Vector3> {
 
   template <typename FormatContext>
   auto format(const ovis::Vector3& vector, FormatContext& ctx) {
-    return format_to(ctx.out(), presentation == 'f' ? "({:.1f}, {:.1f}, {:.1f})" : "({:.1e}, {:.1e}, {:.1e})", vector.x,
+    return format_to(ctx.out(), fmt::runtime(presentation == 'f' ? "({:.1f}, {:.1f}, {:.1f})" : "({:.1e}, {:.1e}, {:.1e})"), vector.x,
                      vector.y, vector.z);
   }
 };
@@ -250,7 +250,7 @@ struct fmt::formatter<ovis::Vector4> {
   template <typename FormatContext>
   auto format(const ovis::Vector4& vector, FormatContext& ctx) {
     return format_to(ctx.out(),
-                     presentation == 'f' ? "({:.1f}, {:.1f}, {:.1f}, {:.1f})" : "({:.1e}, {:.1e}, {:.1e}, {:.1e})",
+                     fmt::runtime(presentation == 'f' ? "({:.1f}, {:.1f}, {:.1f}, {:.1f})" : "({:.1e}, {:.1e}, {:.1e}, {:.1e})"),
                      vector.x, vector.y, vector.z, vector.w);
   }
 };
