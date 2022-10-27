@@ -41,13 +41,17 @@ IncludeCategories:
     Priority:        3
     SortPriority:    10
 
-  - Regex:           '^(<|")ovis\/application'
+  - Regex:           '^(<|")ovis\/sdl'
     Priority:        3
     SortPriority:    11
 
-  - Regex:           '^(<|")ovis\/test'
+  - Regex:           '^(<|")ovis\/emscripten'
     Priority:        3
     SortPriority:    12
+
+  - Regex:           '^(<|")ovis\/test'
+    Priority:        3
+    SortPriority:    13
 
   - Regex:           '^(<|")ovis\/editor'
     Priority:        3
