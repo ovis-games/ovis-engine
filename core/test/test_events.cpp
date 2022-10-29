@@ -33,7 +33,7 @@ OVIS_CREATE_SIMPLE_JOB(NumberEventEmitter)
 class NumberEventListener : public FrameJob {
   public:
     NumberEventListener() : FrameJob("NumberEventListener") {
-      RequireReadAccess(main_vm->GetTypeId<NumberEvent>());
+      RequireResourceAccess<NumberEvent>(ResourceAccess::READ);
       ExecuteAfter("NumberEventEmitter");
     }
 

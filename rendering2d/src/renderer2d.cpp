@@ -11,8 +11,8 @@ namespace ovis {
 
 Renderer2D::Renderer2D(GraphicsContext* graphics_context) : RenderPass("Renderer2D", graphics_context) {
   ExecuteAfter("ClearPass");
-  RequireReadAccess<Shape2D>();
-  RequireReadAccess<Text>();
+  RequireResourceAccess<Shape2D>(ResourceAccess::READ);
+  RequireResourceAccess<Text>(ResourceAccess::READ);
 }
 
 void Renderer2D::CreateResources() {

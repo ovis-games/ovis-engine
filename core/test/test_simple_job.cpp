@@ -2,6 +2,7 @@
 
 #include "catch2/catch_test_macros.hpp"
 
+#include "ovis/core/resource.hpp"
 #include "ovis/core/scene.hpp"
 #include "ovis/core/simple_job.hpp"
 #include "ovis/core/vm_bindings.hpp"
@@ -20,7 +21,7 @@ OVIS_VM_DEFINE_TYPE_BINDING(Test, Speed) {
   Speed_type->AddProperty<&Speed::x>("x");
   Speed_type->AddProperty<&Speed::y>("y");
 }
-  
+
 struct Position {
   float x = 0;
   float y = 0;
@@ -46,10 +47,8 @@ TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
   {
     MoveJob move_job;
 
-    REQUIRE(!move_job.read_access().contains(main_vm->GetTypeId<Position>()));
-    REQUIRE(move_job.read_access().contains(main_vm->GetTypeId<Speed>()));
-    REQUIRE(move_job.write_access().contains(main_vm->GetTypeId<Position>()));
-    REQUIRE(!move_job.write_access().contains(main_vm->GetTypeId<Speed>()));
+    REQUIRE(move_job.required_resources().at(main_vm->GetTypeId<Position>()) == ResourceAccess::READ_WRITE);
+    REQUIRE(move_job.required_resources().at(main_vm->GetTypeId<Speed>()) == ResourceAccess::READ);
   }
 
   Scene s;

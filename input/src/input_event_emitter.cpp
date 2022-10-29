@@ -1,15 +1,16 @@
 #include "ovis/input/input_event_emitter.hpp"
+#include "ovis/core/resource.hpp"
 
 namespace ovis {
 
 
 InputEventEmitter::InputEventEmitter() : FrameJob("InputEventEmitter") {
-  RequireWriteAccess<KeyPressEvent>();
-  RequireWriteAccess<KeyReleaseEvent>();
-  RequireWriteAccess<MouseButtonPressEvent>();
-  RequireWriteAccess<MouseButtonReleaseEvent>();
-  RequireWriteAccess<MouseMoveEvent>();
-  RequireWriteAccess<MouseWheelEvent>();
+  RequireResourceAccess<KeyPressEvent>(ResourceAccess::WRITE);
+  RequireResourceAccess<KeyReleaseEvent>(ResourceAccess::WRITE);
+  RequireResourceAccess<MouseButtonPressEvent>(ResourceAccess::WRITE);
+  RequireResourceAccess<MouseButtonReleaseEvent>(ResourceAccess::WRITE);
+  RequireResourceAccess<MouseMoveEvent>(ResourceAccess::WRITE);
+  RequireResourceAccess<MouseWheelEvent>(ResourceAccess::WRITE);
 }
 
 Result<> InputEventEmitter::Prepare(Scene* const& scene) {
@@ -19,6 +20,8 @@ Result<> InputEventEmitter::Prepare(Scene* const& scene) {
   mouse_button_release_event_emitter_ = scene->GetEventEmitter<MouseButtonReleaseEvent>();
   mouse_move_event_emitter_ = scene->GetEventEmitter<MouseMoveEvent>();
   mouse_wheel_event_emitter_ = scene->GetEventEmitter<MouseWheelEvent>();
+
+  return Success;
 }
 
 Result<> InputEventEmitter::Execute(const SceneUpdate& update) {
@@ -51,6 +54,8 @@ Result<> InputEventEmitter::Execute(const SceneUpdate& update) {
     mouse_wheel_event_emitter_.Emit(event);
   }
   mouse_wheel_events_.clear();
+
+  return Success;
 }
 
 }  // namespace ovis

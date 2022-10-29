@@ -6,6 +6,9 @@ add_library(
   include/ovis/core/main_vm.hpp src/main_vm.cpp
   include/ovis/core/event_storage.hpp src/event_storage.cpp
   include/ovis/core/json_schema.hpp src/json_schema.cpp
+  include/ovis/core/scheduler.hpp src/scheduler.cpp
+  include/ovis/core/job.hpp src/job.cpp
+  include/ovis/core/resource.hpp src/resource.cpp
   include/ovis/core/scene.hpp src/scene.cpp
   include/ovis/core/component_storage.hpp src/component_storage.cpp
   include/ovis/core/scene_viewport.hpp src/scene_viewport.cpp

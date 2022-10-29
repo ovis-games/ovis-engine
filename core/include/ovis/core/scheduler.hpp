@@ -65,8 +65,9 @@ template <typename PrepareParameters, typename ExecuteParameters>
 std::unordered_set<TypeId> Scheduler<PrepareParameters, ExecuteParameters>::GetUsedComponentsAndEvents() const {
   std::unordered_set<TypeId> types;
   for (const auto& job : jobs_) {
-    types.insert(job->read_access().begin(), job->read_access().end());
-    types.insert(job->write_access().begin(), job->write_access().end());
+    for (const auto& [required_resource, _] : job->required_resources()) {
+      types.insert(required_resource);
+    }
   }
   return types;
 }
