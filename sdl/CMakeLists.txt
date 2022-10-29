@@ -4,6 +4,7 @@ add_library(
   include/ovis/sdl/sdl_window.hpp src/sdl_window.cpp
   include/ovis/sdl/sdl_event_processor.hpp src/sdl_event_processor.cpp
   include/ovis/sdl/sdl_init_subsystem.hpp src/sdl_init_subsystem.cpp
+  include/ovis/sdl/system.hpp src/system.cpp
 )
 add_library(ovis::sdl ALIAS ovis-sdl)
 
@@ -16,6 +17,7 @@ target_include_directories(
 target_link_libraries(
   ovis-sdl
   PUBLIC
+    ovis::core
     ovis::input
     ovis::graphics
     stb::truetype
@@ -51,6 +53,7 @@ if (OVIS_BUILD_TESTS)
   add_executable(
     ovis-sdl-test
 
+    test/test_system.cpp
     test/test_window.cpp
   )
   target_link_libraries(
@@ -69,7 +72,7 @@ if (OVIS_BUILD_TESTS)
   if (OVIS_EMSCRIPTEN)
     add_test(
       ovis-sdl-test
-      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-sdl-test.js
+      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-sdl-test.js --assets-directory=/ovis_assets
     )
   else ()
     add_test(
