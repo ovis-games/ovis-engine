@@ -93,7 +93,7 @@ if (OVIS_BUILD_TESTS)
   if (OVIS_EMSCRIPTEN)
     add_test(
       ovis-core-test
-      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-core-test.js --skip-benchmarks
+      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-core-test.js --skip-benchmarks --assets-directory=/ovis_assets
     )
   else ()
     add_test(

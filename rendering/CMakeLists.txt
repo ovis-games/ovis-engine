@@ -44,7 +44,7 @@ if (OVIS_BUILD_TESTS)
   if (OVIS_EMSCRIPTEN)
     add_test(
       ovis-rendering-test
-      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-rendering-test.js
+      ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-rendering-test.js --assets-directory=/ovis_assets
     )
   else ()
     add_test(ovis-rendering-test ovis-rendering-test)

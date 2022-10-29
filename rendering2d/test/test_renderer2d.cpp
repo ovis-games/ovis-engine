@@ -22,8 +22,8 @@ TEST_CASE("Display shapes", "[ovis][rendering2d][Renderer2D]") {
   )"_json;
 
   Scene scene;
-  scene.frame_scheduler().AddJob<ClearPass>(&window.graphics_context, Color::Aqua());
   scene.frame_scheduler().AddJob<Renderer2D>(&window.graphics_context);
+  scene.frame_scheduler().AddJob<ClearPass>(&window.graphics_context, Color::Aqua());
   REQUIRE_RESULT(scene.Prepare());
 
   auto circle = scene.CreateEntity("Circle");

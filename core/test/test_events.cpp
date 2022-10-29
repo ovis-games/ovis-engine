@@ -33,8 +33,7 @@ OVIS_CREATE_SIMPLE_JOB(NumberEventEmitter)
 class NumberEventListener : public FrameJob {
   public:
     NumberEventListener() : FrameJob("NumberEventListener") {
-      RequireResourceAccess<NumberEvent>(ResourceAccess::READ);
-      ExecuteAfter("NumberEventEmitter");
+      RequireResourceAccess<NumberEvent>(ResourceAccess::READ_WRITE);
     }
 
     Result<> Prepare(Scene* const& update) override { return Success; }

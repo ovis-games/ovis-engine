@@ -2,12 +2,14 @@
 
 #include <memory>
 #include <type_traits>
+#include <unordered_map>
 #include <vector>
 
 #include "ovis/vm/list.hpp"
 #include "ovis/core/event_storage.hpp"
 #include "ovis/core/job.hpp"
 #include "ovis/core/main_vm.hpp"
+#include "ovis/vm/type_id.hpp"
 
 namespace ovis {
 
@@ -102,6 +104,7 @@ std::unordered_set<TypeId> Scheduler<PrepareParameters, ExecuteParameters>::GetU
 template <typename PrepareParameters, typename ExecuteParameters>
 Result<> Scheduler<PrepareParameters, ExecuteParameters>::SortJobs() {
   std::unordered_multimap<std::string, std::string> dependencies;
+  std::unordered_map<ResourceAccess, std::unordered_map<TypeId, std::vector<std::string>>> resources_dependencies;
 
   for (const auto& job : jobs_) {
     for (const auto& execute_after : job->execute_after()) {
@@ -110,8 +113,33 @@ Result<> Scheduler<PrepareParameters, ExecuteParameters>::SortJobs() {
     for (const auto& execute_before : job->execute_before()) {
       dependencies.insert(std::make_pair(execute_before, std::string(job->id())));
     }
+    for (const auto& [type_id, access_type] : job->required_resources()) {
+      resources_dependencies[access_type][type_id].emplace_back(job->id());
+    }
   }
 
+  auto& read_access = resources_dependencies[ResourceAccess::READ];
+  auto& write_access = resources_dependencies[ResourceAccess::WRITE];
+  auto& read_write_access = resources_dependencies[ResourceAccess::READ_WRITE];
+  for (const auto& [type_id, read_job_ids] : read_access) {
+    for (const auto& read_job_id : read_job_ids) {
+      for (const auto& read_write_job_id : read_write_access[type_id]) {
+        dependencies.insert(std::make_pair(read_job_id, read_write_job_id));
+      }
+      for (const auto& write_job_id : write_access[type_id]) {
+        dependencies.insert(std::make_pair(read_job_id, write_job_id));
+      }
+    }
+  }
+  for (const auto& [type_id, read_write_job_ids] : read_write_access) {
+    for (const auto& read_write_job_id : read_write_job_ids) {
+      for (const auto& write_job_id : write_access[type_id]) {
+        dependencies.insert(std::make_pair(read_write_job_id, write_job_id));
+      }
+    }
+  }
+
+  LogV("Job execution order:");
   // The range [jobs.begin(), jobs.begin() + processed_jobs) is alrady sorted
   // The range [jobs.begin() + processed_jobs, jobs.end()) still needs to be sorted
   for (size_t processed_jobs = 0; processed_jobs < jobs_.size(); ++processed_jobs) {
@@ -126,6 +154,8 @@ Result<> Scheduler<PrepareParameters, ExecuteParameters>::SortJobs() {
     std::erase_if(dependencies, [next_job_id](const auto& dependency) {
       return next_job_id == dependency.second;
     });
+
+    LogV(" - {}", next_job_id);
 
     using std::swap;
     swap(*unsorted_section_start, *next_job);
