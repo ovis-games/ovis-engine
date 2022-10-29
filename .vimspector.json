@@ -1,12 +1,50 @@
 {
   "configurations": {
-    "Launch": {
-      "adapter": "vscode-cpptools",
+    "ovis-vm-test": {
+      "adapter": "CodeLLDB",
       "configuration": {
         "request": "launch",
-        "program": "/home/simon/Code/ovis-engine/build/clang/core/ovis-core-test",
-        "args": ["--assets-directory=./build/clang/core/assets/ovis-core-test/", "[ovis][core][Value]"],
-        "cwd": "/home/simon/Code/ovis-engine",
+        "program": "/Users/simon/Code/ovis-engine/build/clang/vm/ovis-vm-test",
+        "args": [],
+        "cwd": "/Users/simon/Code/ovis-engine",
+        "environment": [ ],
+        "externalConsole": true,
+        "MIMode": "lldb",
+        "SetupCommands": [
+          {
+            "description": "Enable pretty printing for GDB",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+          }
+        ]
+      }
+    },
+    "ovis-core-test": {
+      "adapter": "CodeLLDB",
+      "configuration": {
+        "request": "launch",
+        "program": "/Users/simon/Code/ovis-engine/build/clang/core/ovis-core-test",
+        "args": ["--assets-directory=./build/clang/core/assets/ovis-core-test/"],
+        "cwd": "/Users/simon/Code/ovis-engine",
+        "environment": [ ],
+        "externalConsole": true,
+        "MIMode": "gdb",
+        "SetupCommands": [
+          {
+            "description": "Enable pretty printing for GDB",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+          }
+        ]
+      }
+    },
+    "ovis-rendering2d-test": {
+      "adapter": "CodeLLDB",
+      "configuration": {
+        "request": "launch",
+        "program": "/Users/simon/Code/ovis-engine/build/clang/rendering2d/ovis-rendering2d-test",
+        "args": ["--assets-directory=./build/clang/rendering2d/assets/ovis-rendering2d-test/"],
+        "cwd": "/Users/simon/Code/ovis-engine",
         "environment": [ ],
         "externalConsole": true,
         "MIMode": "gdb",

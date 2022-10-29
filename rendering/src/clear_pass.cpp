@@ -1,11 +1,14 @@
 #include "ovis/rendering/clear_pass.hpp"
 
+#include "ovis/graphics/render_target.hpp"
 #include "ovis/graphics/render_target_configuration.hpp"
 
 namespace ovis {
 
 ClearPass::ClearPass(GraphicsContext* context, std::optional<Color> clear_color)
-    : RenderPass("ClearPass", context), clear_color_(clear_color) {}
+    : RenderPass("ClearPass", context), clear_color_(clear_color) {
+  RequireResourceAccess<RenderTarget>(ResourceAccess::WRITE);
+}
 
 void ClearPass::Render(const SceneUpdate& update, const SceneViewport& viewport) {
   if (clear_color()) {

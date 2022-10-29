@@ -1,18 +1,20 @@
+#include "ovis/rendering2d/renderer2d.hpp"
+
 #include "ovis/core/asset_library.hpp"
 #include "ovis/core/transform.hpp"
 #include "ovis/graphics/graphics_context.hpp"
+#include "ovis/graphics/render_target.hpp"
 #include "ovis/graphics/render_target_configuration.hpp"
 #include "ovis/rendering/clear_pass.hpp"
-#include "ovis/rendering2d/renderer2d.hpp"
 #include "ovis/rendering2d/shape2d.hpp"
 #include "ovis/rendering2d/text.hpp"
 
 namespace ovis {
 
 Renderer2D::Renderer2D(GraphicsContext* graphics_context) : RenderPass("Renderer2D", graphics_context) {
-  ExecuteAfter("ClearPass");
   RequireResourceAccess<Shape2D>(ResourceAccess::READ);
   RequireResourceAccess<Text>(ResourceAccess::READ);
+  RequireResourceAccess<RenderTarget>(ResourceAccess::READ_WRITE);
 }
 
 void Renderer2D::CreateResources() {
@@ -71,7 +73,7 @@ void Renderer2D::Render(const SceneUpdate& update, const SceneViewport& viewport
   //   return lhs_position.z > rhs_position.z;
   // });
   //
-  // auto trnsform_storage = 
+  // auto trnsform_storage =
 
   auto shape_storage = update.scene->GetComponentStorage<Shape2D>();
   auto text_storage = update.scene->GetComponentStorage<Text>();
@@ -93,7 +95,8 @@ void Renderer2D::Render(const SceneUpdate& update, const SceneViewport& viewport
       if (texture_asset.size() > 0) {
         auto texture_iterator = textures_.find(texture_asset);
         if (texture_iterator == textures_.end()) {
-          texture_iterator = textures_.insert(std::make_pair(texture_asset, LoadTexture2D(texture_asset, context()))).first;
+          texture_iterator =
+              textures_.insert(std::make_pair(texture_asset, LoadTexture2D(texture_asset, context()))).first;
         }
         texture = texture_iterator->second.get();
       }
@@ -107,7 +110,8 @@ void Renderer2D::Render(const SceneUpdate& update, const SceneViewport& viewport
       }
 
       for (size_t i = 0; i < vertices.size(); ++i) {
-        const Vector2 transformed_position = TransformPosition(world_to_clip_space, Vector3(vertices[i].x, vertices[i].y, 0.0f));
+        const Vector2 transformed_position =
+            TransformPosition(world_to_clip_space, Vector3(vertices[i].x, vertices[i].y, 0.0f));
         shape_vertices_[shape_vertex_count_ + i].x = transformed_position.x;
         shape_vertices_[shape_vertex_count_ + i].y = transformed_position.y;
         shape_vertices_[shape_vertex_count_ + i].color = vertices[i].color;
@@ -118,7 +122,7 @@ void Renderer2D::Render(const SceneUpdate& update, const SceneViewport& viewport
     if (text_storage.EntityHasComponent(entity.id)) {
       const Text& text = text_storage[entity.id];
 
-      DrawShapeVertices(); // TODO: check if texture different
+      DrawShapeVertices();  // TODO: check if texture different
       Vector2 position = Vector2::Zero();
 
       if (Texture2D* texture = font_atlases_[0].texture(); texture != bound_texture) {
@@ -132,7 +136,8 @@ void Renderer2D::Render(const SceneUpdate& update, const SceneViewport& viewport
           DrawShapeVertices();
         }
         for (auto& vertex : vertices) {
-          const Vector2 transformed_position = TransformPosition(world_to_clip_space, Vector3(vertex.x, vertex.y, 0.0f));
+          const Vector2 transformed_position =
+              TransformPosition(world_to_clip_space, Vector3(vertex.x, vertex.y, 0.0f));
           vertex.x = transformed_position.x;
           vertex.y = transformed_position.y;
         }
