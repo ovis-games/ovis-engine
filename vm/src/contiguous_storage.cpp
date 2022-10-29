@@ -10,7 +10,8 @@ ContiguousStorage::ContiguousStorage(TypeMemoryLayout memory_layout)
 
 ContiguousStorage::ContiguousStorage(TypeMemoryLayout memory_layout, SizeType capacity)
     : memory_layout_(memory_layout),
-      data_(aligned_alloc(memory_layout_.alignment_in_bytes, capacity * memory_layout.size_in_bytes)),
+      data_(aligned_alloc(std::max<std::size_t>(8, memory_layout_.alignment_in_bytes),
+                          capacity * memory_layout_.size_in_bytes)),
       capacity_(capacity) {
   assert(memory_layout.is_constructible);
   assert(memory_layout.is_copyable);

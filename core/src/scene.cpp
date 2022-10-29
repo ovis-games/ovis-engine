@@ -168,8 +168,8 @@ Result<> Scene::Prepare() {
 
     LogV(" Used entity components:");
     for (const auto component_type : object_component_types) {
-      component_storages_.emplace_back(this, component_type, entities_.size());
       LogV(" - {}", main_vm->GetType(component_type)->GetReferenceString());
+      component_storages_.emplace_back(this, component_type, entities_.size());
     }
   }
   {

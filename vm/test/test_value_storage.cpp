@@ -42,8 +42,8 @@ TEST_CASE("Use value storage", "[ovis][vm][ValueStorage]") {
       value_storage.Deallocate();
     }
 
-    SECTION("alignment=4, size=16") {
-      void* memory = value_storage.AllocateIfNecessary(4, 16);
+    SECTION("alignment=8, size=16") {
+      void* memory = value_storage.AllocateIfNecessary(8, 16);
       REQUIRE(memory != nullptr);
       REQUIRE(MemoryIsAlignedTo(memory, 4));
       REQUIRE(value_storage.has_allocated_storage());
