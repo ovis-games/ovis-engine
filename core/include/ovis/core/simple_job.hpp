@@ -20,6 +20,28 @@
 
 namespace ovis {
 
+template <typename T, ResourceAccess ACCESS_TYPE = std::is_const_v<T> ? ResourceAccess::READ : ResourceAccess::READ_WRITE>
+struct EntityComponent {
+  T* value;
+  T* operator->() const {
+    return value;
+  }
+  T& operator*() const {
+    return *value;
+  }
+};
+
+template <typename T, ResourceAccess ACCESS_TYPE = std::is_const_v<T> ? ResourceAccess::READ : ResourceAccess::READ_WRITE>
+struct SceneComponent {
+  T* value;
+  T* operator->() const {
+    return value;
+  }
+  T& operator*() const {
+    return *value;
+  }
+};
+
 template <auto FUNCTION>
 class SimpleJob : public Job<Scene*, SceneUpdate> {
   using ArgumentTypes = typename reflection::Invocable<FUNCTION>::ArgumentTypes;
@@ -73,22 +95,10 @@ class SimpleJob : public Job<Scene*, SceneUpdate> {
   struct ParameterSource<ComponentStorageView<T>> {
     using type = ComponentStorageView<T>;
     static constexpr bool needs_iteration = false;
-    static void ParseAccess(SimpleJob* job) { ParameterSource<T>::ParseAccess(job); }
-    static type GetSource(Scene* scene) { return ParameterSource<T>::GetSource(scene);  }
+    static void ParseAccess(SimpleJob* job) { ParameterSource<EntityComponent<T>>::ParseAccess(job); }
+    static type GetSource(Scene* scene) { return ParameterSource<EntityComponent<T>>::GetSource(scene);  }
     static bool ShouldExecute(Entity* entity, type source) { return true; }
-    static T GetParameter(Scene* scene) { return scene; }
-  };
-  template <typename T>
-  struct ParameterSource<const T&> {
-    using type = ComponentStorageView<const T>;
-    static constexpr bool needs_iteration = true;
-    static void ParseAccess(SimpleJob* job) {
-      // assert(main_vm->GetType<T>()
-      job->RequireResourceAccess<T>(ResourceAccess::READ);
-    }
-    static type GetSource(Scene* scene) { return scene->GetComponentStorage<const T>(); }
-    static bool ShouldExecute(Entity* entity, type source) { return source.EntityHasComponent(entity->id); }
-    static auto GetParameter(Entity* entity, type source) { return source.GetComponent(entity->id); }
+    static auto GetParameter(Entity* entity, type source) { return source; }
   };
   template <typename T>
   struct ParameterSource<EventEmitter<T>> {
@@ -103,38 +113,23 @@ class SimpleJob : public Job<Scene*, SceneUpdate> {
     static bool ShouldExecute(Entity* entity, type source) { return true; }
     static auto GetParameter(Entity* entity, type source) { return source; }
   };
-  template <typename T>
-  struct ParameterSource<T&> {
-    using type = ComponentStorageView<const T>;
+  template <typename T, ResourceAccess ACCESS_TYPE>
+  struct ParameterSource<EntityComponent<T, ACCESS_TYPE>> {
+    using type = ComponentStorageView<T>;
     static constexpr bool needs_iteration = true;
-    static void ParseAccess(SimpleJob* job) { job->RequireResourceAccess<T>(ResourceAccess::READ_WRITE); }
+    static void ParseAccess(SimpleJob* job) { job->RequireResourceAccess<T>(ACCESS_TYPE); }
     static type GetSource(Scene* scene) { return scene->GetComponentStorage<T>(); }
     static bool ShouldExecute(Entity* entity, type source) { return source.EntityHasComponent(entity->id); }
-    static auto GetParameter(Entity* entity, type source) { return source.GetComponent(entity->id); }
+    static EntityComponent<T, ACCESS_TYPE> GetParameter(Entity* entity, type source) { return { &source.GetComponent(entity->id) }; }
   };
-  template <typename T>
-  struct ParameterSource<const T*> {
-    using type = ComponentStorageView<T>;
+  template <typename T, ResourceAccess ACCESS_TYPE>
+  struct ParameterSource<SceneComponent<T, ACCESS_TYPE>> {
+    using type = T*;
     static constexpr bool needs_iteration = true;
-    static void ParseAccess(SimpleJob* job) { job->RequireResourceAccess<T>(ResourceAccess::READ); }
-    static type GetSource(Scene* scene) { return scene->GetComponentStorage<const T>(); }
+    static void ParseAccess(SimpleJob* job) { job->RequireResourceAccess<T>(ACCESS_TYPE); }
+    static type GetSource(Scene* scene) { return scene->GetSceneComponent<T>(); }
     static bool ShouldExecute(Entity* entity, type source) { return true; }
-    static auto GetParameter(Entity* entity, type source) {
-      assert(entity != nullptr);
-      return source.EntityHasComponent(entity->id) ? &source.GetComponent(entity->id) : nullptr;
-    }
-  };
-  template <typename T>
-  struct ParameterSource<T*> {
-    using type = ComponentStorageView<T>;
-    static constexpr bool needs_iteration = true;
-    static void ParseAccess(SimpleJob* job) { job->RequireResourceAccess<T>(ResourceAccess::READ_WRITE); }
-    static type GetSource(Scene* scene) { return scene->GetComponentStorage<T>(); }
-    static bool ShouldExecute(Entity* entity, type source) { return true; }
-    static auto GetParameter(Entity* entity, type source) {
-      assert(entity != nullptr);
-      return source.EntityHasComponent(entity->id) ? &source.GetComponent(entity->id) : nullptr;
-    }
+    static SceneComponent<T, ACCESS_TYPE> GetParameter(Entity* entity, type source) { return { source }; }
   };
 
   template <typename T> struct ParameterSourceList;

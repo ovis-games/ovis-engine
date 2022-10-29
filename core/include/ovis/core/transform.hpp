@@ -53,11 +53,11 @@ struct GlobalTransformMatrices {
   OVIS_VM_DECLARE_TYPE_BINDING();
 };
 
-void ComputeLocalTransformMatrices(const Transform&, LocalTransformMatrices* local_transform_matrices);
+void ComputeLocalTransformMatrices(EntityComponent<const Transform>, EntityComponent<LocalTransformMatrices, ResourceAccess::WRITE> local_transform_matrices);
 OVIS_CREATE_SIMPLE_JOB(ComputeLocalTransformMatrices);
 
-void ComputeGlobalTransformMatrices(Scene* scene, const ComponentStorageView<LocalTransformMatrices>& local_transforms,
-                                    ComponentStorageView<GlobalTransformMatrices>* global_transforms);
+void ComputeGlobalTransformMatrices(Scene* scene, ComponentStorageView<const LocalTransformMatrices> local_transforms,
+                                    ComponentStorageView<GlobalTransformMatrices> global_transforms);
 OVIS_CREATE_SIMPLE_JOB(ComputeGlobalTransformMatrices);
 
 }  // namespace ovis

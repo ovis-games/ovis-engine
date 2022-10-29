@@ -19,6 +19,7 @@
 #include "ovis/core/job.hpp"
 #include "ovis/core/scheduler.hpp"
 #include "ovis/core/vector.hpp"
+#include "ovis/vm/type_id.hpp"
 
 namespace ovis {
 
@@ -77,6 +78,12 @@ class Scene : public Serializable {
   }
 
   template <typename ComponentType>
+  ComponentType* GetSceneComponent() {
+    return &GetSceneComponent(main_vm->GetTypeId<ComponentType>()).template as<ComponentType>();
+  }
+  Value& GetSceneComponent(TypeId component_type) { return scene_components_.at(component_type); }
+
+  template <typename ComponentType>
   ComponentStorageView<ComponentType> GetComponentStorage() {
     return GetComponentStorage(main_vm->GetTypeId<ComponentType>());
   }
@@ -112,6 +119,7 @@ class Scene : public Serializable {
 
   std::vector<ComponentStorage> component_storages_;
   std::vector<EventStorage> event_storages_;
+  std::unordered_map<TypeId, Value> scene_components_;
 
   bool is_playing_ = false;
 

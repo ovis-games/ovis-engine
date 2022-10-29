@@ -29,9 +29,9 @@ OVIS_VM_DEFINE_TYPE_BINDING(Core, GlobalTransformMatrices) {
   GlobalTransformMatrices_type->AddProperty<&GlobalTransformMatrices::world_to_local>("worldToLocal");
 }
 
-void ComputeLocalTransformMatrices(const Transform& transform, LocalTransformMatrices* local_transform_matrices) {
+void ComputeLocalTransformMatrices(SceneComponent<const Transform> transform, SceneComponent<LocalTransformMatrices, ResourceAccess::WRITE> local_transform_matrices) {
   local_transform_matrices->local_to_parent =
-      Matrix3x4::FromTransformation(transform.position, transform.scale, transform.rotation);
+      Matrix3x4::FromTransformation(transform->position, transform->scale, transform->rotation);
   local_transform_matrices->parent_to_local = InvertAffine(local_transform_matrices->local_to_parent);
 }
 
@@ -45,13 +45,13 @@ void ComputeGlobalTransformMatrices(const GlobalTransformMatrices& parent_transf
 }
 
 void ComputeGlobalTransformMatricesForChildren(Scene* scene, Entity* parent,
-                                               const ComponentStorageView<LocalTransformMatrices>& local_transforms,
-                                               ComponentStorageView<GlobalTransformMatrices>* global_transforms) {
+                                               ComponentStorageView<const LocalTransformMatrices> local_transforms,
+                                               ComponentStorageView<GlobalTransformMatrices> global_transforms) {
   for (auto& child : parent->children(scene)) {
     ComputeGlobalTransformMatrices(
-      global_transforms->GetComponent(parent->id),
+      global_transforms.GetComponent(parent->id),
       local_transforms.GetComponent(child.id),
-      &global_transforms->GetComponent(child.id)
+      &global_transforms.GetComponent(child.id)
     );
     ComputeGlobalTransformMatricesForChildren(scene, &child, local_transforms, global_transforms);
   }
@@ -60,11 +60,11 @@ void ComputeGlobalTransformMatricesForChildren(Scene* scene, Entity* parent,
 }  // namespace
 
 void ComputeGlobalTransformMatrices(Scene* scene,
-                                    const ComponentStorageView<LocalTransformMatrices>& local_transforms,
-                                    ComponentStorageView<GlobalTransformMatrices>* global_transforms) {
+                                    ComponentStorageView<const LocalTransformMatrices> local_transforms,
+                                    ComponentStorageView<GlobalTransformMatrices> global_transforms) {
   for (auto& entity : scene->root_entities()) {
     const LocalTransformMatrices& local = local_transforms.GetComponent(entity.id);
-    GlobalTransformMatrices& global = global_transforms->GetComponent(entity.id);
+    GlobalTransformMatrices& global = global_transforms.GetComponent(entity.id);
     global.world_to_local = local.parent_to_local;
     global.local_to_world = local.local_to_parent;
     ComputeGlobalTransformMatricesForChildren(scene, &entity, local_transforms, global_transforms);

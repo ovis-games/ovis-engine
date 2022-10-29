@@ -162,6 +162,17 @@ EventStorage* Scene::GetEventStorage(TypeId event_type) {
 Result<> Scene::Prepare() {
   LogV("Preparing scene");
   {
+    const auto scene_component_types = frame_scheduler().GetUsedSceneComponents();
+    scene_components_.clear();
+    scene_components_.reserve(scene_component_types.size());
+
+    LogV(" Used Scene components:");
+    for (const auto component_type : scene_component_types) {
+      LogV(" - {}", main_vm->GetType(component_type)->GetReferenceString());
+      scene_components_.insert(std::make_pair(component_type, Value(main_vm, component_type)));
+    }
+  }
+  {
     const auto object_component_types = frame_scheduler().GetUsedEntityComponents();
     component_storages_.clear();
     component_storages_.reserve(object_component_types.size());

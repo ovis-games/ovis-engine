@@ -9,6 +9,16 @@
 
 using namespace ovis;
 
+struct Gravity {
+  double x = 0;
+  double y = -1;
+
+  OVIS_VM_DECLARE_TYPE_BINDING();
+};
+OVIS_VM_DEFINE_TYPE_BINDING(Test, Gravity) {
+  Gravity_type->AddAttribute("Core.SceneComponent");
+}
+
 struct Speed {
   float x = 1;
   float y = 2;
@@ -33,9 +43,9 @@ OVIS_VM_DEFINE_TYPE_BINDING(Test, Position) {
   Position_type->AddAttribute("Core.EntityComponent");
 }
 
-void Move(const Speed& speed, Position* position) {
-  position->x += speed.x;
-  position->y += speed.y;
+void Move(SceneComponent<const Gravity> gravity, EntityComponent<const Speed> speed, EntityComponent<Position> position) {
+  position->x += speed->x + gravity->x;
+  position->y += speed->y + gravity->y;
 }
 
 OVIS_CREATE_SIMPLE_JOB(Move);
@@ -89,7 +99,7 @@ TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
 
     Position pos = position_storage[entity->id];
     REQUIRE(pos.x == 1);
-    REQUIRE(pos.y == 2);
+    REQUIRE(pos.y == 1);
   }
 
   s.Update(0.1);
@@ -100,7 +110,7 @@ TEST_CASE("Test SimpleSceneController", "[ovis][core][SimpleSceneController]") {
 
     Position pos = position_storage[entity->id];
     REQUIRE(pos.x == 2);
-    REQUIRE(pos.y == 4);
+    REQUIRE(pos.y == 2);
   }
 
   s.Stop();

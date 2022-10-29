@@ -145,6 +145,7 @@ TEST_CASE("Create scene", "[ovis][core][Scene]") {
   }
 }
 
+
 TEST_CASE("Create scene objects", "[Scene]") {
   BENCHMARK_ADVANCED("Create objects")(Catch::Benchmark::Chronometer meter) {
     Scene scene;
