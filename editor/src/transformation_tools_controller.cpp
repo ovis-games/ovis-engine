@@ -1,8 +1,8 @@
 
 #include "ovis/editor/transformation_tools_controller.hpp"
 
-#include <emscripten.h>
-#include <emscripten/bind.h>
+#include "emscripten.h"
+#include "emscripten/bind.h"
 
 #include "ovis/utils/log.hpp"
 #include "ovis/core/intersection.hpp"
@@ -30,7 +30,7 @@ float DistanceToLineSegment(Vector2 point, const LineSegment2D& line_segment) {
   return Length(point - projected_point_on_line_segment);
 }
 
-TransformationToolsController::TransformationToolsController(EditorViewport* editor_viewport) : ViewportController(editor_viewport) {}
+TransformationToolsController::TransformationToolsController(EditorViewport* editor_viewport) : FrameJob("TransformationTools") {}
 
 void TransformationToolsController::Update(std::chrono::microseconds) {
   auto* object_selection_controller = editor_viewport()->object_selection_controller();

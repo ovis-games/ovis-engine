@@ -2,7 +2,6 @@
 
 #include "ovis/core/scene.hpp"
 #include "ovis/input/mouse_events.hpp"
-#include "ovis/editor/viewport_controller.hpp"
 
 namespace ovis {
 namespace editor {
@@ -13,12 +12,10 @@ struct LineSegment2D {
 
 float DistanceToLineSegment(Vector2 point, const LineSegment2D& line_segment);
 
-class TransformationToolsController : public ViewportController {
+class TransformationToolsController : public FrameJob {
   friend class TransformationToolsRenderer;
 
  public:
-  static constexpr std::string_view Name() { return "TransformationTools"; }
-
   enum class TransformationType { MOVE = 0, ROTATE = 1, SCALE = 2 };
   enum class AxesSelection {
     NONE,

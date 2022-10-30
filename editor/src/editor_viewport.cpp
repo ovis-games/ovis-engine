@@ -1,14 +1,14 @@
 #include "ovis/editor/editor_viewport.hpp"
 
-#include <emscripten.h>
-#include <emscripten/bind.h>
-#include <emscripten/html5.h>
+#include "emscripten.h"
+#include "emscripten/bind.h"
+#include "emscripten/html5.h"
 
 #include "ovis/editor/json_helper.hpp"
 #include "ovis/utils/json.hpp"
-#include "ovis/rendering/clear_pass.hpp"
-#include "ovis/rendering2d/renderer2d.hpp"
-#include "ovis/editor/render_passes/transformation_tools_renderer.hpp"
+// #include "ovis/rendering/clear_pass.hpp"
+// #include "ovis/rendering2d/renderer2d.hpp"
+// #include "ovis/editor/render_passes/transformation_tools_renderer.hpp"
 
 namespace {
 // emscripten::val document = emscripten::val::undefined();
@@ -52,22 +52,21 @@ void DestroyEditorViewport(std::uintptr_t editor_viewport) {
 
 void SetViewportScene(std::uintptr_t editor_viewport, const emscripten::val& scene) {
   LogV("Update scene: {}", SerializeValue(scene));
-  ovis::SceneObject::ClearObjectTemplateChache(); // TODO: do this for specific object templates when they change
   reinterpret_cast<EditorViewport*>(editor_viewport)->scene()->Deserialize(json::parse(SerializeValue(scene)));
 }
 
 void SelectViewportObject(std::uintptr_t editor_viewport, const emscripten::val& object_path) {
-  if (object_path.isNull()) {
-    reinterpret_cast<EditorViewport*>(editor_viewport)->object_selection_controller()->SelectObject(nullptr);
-  } else {
-    reinterpret_cast<EditorViewport*>(editor_viewport)->object_selection_controller()->SelectObject(object_path.as<std::string>());
-  }
+  // if (object_path.isNull()) {
+  //   reinterpret_cast<EditorViewport*>(editor_viewport)->object_selection_controller()->SelectObject(nullptr);
+  // } else {
+  //   reinterpret_cast<EditorViewport*>(editor_viewport)->object_selection_controller()->SelectObject(object_path.as<std::string>());
+  // }
 }
 
 void SetObjectSelectionChangedHandler(std::uintptr_t editor_viewport, const emscripten::val& event_handler) {
-  reinterpret_cast<EditorViewport*>(editor_viewport)
-      ->object_selection_controller()
-      ->SetObjectSelectionChangedHandler(event_handler);
+  // reinterpret_cast<EditorViewport*>(editor_viewport)
+  //     ->object_selection_controller()
+  //     ->SetObjectSelectionChangedHandler(event_handler);
 }
 
 // void SelectTransformType(int transform_type) {
@@ -98,51 +97,33 @@ EMSCRIPTEN_BINDINGS(editor_viewport_module) {
 }
 
 EditorViewport::EditorViewport(std::string target)
-    : CanvasViewport(std::move(target)),
-      camera_controller_(this),
-      transformation_tools_controller_(this),
-      object_selection_controller_(this) {
-  LogOnError(AddRenderPass<ClearPass>());
-  LogOnError(AddRenderPass<Renderer2D>());
-  LogOnError(AddRenderPass<SelectedObjectBoundingBox>());
-  LogOnError(AddRenderPass<TransformationToolsRenderer>());
+    : Canvas(std::move(target)) {
+  // LogOnError(AddRenderPass<ClearPass>());
+  // LogOnError(AddRenderPass<Renderer2D>());
+  // LogOnError(AddRenderPass<SelectedObjectBoundingBox>());
+  // LogOnError(AddRenderPass<TransformationToolsRenderer>());
 
-  SetCustomCameraMatrices(Matrix3x4::IdentityTransformation(),
-                          Matrix4::FromOrthographicProjection(-10, 10, -10, 10, -10, 10));
+  // SetCustomCameraMatrices(Matrix3x4::IdentityTransformation(),
+  //                         Matrix4::FromOrthographicProjection(-10, 10, -10, 10, -10, 10));
 
-  AddController(camera_controller());
-  AddController(transformation_tools_controller());
-  AddController(object_selection_controller());
+  // AddController(camera_controller());
+  // AddController(transformation_tools_controller());
+  // AddController(object_selection_controller());
 
-  SetScene(&scene_);
-  scene()->SetMainViewport(this);
+  // SetScene(&scene_);
+  // scene()->SetMainViewport(this);
 }
 
-void EditorViewport::Update(std::chrono::microseconds delta_time) {
-  for (const auto& controller : controllers_) {
-    controller->Update(delta_time);
-  }
-  if (scene()->is_playing()) {
-    scene()->BeforeUpdate();
-    scene()->Update(delta_time);
-    scene()->AfterUpdate();
-  }
-}
-
-void EditorViewport::ProcessEvent(Event* event) {
-  for (const auto& controller : controllers_) {
-    controller->ProcessEvent(event);
-    if (!event->is_propagating()) {
-      return;
-    }
-  }
-
-  scene()->ProcessEvent(event);
-}
-  
-void EditorViewport::AddController(ViewportController* controller) {
-  controllers_.push_back(controller);
-}
+// void EditorViewport::Update(std::chrono::microseconds delta_time) {
+//   for (const auto& controller : controllers_) {
+//     controller->Update(delta_time);
+//   }
+//   if (scene()->is_playing()) {
+//     scene()->BeforeUpdate();
+//     scene()->Update(delta_time);
+//     scene()->AfterUpdate();
+//   }
+// }
 
 emscripten::val GetDocumentValueAtPath(std::string_view path) {
   // emscripten::val current = document;

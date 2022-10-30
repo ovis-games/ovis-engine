@@ -1,14 +1,12 @@
 #include <cstring>
 
-#include <emscripten.h>
-#include <emscripten/bind.h>
-#include <emscripten/val.h>
+#include "emscripten.h"
+#include "emscripten/bind.h"
+#include "emscripten/val.h"
 
 #include "ovis/utils/log.hpp"
 #include "ovis/core/asset_library.hpp"
-#include "ovis/rendering/clear_pass.hpp"
-#include "ovis/application/application.hpp"
-#include "ovis/application/sdl_window.hpp"
+#include "ovis/core/application.hpp"
 #include "ovis/editor/editor_viewport.hpp"
 
 using namespace ovis;
@@ -35,11 +33,6 @@ int main(int argc, char* argv[]) {
     }
   });
 
-  Init();
-
   SetEngineAssetsDirectory("/ovis_assets");
-
-  Run();
-
-  Quit();
+  RunApplicationLoop();
 }
