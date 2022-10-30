@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scene.schema.json",
+  "type": "object",
+  "properties": {
+    "entities": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "entity.schema.json"
+      }
+    }
+  },
+  "required": ["entities"],
+  "additionalProperties": false
+}

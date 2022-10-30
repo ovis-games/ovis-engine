@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "transform.schema.json",
+  "type": "object",
+  "properties": {
+    "position": {
+      "$ref": "vector3.schema.json"
+    },
+    "rotation": {
+      "$ref": "vector3.schema.json"
+    },
+    "scale": {
+      "$ref": "vector3.schema.json"
+    }
+  },
+  "additionalProperties": false
+}

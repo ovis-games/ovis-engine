@@ -1,23 +1,19 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "id": "Core.Entity",
-  "title": "Entity",
-  "description": "",
+  "$id": "entity.schema.json",
   "type": "object",
   "properties": {
     "template": {
       "type": "string"
     },
     "components": {
-      "type": "object",
-      "properties": {
-        "Core.Transform": { "$ref": "Core.Transform.schema.json" }
-      }
+      "type": "object"
     },
     "children": {
       "type": "object",
-      "additionalProperties": {"$ref": "Core.Entity.schema.json" }
+      "additionalProperties": {"$ref": "entity.schema.json" }
     }
   },
+  "required": ["components", "children"],
   "additionalProperties": false
 }

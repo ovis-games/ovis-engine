@@ -1,13 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "id": "Core.Vector3",
-  "title": "Vector3",
-  "description": "A three-dimensional vector.",
+  "$id": "vector3.schema.json",
   "type": "array",
   "minItems": 3,
   "maxItems": 3,
   "items": {
     "type": "number"
-  },
-  "additionalProperties": false
+  }
 }
