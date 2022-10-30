@@ -2,6 +2,7 @@
 
 #include "ovis/core/main_vm.hpp"
 #include "ovis/core/scene.hpp"
+#include "ovis/utils/range.hpp"
 
 namespace ovis {
 
@@ -77,6 +78,15 @@ Result<> ComponentStorage::RemoveComponent(EntityId object_id) {
   storage_.Destruct(object_id.index);
   flags_[object_id.index] = false;
   return Success;
+}
+
+void ComponentStorage::Clear() {
+  for (auto i : IRange(this->flags_.size())) {
+    if (flags_[i]) {
+      storage_.DestructRange(i, 1);
+      flags_[i] = false;
+    }
+  }
 }
 
 bool ComponentStorage::EntityHasComponent(EntityId entity_id) const {

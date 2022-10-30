@@ -27,6 +27,7 @@ public:
 
   Result<> AddComponent(EntityId entity_id);
   Result<> RemoveComponent(EntityId entity_id);
+  void Clear();
   bool EntityHasComponent(EntityId entity_id) const;
 
   template <typename T>

@@ -45,7 +45,7 @@ class Scene : public Serializable {
   auto& frame_scheduler() { return frame_scheduler_; }
 
   Entity* CreateEntity(std::string_view object_name, std::optional<EntityId> parent = std::nullopt);
-  Entity* CreateEntity(std::string_view object_name, const json& serialized_object, std::optional<EntityId> parent = std::nullopt);
+  Entity* CreateEntity(std::string_view object_name, const json& serialized_entity, std::optional<EntityId> parent = std::nullopt);
 
   Entity* GetEntity(EntityId id);
   Entity* GetEntityUnchecked(EntityId id);

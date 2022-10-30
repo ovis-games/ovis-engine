@@ -35,6 +35,7 @@ target_include_directories(
   ovis-core
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_BINARY_DIR}/include
 )
 
 target_link_libraries(
@@ -42,6 +43,13 @@ target_link_libraries(
   PUBLIC
     ovis::utils
     ovis::vm
+)
+
+target_add_schemas(
+  ovis-core
+
+  schemas/scene.schema.json
+  schemas/entity.schema.json
 )
 
 target_add_assets(

@@ -9,6 +9,7 @@
 #include "ovis/core/asset_library.hpp"
 #include "ovis/core/entity.hpp"
 #include "ovis/core/scene_viewport.hpp"
+#include "schemas/scene.hpp"
 
 namespace ovis {
 
@@ -79,6 +80,23 @@ Entity* Scene::CreateEntity(std::string_view object_name, std::optional<EntityId
   return entity;
 }
 
+Entity* Scene::CreateEntity(std::string_view object_name, const json& serialized_entity, std::optional<EntityId> parent) {
+  Entity* entity = CreateEntity(object_name, parent);
+
+  schemas::EntitySchema definition = serialized_entity;
+  for (const auto& [component_id, component_definition] : definition.components) {
+    auto storage = GetComponentStorage(main_vm->GetTypeId(component_id));
+    if (storage) {
+      storage->AddComponent(entity->id);
+    }
+  }
+  for (const auto& [child_name, child_definition] : definition.children) {
+    CreateEntity(child_name, child_definition, entity->id);
+  }
+
+  return entity;
+}
+
 Entity* Scene::GetEntity(EntityId id) {
   return IsEntityIdValid(id) ? &entities_[id.index] : nullptr;
 }
@@ -97,14 +115,26 @@ Entity* Scene::GetEntityUnchecked(EntityId id) {
 //   entities_[id.index].Kill();
 // }
 
-// void Scene::ClearEntities() {
-//   for (auto& object : entities_) {
-//     if (object.is_alive()) {
-//       object.Kill();
-//     }
-//   }
-// }
-
+void Scene::ClearEntities() {
+  for (auto& entity_component_storage : component_storages_) {
+    entity_component_storage.Clear();
+  }
+  for (auto& entity : entities_) {
+    if (entity.is_active()) {
+      entity.id = entity.id.next();
+      entity.parent_id = entity.id;
+      entity.first_children_id = entity.id;
+      entity.deactivate();
+    }
+  }
+  for (auto& entity : entities_) {
+    entity.previous_sibling_id = entities_[entity.id.index > 0 ? entity.id.index - 1 : entities_.size() -1].id;
+    entity.next_sibling_id = entities_[(entity.id.index + 1) % entities_.size()].id;
+  }
+  first_inactive_entity_.emplace(entities_[0].id);
+  first_active_entity_.reset();
+  last_active_entity_.reset();
+}
 
 Scene::EntityIterator Scene::begin() {
   return {
@@ -137,27 +167,6 @@ EventStorage* Scene::GetEventStorage(TypeId event_type) {
   }
   return nullptr;
 }
-
-// void Scene::ClearEntities() {
-//   while (entities_.size() > 0) {
-//     // Destroy one at a time because parent objects will explicitly destory their children
-//     // TODO: maybe set a special flag in the scene that we are already destructing?
-//     entities_.erase(entities_.begin());
-//   }
-// }
-
-// Entity* Scene::GetEntity(std::string_view object_path) {
-//   auto object = entities_.find(std::string(object_path));
-//   if (object == entities_.end()) {
-//     return nullptr;
-//   }
-//   { return object->second.get(); }
-// }
-
-// bool Scene::ContainsEntity(std::string_view object_reference) {
-//   return entities_.count(std::string(object_reference));
-// }
-//
 
 Result<> Scene::Prepare() {
   LogV("Preparing scene");
@@ -214,68 +223,18 @@ void Scene::Update(float delta_time) {
 }
 
 json Scene::Serialize() const {
-  json serialized_object = {{"version", "0.1"}};
-//   auto& controllers = serialized_object["controllers"] = json::object();
-//   for (const auto& controller : controllers_) {
-//     controllers[controller.first] = controller.second->Serialize();
-//   }
-
-//   auto& objects = serialized_object["objects"] = json::object();
-//   for (const auto& object : entities_) {
-//     if (object.second->parent() == nullptr) {
-//       objects[object.first] = object.second->Serialize();
-//     }
-//   }
-
-//   Camera* camera = main_viewport() ? main_viewport()->camera() : nullptr;
-//   if (camera != nullptr) {
-//     SDL_assert(camera->scene_object() != nullptr);
-//     serialized_object["camera"] = camera->scene_object()->name();
-//   }
-//   // if (camera_object_.size() > 0) {
-//   //   serialized_object["camera"] = camera_object_;
-//   // }
-
-  return serialized_object;
+  schemas::Scene scene;
+  return scene;
 }
 
-bool Scene::Deserialize(const json& serialized_object) {
-//   if (!serialized_object.contains("version") || serialized_object["version"] != "0.1") {
-//     LogE("Invalid scene object. Version must be 0.1!");
-//     return false;
-//   }
+bool Scene::Deserialize(const json& serialized_scene) {
+  schemas::Scene scene = serialized_scene;
 
-//   ClearEntities();
-//   ClearControllers();
+  ClearEntities();
 
-//   if (serialized_object.contains("controllers") && serialized_object["controllers"].is_object()) {
-//     for (const auto& controller : serialized_object["controllers"].items()) {
-//       AddController(controller.key(), controller.value());
-//     }
-//   }
-
-//   if (serialized_object.contains("objects") && serialized_object["objects"].is_object()) {
-//     for (const auto& object : serialized_object["objects"].items()) {
-//       CreateEntity(object.key(), object.value());
-//     }
-//   }
-
-//   if (serialized_object.contains("camera")) {
-//     // camera_object_ = serialized_object.at("camera");
-//     if (main_viewport() != nullptr) {
-//       // Need to copy out variable here as nlohmann json currently does not support direct
-//       // conversion to std::string_view
-//       const std::string camera_object_reference = serialized_object.at("camera");
-//       Entity* object = GetEntity(camera_object_reference);
-//       if (object != nullptr && object->HasComponent<Camera>()) {
-//         main_viewport()->SetCamera(object->GetComponent<Camera>());
-//         LogD("Setting Camera");
-//       } else {
-//         main_viewport()->SetCamera(nullptr);
-//         LogD("Setting Camera to null");
-//       }
-//     }
-//   }
+  for (const auto& [entity_name, entity_definition]: scene.entities) {
+    this->CreateEntity(entity_name, entity_definition);
+  }
 
  return true;
 }
