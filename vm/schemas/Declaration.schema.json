@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/draft-07/schema",
+  "$id": "Declaration.schema.json",
+  "title": "Declaration",
+  "type": "object",
+  "properties": {
+    "type": {
+      "enum": ["function", "type"]
+    },
+    "functionDeclaration": { "$ref": "Function.schema.json" },
+    "typeDeclaration": { "$ref": "Type.schema.json" }
+  },
+  "additionalProperties": false,
+  "required": ["type"]
+}

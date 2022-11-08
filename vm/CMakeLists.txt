@@ -34,8 +34,9 @@ target_link_libraries(
 target_add_schemas(
   ovis-vm
 
-  schemas/function.schema.json
-  schemas/type.schema.json
+  schemas/Function.schema.json
+  schemas/Type.schema.json
+  schemas/Declaration.schema.json
 )
 
 install(

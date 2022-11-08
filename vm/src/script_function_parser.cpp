@@ -65,7 +65,7 @@ void ScriptFunctionParser::Parse(const schemas::Function& function) {
   });
 }
 
-void ScriptFunctionParser::ParseOutputs(const std::vector<schemas::Variable>& outputs, std::string_view path) {
+void ScriptFunctionParser::ParseOutputs(const std::vector<schemas::VariableDeclaration>& outputs, std::string_view path) {
   for (const auto& output : outputs) {
     const auto type_id = virtual_machine->GetTypeId(output.type);
     current_scope()->AddVariable(type_id, "");
@@ -73,7 +73,7 @@ void ScriptFunctionParser::ParseOutputs(const std::vector<schemas::Variable>& ou
   }
 }
 
-void ScriptFunctionParser::ParseInputs(const std::vector<schemas::Variable>& inputs, std::string_view path) {
+void ScriptFunctionParser::ParseInputs(const std::vector<schemas::VariableDeclaration>& inputs, std::string_view path) {
   for (const auto& input : inputs) {
     const auto type_id = virtual_machine->GetTypeId(input.type);
     auto add_variable_result = current_scope()->AddVariable(type_id, input.name);
@@ -85,17 +85,17 @@ void ScriptFunctionParser::ParseInputs(const std::vector<schemas::Variable>& inp
   }
 }
 
-void ScriptFunctionParser::ParseStatements(const std::vector<schemas::StatementSchema>& statements, std::string_view path) {
+void ScriptFunctionParser::ParseStatements(const std::vector<schemas::Statement>& statements, std::string_view path) {
   for (const auto& statement : IndexRange(statements)) {
     ParseStatement(*statement, fmt::format("{}/{}", path, statement.index()));
   }
 }
 
-void ScriptFunctionParser::ParseStatement(const schemas::StatementSchema& statement, std::string_view path) {
+void ScriptFunctionParser::ParseStatement(const schemas::Statement& statement, std::string_view path) {
   switch (statement.type) {
     case schemas::StatementType::RETURN:
-      assert(statement.statement_schema_return);
-      ParseReturnStatement(*statement.statement_schema_return.get(), path);
+      assert(statement.statement_return);
+      ParseReturnStatement(*statement.statement_return.get(), path);
       return;
 
     case schemas::StatementType::VARIABLE_DECLARATION:
@@ -136,7 +136,7 @@ void ScriptFunctionParser::ParseExpressionStatement(const schemas::Expression& e
 }
 
 void ScriptFunctionParser::ParseVariableDeclarationStatement(
-    const schemas::VariableDeclaration& variable_declaration_statement, std::string_view path) {
+    const schemas::VariableDeclarationStatement& variable_declaration_statement, std::string_view path) {
   const auto type = virtual_machine->GetType(variable_declaration_statement.variable.type);
   if (!type) {
     AddError(path, "Unknown variable type {}", variable_declaration_statement.variable.type);
@@ -188,7 +188,7 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseExpression(const 
   };
 }
 
-std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseConstantExpression(const schemas::Constant& constant_expression, std::string_view path) {
+std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseConstantExpression(const schemas::ConstantExpression& constant_expression, std::string_view path) {
   return std::visit(
       [this, path](const auto& value) {
         return std::span<ScriptFunctionScopeValue>{InsertPushConstantInstructions(path, value), 1};
@@ -197,7 +197,7 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseConstantExpressio
 }
 
 std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseFunctionCallExpression(
-    const schemas::FunctionCall& function_call_expression, std::string_view path) {
+    const schemas::FunctionCallExpression& function_call_expression, std::string_view path) {
   const auto function = virtual_machine->GetFunction(function_call_expression.function);
   if (!function) {
     AddError(path, "Unknown function: {}", function_call_expression.function);
@@ -238,12 +238,12 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseVariableExpressio
 }
 
 std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseOperatorExpression(
-    const schemas::OperatorClass& operator_expression, std::string_view path) {
+    const schemas::OperatorExpression& operator_expression, std::string_view path) {
   const auto number_type = virtual_machine->GetTypeId<double>();
   const auto boolean_type = virtual_machine->GetTypeId<bool>();
 
-  switch (operator_expression.operator_operator) {
-    case schemas::OperatorEnum::ADD:
+  switch (operator_expression.operator_expression_operator) {
+    case schemas::Operator::ADD:
       if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {number_type, number_type}, path)) {
         return {};
       }
@@ -253,7 +253,7 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseOperatorExpressio
       assert(!current_scope()->values.back().name.has_value());
       return {&current_scope()->values.back(), 1};
 
-    case schemas::OperatorEnum::SUBTRACT:
+    case schemas::Operator::SUBTRACT:
       if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {number_type, number_type}, path)) {
         return {};
       }
@@ -261,7 +261,7 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseOperatorExpressio
       current_scope()->PopValue();
       return {&current_scope()->values.back(), 1};
 
-    case schemas::OperatorEnum::MULTIPLY:
+    case schemas::Operator::MULTIPLY:
       if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {number_type, number_type}, path)) {
         return {};
       }
@@ -269,7 +269,7 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseOperatorExpressio
       current_scope()->PopValue();
       return {&current_scope()->values.back(), 1};
 
-    case schemas::OperatorEnum::DIVIDE:
+    case schemas::Operator::DIVIDE:
       if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {number_type, number_type}, path)) {
         return {};
       }
@@ -277,11 +277,11 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseOperatorExpressio
       current_scope()->PopValue();
       return {&current_scope()->values.back(), 1};
 
-    case schemas::OperatorEnum::NEGATE:
+    case schemas::Operator::NEGATE:
       AddError(path, "Negate operator is not implemented yet");
       return {};
 
-    case schemas::OperatorEnum::AND:
+    case schemas::Operator::AND:
       AddError(path, "And operator is not implemented yet");
       return {};
       // if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {boolean_type, boolean_type}, path)) {
@@ -291,7 +291,7 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseOperatorExpressio
       // current_scope()->PopValue();
       // return {&current_scope()->values.back(), 1};
 
-    case schemas::OperatorEnum::OR:
+    case schemas::Operator::OR:
       AddError(path, "Or operator is not implemented yet");
       return {};
       // if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {boolean_type, boolean_type}, path)) {
@@ -301,19 +301,19 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseOperatorExpressio
       // current_scope()->PopValue();
       // return {&current_scope()->values.back(), 1};
 
-    case schemas::OperatorEnum::NOT:
+    case schemas::Operator::NOT:
       AddError(path, "Not operator is not implemented yet");
       return {};
 
-    case schemas::OperatorEnum::EQUALS:
+    case schemas::Operator::EQUALS:
       AddError(path, "Equals operator is not implemented yet");
       return {};
 
-    case schemas::OperatorEnum::NOT_EQUALS:
+    case schemas::Operator::NOT_EQUALS:
       AddError(path, "Not-equale operator is not implemented yet");
       return {};
 
-    case schemas::OperatorEnum::GREATER:
+    case schemas::Operator::GREATER:
       if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {number_type, number_type}, path)) {
         return {};
       }
@@ -323,7 +323,7 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseOperatorExpressio
       assert(!current_scope()->values.back().name.has_value());
       return {&current_scope()->values.back(), 1};
 
-    case schemas::OperatorEnum::LESS:
+    case schemas::Operator::LESS:
       if (!CheckValueTypes(ParseInfixOperatorOperands(operator_expression, path), {number_type, number_type}, path)) {
         return {};
       }
@@ -336,7 +336,7 @@ std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseOperatorExpressio
   }
 }
 
-std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseInfixOperatorOperands(const schemas::OperatorClass& operator_expression, std::string_view path) {
+std::span<ScriptFunctionScopeValue> ScriptFunctionParser::ParseInfixOperatorOperands(const schemas::OperatorExpression& operator_expression, std::string_view path) {
   if (!operator_expression.left_hand_side || !operator_expression.right_hand_side) {
     AddError(path, "Operator requires a left and right hand side operand.");
     return {};

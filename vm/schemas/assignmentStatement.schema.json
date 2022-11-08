@@ -1,15 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "assignmentStatement.schema.json",
+  "$id": "AssignmentStatement.schema.json",
+  "title": "AssignmentStatement",
   "type": "object",
   "properties": {
     "variables": {
       "type": "array",
-      "items": { "$ref": "identifier.schema.json" }
+      "items": { "$ref": "Identifier.schema.json" }
     },
     "values": {
       "type": "array",
-      "items": { "$ref": "expression.schema.json" }
+      "items": { "$ref": "Expression.schema.json" }
     }
   },
   "additionalProperties": false,

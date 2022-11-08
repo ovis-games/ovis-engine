@@ -1,16 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "expression.schema.json",
+  "$id": "Expression.schema.json",
+  "title": "Expression",
   "type": "object",
   "properties": {
     "type": {
       "type": "string",
       "enum": ["constant", "variable", "operator", "functionCall"]
     },
-    "constant": { "$ref": "constantExpression.schema.json" },
-    "variable": { "$ref": "variableExpression.schema.json" },
-    "operator": { "$ref": "operatorExpression.schema.json" },
-    "functionCall": { "$ref": "functionCallExpression.schema.json" }
+    "constant": { "$ref": "ConstantExpression.schema.json" },
+    "variable": { "$ref": "VariableExpression.schema.json" },
+    "operator": { "$ref": "OperatorExpression.schema.json" },
+    "functionCall": { "$ref": "FunctionCallExpression.schema.json" }
   },
   "additionalProperties": false,
   "required": ["type"]

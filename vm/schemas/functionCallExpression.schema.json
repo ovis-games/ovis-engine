@@ -1,12 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "functionCallExpression.schema.json",
+  "$id": "FunctionCallExpression.schema.json",
+  "title": "FunctionCallExpression",
   "type": "object",
   "properties": {
-    "function": { "$ref": "identifier.schema.json" },
+    "function": { "$ref": "Identifier.schema.json" },
     "inputs": {
       "type": "array",
-      "items": { "$ref": "expression.schema.json" }
+      "items": { "$ref": "Expression.schema.json" }
     }
   },
   "additionalProperties": false,

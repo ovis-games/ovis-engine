@@ -1,12 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "type.schema.json",
+  "$id": "Type.schema.json",
+  "title": "Type",
   "type": "object",
   "properties": {
-    "name": { "$ref": "identifier.schema.json" },
+    "name": { "$ref": "Identifier.schema.json" },
     "properties": {
       "type": "array",
-      "items": { "$ref": "variableDeclaration.schema.json" }
+      "items": { "$ref": "VariableDeclaration.schema.json" }
     }
   },
   "additionalProperties": false,

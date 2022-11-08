@@ -1,5 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "variableExpression.schema.json",
-  "$ref": "identifier.schema.json"
+  "$id": "VariableExpression.schema.json",
+  "title": "VariableExpression",
+  "$ref": "Identifier.schema.json"
 }
