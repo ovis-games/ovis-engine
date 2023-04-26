@@ -66,6 +66,45 @@ Result<void> Sleep(int time) {
   return Success;
 }
 ```
-### Convenience
+
+### Error propagation
+When you want to propagate errors through a function call you can do it like this:
+```C++
+Result<Int> ReadIntegerFromFile(const std::filesystem::path& path) {
+  const auto content = ReadFile(path);
+  if (!content) {
+    return content.error();
+  }
+  return std::stoi(*content); // Please use std::from_chars instead of stoi in real code!
+}
+```
+However, the header also defined the `OVIS_CHECK_RESULT` macro which essentially does the same this as the if.
+So, you can write this instead:
+```C++
+Result<Int> ReadIntegerFromFile(const std::filesystem::path& path) {
+  const auto content = ReadFile(path);
+  OVIS_CHECK_RESULT(content);
+  return std::stoi(*content); // Again, use std::from_chars instead
+}
+```
+Unfortunately, there is now way to implement a macro with similar functionality to the [`?` operator](https://doc.rust-lang.org/rust-by-example/std/result/question_mark.html) in Rust.
+
+### Safety
+In debug mode, the Result class also checks whether the user perfomed a check if the result has a value before accessing it.
+So, this would trigger an assertion:
+```C++
+std::string value = *ReadFile(some_filename); // Triggers an assertion in debug mode, even if the result contains a value
+```
+This is, to ensure that potential errors are not simply ignored.
+It is not completely safe, as the following would pass, but it is better than nothing.
+```C++
+auto content = ReadFile(some_filename);
+bool has_value = content.has_value(); // The return value of has_value() needs to be used as it is flagged with [[nodiscard]]
+content->size(); // This would pass in debug mode, and would lead to undefined behaviour when content actually contains an error.
+// I chose not to check for a value on every dereferencation due to runtime overhead (same as std::optional, ...).
+```
 
 ### Caveats
+Currently there are two constructors of `Result<T, E>`: one which takes an T and one that takes an E.
+This will lead to a compile-time error if T == E or if the constructor gets called with a type that is neither T or E but implicitly convertible to both.
+However, these use cases are unlikely to occur in normal usage that I decided to not support this instead of wrapping the error like [`std::unexpected`](https://en.cppreference.com/w/cpp/utility/expected/unexpected).
