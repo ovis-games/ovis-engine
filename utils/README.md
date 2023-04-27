@@ -58,11 +58,17 @@ Similarly, to `std::nullopt_t` its only use is to construct a `Result<void, E>` 
 For convenience, the global declaration `constexpr SuccessType Success;` exists to allow simple construction of such types.
 E.g.,:
 ```C++
-Result<void> Sleep(int time) {
-  if (time < 0) {
-    return Error("Cannot travel in time");
+Result<> WriteFile(const std::filesystem::path& path, std::string_view content) {
+  std::ofstream file(path);
+
+  if (!file) {
+    return Error("Cannot open file: {}", path);
   }
-  SleepInternal(time);
+
+  if (!file.write(content.data(), content.size())) {
+    return Error("Could not write file: {}", path);
+  }
+
   return Success;
 }
 ```
