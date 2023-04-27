@@ -2,7 +2,67 @@
 This module contains general C++ utilities.
 The following sections contain the most important aspects of the module.
 
-[Error Handling](#error-handling)
+* [Ranges](#ranges)
+* [Error Handling](#error-handling)
+
+## Ranges
+The header [range.hpp](utils/include/ovis/utils/result.hpp) contains a lot of helper functions regarding ranges.
+Most of the concepts have made its way into the C++ 20 standard in the new `ranges` library and they should be used instead.
+
+#### IntegralRange
+Generate an integer range, similar to [`std::ranges::iota_view`](https://en.cppreference.com/w/cpp/ranges/iota_view).
+Usage:
+```C++
+for (auto i : IntegralRange<int>{0, 3}) {
+  // i will have the values 0, 1, 2
+}
+// or:
+for (auto i : IRange(3)) {
+  // in contrast to std::views::iota(), calling IRange with a single argument
+  // it denotes the end of the range that starts at zero, so this also iterates
+  // over the values 0, 1, 2
+}
+```
+
+#### IndexedRange
+Equivalent of [`std::views::enumerate`](https://en.cppreference.com/w/cpp/ranges/enumerate_view).
+```C++
+std::vector<std::string> strings = { "foo", "bar" };
+for (auto string : IndexRange(strings)) {
+  // string.value() or string-> accesses the underlying value
+  // string.index() returns the zero-based index
+}
+```
+
+#### RangeFilter
+Equivalent of [`std::views::filter`](https://en.cppreference.com/w/cpp/ranges/filter_view).
+```C++
+const auto numbers = { 0, 1, 2, 3, 4, };
+for (auto number : FilterRange(numbers, [](int number) { return number % 2 == 0; })) {
+  // number will have the values 0, 2, 4
+}
+```
+
+#### RangeAdapter
+Equivalent of [`std::views::transform`](https://en.cppreference.com/w/cpp/ranges/transform_view).
+```C++
+const auto numbers = { 0, 1, 2, 3, 4, };
+for (auto number : TransformRange(numbers, [](int number) { return number * 2; })) {
+  // number will have the values 0, 2, 4, 6, 8
+}
+```
+
+#### TupleElementRange
+Equivalent of [`std::views::elements`](https://en.cppreference.com/w/cpp/ranges/elements_view).
+```C++
+const std::map<std::string, int> dict = { {"foo", 2}, {"bar", 4} };
+for (auto key : Keys(dict)) {
+  // "foo", "bar"
+}
+for (auto value : Values(dict)) {
+  // 2, 4
+}
+```
 
 ## Error Handling
 The header [result.hpp](utils/include/ovis/utils/result.hpp) contains a the `Result<T, E>` class which is used within the engine for error handling instead of error codes or exceptions.
@@ -11,7 +71,7 @@ In addition, the header defines a simple `Error` which simply stores an error me
 This error type is sufficient for most use cases where you do not want to differentiate between different errors that can occur during a function call.
 `Error` has a constructor that takes a format string and its corresponding parameters to produce the final message using [{fmt}](https://github.com/fmtlib/fmt) (look below for an example).
 
-### Usage
+#### Usage
 `Result<T, E>` is intended to be used as a return type for functions.
 `T` should be the type the function should return on success (using `void` for functions that do not produce a value is completely fine).
 `E` should be the error type, which defaults to the simple `Error` struct described above.
@@ -48,7 +108,7 @@ if (auto content = ReadFile(some_path); content.has_value()) {
 }
 ```
 
-### Usage of `void` Results
+#### Usage of `void` Results
 The Result class is specialized for `Result<void, E>`, which basically results in and `std::optional<E>`.
 `Result<void, E>` does not have a has_value() method, but the `bool` operator is still overloaded to return true if the function succeeded and false if an error occured.
 Similarly, it does not have the arrow and dereference operator overloaded, as this would not make sense in this context.
@@ -73,7 +133,7 @@ Result<> WriteFile(const std::filesystem::path& path, std::string_view content) 
 }
 ```
 
-### Error propagation
+#### Error propagation
 When you want to propagate errors through a function call you can do it like this:
 ```C++
 Result<Int> ReadIntegerFromFile(const std::filesystem::path& path) {
@@ -95,7 +155,7 @@ Result<Int> ReadIntegerFromFile(const std::filesystem::path& path) {
 ```
 Unfortunately, there is now way to implement a macro with similar functionality to the [`?` operator](https://doc.rust-lang.org/rust-by-example/std/result/question_mark.html) in Rust.
 
-### Safety
+#### Safety
 In debug mode, the Result class also checks whether the user perfomed a check if the result has a value before accessing it.
 So, this would trigger an assertion:
 ```C++
@@ -110,7 +170,7 @@ content->size(); // This would pass in debug mode, and would lead to undefined b
 // I chose not to check for a value on every dereferencation due to runtime overhead (same as std::optional, ...).
 ```
 
-### Caveats
+#### Caveats
 Currently there are two constructors of `Result<T, E>`: one which takes an T and one that takes an E.
 This will lead to a compile-time error if T == E or if the constructor gets called with a type that is neither T or E but implicitly convertible to both.
 However, these use cases are unlikely to occur in normal usage that I decided to not support this instead of wrapping the error like [`std::unexpected`](https://en.cppreference.com/w/cpp/utility/expected/unexpected).
