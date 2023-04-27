@@ -2,8 +2,30 @@
 This module contains general C++ utilities.
 The following sections contain the most important aspects of the module.
 
+* [Type ID](#type-id)
+* [Versioned Index ID](#versioned-index-id)
 * [Ranges](#ranges)
 * [Error Handling](#error-handling)
+
+## Type ID
+
+The header [native_type_id.hpp](ovis-engine/utils/include/ovis/utils/native_type_id.hpp) contains the type `NativeTypeId` (just a typedef for a 32 bit unsigned integer) as well as the [variable template](https://en.cppreference.com/w/cpp/language/variable_template) `constexpr NativeTypeId TypeOf<T>` which calculates a compile-time id for a given type.
+
+## Versioned Index ID
+
+The header [versioned_index.hpp](ovis-engine/utils/include/ovis/utils/versioned_index.hpp) contains the class `VersionedIndex` which can be used for resources that are stored in arrays.
+In general, the index of the element already represents a unique ID for resources stored in an array.
+However, if the element slots are reused, the same ID now points to a different element and it is impossible to detect this.
+`VersionedIndex` stores a 'version' number in addition to the actual index that is intended to be increased whenever the slot is reused.
+This way, you can detect whether the id belongs to the resources at the corresponding index.
+
+```C++
+using MyId = VersionIndex<uint32_t, 8 /* VERSION_BITS */, 24 /* INDEX_BITS */, 0 /* FLAGS_BITS */>;
+```
+In this example `MyId` is essentially a 32bit unsigned integer with 8 bits reserved for the version and 24 bits for the actual index.
+In addition you can reserve additional bits for flags.
+In general, you only have to specify the type and the number of version bits.
+The remaining bits will be used for the index by default, so `VersionIndex<uint32_t, 8>` would yield the same type.
 
 ## Ranges
 The header [range.hpp](utils/include/ovis/utils/result.hpp) contains a lot of helper functions regarding ranges.
