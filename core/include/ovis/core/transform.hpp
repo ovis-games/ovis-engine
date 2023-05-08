@@ -1,170 +1,63 @@
 #pragma once
 
-#include <sol/sol.hpp>
-
-#include <ovis/core/matrix.hpp>
-#include <ovis/core/quaternion.hpp>
-#include <ovis/core/scene_object.hpp>
-#include <ovis/core/scene_object_component.hpp>
-#include <ovis/core/vector.hpp>
+#include "ovis/core/component_storage.hpp"
+#include "ovis/core/matrix.hpp"
+#include "ovis/core/quaternion.hpp"
+#include "ovis/core/simple_job.hpp"
+#include "ovis/core/vector.hpp"
+#include "ovis/core/vm_bindings.hpp"
 
 namespace ovis {
 
-class Transform : public SceneObjectComponent {
-  OVIS_MAKE_DYNAMICALLY_LUA_REFERENCABLE();
-  friend class TransformController;
+struct Transform {
+  Vector3 position = Vector3::Zero();
+  Vector3 scale = Vector3::One();
+  Quaternion rotation = Quaternion::Identity();
 
- public:
-  explicit inline Transform(SceneObject* object) : SceneObjectComponent(object) {}
-
-  inline Vector3 local_position() const { return position_; }
-  inline void SetLocalPosition(Vector3 new_position) {
-    position_ = new_position;
-    FlagAsDirty();
-  }
-  inline void MoveLocally(Vector3 offset) {
-    position_ += offset;
-    FlagAsDirty();
-  }
-
-  inline Vector3 world_position() const { return ExtractColumn(local_to_world_matrix(), 3); }
-  inline void SetWorldPosition(const Vector3 position) {
-    SetLocalPosition(TransformPosition(FindWorldToParentMatrix(), position));
-  }
-  inline void Move(Vector3 offset) { MoveLocally(TransformDirection(FindWorldToParentMatrix(), offset)); }
-
-  inline Vector3 local_scale() const { return scale_; }
-  inline void SetLocalScale(Vector3 new_scale) {
-    scale_ = new_scale;
-    FlagAsDirty();
-  }
-  inline void SetLocalScale(float new_uniform_scale) {
-    scale_ = {new_uniform_scale, new_uniform_scale, new_uniform_scale};
-    FlagAsDirty();
-  }
-  inline void ScaleLocally(Vector3 scale) {
-    scale_ *= scale;
-    FlagAsDirty();
-  }
-  inline void ScaleLocally(float uniform_scale) {
-    scale_ *= uniform_scale;
-    FlagAsDirty();
-  }
-
-  inline Quaternion local_rotation() const { return rotation_; }
-  inline void SetLocalRotation(Quaternion new_rotation) {
-    rotation_ = new_rotation;
-    FlagAsDirty();
-  }
-  inline void RotateLocally(Quaternion rotation_offset) {
-    rotation_ = rotation_offset * rotation_;
-    FlagAsDirty();
-  }
-  inline void RotateLocally(Vector3 axis, float angle_in_radians) {
-    RotateLocally(Quaternion::FromAxisAndAngle(axis, angle_in_radians));
-    FlagAsDirty();
-  }
-  inline void SetLocalYawPitchRoll(float yaw, float pitch, float roll) {
-    rotation_ = Quaternion::FromEulerAngles(yaw, pitch, roll);
-    FlagAsDirty();
-  }
-  inline void GetLocalYawPitchRoll(float* yaw, float* pitch, float* roll) const {
-    if (yaw) *yaw = ExtractYaw(rotation_);
-    if (pitch) *pitch = ExtractPitch(rotation_);
-    if (roll) *roll = ExtractRoll(rotation_);
-  }
-
-  inline Quaternion world_rotation() const {
-    const Transform* parent = FindParentTransform();
-    return parent != nullptr ? parent->world_rotation() * local_rotation() : local_rotation();
-    // TODO: make FromTransformation work with scaling!
-    // return Quaternion::FromTransformation(local_to_world_matrix());
-  }
-
-  inline Vector3 LocalDirectionToWorld(Vector3 local_space_direction) const {
-    return TransformDirection(local_to_world_matrix(), local_space_direction);
-  }
-
-  inline Vector3 WorldDirectionToLocal(Vector3 world_space_direction) const {
-    return TransformDirection(world_to_local_matrix(), world_space_direction);
-  }
-
-  inline Vector3 LocalPositionToWorld(Vector3 local_space_position) const {
-    return TransformPosition(local_to_world_matrix(), local_space_position);
-  }
-
-  inline Vector3 WorldPositionToLocal(Vector3 world_space_position) const {
-    return TransformPosition(world_to_local_matrix(), world_space_position);
-  }
-
-  inline Matrix3x4 local_to_world_matrix() const {
-    if (dirty_) {
-      CalculateMatrices();
-    }
-    return local_to_world_;
-  }
-
-  Matrix3x4 world_to_local_matrix() const {
-    if (dirty_) {
-      CalculateMatrices();
-    }
-    return world_to_local_;
-  }
-
-  json Serialize() const override;
-  bool Deserialize(const json& data) override;
-  const json* GetSchema() const override;
-
-  static void RegisterType(sol::table* module);
-  static void RegisterType(vm::Module* module);
-
- private:
-  Vector3 position_ = Vector3::Zero();
-  Vector3 scale_ = Vector3::One();
-  Quaternion rotation_ = Quaternion::Identity();
-
-  mutable Matrix3x4 local_to_world_;
-  mutable Matrix3x4 world_to_local_;
-
-  inline const Transform* FindParentTransform() const;
-  inline Matrix3x4 FindParentToWorldMatrix() const;
-  inline Matrix3x4 FindWorldToParentMatrix() const;
-
-  // Indicates whether the transformation matrices need to be re-calculated
-  mutable bool dirty_ = true;
-
-  // This method is const as the matrices are calculated "on-demand" in the getter functions
-  void CalculateMatrices() const;
-
-  // Set the dirty flag to the transform component and all tansform components of its children
-  void FlagAsDirty();
-  static void FlagAsDirty(SceneObject* object);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 };
-
-const Transform* Transform::FindParentTransform() const {
-  const SceneObject* parent = scene_object()->parent();
-  while (parent) {
-    const Transform* parent_transform = parent->GetComponent<Transform>();
-    if (parent_transform) {
-      return parent_transform;
-    } else {
-      parent = parent->parent();
-    }
-  }
-  return nullptr;
-}
-
-Matrix3x4 Transform::FindParentToWorldMatrix() const {
-  const Transform* parent_transform = FindParentTransform();
-  return parent_transform != nullptr ? parent_transform->local_to_world_matrix() : Matrix3x4::IdentityTransformation();
-}
-
-Matrix3x4 Transform::FindWorldToParentMatrix() const {
-  const Transform* parent_transform = FindParentTransform();
-  return parent_transform != nullptr ? parent_transform->world_to_local_matrix() : Matrix3x4::IdentityTransformation();
-}
 
 void to_json(json& data, const Transform& transform);
 void from_json(const json& data, Transform& transform);
+
+struct LocalTransformMatrices {
+  Matrix3x4 parent_to_local = Matrix3x4::IdentityTransformation();
+  Matrix3x4 local_to_parent = Matrix3x4::IdentityTransformation();
+
+  OVIS_VM_DECLARE_TYPE_BINDING();
+};
+
+void to_json(json& data, const Transform& transform);
+void from_json(const json& data, Transform& transform);
+
+struct GlobalTransformMatrices {
+  Matrix3x4 local_to_world = Matrix3x4::IdentityTransformation();
+  Matrix3x4 world_to_local = Matrix3x4::IdentityTransformation();
+
+  Vector3 LocalDirectionToWorld(Vector3 local_direction) {
+    return TransformDirection(local_to_world, local_direction);
+  }
+
+  Vector3 LocalPositionToWorld(Vector3 local_position) {
+    return TransformPosition(local_to_world, local_position);
+  }
+
+  Vector3 WorldDirectionToLocal(Vector3 world_direction) {
+    return TransformDirection(local_to_world, world_direction);
+  }
+
+  Vector3 WorldPositionToLocal(Vector3 world_position) {
+    return TransformPosition(local_to_world, world_position);
+  }
+
+  OVIS_VM_DECLARE_TYPE_BINDING();
+};
+
+void ComputeLocalTransformMatrices(const Transform&, LocalTransformMatrices* local_transform_matrices);
+OVIS_CREATE_SIMPLE_JOB(ComputeLocalTransformMatrices);
+
+void ComputeGlobalTransformMatrices(Scene* scene, const ComponentStorageView<LocalTransformMatrices>& local_transforms,
+                                    ComponentStorageView<GlobalTransformMatrices>* global_transforms);
+OVIS_CREATE_SIMPLE_JOB(ComputeGlobalTransformMatrices);
 
 }  // namespace ovis

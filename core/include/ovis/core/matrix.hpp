@@ -5,8 +5,8 @@
 
 #include <fmt/format.h>
 
-#include <ovis/core/matrix_types.hpp>
-#include <ovis/core/vector.hpp>
+#include "ovis/core/matrix_types.hpp"
+#include "ovis/core/vector.hpp"
 
 namespace ovis {
 

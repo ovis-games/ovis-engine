@@ -5,14 +5,12 @@
 #include <set>
 #include <vector>
 
-#include <SDL2/SDL.h>
-
-#include <ovis/utils/class.hpp>
-#include <ovis/core/rect.hpp>
-#include <ovis/graphics/blend_state.hpp>
-#include <ovis/graphics/depth_buffer_state.hpp>
-#include <ovis/graphics/gl.hpp>
-#include <ovis/graphics/uniform_buffer.hpp>
+#include "ovis/utils/class.hpp"
+#include "ovis/core/rect.hpp"
+#include "ovis/graphics/blend_state.hpp"
+#include "ovis/graphics/depth_buffer_state.hpp"
+#include "ovis/graphics/gl.hpp"
+#include "ovis/graphics/uniform_buffer.hpp"
 
 namespace ovis {
 
@@ -39,9 +37,9 @@ struct DrawItem {
   VertexInput* vertex_input = nullptr;
   IndexBuffer* index_buffer = nullptr;
   PrimitiveTopology primitive_topology = PrimitiveTopology::TRIANGLE_LIST;
-  Uint32 start = 0;
-  Uint32 count = 3;
-  Uint32 base_vertex = 0;
+  uint32_t start = 0;
+  uint32_t count = 3;
+  uint32_t base_vertex = 0;
   DepthBufferState depth_buffer_state;
   BlendState blend_state;
   std::optional<Rect<int>> scissor_rect;
@@ -63,16 +61,17 @@ class GraphicsContext final {
   MAKE_NON_COPY_OR_MOVABLE(GraphicsContext);
 
  public:
-  GraphicsContext(SDL_Window* window);
+  GraphicsContext(Vector2 framebuffer_dimensions);
   ~GraphicsContext();
 
   void Draw(const DrawItem& draw_item);
 
+  void SetFramebufferSize(int width, int height);
   inline RenderTargetConfiguration* default_render_target_configuration() const {
     return m_default_render_target_configuration.get();
   }
   inline GraphicsResource* GetResource(GraphicsResource::Id resource_id) const {
-    const size_t index = resource_id.index();
+    const size_t index = resource_id.index;
     if (index >= resources_.size()) {
       return nullptr;
     }
@@ -81,8 +80,6 @@ class GraphicsContext final {
   }
 
  private:
-  SDL_Window* window_;
-  SDL_GLContext m_context;
   std::vector<GraphicsResource*> resources_;
   std::unique_ptr<RenderTargetConfiguration> m_default_render_target_configuration;
 
@@ -109,7 +106,7 @@ class GraphicsContext final {
   size_t viewport_height_;
 
   inline void BindTexture(GLenum texture_type, GLuint texture_name, GLuint texture_unit) {
-    SDL_assert(texture_unit < m_bound_textures.size());
+    assert(texture_unit < m_bound_textures.size());
     if (m_bound_textures[texture_unit] != texture_name) {
       ActivateTextureUnit(texture_unit);
       glBindTexture(texture_type, texture_name);
@@ -125,7 +122,7 @@ class GraphicsContext final {
   }
 
   inline void EnableVertexAttribArray(GLuint index) {
-    SDL_assert(index < m_vertex_attrib_array_states.size());
+    assert(index < m_vertex_attrib_array_states.size());
     if (!m_vertex_attrib_array_states[index]) {
       glEnableVertexAttribArray(index);
       m_vertex_attrib_array_states[index] = true;
@@ -133,7 +130,7 @@ class GraphicsContext final {
   }
 
   inline void DisableVertexAttribArray(GLuint index) {
-    SDL_assert(index < m_vertex_attrib_array_states.size());
+    assert(index < m_vertex_attrib_array_states.size());
     if (m_vertex_attrib_array_states[index]) {
       glDisableVertexAttribArray(index);
       m_vertex_attrib_array_states[index] = false;

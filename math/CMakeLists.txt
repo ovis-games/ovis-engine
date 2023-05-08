@@ -22,12 +22,6 @@ target_include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_include_directories(
-  ovis-math
-  PUBLIC
-    ${OVIS_ROOT}/extern/glm/include
-)
-
 target_link_libraries(
   ovis-math
   PUBLIC

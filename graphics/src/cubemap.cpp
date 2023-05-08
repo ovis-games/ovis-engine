@@ -1,12 +1,10 @@
+#include "ovis/graphics/cubemap.hpp"
+
 #include <cstring>
 #include <fstream>
 
-#include <SDL2/SDL_assert.h>
-#include <SDL2/SDL_surface.h>
-
-#include <ovis/utils/log.hpp>
-#include <ovis/graphics/cubemap.hpp>
-#include <ovis/graphics/graphics_context.hpp>
+#include "ovis/utils/log.hpp"
+#include "ovis/graphics/graphics_context.hpp"
 
 namespace ovis {
 
@@ -31,7 +29,7 @@ Cubemap::Cubemap(GraphicsContext* context, const CubemapDescription& description
       break;
 
     default:
-      SDL_assert(false);
+      assert(false);
       break;
   }
 
@@ -60,13 +58,13 @@ Cubemap::Cubemap(GraphicsContext* context, const CubemapDescription& description
       break;
 
     case TextureFilter::TRILINEAR:
-      SDL_assert(description.mip_map_count > 1);
+      assert(description.mip_map_count > 1);
       min_filter = GL_LINEAR_MIPMAP_LINEAR;
       mag_filter = GL_LINEAR;
       break;
 
     default:
-      SDL_assert(false);
+      assert(false);
       break;
   }
   glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, min_filter);
@@ -93,7 +91,7 @@ void Cubemap::Write(CubemapSide side, std::size_t level, std::size_t x, std::siz
       break;
 
     default:
-      SDL_assert(false);
+      assert(false);
       break;
   }
 

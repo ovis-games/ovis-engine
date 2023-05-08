@@ -3,9 +3,11 @@
 #include <cstdint>
 #include <limits>
 #include <string_view>
+#include <vector>
 
-#include <SDL2/SDL_scancode.h>
-#include <sol/sol.hpp>
+#include "SDL_scancode.h"
+
+#include "ovis/core/vm_bindings.hpp"
 
 namespace ovis {
 
@@ -131,7 +133,7 @@ struct Key {
   static constexpr Key F23() { return {SDL_SCANCODE_F23}; }
   static constexpr Key F24() { return {SDL_SCANCODE_F24}; }
 
-  static void RegisterType(sol::table* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 };
 static_assert(sizeof(Key) == sizeof(Key::KeyCode));
 

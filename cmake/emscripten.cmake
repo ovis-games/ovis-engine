@@ -6,6 +6,12 @@ endif()
 
 if (OVIS_EMSCRIPTEN)
   add_definitions("-DOVIS_EMSCRIPTEN=1")
+  # add_compile_options(
+  #   -fno-exceptions
+  # )
+  # add_link_options(
+  #   -fno-exceptions
+  # )
 
   if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR NOT DEFINED CMAKE_BUILD_TYPE)
     message(STATUS "Ovis: Building in debug mode, disable optimziations.")
@@ -13,6 +19,7 @@ if (OVIS_EMSCRIPTEN)
       -g
       -O0
       "SHELL:-s DISABLE_EXCEPTION_CATCHING=0"
+      "SHELL:-s ALLOW_MEMORY_GROWTH=1"
     )
     add_link_options(
       -g
@@ -27,4 +34,7 @@ if (OVIS_EMSCRIPTEN)
       -O3
     )
   endif ()
+  add_link_options(
+    -sALLOW_MEMORY_GROWTH
+  )
 endif()

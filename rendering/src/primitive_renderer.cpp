@@ -1,15 +1,15 @@
-#include <ovis/core/math_constants.hpp>
-#include <ovis/rendering/primitive_renderer.hpp>
-#include <ovis/rendering/rendering_viewport.hpp>
+#include "ovis/core/math_constants.hpp"
+#include "ovis/rendering/primitive_renderer.hpp"
 
 namespace ovis {
 std::map<GraphicsContext*, std::weak_ptr<PrimitiveRenderer::Resources>> PrimitiveRenderer::resources;
 
-PrimitiveRenderer::PrimitiveRenderer(std::string_view name) : RenderPass(name) {}
+PrimitiveRenderer::PrimitiveRenderer(std::string_view job_id, GraphicsContext* graphics_context)
+    : RenderPass(job_id, graphics_context) {}
 
 void PrimitiveRenderer::CreateResources() {
-  SDL_assert(!is_drawing_);
-  SDL_assert(!resources_);
+  assert(!is_drawing_);
+  assert(!resources_);
 
   // REMARK: This is currently not thread safe, but it currently does not have to be and most likely never will be.
   auto resources_iterator = resources.find(context());
@@ -46,25 +46,25 @@ void PrimitiveRenderer::ReleaseResources() {
 }
 
 void PrimitiveRenderer::SetDrawSpace(DrawSpace space) {
-  SDL_assert(!is_drawing_);
+  assert(!is_drawing_);
   draw_space_ = space;
 }
 
-void PrimitiveRenderer::BeginDraw(const RenderContext& render_context) {
-  SDL_assert(!is_drawing_);
-  SDL_assert(resources_);
+void PrimitiveRenderer::BeginDraw(const SceneViewport& viewport) {
+  assert(!is_drawing_);
+  assert(resources_);
 
   is_drawing_ = true;
   resources_->vertices.clear();
 
-  const Vector2 viewport_size = viewport()->GetDimensions();
+  const Vector2 viewport_size = viewport.dimensions;
   screen_aabb_ = AxisAlignedBoundingBox2D::FromMinMax(Vector2::Zero(), viewport_size);
 
   const Matrix4 screen_to_clip_space =
       Matrix4::FromOrthographicProjection(0.0f, viewport_size.x, viewport_size.y, 0.0f, -1.0f, 1.0f);
 
   if (draw_space_ == DrawSpace::WORLD) {
-    to_screen_space_ = Invert(screen_to_clip_space) * render_context.world_to_clip_space;
+    to_screen_space_ = Invert(screen_to_clip_space) * viewport.world_to_clip;
   } else {
     to_screen_space_ = Matrix4::Identity();
   }
@@ -73,8 +73,8 @@ void PrimitiveRenderer::BeginDraw(const RenderContext& render_context) {
 }
 
 void PrimitiveRenderer::EndDraw() {
-  SDL_assert(is_drawing_);
-  SDL_assert(resources_);
+  assert(is_drawing_);
+  assert(resources_);
 
   Flush();
   is_drawing_ = false;
@@ -163,7 +163,7 @@ void PrimitiveRenderer::DrawDashedLine(const Vector3& start, const Vector3& end,
 }
 
 void PrimitiveRenderer::DrawLineStip(std::span<const Vector3> positions, const Color& color, float thickness) {
-  SDL_assert(positions.size() >= 2);
+  assert(positions.size() >= 2);
 
   for (size_t i = 0; i < positions.size() - 1; ++i) {
     DrawLine(positions[i], positions[i + 1], color, thickness);
@@ -171,7 +171,7 @@ void PrimitiveRenderer::DrawLineStip(std::span<const Vector3> positions, const C
 }
 
 void PrimitiveRenderer::DrawLoop(std::span<const Vector3> positions, const Color& color, float thickness) {
-  SDL_assert(positions.size() > 2);
+  assert(positions.size() > 2);
   DrawLineStip(positions, color, thickness);
   DrawLine(positions.back(), positions.front(), color, thickness);
 }
@@ -249,7 +249,7 @@ void PrimitiveRenderer::DrawDisc(const Vector3& center, float radius, const Colo
 }
 
 void PrimitiveRenderer::DrawConvexPolygon(const Vector3* positions, size_t num_positions, const Color& color) {
-  SDL_assert(num_positions > 2);
+  assert(num_positions > 2);
 
   for (size_t i = 0; i < num_positions - 1; ++i) {
     DrawTriangle(positions[0], positions[i], positions[i + 1], color);
@@ -257,9 +257,9 @@ void PrimitiveRenderer::DrawConvexPolygon(const Vector3* positions, size_t num_p
 }
 
 void PrimitiveRenderer::AddVertices(std::span<const Vertex> vertices) {
-  SDL_assert(is_drawing_);
-  SDL_assert(resources_);
-  SDL_assert(vertices.size() % 3 == 0);
+  assert(is_drawing_);
+  assert(resources_);
+  assert(vertices.size() % 3 == 0);
 
   const size_t remaining_space = VERTEX_BUFFER_ELEMENT_COUNT - resources_->vertices.size();
   const size_t vertices_to_copy = (std::min(vertices.size(), remaining_space) / 3) * 3;
@@ -273,12 +273,12 @@ void PrimitiveRenderer::AddVertices(std::span<const Vertex> vertices) {
 }
 
 void PrimitiveRenderer::Flush() {
-  SDL_assert(is_drawing_);
-  SDL_assert(resources_);
+  assert(is_drawing_);
+  assert(resources_);
 
   const size_t vertex_count = resources_->vertices.size();
-  SDL_assert(vertex_count < VERTEX_BUFFER_ELEMENT_COUNT);
-  SDL_assert(vertex_count % 3 == 0);
+  assert(vertex_count < VERTEX_BUFFER_ELEMENT_COUNT);
+  assert(vertex_count % 3 == 0);
 
   if (resources_->vertices.size() == 0) {
     return;
@@ -290,7 +290,7 @@ void PrimitiveRenderer::Flush() {
   draw_item.vertex_input = resources_->vertex_input.get();
   draw_item.shader_program = resources_->shader.get();
   draw_item.primitive_topology = PrimitiveTopology::TRIANGLE_LIST;
-  draw_item.render_target_configuration = viewport()->GetDefaultRenderTargetConfiguration();
+  // draw_item.render_target_configuration = viewport()->GetDefaultRenderTargetConfiguration();
   draw_item.count = vertex_count;
   if (enable_alpha_blending_) {
     draw_item.blend_state.enabled = true;

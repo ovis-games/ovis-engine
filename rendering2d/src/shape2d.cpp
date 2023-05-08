@@ -1,92 +1,64 @@
-#include <SDL_assert.h>
-
-#include <ovis/rendering2d/shape2d.hpp>
-#include <ovis/core/scene_object.hpp>
+#include "ovis/rendering2d/shape2d.hpp"
 
 namespace ovis {
 
-const json Shape2D::schema = {{"$ref", "rendering2d#/$defs/shape2d"}};
+void to_json(json& data, const Shape2D& shape2d) {
+  data = {
+    {"color", shape2d.color()},
+    {"outlineColor", shape2d.outline_color()},
+    {"outlineWidth", shape2d.outline_width()},
+    {"texture", shape2d.texture_asset()}
+  };
 
-json Shape2D::Serialize() const {
-  json data = {{"color", color_},
-               {"outlineColor", outline_color_},
-               {"outlineWidth", outline_width_},
-               {"texture", texture_asset_}};
-
-  switch (type()) {
-    case Type::RECTANGLE:
+  switch (shape2d.type()) {
+    case Shape2D::Type::RECTANGLE:
       data["type"] = "Rectangle";
-      data["size"] = rectangle_.size;
+      data["size"] = shape2d.rectangle().size;
       break;
 
-    case Type::ELLIPSE:
+    case Shape2D::Type::ELLIPSE:
       data["type"] = "Ellipse";
-      data["size"] = ellipse_.size;
-      data["segmentCount"] = ellipse_.num_segments;
+      data["size"] = shape2d.ellipse().size;
+      data["segmentCount"] = shape2d.ellipse().num_segments;
       break;
   }
-
-  return data;
 }
 
-bool Shape2D::Deserialize(const json& data) {
-  if (data.contains("color")) {
-    color_ = data.at("color");
-  } else {
-    color_ = Color::White();
-  }
-  if (data.contains("outlineColor")) {
-    outline_color_ = data.at("outlineColor");
-  } else {
-    outline_color_ = Color::Black();
-  }
-  if (data.contains("outlineWidth")) {
-    outline_width_ = data.at("outlineWidth");
-  } else {
-    outline_width_ = 1.0f;
-  }
-  if (data.contains("texture")) {
-    texture_asset_ = data.at("texture");
-  } else {
-    texture_asset_ = "";
-  }
+void from_json(const json& data, Shape2D& shape2d) {
+  shape2d.SetColor(data.contains("color") ? data.at("color").get<Color>() : Color::White());
+  shape2d.SetOutlineColor(data.contains("outlineColor") ? data.at("outlineColor").get<Color>() : Color::Black());
+  shape2d.SetOutlineWidth(data.contains("outlineWidth") ? data.at("outlineWidth").get<float>() : 1.0);
+  shape2d.SetTexture(data.contains("texture") ? data.at("texture").get<std::string>() : "");
 
   const std::string& type = data.contains("type") ? data.at("type") : "Rectangle";
   if (type == "Rectangle") {
-    type_ = Type::RECTANGLE;
-    Rectangle rect;
-    if (data.contains("size")) {
-      rect.size = data.at("size");
-    } else {
-      rect.size = { 10.0f, 10.0f};
-    }
-    SetRectangle(rect);
+    Shape2D::Rectangle rect {
+      .size = data.contains("size") ? data.at("size").get<Vector2>() : Vector2 { 10.0f, 10.0f},
+    };
+    shape2d.SetRectangle(rect);
   } else if (type == "Ellipse") {
-    type_ = Type::ELLIPSE;
-    Ellipse ellipse;
-    if (data.contains("size")) {
-      ellipse.size = data.at("size");
-    } else {
-      ellipse.size = { 10.0f, 10.0f};
-    }
-    if (data.contains("segmentCount")) {
-      ellipse.num_segments = data.at("segmentCount");
-    } else {
-      ellipse.num_segments = 32;
-    }
-    SetEllipse(ellipse);
+    Shape2D::Ellipse ellipse {
+      .size = data.contains("size") ? data.at("size").get<Vector2>() : Vector2 { 10.0f, 10.0f},
+      .num_segments = data.contains("segmentCount") ? data.at("segmentCount").get<uint32_t>() : 32,
+    };
+    shape2d.SetEllipse(ellipse);
   } else {
-    return false;
+    assert(false);
   }
-  return true;
 }
 
 void Shape2D::SetColor(const Color& color) {
   color_ = color;
-  const uint32_t color_rgba = ConvertToRGBA8(color_);
-  for (auto& vertex : vertices_) {
-    vertex.color = color_rgba;
-  }
+  Update();
+}
+
+void Shape2D::SetOutlineColor(const Color& color) {
+  outline_color_ = color;
+  Update();
+}
+void Shape2D::SetOutlineWidth(float width) {
+  outline_width_ = width;
+  Update();
 }
 
 void Shape2D::SetRectangle(const Rectangle& rect) {
@@ -114,7 +86,7 @@ void Shape2D::Update() {
 }
 
 void Shape2D::UpdateRectangle() {
-  SDL_assert(type_ == Type::RECTANGLE);
+  assert(type_ == Type::RECTANGLE);
 
   const Vector2 inner_half_size = 0.5f * rectangle_.size + std::min(outline_width_, 0.0f) * Vector2::One();
   const Vector2 outer_half_size = inner_half_size + std::abs(outline_width_) * Vector2::One();
@@ -122,57 +94,57 @@ void Shape2D::UpdateRectangle() {
   const uint32_t outline_color = ConvertToRGBA8(outline_color_);
   if (outline_width_ == 0.0f) {
     vertices_ = {
-      { -inner_half_size.x, -inner_half_size.y, inner_color },
-      {  inner_half_size.x, -inner_half_size.y, inner_color },
-      {  inner_half_size.x,  inner_half_size.y, inner_color },
-      { -inner_half_size.x, -inner_half_size.y, inner_color },
-      {  inner_half_size.x,  inner_half_size.y, inner_color },
-      { -inner_half_size.x,  inner_half_size.y, inner_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, inner_color },
+      {  inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, inner_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, inner_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, inner_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, inner_color },
+      { -inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, inner_color },
     };
   } else {
     vertices_ = {
-      { -inner_half_size.x, -inner_half_size.y, inner_color },
-      {  inner_half_size.x, -inner_half_size.y, inner_color },
-      {  inner_half_size.x,  inner_half_size.y, inner_color },
-      { -inner_half_size.x, -inner_half_size.y, inner_color },
-      {  inner_half_size.x,  inner_half_size.y, inner_color },
-      { -inner_half_size.x,  inner_half_size.y, inner_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, inner_color },
+      {  inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, inner_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, inner_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, inner_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, inner_color },
+      { -inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, inner_color },
 
       // Top outline
-      { -inner_half_size.x,  inner_half_size.y, outline_color },
-      {  inner_half_size.x,  inner_half_size.y, outline_color },
-      {  outer_half_size.x,  outer_half_size.y, outline_color },
+      { -inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, outline_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, outline_color },
+      {  outer_half_size.x,  outer_half_size.y, 0.0f, 0.0f, outline_color },
 
-      { -inner_half_size.x,  inner_half_size.y, outline_color },
-      {  outer_half_size.x,  outer_half_size.y, outline_color },
-      { -outer_half_size.x,  outer_half_size.y, outline_color },
+      { -inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, outline_color },
+      {  outer_half_size.x,  outer_half_size.y, 0.0f, 0.0f, outline_color },
+      { -outer_half_size.x,  outer_half_size.y, 0.0f, 0.0f, outline_color },
 
       // Bottom outline
-      { -outer_half_size.x, -outer_half_size.y, outline_color },
-      {  outer_half_size.x, -outer_half_size.y, outline_color },
-      {  inner_half_size.x, -inner_half_size.y, outline_color },
+      { -outer_half_size.x, -outer_half_size.y, 0.0f, 0.0f, outline_color },
+      {  outer_half_size.x, -outer_half_size.y, 0.0f, 0.0f, outline_color },
+      {  inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, outline_color },
 
-      { -outer_half_size.x, -outer_half_size.y, outline_color },
-      {  inner_half_size.x, -inner_half_size.y, outline_color },
-      { -inner_half_size.x, -inner_half_size.y, outline_color },
+      { -outer_half_size.x, -outer_half_size.y, 0.0f, 0.0f, outline_color },
+      {  inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, outline_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, outline_color },
 
       // Right outline
-      {  inner_half_size.x,  inner_half_size.y, outline_color },
-      {  inner_half_size.x, -inner_half_size.y, outline_color },
-      {  outer_half_size.x, -outer_half_size.y, outline_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, outline_color },
+      {  inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, outline_color },
+      {  outer_half_size.x, -outer_half_size.y, 0.0f, 0.0f, outline_color },
 
-      {  inner_half_size.x,  inner_half_size.y, outline_color },
-      {  outer_half_size.x, -outer_half_size.y, outline_color },
-      {  outer_half_size.x,  outer_half_size.y, outline_color },
+      {  inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, outline_color },
+      {  outer_half_size.x, -outer_half_size.y, 0.0f, 0.0f, outline_color },
+      {  outer_half_size.x,  outer_half_size.y, 0.0f, 0.0f, outline_color },
 
       // Left outline
-      { -inner_half_size.x, -inner_half_size.y, outline_color },
-      { -inner_half_size.x,  inner_half_size.y, outline_color },
-      { -outer_half_size.x,  outer_half_size.y, outline_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, outline_color },
+      { -inner_half_size.x,  inner_half_size.y, 0.0f, 0.0f, outline_color },
+      { -outer_half_size.x,  outer_half_size.y, 0.0f, 0.0f, outline_color },
 
-      { -inner_half_size.x, -inner_half_size.y, outline_color },
-      { -outer_half_size.x,  outer_half_size.y, outline_color },
-      { -outer_half_size.x, -outer_half_size.y, outline_color },
+      { -inner_half_size.x, -inner_half_size.y, 0.0f, 0.0f, outline_color },
+      { -outer_half_size.x,  outer_half_size.y, 0.0f, 0.0f, outline_color },
+      { -outer_half_size.x, -outer_half_size.y, 0.0f, 0.0f, outline_color },
     };
   }
 }
@@ -194,14 +166,14 @@ void Shape2D::UpdateEllipse() {
       const float angle = i * 2.0f * Pi<float>() / ellipse_.num_segments;
 
       const Vector2 new_position = inner_half_size * Vector2{std::sin(angle), std::cos(angle)};
-      vertices_.push_back({previous_position.x, previous_position.y, ellipse_color});
-      vertices_.push_back({new_position.x, new_position.y, ellipse_color});
-      vertices_.push_back({0.0f, 0.0f, ellipse_color});
+      vertices_.push_back({previous_position.x, previous_position.y, 0.0f, 0.0f, ellipse_color});
+      vertices_.push_back({new_position.x, new_position.y, 0.0f, 0.0f, ellipse_color});
+      vertices_.push_back({0.0f, 0.0f, 0.0f, 0.0f, ellipse_color});
       previous_position = new_position;
     }
-    vertices_.push_back({previous_position.x, previous_position.y, ellipse_color});
-    vertices_.push_back({0.0f, inner_half_size.y, ellipse_color});
-    vertices_.push_back({0.0f, 0.0f, ellipse_color});
+    vertices_.push_back({previous_position.x, previous_position.y, 0.0f, 0.0f, ellipse_color});
+    vertices_.push_back({0.0f, inner_half_size.y, 0.0f, 0.0f, ellipse_color});
+    vertices_.push_back({0.0f, 0.0f, 0.0f, 0.0f, ellipse_color});
   }
 
   // Add outline vertices
@@ -218,24 +190,24 @@ void Shape2D::UpdateEllipse() {
       const Vector2 new_inner_position = inner_half_size * direction;
       const Vector2 new_outer_position = outer_half_size * direction;
 
-      vertices_.push_back({previous_inner_position.x, previous_inner_position.y, outline_color});
-      vertices_.push_back({new_inner_position.x, new_inner_position.y, outline_color});
-      vertices_.push_back({new_outer_position.x, new_outer_position.y, outline_color});
+      vertices_.push_back({previous_inner_position.x, previous_inner_position.y, 0.0f, 0.0f, outline_color});
+      vertices_.push_back({new_inner_position.x, new_inner_position.y, 0.0f, 0.0f, outline_color});
+      vertices_.push_back({new_outer_position.x, new_outer_position.y, 0.0f, 0.0f, outline_color});
 
-      vertices_.push_back({previous_inner_position.x, previous_inner_position.y, outline_color});
-      vertices_.push_back({new_outer_position.x, new_outer_position.y, outline_color});
-      vertices_.push_back({previous_outer_position.x, previous_outer_position.y, outline_color});
+      vertices_.push_back({previous_inner_position.x, previous_inner_position.y, 0.0f, 0.0f, outline_color});
+      vertices_.push_back({new_outer_position.x, new_outer_position.y, 0.0f, 0.0f, outline_color});
+      vertices_.push_back({previous_outer_position.x, previous_outer_position.y, 0.0f, 0.0f, outline_color});
 
       previous_inner_position = new_inner_position;
       previous_outer_position = new_outer_position;
     }
   }
 
-  SDL_assert(vertices_.size() == ellipse_vertices + outline_vertices);
+  assert(vertices_.size() == ellipse_vertices + outline_vertices);
 }
 
-void Shape2D::RegisterType(vm::Module* module) {
-  module->RegisterType<Shape2D, SceneObjectComponent>("Shape2D");
+OVIS_VM_DEFINE_TYPE_BINDING(Rendering2D, Shape2D) {
+  Shape2D_type->AddAttribute("Core.EntityComponent");
 }
 
 }  // namespace ovis

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ovis/utils/log.hpp"
 #include <cassert>
 #include <string>
 #include <string_view>
@@ -12,7 +13,7 @@ namespace ovis {
 
 struct Error {
   template <typename... Args>
-  Error(std::string_view message, Args&&... args) : message(fmt::format(message, std::forward<Args>(args)...)) {}
+  Error(std::string_view message, Args&&... args) : message(fmt::format(fmt::runtime(message), std::forward<Args>(args)...)) {}
 
   std::string message;
 };
@@ -20,10 +21,14 @@ struct Error {
 template <typename T = void, typename E = Error>
 class Result;
 
+struct SuccessType {};
+constexpr SuccessType Success;
+
 template <typename E>
 class Result<void, E> {
 public:
-  Result() {}
+  [[deprecated]] Result() {}
+  Result(SuccessType) {}
   Result(E error) : error_(std::move(error)) {}
 
   [[nodiscard]] operator bool() const {
@@ -131,10 +136,56 @@ private:
   }
 };
 
-#define OVIS_CHECK_RESULT(expression)      \
-  if (auto&& result = expression; !result) { \
-    return result.error();                 \
+template <typename T, typename ResultType, typename E>
+bool operator==(const Result<ResultType, E>& lhs, const T& rhs) {
+  return lhs.has_value() && *lhs == rhs;
+}
+
+template <typename T, typename E>
+bool operator==(const T& lhs, const Result<T, E>& rhs) {
+  return rhs.has_value() && lhs == *rhs;
+}
+
+template <typename T>
+struct is_result : std::false_type {};
+
+template <typename T, typename E>
+struct is_result<Result<T, E>> : std::true_type {};
+
+template <typename T>
+constexpr bool is_result_v = is_result<T>::value;
+
+template <typename T>
+concept ResultType = is_result_v<T>;
+
+template <typename T>
+concept NonResultType = !is_result_v<T>;
+
+template <typename T, typename E>
+requires std::is_base_of_v<Error, E> void LogOnError(const Result<T, E>& result, LogLevel log_level = LogLevel::ERROR) {
+  if (!result) {
+    Log::Write(log_level, "{}", result.error().message);
+  }
+}
+
+#define OVIS_CHECK_RESULT(expression)                              \
+  if (auto&& ovis_check_result = expression; !ovis_check_result) { \
+    return ovis_check_result.error();                              \
   }
 
-}
+}  // namespace ovis
+
+
+template<>
+struct fmt::formatter<ovis::Error> {
+  template<typename ParseContext>
+  constexpr auto parse(ParseContext& ctx) {
+    return ctx.begin();
+  }
+
+  template<typename FormatContext>
+  auto format(const ovis::Error& error, FormatContext& ctx) {
+    return fmt::format_to(ctx.out(), "{}", error.message);
+  }
+};
 

@@ -1,3 +1,4 @@
+#include <cassert>
 #include <iostream>
 
 #include <ovis/utils/log.hpp>
@@ -12,7 +13,7 @@ size_t Log::AddListener(LogListener listener) {
 }
 
 void Log::RemoveListener(size_t id) {
-  SDL_assert(id < log_listeners_.size());
+  assert(id < log_listeners_.size());
   log_listeners_[id] = nullptr;
 }
 

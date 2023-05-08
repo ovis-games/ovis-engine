@@ -1,19 +1,18 @@
-#include <ovis/core/scene_viewport.hpp>
+#include "ovis/core/scene_viewport.hpp"
+#include "ovis/core/vm_bindings.hpp"
 
 namespace ovis {
 
-void SceneViewport::ProcessEvent(Event* event) {
-  scene_->ProcessEvent(event);
-}
+OVIS_VM_DEFINE_TYPE_BINDING(Core, SceneViewport) {
+  SceneViewport_type->AddAttribute("Core.SceneComponent");
 
-void SceneViewport::RegisterType(sol::table* module) {
-  /// A viewport renders the scene from a specific viewpoint.
-  // @classmod ovis.core.SceneViewport
-  sol::usertype<SceneViewport> scene_viewport = module->new_usertype<SceneViewport>("SceneViewport");
+  SceneViewport_type->AddProperty<&SceneViewport::dimensions>("dimensions");
+  SceneViewport_type->AddProperty<&SceneViewport::world_to_view>("worldToView");
+  SceneViewport_type->AddProperty<&SceneViewport::view_to_world>("viewToWorld");
+  SceneViewport_type->AddProperty<&SceneViewport::clip_to_view>("clipToView");
+  SceneViewport_type->AddProperty<&SceneViewport::view_to_clip>("viewToClip");
 
-  /// The dimensions of the viewport (readonly).
-  // @field[type=Vector2] dimensions
-  scene_viewport["dimensions"] = sol::property(&SceneViewport::GetDimensions);
+  // TODO: expose methods
 }
 
 }  // namespace ovis

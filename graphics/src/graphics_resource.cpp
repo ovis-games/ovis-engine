@@ -1,23 +1,22 @@
-#include <SDL2/SDL_assert.h>
+#include "ovis/graphics/graphics_resource.hpp"
 
-#include <ovis/graphics/graphics_context.hpp>
-#include <ovis/graphics/graphics_resource.hpp>
+#include "ovis/graphics/graphics_context.hpp"
 
 namespace ovis {
 
 GraphicsResource::~GraphicsResource() {
-  const size_t index = id().index();
-  SDL_assert(context_->resources_[index] == this);
+  const size_t index = id().index;
+  assert(context_->resources_[index] == this);
   context_->resources_[index] = new GraphicsResource(context_, id());
 }
 
 GraphicsResource::GraphicsResource(GraphicsContext* context, Type type) : context_(context), type_(type) {
-  SDL_assert(context != nullptr);
-  SDL_assert(type != Type::NONE);
+  assert(context != nullptr);
+  assert(type != Type::NONE);
 
   for (size_t index = 0; index < context->resources_.size(); ++index) {
     GraphicsResource* resource = context->resources_[index];
-    SDL_assert(resource != nullptr);
+    assert(resource != nullptr);
 
     if (resource->type() == Type::NONE) {
       id_ = resource->id().next();
@@ -32,7 +31,7 @@ GraphicsResource::GraphicsResource(GraphicsContext* context, Type type) : contex
 }
 
 GraphicsResource::GraphicsResource(GraphicsContext* context, Id id) : context_(context), id_(id), type_(Type::NONE) {
-  SDL_assert(context != nullptr);
+  assert(context != nullptr);
 }
 
 }  // namespace ovis

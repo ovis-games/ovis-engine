@@ -1,9 +1,10 @@
 add_library(
   ovis-rendering2d
   
-  include/ovis/rendering2d/rendering2d_module.hpp src/rendering2d_module.cpp
   include/ovis/rendering2d/renderer2d.hpp src/renderer2d.cpp
   include/ovis/rendering2d/shape2d.hpp src/shape2d.cpp
+  include/ovis/rendering2d/text.hpp src/text.cpp
+  include/ovis/rendering2d/font_atlas.hpp src/font_atlas.cpp
 )
 add_library(ovis::rendering2d ALIAS ovis-rendering2d)
 
@@ -17,6 +18,7 @@ target_link_libraries(
   ovis-rendering2d
   PUBLIC
     ovis::rendering
+    stb::truetype
 )
 
 target_add_assets(
@@ -25,36 +27,36 @@ target_add_assets(
   assets/rendering2d.schema.json
   assets/shape2d.shader.vert
   assets/shape2d.shader.frag
+  assets/NotoSans-Regular.font.ttf
 )
 
 if (OVIS_BUILD_TESTS)
   add_executable(
     ovis-rendering2d-test
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/test/test_shape2d.cpp
+    test/test_shape2d.cpp
+    test/test_renderer2d.cpp
   )
   target_link_libraries(
     ovis-rendering2d-test
     PRIVATE
-      catch2
       ovis::rendering2d
+      ovis::test
   )
   # target_add_assets(
-  #   ovis-rendering-test
+  #   ovis-rendering2d-test
 
-  #   test/assets/template.scene_object.json
   # )
   target_embed_assets(ovis-rendering2d-test)
 
   if (OVIS_EMSCRIPTEN)
     add_test(
-      ovis-renderin2d-test
+      ovis-rendering2d-test
       ${NODE_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/ovis-rendering2d-test.js
     )
   else ()
     add_test(
-      NAME ovis-renderin2d-test
+      NAME ovis-rendering2d-test
       COMMAND ovis-rendering2d-test --assets-directory ${CMAKE_CURRENT_BINARY_DIR}/assets/ovis-rendering2d-test/
     )
   endif ()

@@ -18,8 +18,8 @@ RenderTargetConfiguration::RenderTargetConfiguration(GraphicsContext* context,
       color_attachment.value()->Attach(GL_COLOR_ATTACHMENT0 + color_attachment.index());
       width_ = color_attachment.value()->GetWidth();
       height_ = color_attachment.value()->GetHeight();
-      SDL_assert(width_ > 0);
-      SDL_assert(height_ > 0);
+      assert(width_ > 0);
+      assert(height_ > 0);
       draw_buffers_.push_back(GL_COLOR_ATTACHMENT0 + color_attachment.index());
     } else {
       draw_buffers_.push_back(GL_NONE);
@@ -33,7 +33,7 @@ RenderTargetConfiguration::RenderTargetConfiguration(GraphicsContext* context,
   }
 
   GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-  SDL_assert(status == GL_FRAMEBUFFER_COMPLETE);
+  assert(status == GL_FRAMEBUFFER_COMPLETE);
 }
 
 RenderTargetConfiguration::~RenderTargetConfiguration() {
@@ -53,7 +53,7 @@ void RenderTargetConfiguration::ClearColor(size_t color_attachment_index, const 
   }
   Bind();
 #if OVIS_EMSCRIPTEN
-  SDL_assert(color_attachment_index == 0);
+  assert(color_attachment_index == 0);
   glClearColor(clear_color[0], clear_color[1], clear_color[2], clear_color[3]);
   glClear(GL_COLOR_BUFFER_BIT);
 #else

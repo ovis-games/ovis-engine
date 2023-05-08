@@ -1,12 +1,13 @@
+#include "ovis/graphics/shader_program.hpp"
+
 #include <fstream>
 #include <iostream>
 #include <vector>
 
-#include <ovis/utils/file.hpp>
-#include <ovis/utils/log.hpp>
-#include <ovis/utils/range.hpp>
-#include <ovis/graphics/graphics_context.hpp>
-#include <ovis/graphics/shader_program.hpp>
+#include "ovis/utils/file.hpp"
+#include "ovis/utils/log.hpp"
+#include "ovis/utils/range.hpp"
+#include "ovis/graphics/graphics_context.hpp"
 
 namespace ovis {
 
@@ -19,9 +20,14 @@ ShaderProgram::ShaderProgram(GraphicsContext* context, const ShaderProgramDescri
 
   GLint link_status = 0;
   glGetProgramiv(m_program_name, GL_LINK_STATUS, &link_status);
-  SDL_assert(link_status == 1);
-
-  {
+  assert(link_status == 1);
+  if (link_status != 1) {
+    GLint info_log_length = 0;
+    glGetProgramiv(m_program_name, GL_INFO_LOG_LENGTH, &info_log_length);
+    std::vector<GLchar> info_log_buffer(info_log_length, '\0');
+    glGetProgramInfoLog(m_program_name, info_log_length, nullptr, info_log_buffer.data());
+    LogE("{}", info_log_buffer.data());
+  } else {
     GLint num_attributes = 0;
     glGetProgramiv(m_program_name, GL_ACTIVE_ATTRIBUTES, &num_attributes);
 
@@ -61,7 +67,7 @@ ShaderProgram::~ShaderProgram() {
 void ShaderProgram::AttachShader(const std::string& source, GLenum shader_type) {
   if (source.length() > 0) {
     GLuint shader = glCreateShader(shader_type);
-    SDL_assert(shader != 0);
+    assert(shader != 0);
 
     std::string final_shader_source;
 #if OVIS_EMSCRIPTEN
@@ -101,7 +107,7 @@ void ShaderProgram::AttachShader(const std::string& source, GLenum shader_type) 
       glAttachShader(m_program_name, shader);
     } else {
       GLint info_log_length = 0;
-      glGetShaderiv(shader, GL_SHADER_SOURCE_LENGTH, &info_log_length);
+      glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &info_log_length);
       std::vector<GLchar> info_log_buffer(info_log_length, '\0');
       glGetShaderInfoLog(shader, info_log_length, nullptr, info_log_buffer.data());
       LogE("{}", info_log_buffer.data());

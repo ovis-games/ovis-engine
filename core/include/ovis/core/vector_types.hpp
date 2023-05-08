@@ -4,16 +4,12 @@
 #include <type_traits>
 
 #include <fmt/format.h>
-#include <sol/sol.hpp>
 
-#include <ovis/utils/json.hpp>
-#include <ovis/core/math_constants.hpp>
+#include "ovis/utils/json.hpp"
+#include "ovis/core/math_constants.hpp"
+#include "ovis/core/vm_bindings.hpp"
 
 namespace ovis {
-
-namespace vm {
-class Module;
-}
 
 template <int ELEMENT_COUNT>
 struct VectorTypes;
@@ -53,8 +49,7 @@ union alignas(sizeof(float) * 2) Vector2 {
     }};
   };
 
-  static void RegisterType(sol::table* module);
-  static void RegisterType(vm::Module* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 };
 static_assert(sizeof(Vector2) == 8);
 static_assert(std::is_trivially_copyable<Vector2>());
@@ -113,8 +108,7 @@ union alignas(sizeof(float) * 4) Vector3 {
     }};
   };
 
-  static void RegisterType(sol::table* module);
-  static void RegisterType(vm::Module* module);
+  OVIS_VM_DECLARE_TYPE_BINDING();
 };
 std::ostream& operator<<(std::ostream& stream, const Vector3& vector);
 static_assert(sizeof(Vector3) == 16);
@@ -218,7 +212,7 @@ struct fmt::formatter<ovis::Vector2> {
 
   template <typename FormatContext>
   auto format(const ovis::Vector2& vector, FormatContext& ctx) {
-    return format_to(ctx.out(), presentation == 'f' ? "({:.1f}, {:.1f})" : "({:.1e}, {:.1e})", vector.x, vector.y);
+    return format_to(ctx.out(), fmt::runtime(presentation == 'f' ? "({:.1f}, {:.1f})" : "({:.1e}, {:.1e})"), vector.x, vector.y);
   }
 };
 
@@ -236,7 +230,7 @@ struct fmt::formatter<ovis::Vector3> {
 
   template <typename FormatContext>
   auto format(const ovis::Vector3& vector, FormatContext& ctx) {
-    return format_to(ctx.out(), presentation == 'f' ? "({:.1f}, {:.1f}, {:.1f})" : "({:.1e}, {:.1e}, {:.1e})", vector.x,
+    return format_to(ctx.out(), fmt::runtime(presentation == 'f' ? "({:.1f}, {:.1f}, {:.1f})" : "({:.1e}, {:.1e}, {:.1e})"), vector.x,
                      vector.y, vector.z);
   }
 };
@@ -256,7 +250,7 @@ struct fmt::formatter<ovis::Vector4> {
   template <typename FormatContext>
   auto format(const ovis::Vector4& vector, FormatContext& ctx) {
     return format_to(ctx.out(),
-                     presentation == 'f' ? "({:.1f}, {:.1f}, {:.1f}, {:.1f})" : "({:.1e}, {:.1e}, {:.1e}, {:.1e})",
+                     fmt::runtime(presentation == 'f' ? "({:.1f}, {:.1f}, {:.1f}, {:.1f})" : "({:.1e}, {:.1e}, {:.1e}, {:.1e})"),
                      vector.x, vector.y, vector.z, vector.w);
   }
 };

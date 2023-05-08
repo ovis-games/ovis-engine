@@ -213,7 +213,7 @@ class RangeFilter {
 
     inline bool operator!=(const Iterator& rhs) const { return iterator_ != rhs.iterator_; }
 
-    inline const auto& operator*() const { return *iterator_; }
+    inline auto& operator*() const { return *iterator_; }
 
     inline auto* operator->() const { return &*iterator_; }
 
@@ -256,7 +256,7 @@ template <typename Iterator, typename Functor>
 RangeFilter(Iterator begin, Iterator end, Functor functor) -> RangeFilter<Iterator, Functor>;
 
 template <typename Range, typename Functor>
-auto FilterRange(const Range& range, Functor f) {
+auto FilterRange(Range&& range, Functor f) {
   return RangeFilter(range.begin(), range.end(), f);
 }
 
@@ -335,7 +335,7 @@ template <typename Iterator, typename Functor>
 RangeAdapter(Iterator begin, Iterator end, Functor functor) -> RangeAdapter<Iterator, Functor>;
 
 template <typename Range, typename Functor>
-auto TransformRange(const Range& range, Functor f) {
+auto TransformRange(Range&& range, Functor f) {
   return RangeAdapter(range.begin(), range.end(), f);
 }
 

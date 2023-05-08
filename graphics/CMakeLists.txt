@@ -39,12 +39,6 @@ if (APPLE)
   )
 endif ()
 
-target_include_directories(
-  ovis-graphics
-  PUBLIC
-    ${OVIS_ROOT}/extern/glm/include
-)
-
 target_link_libraries(
   ovis-graphics
   PUBLIC

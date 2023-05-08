@@ -8,7 +8,6 @@
 
 #include <ovis/utils/log.hpp>
 #include <ovis/core/asset_library.hpp>
-#include <ovis/rendering2d/rendering2d_module.hpp>
 #include <ovis/application/application.hpp>
 #include <ovis/application/window.hpp>
 
@@ -46,8 +45,8 @@ int main(int argc, char* argv[]) {
 #endif
 
   Window window(WindowDescription{});
-  window.AddRenderPass("ClearPass");
-  window.AddRenderPass("SpriteRenderer");
+  // AddRenderPass<ClearPass>();
+  // AddRenderPass<Renderer2D>();
 
 #if OVIS_EMSCRIPTEN
   window.scene()->AddController<player::LoadingController>(backend_prefix, user_name, game_name, package_type);

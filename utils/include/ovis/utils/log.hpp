@@ -6,7 +6,6 @@
 #include <utility>
 #include <vector>
 
-#include <SDL2/SDL_assert.h>
 #include <fmt/format.h>
 
 namespace ovis {
@@ -28,7 +27,7 @@ class Log {
     std::ostringstream format_buffer;
     const char log_level_char = detail::LOG_LEVEL_CHARS[static_cast<int>(level)];
     fmt::format_to(std::ostream_iterator<char>(format_buffer), "{}: ", log_level_char);
-    fmt::format_to(std::ostream_iterator<char>(format_buffer), format_string, std::forward<T>(args)...);
+    fmt::format_to(std::ostream_iterator<char>(format_buffer), fmt::runtime(format_string), std::forward<T>(args)...);
 
     std::string formatted_string = format_buffer.str();
     for (auto& listener : log_listeners_) {

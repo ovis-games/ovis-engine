@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "variableDeclarationStatement.schema.json",
+  "type": "object",
+  "properties": {
+    "variable": { "$ref": "variableDeclaration.schema.json" },
+    "value": { "$ref": "expression.schema.json" }
+  },
+  "additionalProperties": false,
+  "required": ["variable"]
+}

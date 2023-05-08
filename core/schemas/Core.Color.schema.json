@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "id": "Core.Color",
+  "title": "Color",
+  "description": "A color specified as RGBA.",
+  "type": "array",
+  "minItems": 4,
+  "maxItems": 4,
+  "items": {
+    "type": "number"
+  },
+  "additionalProperties": false
+}
